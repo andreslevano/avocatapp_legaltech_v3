@@ -1,0 +1,44 @@
+{
+  "name": "avocat-legaltech-v3",
+  "version": "1.0.0",
+  "description": "LegalTech application built with Next.js 14, Firebase, and AI integration",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stripe/stripe-js": "^2.0.0",
+    "@swc/helpers": "^0.5.17",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "autoprefixer": "^10.0.0",
+    "firebase": "^10.0.0",
+    "next": "^14.0.0",
+    "openai": "^4.0.0",
+    "postcss": "^8.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "stripe": "^14.0.0",
+    "tailwindcss": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0",
+    "prettier": "^3.0.0"
+  },
+  "keywords": [
+    "legaltech",
+    "nextjs",
+    "firebase",
+    "ai",
+    "stripe"
+  ],
+  "author": "Andres Levano",
+  "license": "MIT"
+}

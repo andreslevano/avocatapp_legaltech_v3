@@ -1,0 +1,123 @@
+// User types
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'user' | 'admin' | 'lawyer';
+  firm?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Document types
+export interface LegalDocument {
+  id: string;
+  title: string;
+  content: string;
+  type: 'contract' | 'case_file' | 'legal_brief' | 'other';
+  userId: string;
+  clientId?: string;
+  tags: string[];
+  analysis?: DocumentAnalysis;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DocumentAnalysis {
+  id: string;
+  documentId: string;
+  summary: string;
+  keyPoints: string[];
+  risks: string[];
+  recommendations: string[];
+  aiGenerated: boolean;
+  createdAt: Date;
+}
+
+// Case types
+export interface LegalCase {
+  id: string;
+  title: string;
+  description: string;
+  clientId: string;
+  lawyerId: string;
+  status: 'open' | 'active' | 'closed' | 'archived';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  documents: string[];
+  notes: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Client types
+export interface Client {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  firm?: string;
+  cases: string[];
+  documents: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Payment types
+export interface Subscription {
+  id: string;
+  userId: string;
+  planId: string;
+  status: 'active' | 'canceled' | 'past_due' | 'unpaid';
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  cancelAtPeriodEnd: boolean;
+  stripeSubscriptionId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PricingPlan {
+  id: string;
+  name: string;
+  price: number;
+  interval: 'month' | 'year';
+  features: string[];
+  stripePriceId: string;
+  isPopular: boolean;
+}
+
+// AI Analysis types
+export interface AIAnalysisRequest {
+  documentId: string;
+  analysisType: 'summary' | 'risk_assessment' | 'legal_research' | 'contract_review';
+  customPrompt?: string;
+}
+
+export interface AIAnalysisResponse {
+  id: string;
+  requestId: string;
+  content: string;
+  metadata: {
+    model: string;
+    tokens: number;
+    processingTime: number;
+  };
+  createdAt: Date;
+}
+
+// API Response types
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
