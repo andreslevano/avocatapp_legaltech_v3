@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, Auth } from 'firebase/auth';
-import { doc, setDoc, Firestore } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -16,12 +15,29 @@ export default function SignUp() {
     confirmPassword: '',
     firm: '',
     phone: '',
+    country: '',
+    plan: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const router = useRouter();
+
+  // Function to get dashboard URL based on selected plan
+  const getDashboardUrl = (plan: string): string => {
+    switch (plan) {
+      case 'Estudiantes':
+        return '/dashboard/estudiantes';
+      case 'Reclamación de Cantidades':
+        return '/dashboard/reclamacion-cantidades';
+      case 'Acción de Tutela':
+        return '/dashboard/accion-tutela';
+      case 'Abogados':
+      default:
+        return '/dashboard';
+    }
+  };
 
   useEffect(() => {
     // Check if Firebase is properly initialized
@@ -30,12 +46,30 @@ export default function SignUp() {
     }
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // If country changes, reset plan selection
+    if (name === 'country') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        plan: '', // Reset plan when country changes
+        firm: '' // Reset firm when country changes
+      }));
+    } else if (name === 'plan') {
+      // If plan changes, reset firm if not Abogados
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        firm: value === 'Abogados' ? prev.firm : '' // Clear firm if not Abogados plan
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
@@ -62,34 +96,36 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(
+      await createUserWithEmailAndPassword(
         auth as Auth,
         formData.email,
         formData.password
       );
 
-      const user = userCredential.user;
-
       // Skip Firestore for now to ensure navigation works
       console.log('Account created successfully, skipping Firestore for now');
+      console.log('Selected plan:', formData.plan);
       
       setSuccess('¡Cuenta creada exitosamente! Redirigiendo...');
       
-      // Redirigir al dashboard inmediatamente
-      console.log('Attempting to navigate to dashboard...');
+      // Redirigir directamente al dashboard seleccionado
+      const dashboardUrl = getDashboardUrl(formData.plan);
+      console.log('Attempting to navigate to dashboard:', dashboardUrl);
+      console.log('Form data:', formData);
       try {
-        await router.push('/dashboard');
+        await router.push(dashboardUrl);
         console.log('Navigation successful');
       } catch (navError) {
         console.error('Navigation error:', navError);
         // Fallback: try window.location
-        window.location.href = '/dashboard';
+        window.location.href = dashboardUrl;
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error al crear cuenta:', error);
       
-      switch (error.code) {
+      if (error && typeof error === 'object' && 'code' in error) {
+        switch ((error as { code: string }).code) {
         case 'auth/email-already-in-use':
           setError('Este email ya está registrado');
           break;
@@ -101,6 +137,7 @@ export default function SignUp() {
           break;
         default:
           setError('Error al crear la cuenta. Intenta de nuevo.');
+        }
       }
     } finally {
       setIsLoading(false);
@@ -119,26 +156,27 @@ export default function SignUp() {
 
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth as Auth, provider);
-      const user = result.user;
+      await signInWithPopup(auth as Auth, provider);
 
       // Skip Firestore for now to ensure navigation works
       console.log('Google account created successfully, skipping Firestore for now');
+      console.log('Selected plan for Google signup:', formData.plan);
 
       setSuccess('¡Cuenta creada exitosamente con Google! Redirigiendo...');
       
-      // Redirigir al dashboard inmediatamente
-      console.log('Attempting to navigate to dashboard...');
+      // Redirigir directamente al dashboard seleccionado
+      const dashboardUrl = getDashboardUrl(formData.plan);
+      console.log('Attempting to navigate to dashboard:', dashboardUrl);
       try {
-        await router.push('/dashboard');
+        await router.push(dashboardUrl);
         console.log('Navigation successful');
       } catch (navError) {
         console.error('Navigation error:', navError);
         // Fallback: try window.location
-        window.location.href = '/dashboard';
+        window.location.href = dashboardUrl;
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error al crear cuenta con Google:', error);
       setError('Error al crear cuenta con Google. Intenta de nuevo.');
     } finally {
@@ -282,19 +320,78 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label htmlFor="firm" className="block text-sm font-medium text-gray-700">
-                Bufete (opcional)
+              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                País *
               </label>
-              <input
-                id="firm"
-                name="firm"
-                type="text"
-                value={formData.firm}
+              <select
+                id="country"
+                name="country"
+                required
+                value={formData.country}
                 onChange={handleInputChange}
                 className="mt-1 input-field"
-                placeholder="Nombre del bufete"
-              />
+              >
+                <option value="">Selecciona tu país</option>
+                <option value="Chile">Chile</option>
+                <option value="Colombia">Colombia</option>
+                <option value="Ecuador">Ecuador</option>
+                <option value="España">España</option>
+                <option value="Mexico">Mexico</option>
+                <option value="Peru">Peru</option>
+              </select>
             </div>
+
+            <div>
+              <label htmlFor="plan" className="block text-sm font-medium text-gray-700">
+                Plan *
+              </label>
+              <select
+                id="plan"
+                name="plan"
+                required
+                value={formData.plan}
+                onChange={handleInputChange}
+                className="mt-1 input-field"
+                disabled={!formData.country}
+              >
+                <option value="">
+                  {!formData.country ? 'Primero selecciona un país' : 'Selecciona tu plan'}
+                </option>
+                {formData.country === 'España' && (
+                  <>
+                    <option value="Estudiantes">Estudiantes</option>
+                    <option value="Reclamación de Cantidades">Reclamación de Cantidades</option>
+                    <option value="Abogados">Abogados</option>
+                  </>
+                )}
+                {formData.country === 'Colombia' && (
+                  <>
+                    <option value="Acción de Tutela">Acción de Tutela</option>
+                    <option value="Abogados">Abogados</option>
+                  </>
+                )}
+                {formData.country && formData.country !== 'España' && formData.country !== 'Colombia' && (
+                  <option value="Abogados">Abogados</option>
+                )}
+              </select>
+            </div>
+
+            {formData.plan === 'Abogados' && (
+              <div>
+                <label htmlFor="firm" className="block text-sm font-medium text-gray-700">
+                  Bufete (opcional)
+                </label>
+                <input
+                  id="firm"
+                  name="firm"
+                  type="text"
+                  value={formData.firm}
+                  onChange={handleInputChange}
+                  className="mt-1 input-field"
+                  placeholder="Nombre del bufete"
+                />
+              </div>
+            )}
 
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">

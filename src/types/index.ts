@@ -4,6 +4,7 @@ export interface User {
   email: string;
   name: string;
   role: 'user' | 'admin' | 'lawyer';
+  plan?: 'Abogados' | 'Estudiantes' | 'Reclamación de Cantidades' | 'Acción de Tutela';
   firm?: string;
   createdAt: Date;
   updatedAt: Date;
