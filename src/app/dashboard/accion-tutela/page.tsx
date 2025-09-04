@@ -7,6 +7,7 @@ import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
 import TutelaProcessSimple from '@/components/TutelaProcessSimple';
+import PurchaseHistoryComponent from '@/components/PurchaseHistory';
 
 export default function AccionTutelaDashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -509,6 +510,11 @@ export default function AccionTutelaDashboard() {
               />
             </div>
           )}
+
+          {/* Purchase History Section */}
+          <div className="mt-12">
+            <PurchaseHistoryComponent userId={user?.uid} documentType="accion_tutela" />
+          </div>
         </div>
       </main>
     </div>
