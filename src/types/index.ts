@@ -122,3 +122,59 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
     totalPages: number;
   };
 }
+
+// Document Processing types for Reclamación de Cantidades
+export interface UploadedDocument {
+  id: string;
+  name: string;
+  file: File;
+  size: number;
+  type: string;
+  category?: DocumentCategory;
+  uploadDate: Date;
+  previewUrl?: string;
+}
+
+export interface DocumentCategory {
+  id: string;
+  name: string;
+  description: string;
+  required: boolean;
+  color: string;
+}
+
+export interface DocumentSummary {
+  totalDocuments: number;
+  categorizedDocuments: { [categoryId: string]: UploadedDocument[] };
+  missingRequired: string[];
+  analysisComplete: boolean;
+}
+
+export interface GeneratedDocument {
+  id: string;
+  title: string;
+  content: string;
+  type: 'reclamacion_cantidades';
+  generatedAt: Date;
+  downloadUrl?: string;
+}
+
+// Purchase History types
+export interface PurchaseHistory {
+  id: string;
+  userId: string;
+  documentTitle: string;
+  documentType: 'reclamacion_cantidades';
+  purchaseDate: Date;
+  price: number;
+  currency: string;
+  status: 'completed' | 'pending' | 'failed';
+  documentCount: number;
+  accuracy: number;
+  files: {
+    wordUrl?: string;
+    pdfUrl?: string;
+  };
+  emailSent: boolean;
+  emailSentAt?: Date;
+}

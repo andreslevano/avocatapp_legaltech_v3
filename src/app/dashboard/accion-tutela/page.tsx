@@ -6,11 +6,19 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
+import TutelaProcessSimple from '@/components/TutelaProcessSimple';
 
 export default function AccionTutelaDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [showProcess, setShowProcess] = useState(false);
+  const [formData, setFormData] = useState({
+    vulnerador: '',
+    hechos: '',
+    derecho: '',
+    solicitud: ''
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -44,6 +52,42 @@ export default function AccionTutelaDashboard() {
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form data
+    if (!formData.vulnerador || !formData.hechos || !formData.derecho || !formData.solicitud) {
+      alert('Por favor, complete todos los campos del formulario.');
+      return;
+    }
+    
+    // Show the process
+    setShowProcess(true);
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleProcessComplete = (document: any) => {
+    console.log('Tutela process completed:', document);
+    // You can add additional logic here, like saving to database, etc.
+  };
+
+  const handleResetForm = () => {
+    setFormData({
+      vulnerador: '',
+      hechos: '',
+      derecho: '',
+      solicitud: ''
+    });
+    setShowProcess(false);
   };
 
   if (loading) {
@@ -326,7 +370,7 @@ export default function AccionTutelaDashboard() {
           </div>
 
           {/* Getting Started */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white overflow-hidden shadow rounded-lg mb-8">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
                 Comenzando con Acciones de Tutela
@@ -359,6 +403,112 @@ export default function AccionTutelaDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Formulario de Acción de Tutela */}
+          <div className="bg-white overflow-hidden shadow rounded-lg mb-8">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-6">
+                Formulario de Acción de Tutela
+              </h3>
+              
+              <form onSubmit={handleFormSubmit} className="space-y-6">
+                {/* Campo 1: Nombre de persona o entidad que vulnera el derecho */}
+                <div>
+                  <label htmlFor="vulnerador" className="block text-sm font-medium text-gray-700 mb-2">
+                    Nombre de persona o entidad que vulnera el derecho
+                  </label>
+                  <input
+                    type="text"
+                    id="vulnerador"
+                    name="vulnerador"
+                    value={formData.vulnerador}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                    placeholder="Ingrese el nombre de la persona o entidad"
+                    required
+                  />
+                </div>
+
+                {/* Campo 2: Relato de los hechos */}
+                <div>
+                  <label htmlFor="hechos" className="block text-sm font-medium text-gray-700 mb-2">
+                    Relato de los hechos
+                  </label>
+                  <textarea
+                    id="hechos"
+                    name="hechos"
+                    value={formData.hechos}
+                    onChange={handleFormChange}
+                    rows={6}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                    placeholder="Describa detalladamente los hechos que dieron lugar a la vulneración de sus derechos fundamentales"
+                    required
+                  />
+                </div>
+
+                {/* Campo 3: Que derecho piensa que ha sido vulnerado */}
+                <div>
+                  <label htmlFor="derecho" className="block text-sm font-medium text-gray-700 mb-2">
+                    ¿Qué derecho piensa que ha sido vulnerado?
+                  </label>
+                  <select
+                    id="derecho"
+                    name="derecho"
+                    value={formData.derecho}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                    required
+                  >
+                    <option value="">Seleccione un derecho</option>
+                    <option value="vida">Derecho a la vida</option>
+                    <option value="salud">Derecho a la salud</option>
+                    <option value="educacion">Derecho a la educación</option>
+                    <option value="igualdad">Derecho a la igualdad</option>
+                    <option value="debido-proceso">Derecho al debido proceso</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+
+                {/* Campo 4: Que se solicita */}
+                <div>
+                  <label htmlFor="solicitud" className="block text-sm font-medium text-gray-700 mb-2">
+                    ¿Qué se solicita?
+                  </label>
+                  <textarea
+                    id="solicitud"
+                    name="solicitud"
+                    value={formData.solicitud}
+                    onChange={handleFormChange}
+                    rows={4}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                    placeholder="Describa específicamente qué solicita al juez de tutela para la protección de sus derechos"
+                    required
+                  />
+                </div>
+
+                {/* Botón Continuar */}
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    Continuar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* Proceso de Acción de Tutela */}
+          {showProcess && (
+            <div className="mb-8">
+              <TutelaProcessSimple 
+                formData={formData} 
+                onComplete={handleProcessComplete}
+                onResetForm={handleResetForm}
+              />
+            </div>
+          )}
         </div>
       </main>
     </div>

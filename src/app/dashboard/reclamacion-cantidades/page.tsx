@@ -6,6 +6,8 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
+import ReclamacionProcessSimple from '@/components/ReclamacionProcessSimple';
+import PurchaseHistoryComponent from '@/components/PurchaseHistory';
 
 export default function ReclamacionCantidadesDashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -269,7 +271,7 @@ export default function ReclamacionCantidadesDashboard() {
           </div>
 
           {/* Getting Started */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white overflow-hidden shadow rounded-lg mb-8">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
                 Comenzando con Reclamaciones
@@ -301,6 +303,14 @@ export default function ReclamacionCantidadesDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Document Processing Workflow */}
+          <ReclamacionProcessSimple />
+
+          {/* Purchase History Section */}
+          <div className="mt-12">
+            <PurchaseHistoryComponent userId={user?.uid} />
           </div>
         </div>
       </main>
