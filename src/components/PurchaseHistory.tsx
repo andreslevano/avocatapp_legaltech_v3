@@ -5,6 +5,7 @@ import { PurchaseHistory } from '@/types';
 
 interface PurchaseHistoryProps {
   userId?: string;
+  documentType?: 'reclamacion_cantidades' | 'accion_tutela';
 }
 
 // Mock data for demonstration
@@ -62,12 +63,71 @@ const mockPurchaseHistory: PurchaseHistory[] = [
     },
     emailSent: true,
     emailSentAt: new Date('2024-12-05T09:20:00')
+  },
+  {
+    id: '4',
+    userId: 'user1',
+    documentTitle: 'Acción de Tutela - 18/12/2024',
+    documentType: 'accion_tutela',
+    purchaseDate: new Date('2024-12-18T11:45:00'),
+    price: 10.00,
+    currency: 'EUR',
+    status: 'completed',
+    documentCount: 5,
+    accuracy: 90,
+    files: {
+      wordUrl: '/documents/tutela-1.docx',
+      pdfUrl: '/documents/tutela-1.pdf'
+    },
+    emailSent: true,
+    emailSentAt: new Date('2024-12-18T11:50:00')
+  },
+  {
+    id: '5',
+    userId: 'user1',
+    documentTitle: 'Acción de Tutela - 12/12/2024',
+    documentType: 'accion_tutela',
+    purchaseDate: new Date('2024-12-12T16:30:00'),
+    price: 10.00,
+    currency: 'EUR',
+    status: 'completed',
+    documentCount: 7,
+    accuracy: 75,
+    files: {
+      wordUrl: '/documents/tutela-2.docx',
+      pdfUrl: '/documents/tutela-2.pdf'
+    },
+    emailSent: true,
+    emailSentAt: new Date('2024-12-12T16:35:00')
+  },
+  {
+    id: '6',
+    userId: 'user1',
+    documentTitle: 'Acción de Tutela - 08/12/2024',
+    documentType: 'accion_tutela',
+    purchaseDate: new Date('2024-12-08T09:20:00'),
+    price: 10.00,
+    currency: 'EUR',
+    status: 'completed',
+    documentCount: 4,
+    accuracy: 88,
+    files: {
+      wordUrl: '/documents/tutela-3.docx',
+      pdfUrl: '/documents/tutela-3.pdf'
+    },
+    emailSent: true,
+    emailSentAt: new Date('2024-12-08T09:25:00')
   }
 ];
 
-export default function PurchaseHistoryComponent({ userId }: PurchaseHistoryProps) {
+export default function PurchaseHistoryComponent({ userId, documentType }: PurchaseHistoryProps) {
   const [selectedDocument, setSelectedDocument] = useState<PurchaseHistory | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
+
+  // Filter mock data based on document type
+  const filteredPurchaseHistory = documentType 
+    ? mockPurchaseHistory.filter(purchase => purchase.documentType === documentType)
+    : mockPurchaseHistory;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -92,7 +152,8 @@ export default function PurchaseHistoryComponent({ userId }: PurchaseHistoryProp
     try {
       // In a real application, this would fetch the actual file from the server
       // For demo purposes, we'll create a mock download
-      const content = `REGLAMENTO DE CANTIDADES\n\n${document.documentTitle}\n\nGenerado el: ${document.purchaseDate.toLocaleDateString('es-ES')}\nDocumentos procesados: ${document.documentCount}\nPrecisión: ${document.accuracy}%\n\n[Contenido del documento...]`;
+      const documentType = document.documentType === 'accion_tutela' ? 'ACCIÓN DE TUTELA' : 'RECLAMACIÓN DE CANTIDADES';
+      const content = `${documentType}\n\n${document.documentTitle}\n\nGenerado el: ${document.purchaseDate.toLocaleDateString('es-ES')}\nDocumentos procesados: ${document.documentCount}\nPrecisión: ${document.accuracy}%\n\n[Contenido del documento...]`;
       
       if (format === 'pdf') {
         const { default: jsPDF } = await import('jspdf');
@@ -247,13 +308,21 @@ export default function PurchaseHistoryComponent({ userId }: PurchaseHistoryProp
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {mockPurchaseHistory.map((purchase) => (
+            {filteredPurchaseHistory.map((purchase) => (
               <tr key={purchase.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
-                      <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                        <svg className="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                        purchase.documentType === 'accion_tutela' 
+                          ? 'bg-red-100' 
+                          : 'bg-orange-100'
+                      }`}>
+                        <svg className={`h-6 w-6 ${
+                          purchase.documentType === 'accion_tutela' 
+                            ? 'text-red-600' 
+                            : 'text-orange-600'
+                        }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
@@ -337,14 +406,22 @@ export default function PurchaseHistoryComponent({ userId }: PurchaseHistoryProp
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4">
-        {mockPurchaseHistory.map((purchase) => (
+        {filteredPurchaseHistory.map((purchase) => (
           <div key={purchase.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
             {/* Header with icon and title */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center flex-1 min-w-0">
                 <div className="flex-shrink-0 h-10 w-10">
-                  <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                    <svg className="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                    purchase.documentType === 'accion_tutela' 
+                      ? 'bg-red-100' 
+                      : 'bg-orange-100'
+                  }`}>
+                    <svg className={`h-6 w-6 ${
+                      purchase.documentType === 'accion_tutela' 
+                        ? 'text-red-600' 
+                        : 'text-orange-600'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
@@ -525,14 +602,19 @@ export default function PurchaseHistoryComponent({ userId }: PurchaseHistoryProp
       )}
 
       {/* Empty State */}
-      {mockPurchaseHistory.length === 0 && (
+      {filteredPurchaseHistory.length === 0 && (
         <div className="text-center py-12">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           <h3 className="mt-2 text-sm font-medium text-gray-900">No hay compras</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Comienza generando tu primera reclamación de cantidades.
+            {documentType === 'accion_tutela' 
+              ? 'Comienza generando tu primera acción de tutela.'
+              : documentType === 'reclamacion_cantidades'
+              ? 'Comienza generando tu primera reclamación de cantidades.'
+              : 'Comienza generando tu primer documento legal.'
+            }
           </p>
         </div>
       )}
