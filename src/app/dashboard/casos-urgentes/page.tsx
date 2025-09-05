@@ -346,7 +346,10 @@ export default function UrgentCasesPage() {
                         <div className="text-xs text-gray-400 mt-1">
                           Vence: {new Date(caseItem.deadline).toLocaleDateString()}
                         </div>
-                        <button className="mt-3 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-700 transition-colors">
+                        <button 
+                          onClick={() => router.push('/dashboard/analisis-caso')}
+                          className="mt-3 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-700 transition-colors"
+                        >
                           Ver Detalles
                         </button>
                       </div>
