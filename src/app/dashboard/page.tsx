@@ -6,6 +6,10 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
+import IndicatorCards from '@/components/IndicatorCards';
+import CaseStatistics from '@/components/CaseStatistics';
+import CustomerStatistics from '@/components/CustomerStatistics';
+import LawyerToolbar from '@/components/LawyerToolbar';
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -127,6 +131,18 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Lawyer Toolbar - Top */}
+          <LawyerToolbar position="top" />
+
+          {/* Indicator Cards */}
+          <IndicatorCards />
+
+          {/* Case Statistics */}
+          <CaseStatistics />
+
+          {/* Customer Statistics */}
+          <CustomerStatistics />
+
           {/* Quick Actions Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div className="bg-white overflow-hidden shadow rounded-lg">
@@ -245,6 +261,9 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
+          {/* Lawyer Toolbar - Bottom */}
+          <LawyerToolbar position="bottom" />
         </div>
       </main>
     </div>
