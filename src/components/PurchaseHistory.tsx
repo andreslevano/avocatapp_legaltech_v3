@@ -21,6 +21,7 @@ const mockPurchaseHistory: PurchaseHistory[] = [
     status: 'completed',
     documentCount: 6,
     accuracy: 85,
+    amountClaimed: 1850.00,
     files: {
       wordUrl: '/documents/reclamacion-1.docx',
       pdfUrl: '/documents/reclamacion-1.pdf'
@@ -39,6 +40,7 @@ const mockPurchaseHistory: PurchaseHistory[] = [
     status: 'completed',
     documentCount: 4,
     accuracy: 60,
+    amountClaimed: 1650.25,
     files: {
       wordUrl: '/documents/reclamacion-2.docx',
       pdfUrl: '/documents/reclamacion-2.pdf'
@@ -57,6 +59,7 @@ const mockPurchaseHistory: PurchaseHistory[] = [
     status: 'completed',
     documentCount: 8,
     accuracy: 95,
+    amountClaimed: 1995.50,
     files: {
       wordUrl: '/documents/reclamacion-3.docx',
       pdfUrl: '/documents/reclamacion-3.pdf'
@@ -281,28 +284,33 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
 
       {/* Desktop Table View */}
       <div className="hidden lg:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Documento
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Fecha
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Documentos
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Precisión
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Precio
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              {documentType === 'reclamacion_cantidades' && (
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cantidad Reclamada
+                </th>
+              )}
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Estado
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
               </th>
             </tr>
@@ -310,15 +318,15 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredPurchaseHistory.map((purchase) => (
               <tr key={purchase.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-3 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10">
-                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                    <div className="flex-shrink-0 h-8 w-8">
+                      <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
                         purchase.documentType === 'accion_tutela' 
                           ? 'bg-red-100' 
                           : 'bg-orange-100'
                       }`}>
-                        <svg className={`h-6 w-6 ${
+                        <svg className={`h-5 w-5 ${
                           purchase.documentType === 'accion_tutela' 
                             ? 'text-red-600' 
                             : 'text-orange-600'
@@ -327,38 +335,43 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                         </svg>
                       </div>
                     </div>
-                    <div className="ml-4">
+                    <div className="ml-3">
                       <div className="text-sm font-medium text-gray-900">
                         {purchase.documentTitle}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs text-gray-500">
                         {purchase.documentType}
                       </div>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                   {purchase.purchaseDate.toLocaleDateString('es-ES')}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                   {purchase.documentCount} archivos
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-3 whitespace-nowrap">
                   <span className={`text-sm font-medium ${getAccuracyColor(purchase.accuracy)}`}>
                     {purchase.accuracy}%
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                   {purchase.price} {purchase.currency}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                {documentType === 'reclamacion_cantidades' && (
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {purchase.amountClaimed ? `€${purchase.amountClaimed.toFixed(2)}` : 'N/A'}
+                  </td>
+                )}
+                <td className="px-4 py-3 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(purchase.status)}`}>
                     {purchase.status === 'completed' ? 'Completado' : 
                      purchase.status === 'pending' ? 'Pendiente' : 'Fallido'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
+                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                  <div className="flex space-x-1">
                     <button
                       onClick={() => viewPdf(purchase)}
                       className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
@@ -442,7 +455,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
             </div>
 
             {/* Details Grid */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className={`grid gap-3 mb-4 ${documentType === 'reclamacion_cantidades' ? 'grid-cols-2' : 'grid-cols-2'}`}>
               <div>
                 <p className="text-xs text-gray-500">Fecha</p>
                 <p className="text-sm font-medium text-gray-900">
@@ -467,6 +480,14 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                   {purchase.accuracy}%
                 </p>
               </div>
+              {documentType === 'reclamacion_cantidades' && (
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500">Cantidad Reclamada</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {purchase.amountClaimed ? `€${purchase.amountClaimed.toFixed(2)}` : 'N/A'}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -597,6 +618,38 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Totals Section */}
+      {filteredPurchaseHistory.length > 0 && (
+        <div className="mt-8 bg-gray-50 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen Total</h3>
+          <div className={`grid gap-6 ${documentType === 'reclamacion_cantidades' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+            <div className="bg-white rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-500 mb-2">Total de Precios</h4>
+              <p className="text-2xl font-bold text-gray-900">
+                €{filteredPurchaseHistory.reduce((total, purchase) => total + purchase.price, 0).toFixed(2)}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {filteredPurchaseHistory.length} documento{filteredPurchaseHistory.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            {documentType === 'reclamacion_cantidades' && (
+              <div className="bg-white rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Total Reclamado</h4>
+                <p className="text-2xl font-bold text-green-600">
+                  €{filteredPurchaseHistory
+                    .filter(purchase => purchase.amountClaimed)
+                    .reduce((total, purchase) => total + (purchase.amountClaimed || 0), 0)
+                    .toFixed(2)}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {filteredPurchaseHistory.filter(purchase => purchase.amountClaimed).length} reclamación{filteredPurchaseHistory.filter(purchase => purchase.amountClaimed).length !== 1 ? 'es' : ''}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

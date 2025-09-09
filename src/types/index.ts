@@ -164,13 +164,14 @@ export interface PurchaseHistory {
   id: string;
   userId: string;
   documentTitle: string;
-  documentType: 'reclamacion_cantidades';
+  documentType: 'reclamacion_cantidades' | 'accion_tutela';
   purchaseDate: Date;
   price: number;
   currency: string;
   status: 'completed' | 'pending' | 'failed';
   documentCount: number;
   accuracy: number;
+  amountClaimed?: number; // Amount claimed in the document (for reclamacion_cantidades)
   files: {
     wordUrl?: string;
     pdfUrl?: string;

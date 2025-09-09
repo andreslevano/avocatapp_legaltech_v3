@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
+import UserMenu from '@/components/UserMenu';
 
 interface CaseFormData {
   caseTitle: string;
@@ -235,17 +236,7 @@ export default function CreateCasePage() {
               <span className="text-xl font-bold text-gray-900">Avocat</span>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-700">
-                Bienvenido, {user.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="btn-secondary"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
+            <UserMenu user={user} currentPlan="Abogados" />
           </div>
         </div>
       </header>
