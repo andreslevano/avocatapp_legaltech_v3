@@ -97,6 +97,8 @@ export default function EstudiantesDashboard() {
   const [selectedLegalArea, setSelectedLegalArea] = useState('');
   const [selectedDocumentType, setSelectedDocumentType] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedDocuments, setGeneratedDocuments] = useState<Set<string>>(new Set());
   const [purchaseHistory, setPurchaseHistory] = useState<Purchase[]>([
     // Sample purchase history data
     {
@@ -497,7 +499,7 @@ export default function EstudiantesDashboard() {
 
               {/* Add to Cart Button */}
               {selectedLegalArea && selectedDocumentType && (
-                <div className="mt-6">
+                <div className="mt-6 space-y-3">
                   <button
                     onClick={() => {
                       const selectedDoc = legalAreas[selectedLegalArea as keyof typeof legalAreas]?.find(
@@ -530,6 +532,98 @@ export default function EstudiantesDashboard() {
                   >
                     🛒 Agregar al Carrito
                   </button>
+                  
+                  {!generatedDocuments.has(`${selectedLegalArea}-${selectedDocumentType}`) ? (
+                    <button
+                      onClick={async () => {
+                        setIsGenerating(true);
+                        try {
+                          const response = await fetch('/api/generate-document', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              areaLegal: selectedLegalArea,
+                              tipoEscrito: selectedDocumentType,
+                              hechos: 'Hechos del caso para estudiantes - ejemplo de reclamación de cantidad',
+                              peticiones: 'Se solicita el pago de la cantidad adeudada más intereses de demora',
+                              tono: 'formal',
+                              datosCliente: {
+                                nombre: 'Estudiante Ejemplo',
+                                dni: '12345678A',
+                                direccion: 'Calle Ejemplo, 123',
+                                telefono: '600123456',
+                                email: 'estudiante@ejemplo.com'
+                              }
+                            }),
+                          });
+
+                          if (response.ok) {
+                            const data = await response.json();
+                            if (data.success) {
+                              // Descargar PDF
+                              if (data.data.pdfBase64) {
+                                const pdfBlob = new Blob([
+                                  Uint8Array.from(atob(data.data.pdfBase64), c => c.charCodeAt(0))
+                                ], { type: 'application/pdf' });
+                                
+                                const url = window.URL.createObjectURL(pdfBlob);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = data.data.filename;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                window.URL.revokeObjectURL(url);
+                              }
+                              
+                              // Marcar como generado
+                              setGeneratedDocuments(prev => new Set(prev).add(`${selectedLegalArea}-${selectedDocumentType}`));
+                              
+                              // Mostrar información del documento generado
+                              alert(`📄 PDF generado exitosamente!\n\nTokens usados: ${data.data.tokensUsed}\nModelo: ${data.data.model}\nTiempo: ${data.data.elapsedMs}ms\n\nEl documento se ha descargado automáticamente.`);
+                            } else {
+                              alert(`Error: ${data.error?.message || 'Error desconocido'}`);
+                            }
+                          } else {
+                            const errorData = await response.json();
+                            alert(`Error ${response.status}: ${errorData.error?.message || 'Error generando el documento'}`);
+                          }
+                        } catch (error) {
+                          console.error('Error:', error);
+                          alert('Error generando el documento');
+                        } finally {
+                          setIsGenerating(false);
+                        }
+                      }}
+                      disabled={isGenerating}
+                      className={`w-full px-4 py-2 rounded-md transition-colors font-medium ${
+                        isGenerating 
+                          ? 'bg-gray-400 text-white cursor-not-allowed' 
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {isGenerating ? (
+                        <>
+                          <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                          Generando PDF...
+                        </>
+                      ) : (
+                        '🤖 Generar PDF con IA (Gratis)'
+                      )}
+                    </button>
+                  ) : (
+                    <div className="w-full bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-md text-center">
+                      <div className="flex items-center justify-center space-x-2">
+                        <span className="text-green-600">✅</span>
+                        <span className="font-medium">PDF generado exitosamente</span>
+                      </div>
+                      <p className="text-sm text-green-600 mt-1">
+                        El documento ya ha sido descargado
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
