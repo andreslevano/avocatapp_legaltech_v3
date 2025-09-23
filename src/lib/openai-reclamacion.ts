@@ -15,6 +15,12 @@ const getModel = () => {
 };
 
 export async function generateReclamacionCantidad(input: ReclamacionCantidadRequest): Promise<ModelOutput> {
+  // Mock mode for testing
+  if (process.env.OPENAI_MOCK === '1') {
+    const { generateReclamacionCantidadMock } = await import('../__mocks__/openai-reclamacion');
+    return generateReclamacionCantidadMock(input);
+  }
+
   const startTime = Date.now();
   
   try {

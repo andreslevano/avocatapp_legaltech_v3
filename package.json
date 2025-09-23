@@ -11,8 +11,9 @@
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:api": "jest tests/api",
+    "test:ui": "playwright test tests/e2e",
+    "test:api": "playwright test tests/api",
+    "test:unit": "playwright test tests/unit",
     "test:watch": "jest --watch",
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook"
   },
@@ -20,7 +21,6 @@
     "@stripe/stripe-js": "^2.4.0",
     "@swc/helpers": "^0.5.17",
     "@types/jspdf": "^2.0.0",
-    "@types/node": "^20.0.0",
     "@types/nodemailer": "^7.0.1",
     "@types/pdfkit": "^0.17.3",
     "@types/react": "^18.0.0",
@@ -43,17 +43,20 @@
     "stripe": "^14.25.0",
     "tailwindcss": "^3.0.0",
     "tesseract.js": "^6.0.1",
-    "typescript": "^5.0.0",
     "uuid": "^13.0.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
+    "@types/node": "^24.5.2",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
+    "pdf-parse": "^1.1.1",
     "playwright": "^1.55.0",
     "prettier": "^3.0.0",
-    "puppeteer": "^24.22.0"
+    "puppeteer": "^24.22.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
   },
   "keywords": [
     "legaltech",
