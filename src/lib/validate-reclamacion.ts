@@ -24,18 +24,45 @@ export const ResumenOCRSchema = z.object({
 
 // Esquema para la petición de reclamación de cantidades
 export const ReclamacionCantidadSchema = z.object({
+  // Campos del trabajador (aceptar ambos formatos)
+  nombreTrabajador: z.string().optional(),
+  dniTrabajador: z.string().optional(),
+  domicilioTrabajador: z.string().optional(),
+  telefonoTrabajador: z.string().optional(),
+  emailTrabajador: z.string().optional(),
+  
+  // Campos de la empresa
+  nombreEmpresa: z.string().optional(),
+  cifEmpresa: z.string().optional(),
+  domicilioEmpresa: z.string().optional(),
+  telefonoEmpresa: z.string().optional(),
+  emailEmpresa: z.string().optional(),
+  
+  // Datos del contrato
+  fechaInicio: z.string().optional(),
+  fechaFin: z.string().optional(),
+  salario: z.number().optional(),
+  categoria: z.string().optional(),
+  jornada: z.string().optional(),
+  
+  // Motivos y cantidades
+  motivosReclamacion: z.array(z.string()).optional(),
+  cantidadReclamada: z.number().optional(),
+  fechaReclamacion: z.string().optional(),
+  
+  // Formato original (opcional)
   acreedor: z.object({
     nombre: z.string().min(1, 'El nombre del acreedor es requerido'),
     nif: z.string().optional(),
     domicilio: z.string().optional(),
     email: z.string().email('Email inválido').optional(),
     telefono: z.string().optional(),
-  }),
+  }).optional(),
   deudor: z.object({
     nombre: z.string().min(1, 'El nombre del deudor es requerido'),
     nif: z.string().optional(),
     domicilio: z.string().optional(),
-  }),
+  }).optional(),
   plaza: z.string().optional(),
   idioma: z.string().default('es-ES'),
   // OCR ya aplicado

@@ -1,58 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ReclamacionCantidadSchema } from '@/lib/validate-reclamacion';
-import { generateReclamacionCantidad } from '@/lib/openai-reclamacion';
-import { renderReclamacionPDF } from '@/lib/pdf/reclamacion-simple';
+import { ReclamacionCantidadesRequestSchema, ReclamacionCantidadesModelSchema } from '@/lib/validate-reclamacion-cantidades';
+import { SYSTEM_PROMPT, buildUserPrompt } from '@/lib/prompts/reclamacion_cantidades_co';
+import { renderReclamacionCantidadesPDF } from '@/lib/pdf/reclamacion-cantidades';
 import { checkRateLimit } from '@/lib/ratelimit';
-import { apiLogger } from '@/lib/logger';
-import { agregarAlHistorial } from '@/lib/historial';
 import { v4 as uuidv4 } from 'uuid';
+import { getOpenAIClient } from '@/lib/openai-client';
 
-// Funciones auxiliares para calcular cuantía y precisión desde OCR
-function calcularCuantiaDesdeOCR(ocr: any): number {
-  if (ocr.summary?.totalDetected) {
-    return ocr.summary.totalDetected;
-  }
-  
-  let total = 0;
-  ocr.files.forEach((file: any) => {
-    if (file.amounts) {
-      file.amounts.forEach((amount: any) => {
-        if (amount.value > 0) {
-          total += amount.value;
-        }
-      });
-    }
-  });
-  
-  return total > 0 ? total : 0;
-}
-
-function calcularPrecisionDesdeOCR(ocr: any): number {
-  if (ocr.summary?.confidence) {
-    return Math.round(ocr.summary.confidence * 100);
-  }
-  
-  let totalValue = 0;
-  let weightedConfidence = 0;
-  
-  ocr.files.forEach((file: any) => {
-    if (file.amounts && file.amounts.length > 0) {
-      file.amounts.forEach((amount: any) => {
-        if (amount.value > 0) {
-          const confidence = amount.confidence || file.confidence || 0.6;
-          totalValue += amount.value;
-          weightedConfidence += amount.value * confidence;
-        }
-      });
-    }
-  });
-  
-  if (totalValue > 0) {
-    return Math.round((weightedConfidence / totalValue) * 100);
-  }
-  
-  return 60; // Precisión por defecto
-}
+export const runtime = 'nodejs' as const;
 
 export async function POST(request: NextRequest) {
   const requestId = uuidv4();
@@ -64,7 +18,7 @@ export async function POST(request: NextRequest) {
     const rateLimit = checkRateLimit(clientIP);
     
     if (!rateLimit.allowed) {
-      apiLogger.error(requestId, new Error('Rate limit exceeded'), { clientIP });
+      console.error(`❌ Rate limit exceeded for ${clientIP}`);
       return NextResponse.json(
         {
           success: false,
@@ -87,12 +41,10 @@ export async function POST(request: NextRequest) {
 
     // Validar payload
     const body = await request.json();
-    const validationResult = ReclamacionCantidadSchema.safeParse(body);
+    const validationResult = ReclamacionCantidadesRequestSchema.safeParse(body);
     
     if (!validationResult.success) {
-      apiLogger.error(requestId, new Error('Validation failed'), { 
-        errors: validationResult.error.errors 
-      });
+      console.error(`❌ Validation failed:`, validationResult.error.errors);
       return NextResponse.json(
         {
           success: false,
@@ -107,77 +59,112 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validationResult.data;
-    
-    // Calcular cuantía y precisión desde OCR
-    const cuantia = data.cuantiaOverride || calcularCuantiaDesdeOCR(data.ocr);
-    const precision = calcularPrecisionDesdeOCR(data.ocr);
+    const uid = data.userId || 'demo_user';
     
     // Log request
-    apiLogger.info(requestId, 'Reclamacion request', {
-      acreedor: data.acreedor.nombre,
-      deudor: data.deudor.nombre,
-      cuantia,
-      precision,
-      viaPreferida: data.viaPreferida,
-      documentosOCR: data.ocr.files.length
+    console.log(`📝 Generando Reclamación de Cantidades para ${data.nombreTrabajador}`, {
+      trabajador: data.nombreTrabajador,
+      empresa: data.nombreEmpresa,
+      localidad: data.localidad
     });
 
-    // Generar reclamación
-    const model = await generateReclamacionCantidad(data);
+    // Generar reclamación con ChatGPT
+    const userPrompt = buildUserPrompt(data);
     
-    // Generar PDF
-    const pdfBuffer = await renderReclamacionPDF(model, cuantia, precision);
-    
-    // Agregar al historial
-    const historialItem = agregarAlHistorial({
-      fechaISO: new Date().toISOString(),
-      titulo: 'reclamacion_cantidades',
-      documentos: data.ocr.files.length,
-      precision,
-      precio: 10,
-      cuantia,
-      estado: 'Completado',
-      cauceRecomendado: model.cauceRecomendado
+    console.log('🤖 Enviando prompt a ChatGPT...');
+    const openaiClient = getOpenAIClient();
+    const result = await openaiClient.generateContent(userPrompt, {
+      systemPrompt: SYSTEM_PROMPT,
+      temperature: 0.3,
+      maxTokens: 3000
     });
+
+    const content = result.content;
+    const timeMs = result.metadata?.processingTime || 0;
+    const mock = false;
+
+    if (!content) {
+      throw new Error('No se recibió contenido del modelo');
+    }
+
+    // Parsear y validar JSON
+    let parsedContent;
+    try {
+      parsedContent = JSON.parse(content);
+    } catch (parseError) {
+      // Si falla el parseo, intentar extraer JSON del contenido
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedContent = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('No se pudo extraer JSON válido de la respuesta');
+      }
+    }
+
+    // Validar con Zod
+    const modelValidation = ReclamacionCantidadesModelSchema.safeParse(parsedContent);
+    
+    if (!modelValidation.success) {
+      // Reintentar una vez con prompt más específico
+      const retryPrompt = userPrompt + '\n\nIMPORTANTE: Devuelve EXCLUSIVAMENTE JSON válido. No incluyas texto adicional, explicaciones ni formato Markdown. STRICT_JSON_ONLY.';
+      
+      const retryResult = await openaiClient.generateContent(retryPrompt, {
+        systemPrompt: SYSTEM_PROMPT,
+        temperature: 0.1,
+        maxTokens: 3000
+      });
+
+      if (!retryResult.content) {
+        throw new Error('No se recibió contenido en el reintento');
+      }
+
+      const retryParsed = JSON.parse(retryResult.content);
+      const retryValidation = ReclamacionCantidadesModelSchema.safeParse(retryParsed);
+      
+      if (!retryValidation.success) {
+        throw new Error(`Validación fallida en reintento: ${retryValidation.error.errors.map(e => e.message).join(', ')}`);
+      }
+      
+      parsedContent = retryValidation.data;
+    } else {
+      parsedContent = modelValidation.data;
+    }
+
+    // Generar PDF
+    const pdfBuffer = await renderReclamacionCantidadesPDF(parsedContent);
     
     const elapsedMs = Date.now() - startTime;
     
-    apiLogger.success(requestId, {
-      cauceRecomendado: model.cauceRecomendado,
-      jurisdiccion: model.jurisdiccion,
-      cuantia,
-      precision,
-      historialId: historialItem.id,
+    console.log(`✅ Reclamación de Cantidades generada exitosamente`, {
+      docId: requestId,
+      trabajador: data.nombreTrabajador,
+      empresa: data.nombreEmpresa,
       elapsedMs
     });
 
-    // Generar nombre de archivo
-    const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `reclamacion-cantidad-${data.acreedor.nombre.replace(/\s+/g, '_')}-${timestamp}.pdf`;
-
-    // Devolver PDF
+    // Devolver PDF directamente
+    const filename = `reclamacion-cantidades-${data.nombreTrabajador}-${new Date().toISOString().split('T')[0]}.pdf`;
+    
     return new Response(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-store',
-        'X-Request-ID': requestId,
-        'X-Cauce-Recomendado': model.cauceRecomendado,
-        'X-Jurisdiccion': model.jurisdiccion
+        'X-Request-ID': requestId
       }
     });
 
   } catch (error) {
     const elapsedMs = Date.now() - startTime;
-    apiLogger.error(requestId, error, { elapsedMs });
+    console.error(`❌ Error generando Reclamación de Cantidades:`, error);
     
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'GENERATION_FAILED',
-          message: 'Error generando la reclamación de cantidad',
+          message: 'Error generando la reclamación de cantidades',
           hint: 'Intenta de nuevo o contacta soporte si el problema persiste'
         }
       },

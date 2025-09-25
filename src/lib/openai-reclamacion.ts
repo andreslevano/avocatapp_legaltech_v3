@@ -1,17 +1,13 @@
-import OpenAI from 'openai';
 import { ReclamacionCantidadRequest, ModelOutput, ModelOutputSchema } from './validate-reclamacion';
 import { SYSTEM_PROMPT, buildUserPrompt } from './prompts/reclamacion_es';
 import { apiLogger } from './logger';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { callChat } from './ai/provider';
 
 const getModel = () => {
   if (process.env.USE_CHEAPER_MODEL === 'true') {
     return 'gpt-4o-mini';
   }
-  return 'gpt-4o';
+  return 'gpt-4o-2024-08-06';
 };
 
 export async function generateReclamacionCantidad(input: ReclamacionCantidadRequest): Promise<ModelOutput> {
@@ -26,26 +22,14 @@ export async function generateReclamacionCantidad(input: ReclamacionCantidadRequ
   try {
     const userPrompt = buildUserPrompt(input);
     
-    const completion = await openai.chat.completions.create({
+    // Usar el provider resiliente
+    const { content, timeMs, mock } = await callChat({
       model: getModel(),
-      messages: [
-        {
-          role: 'system',
-          content: SYSTEM_PROMPT,
-        },
-        {
-          role: 'user',
-          content: userPrompt,
-        },
-      ],
-      max_tokens: 4000,
+      system: SYSTEM_PROMPT,
+      user: userPrompt,
       temperature: 0.3,
-      top_p: 1,
-      presence_penalty: 0,
-      frequency_penalty: 0,
+      top_p: 1
     });
-
-    const content = completion.choices[0]?.message?.content;
     
     if (!content) {
       throw new Error('No se recibió contenido del modelo');
@@ -109,9 +93,10 @@ export async function generateReclamacionCantidad(input: ReclamacionCantidadRequ
 
     const elapsedMs = Date.now() - startTime;
     apiLogger.info('reclamacion-generated', {
-      tokensUsed: completion.usage?.total_tokens || 0,
-      model: completion.model,
-      elapsedMs,
+      model: getModel(),
+      elapsedMs: timeMs || elapsedMs,
+      mock: mock || false,
+      contentLength: content?.length || 0,
       cauceRecomendado: validationResult.data.cauceRecomendado
     });
 

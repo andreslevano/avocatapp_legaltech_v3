@@ -2,88 +2,48 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
-import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
 import ReclamacionProcessSimple from '@/components/ReclamacionProcessSimple';
 import PurchaseHistoryComponent from '@/components/PurchaseHistory';
 import UserMenu from '@/components/UserMenu';
 
 export default function ReclamacionCantidadesDashboard() {
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Check if Firebase is properly initialized
-    if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
-      setIsFirebaseReady(true);
-      const unsubscribe = onAuthStateChanged(auth as Auth, (user) => {
-        if (user) {
-          setUser(user);
-        } else {
-          router.push('/login');
-        }
-        setLoading(false);
-      });
-
-      return () => unsubscribe();
-    } else {
+    setMounted(true);
+    // Simular carga rápida para demo
+    const timer = setTimeout(() => {
       setLoading(false);
-      router.push('/login');
-    }
-  }, [router]);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSignOut = async () => {
-    if (!isFirebaseReady || !auth || typeof auth.signOut !== 'function') {
-      return;
-    }
-
     try {
-      await signOut(auth as Auth);
       router.push('/');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
   };
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando Reclamación de Cantidades...</p>
         </div>
       </div>
     );
   }
 
-  if (!user || !isFirebaseReady) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-lg">R</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Avocat - Reclamación de Cantidades</span>
-            </div>
-            
-            <UserMenu user={user} currentPlan="Reclamación de Cantidades" />
-          </div>
-        </div>
-      </header>
-
-      {/* Dashboard Navigation */}
-      <DashboardNavigation currentPlan="Reclamación de Cantidades" />
+      <DashboardNavigation />
 
       {/* Dashboard Identification Banner */}
       <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6">
@@ -126,7 +86,7 @@ export default function ReclamacionCantidadesDashboard() {
 
           {/* Purchase History Section */}
           <div className="mt-12">
-            <PurchaseHistoryComponent userId={user?.uid} documentType="reclamacion_cantidades" />
+            <PurchaseHistoryComponent userId="demo_user" documentType="reclamacion_cantidades" />
           </div>
         </div>
       </main>

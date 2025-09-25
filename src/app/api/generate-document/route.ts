@@ -5,6 +5,7 @@ import { checkRateLimit } from '@/lib/ratelimit';
 import { apiLogger } from '@/lib/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { generateAreaSpecificPDF } from '@/lib/pdf-generator';
+import { savePdfForUser, signedUrlFor, saveDocument } from '@/lib/simple-storage';
 
 export async function POST(request: NextRequest) {
   const requestId = uuidv4();
@@ -92,19 +93,86 @@ export async function POST(request: NextRequest) {
     
     const filename = `${data.tipoEscrito.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
     
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: requestId,
+    // Persistir en Firebase Storage y Firestore
+    const uid = 'demo_user'; // TODO: Obtener del auth real
+    const docId = uuidv4();
+    
+    try {
+      // Guardar PDF en Storage
+      const storageResult = await savePdfForUser(uid, docId, pdfBuffer, {
+        contentType: 'application/pdf',
+        metadata: {
+          userId: uid,
+          docId,
+          areaLegal: data.areaLegal,
+          tipoEscrito: data.tipoEscrito,
+          tono: data.tono,
+          filename
+        }
+      });
+      
+      // Guardar metadatos en Firestore
+      const documentData = {
         filename,
         mime: 'application/pdf',
-        content: result.content,
-        pdfBase64: pdfBase64,
+        size: storageResult.size,
+        createdAtISO: new Date().toISOString(),
+        areaLegal: data.areaLegal,
+        tipoEscrito: data.tipoEscrito,
+        tono: data.tono,
+        storagePath: storageResult.storagePath,
+        storageBucket: storageResult.bucket,
+        userId: uid,
+        docId,
         tokensUsed: result.tokensUsed,
-        model: result.model,
-        elapsedMs
-      }
-    });
+        model: result.model
+      };
+      
+      await saveDocument(uid, docId, documentData);
+      
+      // Generar URL de descarga
+      const downloadUrl = await signedUrlFor(uid, docId, { expiresMinutes: 15 });
+      
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: requestId,
+          docId,
+          userId: uid,
+          filename,
+          mime: 'application/pdf',
+          content: result.content,
+          pdfBase64: pdfBase64,
+          tokensUsed: result.tokensUsed,
+          model: result.model,
+          elapsedMs,
+          storagePath: storageResult.storagePath,
+          firestore: {
+            path: `/users/${uid}/documents/${docId}`
+          },
+          downloadUrl
+        }
+      });
+      
+    } catch (storageError) {
+      console.error('Error persisting document:', storageError);
+      
+      // Fallback: devolver sin persistencia
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: requestId,
+          filename,
+          mime: 'application/pdf',
+          content: result.content,
+          pdfBase64: pdfBase64,
+          tokensUsed: result.tokensUsed,
+          model: result.model,
+          elapsedMs,
+          warning: 'Document generated but not persisted to storage'
+        }
+      });
+    }
 
   } catch (error) {
     const elapsedMs = Date.now() - startTime;

@@ -42,6 +42,14 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
       icon: 'T',
       color: 'red',
       description: 'Gestión de tutelas en Colombia'
+    },
+    {
+      id: 'administrador',
+      name: 'Administrador',
+      path: '/dashboard/administrador',
+      icon: 'A',
+      color: 'purple',
+      description: 'Panel de administración del sistema'
     }
   ];
 
@@ -56,6 +64,8 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
           return 'bg-orange-600 text-white border-orange-600 shadow-lg';
         case 'red':
           return 'bg-red-600 text-white border-red-600 shadow-lg';
+        case 'purple':
+          return 'bg-purple-600 text-white border-purple-600 shadow-lg';
         default:
           return 'bg-gray-600 text-white border-gray-600 shadow-lg';
       }
@@ -69,6 +79,8 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
           return 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 hover:border-orange-300';
         case 'red':
           return 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300';
+        case 'purple':
+          return 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100 hover:border-purple-300';
         default:
           return 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300';
       }
@@ -85,6 +97,8 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
         return 'border-orange-500';
       case 'red':
         return 'border-red-500';
+      case 'purple':
+        return 'border-purple-500';
       default:
         return 'border-gray-500';
     }
