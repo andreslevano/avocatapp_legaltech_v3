@@ -7,6 +7,7 @@ import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
 import UserMenu from '@/components/UserMenu';
+import { useI18n } from '@/hooks/useI18n';
 
 interface DocumentTemplate {
   id: string;
@@ -36,6 +37,7 @@ export default function GenerarEscritosPage() {
   const [generatedDocument, setGeneratedDocument] = useState<GeneratedDocument | null>(null);
   const [customInstructions, setCustomInstructions] = useState('');
   const router = useRouter();
+  const { t } = useI18n();
 
   // Document templates
   const documentTemplates: DocumentTemplate[] = [
@@ -419,7 +421,7 @@ DERECHO:
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -461,10 +463,10 @@ DERECHO:
             </div>
             <div className="ml-3">
               <h1 className="text-lg font-semibold text-blue-800">
-                Generador de Escritos Legales con IA
+                {t('dashboard.generateDocuments.title')}
               </h1>
               <p className="text-sm text-blue-700">
-                Selecciona un tipo de documento y genera escritos legales profesionales
+                {t('dashboard.generateDocuments.subtitle')}
               </p>
             </div>
           </div>
@@ -472,7 +474,7 @@ DERECHO:
             href="/dashboard/analisis-caso"
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            ← Volver al Análisis
+            ← {t('dashboard.generateDocuments.backToAnalysis')}
           </Link>
         </div>
       </div>
@@ -485,7 +487,7 @@ DERECHO:
             {/* Left Column - Document Type Selection */}
             <div className="lg:col-span-1">
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Tipo de Documento</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.generateDocuments.documentType')}</h2>
                 
                 <div className="space-y-2">
                   {documentTemplates.map((template) => (
@@ -533,13 +535,13 @@ DERECHO:
             {/* Right Column - Instructions and Generate Button */}
             <div className="lg:col-span-2">
               <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Instrucciones Especiales (Opcional)</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.generateDocuments.specialInstructions')}</h3>
                 <textarea
                   value={customInstructions}
                   onChange={(e) => setCustomInstructions(e.target.value)}
                   rows={6}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
-                  placeholder="Agrega instrucciones específicas para personalizar el documento generado..."
+                  placeholder={t('dashboard.generateDocuments.instructionsPlaceholder')}
                 />
                 
                 {selectedTemplate && (
@@ -551,14 +553,14 @@ DERECHO:
                     {isGenerating ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                        <span>Generando con IA...</span>
+                        <span>{t('dashboard.generateDocuments.generating')}</span>
                       </>
                     ) : (
                       <>
                         <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
-                        <span>Generar {selectedTemplate.name}</span>
+                        <span>{t('dashboard.generateDocuments.generate')} {selectedTemplate.name}</span>
                       </>
                     )}
                   </button>
@@ -574,7 +576,7 @@ DERECHO:
                 {/* Document Header */}
                 <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900">Documento Generado</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.generateDocuments.generatedDocument')}</h2>
                     <div className="flex items-center space-x-4">
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                         generatedDocument.status === 'Completado' ? 'bg-green-100 text-green-800' :

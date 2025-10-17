@@ -8,6 +8,7 @@ import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
 import WinProbabilityIndicator from '@/components/WinProbabilityIndicator';
 import UserMenu from '@/components/UserMenu';
+import { useI18n } from '@/hooks/useI18n';
 
 interface CaseData {
   id: string;
@@ -85,6 +86,7 @@ function CaseAnalysisContent() {
   const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
 
   // Legal areas and procedures data
   const legalAreas = [
@@ -507,20 +509,20 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Cliente</h3>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">{t('dashboard.caseAnalysis.client')}</h3>
                   <p className="text-base sm:text-lg font-semibold text-gray-900 break-words">{caseData.clientName}</p>
                   <p className="text-sm text-gray-600 break-all">{caseData.clientEmail}</p>
                   <p className="text-sm text-gray-600">{caseData.clientPhone}</p>
                 </div>
                 
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Abogado Asignado</h3>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">{t('dashboard.caseAnalysis.assignedLawyer')}</h3>
                   <p className="text-base sm:text-lg font-semibold text-gray-900 break-words">{caseData.assignedLawyer}</p>
                   <p className="text-sm text-gray-600">Fecha Límite: {new Date(caseData.deadline).toLocaleDateString('es-ES')}</p>
                 </div>
                 
                 <div className="sm:col-span-2 lg:col-span-1">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Información del Caso</h3>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">{t('dashboard.caseAnalysis.caseInfo')}</h3>
                   <p className="text-sm text-gray-600">ID: {caseData.id}</p>
                   <p className="text-sm text-gray-600">Creado: {new Date(caseData.createdAt).toLocaleDateString('es-ES')}</p>
                 </div>

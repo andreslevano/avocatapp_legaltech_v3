@@ -11,12 +11,14 @@ import CaseStatistics from '@/components/CaseStatistics';
 import CustomerStatistics from '@/components/CustomerStatistics';
 import LawyerToolbar from '@/components/LawyerToolbar';
 import UserMenu from '@/components/UserMenu';
+import { useI18n } from '@/hooks/useI18n';
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const router = useRouter();
+  const { t } = useI18n();
 
   useEffect(() => {
     // Check if Firebase is properly initialized
@@ -56,7 +58,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -97,7 +99,7 @@ export default function Dashboard() {
           </div>
           <div className="ml-3">
             <p className="text-sm text-blue-700">
-              <strong>Dashboard de Abogados</strong> - Panel completo para profesionales del derecho con herramientas avanzadas de IA
+              <strong>{t('dashboard.title')}</strong> - {t('dashboard.subtitle')}
             </p>
           </div>
         </div>
@@ -107,17 +109,17 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">
-            Panel de Control
+            {t('dashboard.controlPanel')}
           </h1>
 
           {/* Welcome Card */}
           <div className="bg-white overflow-hidden shadow rounded-lg mb-8">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
-                ¡Bienvenido a Avocat!
+                {t('dashboard.welcome')}
               </h3>
               <p className="text-sm text-gray-600">
-                Tu cuenta ha sido creada exitosamente. Comienza a explorar las características de nuestra plataforma LegalTech.
+                {t('dashboard.welcomeMessage')}
               </p>
             </div>
           </div>

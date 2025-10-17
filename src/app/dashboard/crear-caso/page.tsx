@@ -7,6 +7,7 @@ import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
 import UserMenu from '@/components/UserMenu';
+import { useI18n } from '@/hooks/useI18n';
 
 interface CaseFormData {
   caseTitle: string;
@@ -36,6 +37,7 @@ export default function CreateCasePage() {
   const [loading, setLoading] = useState(true);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useI18n();
   const [formData, setFormData] = useState<CaseFormData>({
     caseTitle: '',
     caseType: '',
@@ -255,10 +257,10 @@ export default function CreateCasePage() {
             </div>
             <div className="ml-3">
               <h1 className="text-lg font-semibold text-blue-800">
-                Crear Nuevo Caso
+                {t('dashboard.createCase.title')}
               </h1>
               <p className="text-sm text-blue-700">
-                Complete la información para crear un nuevo caso legal
+                {t('dashboard.createCase.subtitle')}
               </p>
             </div>
           </div>
@@ -266,7 +268,7 @@ export default function CreateCasePage() {
             href="/dashboard"
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            ← Volver al Dashboard
+            ← {t('dashboard.backToDashboard')}
           </Link>
         </div>
       </div>
@@ -277,7 +279,7 @@ export default function CreateCasePage() {
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Case Information */}
             <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Información del Caso</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">{t('dashboard.createCase.caseInfo')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

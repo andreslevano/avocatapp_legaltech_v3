@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
+import { useI18n } from '@/hooks/useI18n';
 
 interface Client {
   id: string;
@@ -32,6 +33,7 @@ export default function CustomerDirectoryPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCity, setFilterCity] = useState<string>('all');
   const router = useRouter();
+  const { t } = useI18n();
 
   useEffect(() => {
     // Check if Firebase is properly initialized
@@ -307,10 +309,10 @@ export default function CustomerDirectoryPage() {
             </div>
             <div className="ml-3">
               <h1 className="text-lg font-semibold text-blue-800">
-                Directorio de Clientes
+                {t('dashboard.clientDirectory.title')}
               </h1>
               <p className="text-sm text-blue-700">
-                Gestión completa de la base de clientes
+                {t('dashboard.clientDirectory.subtitle')}
               </p>
             </div>
           </div>
@@ -318,7 +320,7 @@ export default function CustomerDirectoryPage() {
             href="/dashboard"
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            ← Volver al Dashboard
+            ← {t('dashboard.backToDashboard')}
           </Link>
         </div>
       </div>
@@ -332,25 +334,25 @@ export default function CustomerDirectoryPage() {
               <div className="text-2xl font-bold text-blue-600">
                 {clients.length}
               </div>
-              <div className="text-sm text-gray-600">Total Clientes</div>
+              <div className="text-sm text-gray-600">{t('dashboard.clientDirectory.totalClients')}</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div className="text-2xl font-bold text-green-600">
                 {clients.filter(c => c.status === 'active').length}
               </div>
-              <div className="text-sm text-gray-600">Activos</div>
+              <div className="text-sm text-gray-600">{t('dashboard.clientDirectory.active')}</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div className="text-2xl font-bold text-yellow-600">
                 {clients.filter(c => c.status === 'pending').length}
               </div>
-              <div className="text-sm text-gray-600">Pendientes</div>
+              <div className="text-sm text-gray-600">{t('dashboard.clientDirectory.pending')}</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div className="text-2xl font-bold text-purple-600">
                 {clients.reduce((acc, c) => acc + c.totalCases, 0)}
               </div>
-              <div className="text-sm text-gray-600">Total Casos</div>
+              <div className="text-sm text-gray-600">{t('dashboard.clientDirectory.totalCases')}</div>
             </div>
           </div>
 
@@ -359,11 +361,11 @@ export default function CustomerDirectoryPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Buscar Cliente
+                  {t('dashboard.clientDirectory.searchClient')}
                 </label>
                 <input
                   type="text"
-                  placeholder="Nombre, email o teléfono..."
+                  placeholder={t('dashboard.clientDirectory.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -371,29 +373,29 @@ export default function CustomerDirectoryPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Estado
+                  {t('dashboard.clientDirectory.status')}
                 </label>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
-                  <option value="all">Todos los estados</option>
-                  <option value="active">Activos</option>
-                  <option value="pending">Pendientes</option>
-                  <option value="inactive">Inactivos</option>
+                  <option value="all">{t('dashboard.clientDirectory.allStatuses')}</option>
+                  <option value="active">{t('dashboard.clientDirectory.active')}</option>
+                  <option value="pending">{t('dashboard.clientDirectory.pending')}</option>
+                  <option value="inactive">{t('dashboard.clientDirectory.inactive')}</option>
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ciudad
+                  {t('dashboard.clientDirectory.city')}
                 </label>
                 <select
                   value={filterCity}
                   onChange={(e) => setFilterCity(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
-                  <option value="all">Todas las ciudades</option>
+                  <option value="all">{t('dashboard.clientDirectory.allCities')}</option>
                   {uniqueCities.map(city => (
                     <option key={city} value={city}>{city}</option>
                   ))}
