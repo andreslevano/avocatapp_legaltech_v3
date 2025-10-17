@@ -1,0 +1,244 @@
+{
+  "common": {
+    "loading": "Carregando..."
+  },
+  "navigation": {
+    "features": "Recursos",
+    "pricing": "Preços",
+    "about": "Sobre",
+    "contact": "Contato",
+    "dashboard": "Painel",
+    "logout": "Sair",
+    "login": "Entrar",
+    "signup": "Começar"
+  },
+  "hero": {
+    "title": "Revolucionando<span class=\"text-primary-600 block\">a Prática Jurídica</span>com IA",
+    "subtitle": "Otimize seu fluxo de trabalho jurídico com análise inteligente de documentos, resumos de casos e pesquisa jurídica automatizada alimentada por tecnologia de IA de ponta.",
+    "cta": "Teste Grátis",
+    "learnMore": "Ver Demo",
+    "emailPlaceholder": "Digite seu email para atualizações",
+    "subscribe": "Inscrever-se",
+    "subscribeInfo": "Receba notificações sobre novos recursos e atualizações",
+    "trustedBy": "Confiado por escritórios de advocacia líderes"
+  },
+  "features": {
+    "title": "Recursos Poderosos para a Prática Jurídica Moderna",
+    "subtitle": "Nossa plataforma alimentada por IA combina tecnologia de ponta com profunda experiência jurídica para transformar como você trabalha com casos e clientes.",
+    "documentAnalysis": {
+      "title": "Análise de Documentos com IA",
+      "description": "Análise inteligente e revisão de documentos jurídicos com extração automatizada de informações-chave, cláusulas e riscos potenciais."
+    },
+    "legalResearch": {
+      "title": "Assistente de Pesquisa Jurídica",
+      "description": "Pesquisa jurídica alimentada por IA que analisa jurisprudência, estatutos e regulamentos para fornecer insights abrangentes e precedentes."
+    },
+    "caseSummaries": {
+      "title": "Resumos de Casos",
+      "description": "Geração automatizada de resumos concisos de casos, destacando fatos-chave, questões jurídicas e resultados para referência rápida."
+    },
+    "clientManagement": {
+      "title": "Gestão de Clientes",
+      "description": "Portal completo de clientes com compartilhamento seguro de documentos, ferramentas de comunicação e integração de faturamento."
+    },
+    "analytics": {
+      "title": "Análise e Relatórios",
+      "description": "Painel de análise avançada que fornece insights sobre desempenho de casos, rastreamento de tempo e métricas de negócios."
+    },
+    "security": {
+      "title": "Segurança Corporativa",
+      "description": "Segurança de nível bancário com criptografia de ponta a ponta, controle de acesso baseado em funções e conformidade com padrões da indústria jurídica."
+    }
+  },
+  "pricing": {
+    "title": "Preços Simples e Transparentes",
+    "subtitle": "Escolha o plano que se adequa à sua prática. Todos os planos incluem um teste gratuito de 14 dias sem cartão de crédito necessário.",
+    "students": {
+      "title": "🇪🇸 Estudantes",
+      "description": "Acesso completo para estudantes de direito e estagiários",
+      "price": "€3,00",
+      "period": "/documento",
+      "aiDocs": "Análise de Documentos com IA (50 docs/mês)",
+      "basicLegalResearch": "Pesquisa Jurídica Básica",
+      "clientPortal": "Portal do Cliente (até 10 clientes)",
+      "emailSupport": "Suporte por Email",
+      "basicAnalytics": "Análise Básica",
+      "startNow": "Começar Agora"
+    },
+    "tutela": {
+      "title": "🇨🇴 Ação de Tutela",
+      "description": "Especializado em procedimentos de tutela colombianos",
+      "price": "$50.000",
+      "period": "/documento"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar",
+      "subtitle": "Acesse sua conta Avocat",
+      "email": "Email",
+      "password": "Senha",
+      "loginButton": "Entrar",
+      "loggingIn": "Entrando...",
+      "forgotPassword": "Esqueceu sua senha?",
+      "noAccount": "Não tem uma conta?",
+      "signupLink": "Cadastre-se aqui",
+      "continueWithGoogle": "Continuar com Google",
+      "orEmail": "Ou entrar com email"
+    },
+    "signup": {
+      "title": "Criar sua conta",
+      "subtitle": "Junte-se ao Avocat e revolucione sua prática jurídica",
+      "firstName": "Nome",
+      "lastName": "Sobrenome",
+      "name": "Nome Completo",
+      "email": "Email",
+      "password": "Senha",
+      "confirmPassword": "Confirmar Senha",
+      "createAccount": "Criar Conta",
+      "creating": "Criando conta...",
+      "haveAccount": "Já tem uma conta?",
+      "loginLink": "Entre aqui",
+      "continueWithGoogle": "Continuar com Google",
+      "orEmail": "Ou cadastrar-se com email"
+    }
+  },
+  "dashboard": {
+    "title": "Painel de Advogados",
+    "subtitle": "Painel completo para profissionais jurídicos com ferramentas avançadas de IA",
+    "controlPanel": "Painel de Controle",
+    "welcome": "Bem-vindo ao Avocat!",
+    "welcomeMessage": "Sua conta foi criada com sucesso. Comece a explorar os recursos de nossa plataforma LegalTech.",
+    "backToDashboard": "Voltar ao Painel",
+    "createCase": {
+      "title": "Criar Novo Caso",
+      "subtitle": "Complete as informações para criar um novo caso jurídico",
+      "caseInfo": "Informações do Caso"
+    },
+    "caseAnalysis": {
+      "loading": "Carregando análise do caso...",
+      "client": "Cliente",
+      "assignedLawyer": "Advogado Designado",
+      "caseInfo": "Informações do Caso"
+    },
+    "onTimeCases": {
+      "title": "Casos no Prazo",
+      "subtitle": "Casos com prazo normal de resolução",
+      "totalOnTime": "Total no Prazo",
+      "mediumPriority": "Prioridade Média",
+      "normalPriority": "Prioridade Normal",
+      "averageProgress": "Progresso Médio"
+    },
+    "urgentCases": {
+      "title": "Casos Urgentes",
+      "subtitle": "Casos com menos de 5 dias para o vencimento",
+      "totalUrgent": "Total Urgentes",
+      "critical": "Críticos",
+      "urgent": "Urgentes",
+      "highPriority": "Alta Prioridade",
+      "casesList": "Lista de Casos Urgentes",
+      "loading": "Carregando casos urgentes..."
+    },
+    "overdueCases": {
+      "title": "Casos Vencidos",
+      "subtitle": "Casos que ultrapassaram sua data limite",
+      "totalOverdue": "Total Vencidos",
+      "critical": "Críticos",
+      "urgent": "Urgentes",
+      "averageDays": "Dias Médios"
+    },
+    "clientDirectory": {
+      "title": "Diretório de Clientes",
+      "subtitle": "Gestão completa da base de clientes",
+      "totalClients": "Total de Clientes",
+      "active": "Ativos",
+      "pending": "Pendentes",
+      "inactive": "Inativos",
+      "totalCases": "Total de Casos",
+      "searchClient": "Buscar Cliente",
+      "searchPlaceholder": "Nome, email ou telefone...",
+      "status": "Status",
+      "allStatuses": "Todos os status",
+      "city": "Cidade",
+      "allCities": "Todas as cidades"
+    },
+    "repository": {
+      "title": "Repositório de Documentos do Caso",
+      "subtitle": "Gerencie e controle versões de todos os documentos do caso",
+      "backToAnalysis": "Voltar à Análise",
+      "searchFiles": "Buscar arquivos...",
+      "allTypes": "Todos os tipos",
+      "folders": "Pastas",
+      "text": "Texto",
+      "images": "Imagens"
+    },
+    "generateDocuments": {
+      "title": "Gerador de Documentos Jurídicos com IA",
+      "subtitle": "Selecione um tipo de documento e gere documentos jurídicos profissionais",
+      "backToAnalysis": "Voltar à Análise",
+      "documentType": "Tipo de Documento",
+      "specialInstructions": "Instruções Especiais (Opcional)",
+      "instructionsPlaceholder": "Adicione instruções específicas para personalizar o documento gerado...",
+      "generating": "Gerando com IA...",
+      "generate": "Gerar",
+      "generatedDocument": "Documento Gerado"
+    }
+  },
+  "profile": {
+    "title": "Meu Perfil",
+    "subtitle": "Gerencie suas informações pessoais e configurações da conta",
+    "personalInfo": "Informações Pessoais",
+    "user": "Usuário",
+    "memberSince": "Membro desde",
+    "accountSettings": "Configurações da Conta",
+    "fullName": "Nome Completo",
+    "enterFullName": "Digite seu nome completo",
+    "email": "Endereço de Email",
+    "emailCannotChange": "O endereço de email não pode ser alterado",
+    "phone": "Telefone",
+    "enterPhone": "Digite seu número de telefone",
+    "legalSpecialty": "Especialidade Jurídica",
+    "subscriptionInfo": "Informações da Assinatura",
+    "lawyerPlan": "Plano de Advogados",
+    "fullAccess": "Acesso completo a todos os recursos",
+    "autoRenewal": "Renovação automática",
+    "manageSubscription": "Gerenciar Assinatura",
+    "cancel": "Cancelar",
+    "saveChanges": "Salvar Alterações"
+  },
+  "subscription": {
+    "title": "Assinatura",
+    "subtitle": "Gerencie seu plano de assinatura e faturamento",
+    "currentPlan": "Plano Atual",
+    "lawyerPlan": "Plano de Advogados",
+    "fullAccess": "Acesso completo a todos os recursos",
+    "perMonth": "por mês",
+    "updatePlan": "Atualizar Plano",
+    "cancelSubscription": "Cancelar Assinatura",
+    "availablePlans": "Planos Disponíveis"
+  },
+  "footer": {
+    "description": "Revolucionando a prática jurídica com ferramentas alimentadas por IA e fluxos de trabalho inteligentes projetados para escritórios de advocacia modernos.",
+    "product": "Produto",
+    "company": "Empresa",
+    "support": "Suporte",
+    "stayUpdated": "Mantenha-se Atualizado",
+    "features": "Recursos",
+    "pricing": "Preços",
+    "api": "API",
+    "integrations": "Integrações",
+    "about": "Sobre",
+    "blog": "Blog",
+    "careers": "Carreiras",
+    "press": "Imprensa",
+    "helpCenter": "Central de Ajuda",
+    "contact": "Contato",
+    "status": "Status",
+    "documentation": "Documentação",
+    "privacy": "Política de Privacidade",
+    "terms": "Termos de Serviço",
+    "cookies": "Política de Cookies",
+    "gdpr": "GDPR"
+  }
+}
+
