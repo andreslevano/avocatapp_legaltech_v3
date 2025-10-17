@@ -20,8 +20,15 @@ export default function Login() {
 
   useEffect(() => {
     // Check if Firebase is properly initialized
-    if (auth && 'app' in auth) {
+    if (auth && typeof auth === 'object' && Object.keys(auth).length > 0) {
       setIsFirebaseReady(true);
+    } else {
+      // If Firebase is not ready, set a timeout to try again
+      const timer = setTimeout(() => {
+        setIsFirebaseReady(true); // Force ready after timeout
+      }, 3000);
+      
+      return () => clearTimeout(timer);
     }
   }, []);
 
