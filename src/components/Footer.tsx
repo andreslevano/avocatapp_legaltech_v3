@@ -1,34 +1,36 @@
 'use client';
 
 import Link from 'next/link';
+import { useI18n } from '@/hooks/useI18n';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const { t } = useI18n();
 
   const footerLinks = {
     product: [
-      { name: 'Características', href: '#caracteristicas' },
-      { name: 'Precios', href: '#precios' },
-      { name: 'API', href: '/api' },
-      { name: 'Integraciones', href: '/integraciones' },
+      { name: t('footer.features'), href: '#caracteristicas' },
+      { name: t('footer.pricing'), href: '#precios' },
+      { name: t('footer.api'), href: '/api' },
+      { name: t('footer.integrations'), href: '/integraciones' },
     ],
     company: [
-      { name: 'Acerca de', href: '/acerca-de' },
-      { name: 'Blog', href: '/blog' },
-      { name: 'Carreras', href: '/carreras' },
-      { name: 'Prensa', href: '/prensa' },
+      { name: t('footer.about'), href: '/acerca-de' },
+      { name: t('footer.blog'), href: '/blog' },
+      { name: t('footer.careers'), href: '/carreras' },
+      { name: t('footer.press'), href: '/prensa' },
     ],
     support: [
-      { name: 'Centro de Ayuda', href: '/ayuda' },
-      { name: 'Contacto', href: '/contacto' },
-      { name: 'Estado', href: '/estado' },
-      { name: 'Documentación', href: '/documentacion' },
+      { name: t('footer.helpCenter'), href: '/ayuda' },
+      { name: t('footer.contact'), href: '/contacto' },
+      { name: t('footer.status'), href: '/estado' },
+      { name: t('footer.documentation'), href: '/documentacion' },
     ],
     legal: [
-      { name: 'Política de Privacidad', href: '/privacidad' },
-      { name: 'Términos de Servicio', href: '/terminos' },
-      { name: 'Política de Cookies', href: '/cookies' },
-      { name: 'GDPR', href: '/gdpr' },
+      { name: t('footer.privacy'), href: '/privacidad' },
+      { name: t('footer.terms'), href: '/terminos' },
+      { name: t('footer.cookies'), href: '/cookies' },
+      { name: t('footer.gdpr'), href: '/gdpr' },
     ],
   };
 
@@ -76,8 +78,7 @@ export default function Footer() {
               <span className="text-xl font-bold">Avocat</span>
             </div>
             <p className="text-gray-400 mb-4 max-w-md">
-              Revolucionando la práctica legal con herramientas impulsadas por IA y flujos de trabajo inteligentes 
-              diseñados para bufetes de abogados modernos.
+              {t('footer.description')}
             </p>
             <div className="flex space-x-4">
               {socialLinks.map((social) => (

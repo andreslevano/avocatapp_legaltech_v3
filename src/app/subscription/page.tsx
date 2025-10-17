@@ -6,12 +6,14 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import UserMenu from '@/components/UserMenu';
+import { useI18n } from '@/hooks/useI18n';
 
 export default function Subscription() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const router = useRouter();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
@@ -69,14 +71,14 @@ export default function Subscription() {
         <div className="space-y-8">
           {/* Page Header */}
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Suscripción</h1>
-            <p className="mt-2 text-gray-600">Gestiona tu plan de suscripción y facturación</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('subscription.title')}</h1>
+            <p className="mt-2 text-gray-600">{t('subscription.subtitle')}</p>
           </div>
 
           {/* Current Plan Card */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Plan Actual</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t('subscription.currentPlan')}</h2>
             </div>
             <div className="px-6 py-6">
               <div className="flex items-center justify-between">
@@ -85,21 +87,21 @@ export default function Subscription() {
                     <span className="text-white font-bold text-lg">👨‍💼</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">Plan Abogados</h3>
-                    <p className="text-gray-600">Acceso completo a todas las funcionalidades</p>
+                    <h3 className="text-xl font-semibold text-gray-900">{t('subscription.lawyerPlan')}</h3>
+                    <p className="text-gray-600">{t('subscription.fullAccess')}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-3xl font-bold text-blue-600">€29.99</p>
-                  <p className="text-sm text-gray-500">por mes</p>
+                  <p className="text-sm text-gray-500">{t('subscription.perMonth')}</p>
                 </div>
               </div>
               <div className="mt-6 flex space-x-4">
                 <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  Actualizar Plan
+                  {t('subscription.updatePlan')}
                 </button>
                 <button className="px-4 py-2 border border-red-300 text-red-700 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                  Cancelar Suscripción
+                  {t('subscription.cancelSubscription')}
                 </button>
               </div>
             </div>
@@ -108,7 +110,7 @@ export default function Subscription() {
           {/* Available Plans */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Planes Disponibles</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t('subscription.availablePlans')}</h2>
             </div>
             <div className="px-6 py-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

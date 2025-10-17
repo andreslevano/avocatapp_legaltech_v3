@@ -7,6 +7,7 @@ import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
 import UserMenu from '@/components/UserMenu';
+import { useI18n } from '@/hooks/useI18n';
 
 interface DocumentFile {
   id: string;
@@ -42,6 +43,7 @@ export default function RepositorioPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const router = useRouter();
+  const { t } = useI18n();
 
   // Mock document structure
   const documentStructure: DocumentFile[] = [
@@ -401,10 +403,10 @@ export default function RepositorioPage() {
             </div>
             <div className="ml-3">
               <h1 className="text-lg font-semibold text-purple-800">
-                Repositorio de Documentos del Caso
+                {t('dashboard.repository.title')}
               </h1>
               <p className="text-sm text-purple-700">
-                Gestiona y controla versiones de todos los documentos del caso
+                {t('dashboard.repository.subtitle')}
               </p>
             </div>
           </div>
@@ -412,7 +414,7 @@ export default function RepositorioPage() {
             href="/dashboard/analisis-caso"
             className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
           >
-            ← Volver al Análisis
+            ← {t('dashboard.repository.backToAnalysis')}
           </Link>
         </div>
       </div>
@@ -477,7 +479,7 @@ export default function RepositorioPage() {
                   <div className="flex-1">
                     <input
                       type="text"
-                      placeholder="Buscar archivos..."
+                      placeholder={t('dashboard.repository.searchFiles')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -488,12 +490,12 @@ export default function RepositorioPage() {
                     onChange={(e) => setFilterType(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="all">Todos los tipos</option>
-                    <option value="folder">Carpetas</option>
+                    <option value="all">{t('dashboard.repository.allTypes')}</option>
+                    <option value="folder">{t('dashboard.repository.folders')}</option>
                     <option value="pdf">PDF</option>
                     <option value="docx">Word</option>
-                    <option value="txt">Texto</option>
-                    <option value="image">Imágenes</option>
+                    <option value="txt">{t('dashboard.repository.text')}</option>
+                    <option value="image">{t('dashboard.repository.images')}</option>
                   </select>
                 </div>
               </div>

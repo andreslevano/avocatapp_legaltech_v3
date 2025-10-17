@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useI18n } from '@/hooks/useI18n';
+import LanguageSelector from './LanguageSelector';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { t } = useI18n();
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
@@ -24,40 +27,41 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
             <Link href="#caracteristicas" className="text-gray-600 hover:text-primary-600 transition-colors">
-              Características
+              {t('navigation.features')}
             </Link>
             <Link href="#precios" className="text-gray-600 hover:text-primary-600 transition-colors">
-              Precios
+              {t('navigation.pricing')}
             </Link>
             <Link href="#acerca-de" className="text-gray-600 hover:text-primary-600 transition-colors">
-              Acerca de
+              {t('navigation.about')}
             </Link>
             <Link href="#contacto" className="text-gray-600 hover:text-primary-600 transition-colors">
-              Contacto
+              {t('navigation.contact')}
             </Link>
           </nav>
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            <LanguageSelector />
             {isLoggedIn ? (
               <div className="flex items-center space-x-4">
                 <Link href="/dashboard" className="btn-secondary">
-                  Panel
+                  {t('navigation.dashboard')}
                 </Link>
                 <button
                   onClick={() => setIsLoggedIn(false)}
                   className="text-gray-600 hover:text-primary-600 transition-colors"
                 >
-                  Cerrar Sesión
+                  {t('navigation.logout')}
                 </button>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
                 <Link href="/login" className="text-gray-600 hover:text-primary-600 transition-colors">
-                  Iniciar Sesión
+                  {t('navigation.login')}
                 </Link>
                 <Link href="/signup" className="btn-primary">
-                  Comenzar
+                  {t('navigation.signup')}
                 </Link>
               </div>
             )}
@@ -84,37 +88,40 @@ export default function Header() {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
+              <div className="px-3 py-2">
+                <LanguageSelector />
+              </div>
               <Link href="#caracteristicas" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
-                Características
+                {t('navigation.features')}
               </Link>
               <Link href="#precios" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
-                Precios
+                {t('navigation.pricing')}
               </Link>
               <Link href="#acerca-de" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
-                Acerca de
+                {t('navigation.about')}
               </Link>
               <Link href="#contacto" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
-                Contacto
+                {t('navigation.contact')}
               </Link>
               {isLoggedIn ? (
                 <>
                   <Link href="/dashboard" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
-                    Panel
+                    {t('navigation.dashboard')}
                   </Link>
                   <button
                     onClick={() => setIsLoggedIn(false)}
                     className="block w-full text-left px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors"
                   >
-                    Cerrar Sesión
+                    {t('navigation.logout')}
                   </button>
                 </>
               ) : (
                 <>
                   <Link href="/login" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
-                    Iniciar Sesión
+                    {t('navigation.login')}
                   </Link>
                   <Link href="/signup" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
-                    Comenzar
+                    {t('navigation.signup')}
                   </Link>
                 </>
               )}

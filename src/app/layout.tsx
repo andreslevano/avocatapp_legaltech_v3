@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
+import { I18nProvider } from '@/contexts/I18nContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,9 +21,11 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50">
-          {children}
-        </div>
+        <I18nProvider>
+          <div className="min-h-screen bg-gray-50">
+            {children}
+          </div>
+        </I18nProvider>
       </body>
     </html>
   );

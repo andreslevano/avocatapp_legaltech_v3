@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
+import { useI18n } from '@/hooks/useI18n';
 
 interface OnTimeCase {
   id: string;
@@ -28,6 +29,7 @@ export default function OnTimeCasesPage() {
   const [onTimeCases, setOnTimeCases] = useState<OnTimeCase[]>([]);
   const [casesLoading, setCasesLoading] = useState(true);
   const router = useRouter();
+  const { t } = useI18n();
 
   useEffect(() => {
     // Check if Firebase is properly initialized
@@ -196,7 +198,7 @@ export default function OnTimeCasesPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -221,13 +223,13 @@ export default function OnTimeCasesPage() {
             
             <div className="flex items-center space-x-4">
               <span className="text-gray-700">
-                Bienvenido, {user.email}
+                {t('dashboard.welcome')}, {user.email}
               </span>
               <button
                 onClick={handleSignOut}
                 className="btn-secondary"
               >
-                Cerrar Sesión
+                {t('navigation.logout')}
               </button>
             </div>
           </div>
@@ -248,10 +250,10 @@ export default function OnTimeCasesPage() {
             </div>
             <div className="ml-3">
               <h1 className="text-lg font-semibold text-green-800">
-                Casos a Tiempo
+                {t('dashboard.onTimeCases.title')}
               </h1>
               <p className="text-sm text-green-700">
-                Casos con plazo normal de resolución
+                {t('dashboard.onTimeCases.subtitle')}
               </p>
             </div>
           </div>
@@ -259,7 +261,7 @@ export default function OnTimeCasesPage() {
             href="/dashboard"
             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
           >
-            ← Volver al Dashboard
+            ← {t('dashboard.backToDashboard')}
           </Link>
         </div>
       </div>
@@ -273,25 +275,25 @@ export default function OnTimeCasesPage() {
               <div className="text-2xl font-bold text-green-600">
                 {onTimeCases.length}
               </div>
-              <div className="text-sm text-gray-600">Total a Tiempo</div>
+              <div className="text-sm text-gray-600">{t('dashboard.onTimeCases.totalOnTime')}</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div className="text-2xl font-bold text-blue-600">
                 {onTimeCases.filter(c => c.priority === 'medium').length}
               </div>
-              <div className="text-sm text-gray-600">Prioridad Media</div>
+              <div className="text-sm text-gray-600">{t('dashboard.onTimeCases.mediumPriority')}</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div className="text-2xl font-bold text-gray-600">
                 {onTimeCases.filter(c => c.priority === 'normal').length}
               </div>
-              <div className="text-sm text-gray-600">Prioridad Normal</div>
+              <div className="text-sm text-gray-600">{t('dashboard.onTimeCases.normalPriority')}</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div className="text-2xl font-bold text-purple-600">
                 {Math.round(onTimeCases.reduce((acc, c) => acc + c.progress, 0) / onTimeCases.length)}%
               </div>
-              <div className="text-sm text-gray-600">Progreso Promedio</div>
+              <div className="text-sm text-gray-600">{t('dashboard.onTimeCases.averageProgress')}</div>
             </div>
           </div>
 
