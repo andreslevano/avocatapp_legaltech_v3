@@ -1,0 +1,244 @@
+{
+  "navigation": {
+    "features": "Características",
+    "pricing": "Precios",
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "dashboard": "Panel",
+    "logout": "Cerrar Sesión",
+    "login": "Iniciar Sesión",
+    "signup": "Comenzar"
+  },
+  "hero": {
+    "title": "Revolucionando<span class=\"text-primary-600 block\">la Práctica Legal</span>con IA",
+    "subtitle": "Optimiza tu flujo de trabajo legal con análisis inteligente de documentos, resúmenes de casos e investigación legal automatizada impulsada por tecnología de IA de vanguardia.",
+    "cta": "Prueba Gratuita",
+    "learnMore": "Ver Demo",
+    "emailPlaceholder": "Ingresa tu email para actualizaciones",
+    "subscribe": "Suscribirse",
+    "subscribeInfo": "Recibe notificaciones sobre nuevas funciones y actualizaciones",
+    "trustedBy": "Confiado por bufetes líderes"
+  },
+  "features": {
+    "title": "Características Poderosas para la Práctica Legal Moderna",
+    "subtitle": "Nuestra plataforma impulsada por IA combina tecnología de vanguardia con experiencia legal profunda para transformar cómo trabajas con casos y clientes.",
+    "documentAnalysis": {
+      "title": "Análisis de Documentos con IA",
+      "description": "Análisis inteligente y análisis de documentos legales con extracción automatizada de información clave, cláusulas y riesgos potenciales."
+    },
+    "legalResearch": {
+      "title": "Asistente de Investigación Legal",
+      "description": "Investigación legal impulsada por IA que analiza jurisprudencia, estatutos y regulaciones para proporcionar información integral y precedentes."
+    },
+    "caseSummaries": {
+      "title": "Resúmenes de Casos",
+      "description": "Generación automatizada de resúmenes concisos de casos, destacando hechos clave, problemas legales y resultados para referencia rápida."
+    },
+    "clientManagement": {
+      "title": "Gestión de Clientes",
+      "description": "Portal integral de clientes con intercambio seguro de documentos, herramientas de comunicación e integración de facturación."
+    },
+    "analytics": {
+      "title": "Análisis e Informes",
+      "description": "Panel de análisis avanzado que proporciona información sobre el rendimiento de casos, seguimiento de tiempo y métricas de negocio."
+    },
+    "security": {
+      "title": "Seguridad Empresarial",
+      "description": "Seguridad de nivel bancario con encriptación de extremo a extremo, control de acceso basado en roles y cumplimiento con estándares de la industria legal."
+    }
+  },
+  "pricing": {
+    "title": "Precios Simples y Transparentes",
+    "subtitle": "Elige el plan que se adapte a tu práctica. Todos los planes incluyen una prueba gratuita de 14 días sin tarjeta de crédito requerida.",
+    "students": {
+      "title": "🇪🇸 Estudiantes",
+      "description": "Acceso completo para estudiantes de derecho y pasantes",
+      "price": "€3,00",
+      "period": "/escrito",
+      "aiDocs": "Análisis de Documentos con IA (50 docs/mes)",
+      "basicLegalResearch": "Investigación Legal Básica",
+      "clientPortal": "Portal de Clientes (hasta 10 clientes)",
+      "emailSupport": "Soporte por Email",
+      "basicAnalytics": "Análisis Básico",
+      "startNow": "Empezar ahora"
+    },
+    "tutela": {
+      "title": "🇨🇴 Acción de Tutela",
+      "description": "Especializado en procedimientos de tutela colombianos",
+      "price": "$50.000",
+      "period": "/escrito"
+    },
+    "reclamacion": {
+      "title": "🇪🇸 Reclamación de Cantidades",
+      "description": "Enfoque en reclamaciones de cantidades en España",
+      "price": "€10,00",
+      "period": "/escrito"
+    },
+    "lawyers": {
+      "title": "🌍 Abogados",
+      "description": "Solución completa para bufetes de abogados establecidos",
+      "price": "€550,00",
+      "period": "/anual"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar Sesión",
+      "subtitle": "Accede a tu cuenta de Avocat",
+      "email": "Email",
+      "password": "Contraseña",
+      "loginButton": "Iniciar Sesión",
+      "loggingIn": "Iniciando sesión...",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "noAccount": "¿No tienes una cuenta?",
+      "signupLink": "Regístrate aquí",
+      "continueWithGoogle": "Continuar con Google",
+      "orEmail": "O iniciar sesión con email"
+    },
+    "signup": {
+      "title": "Crear tu cuenta",
+      "subtitle": "Únete a Avocat y revoluciona tu práctica legal",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "name": "Nombre completo",
+      "email": "Email",
+      "password": "Contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "createAccount": "Crear Cuenta",
+      "creating": "Creando cuenta...",
+      "haveAccount": "¿Ya tienes una cuenta?",
+      "loginLink": "Inicia sesión aquí",
+      "continueWithGoogle": "Continuar con Google",
+      "orEmail": "O registrarse con email"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard de Abogados",
+    "subtitle": "Panel completo para profesionales del derecho con herramientas avanzadas de IA",
+    "controlPanel": "Panel de Control",
+    "welcome": "¡Bienvenido a Avocat!",
+    "welcomeMessage": "Tu cuenta ha sido creada exitosamente. Comienza a explorar las características de nuestra plataforma LegalTech.",
+    "backToDashboard": "Volver al Dashboard",
+    "createCase": {
+      "title": "Crear Nuevo Caso",
+      "subtitle": "Complete la información para crear un nuevo caso legal",
+      "caseInfo": "Información del Caso"
+    },
+        "caseAnalysis": {
+          "loading": "Cargando análisis del caso...",
+          "client": "Cliente",
+          "assignedLawyer": "Abogado Asignado",
+          "caseInfo": "Información del Caso"
+        },
+        "onTimeCases": {
+          "title": "Casos a Tiempo",
+          "subtitle": "Casos con plazo normal de resolución",
+          "totalOnTime": "Total a Tiempo",
+          "mediumPriority": "Prioridad Media",
+          "normalPriority": "Prioridad Normal",
+          "averageProgress": "Progreso Promedio"
+        },
+        "urgentCases": {
+          "title": "Casos Urgentes",
+          "subtitle": "Casos con menos de 5 días para el vencimiento",
+          "totalUrgent": "Total Urgentes",
+          "critical": "Críticos",
+          "urgent": "Urgentes",
+          "highPriority": "Alta Prioridad",
+          "casesList": "Lista de Casos Urgentes",
+          "loading": "Cargando casos urgentes..."
+        },
+        "overdueCases": {
+          "title": "Casos Vencidos",
+          "subtitle": "Casos que han superado su fecha límite",
+          "totalOverdue": "Total Vencidos",
+          "critical": "Críticos",
+          "urgent": "Urgentes",
+          "averageDays": "Días Promedio"
+        },
+        "clientDirectory": {
+          "title": "Directorio de Clientes",
+          "subtitle": "Gestión completa de la base de clientes",
+          "totalClients": "Total Clientes",
+          "active": "Activos",
+          "pending": "Pendientes",
+          "inactive": "Inactivos",
+          "totalCases": "Total Casos",
+          "searchClient": "Buscar Cliente",
+          "searchPlaceholder": "Nombre, email o teléfono...",
+          "status": "Estado",
+          "allStatuses": "Todos los estados",
+          "city": "Ciudad",
+          "allCities": "Todas las ciudades"
+        },
+        "repository": {
+          "title": "Repositorio de Documentos del Caso",
+          "subtitle": "Gestiona y controla versiones de todos los documentos del caso",
+          "backToAnalysis": "Volver al Análisis",
+          "searchFiles": "Buscar archivos...",
+          "allTypes": "Todos los tipos",
+          "folders": "Carpetas",
+          "text": "Texto",
+          "images": "Imágenes"
+        },
+        "generateDocuments": {
+          "title": "Generador de Escritos Legales con IA",
+          "subtitle": "Selecciona un tipo de documento y genera escritos legales profesionales",
+          "backToAnalysis": "Volver al Análisis",
+          "documentType": "Tipo de Documento",
+          "specialInstructions": "Instrucciones Especiales (Opcional)",
+          "instructionsPlaceholder": "Agrega instrucciones específicas para personalizar el documento generado...",
+          "generating": "Generando con IA...",
+          "generate": "Generar",
+          "generatedDocument": "Documento Generado"
+        }
+  },
+  "profile": {
+    "title": "Mi Perfil",
+    "subtitle": "Gestiona tu información personal y configuración de cuenta",
+    "personalInfo": "Información Personal",
+    "user": "Usuario",
+    "memberSince": "Miembro desde",
+    "accountSettings": "Configuración de Cuenta",
+    "fullName": "Nombre completo",
+    "enterFullName": "Ingresa tu nombre completo",
+    "email": "Correo electrónico",
+    "emailCannotChange": "El correo electrónico no se puede cambiar",
+    "phone": "Teléfono",
+    "enterPhone": "Ingresa tu número de teléfono",
+    "legalSpecialty": "Especialidad legal",
+    "subscriptionInfo": "Información de Suscripción",
+    "lawyerPlan": "Plan Abogados",
+    "fullAccess": "Acceso completo a todas las funcionalidades",
+    "autoRenewal": "Renovación automática",
+    "manageSubscription": "Gestionar Suscripción",
+    "cancel": "Cancelar",
+    "saveChanges": "Guardar Cambios"
+  },
+  "subscription": {
+    "title": "Suscripción",
+    "subtitle": "Gestiona tu plan de suscripción y facturación",
+    "currentPlan": "Plan Actual",
+    "lawyerPlan": "Plan Abogados",
+    "fullAccess": "Acceso completo a todas las funcionalidades",
+    "perMonth": "por mes",
+    "updatePlan": "Actualizar Plan",
+    "cancelSubscription": "Cancelar Suscripción",
+    "availablePlans": "Planes Disponibles"
+  },
+  "footer": {
+    "description": "Revolucionando la práctica legal con herramientas impulsadas por IA y flujos de trabajo inteligentes diseñados para bufetes de abogados modernos.",
+    "product": "Producto",
+    "company": "Empresa",
+    "support": "Soporte",
+    "stayUpdated": "Mantente actualizado",
+    "stayUpdatedDesc": "Recibe las últimas actualizaciones sobre nuevas funciones e información sobre tecnología legal.",
+    "emailPlaceholder": "Ingresa tu email",
+    "subscribe": "Suscribirse",
+    "copyright": "© 2025 Avocat LegalTech. Todos los derechos reservados.",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos de Servicio",
+    "cookies": "Política de Cookies",
+    "gdpr": "GDPR"
+  }
+}
