@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/hooks/useI18n';
+import { handleUserReactivation } from '@/lib/user-reactivation';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ export default function Login() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [reactivationMessage, setReactivationMessage] = useState('');
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const router = useRouter();
   const { t } = useI18n();
@@ -40,6 +42,27 @@ export default function Login() {
     }));
   };
 
+  const handleSuccessfulLogin = async (user: any) => {
+    try {
+      // Check if user needs reactivation
+      const reactivationResult = await handleUserReactivation(user);
+      
+      if (reactivationResult.wasReactivated) {
+        setReactivationMessage(reactivationResult.message || 'Tu cuenta ha sido reactivada.');
+        // Show message for 3 seconds before redirecting
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 3000);
+      } else {
+        // Normal login flow
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error during login process:', error);
+      router.push('/dashboard'); // Continue to dashboard even if reactivation check fails
+    }
+  };
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -52,8 +75,8 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth as Auth, formData.email, formData.password);
-      router.push('/dashboard');
+      const userCredential = await signInWithEmailAndPassword(auth as Auth, formData.email, formData.password);
+      await handleSuccessfulLogin(userCredential.user);
     } catch (error: any) {
       console.error('Error al iniciar sesión:', error);
       
@@ -86,8 +109,8 @@ export default function Login() {
 
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth as Auth, provider);
-      router.push('/dashboard');
+      const userCredential = await signInWithPopup(auth as Auth, provider);
+      await handleSuccessfulLogin(userCredential.user);
     } catch (error: any) {
       console.error('Error al iniciar sesión con Google:', error);
       setError('Error al iniciar sesión con Google. Intenta de nuevo.');
@@ -189,6 +212,22 @@ export default function Login() {
             {error && (
               <div className="rounded-md bg-red-50 p-4">
                 <div className="text-sm text-red-700">{error}</div>
+              </div>
+            )}
+
+            {reactivationMessage && (
+              <div className="rounded-md bg-green-50 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <div className="text-sm text-green-700">{reactivationMessage}</div>
+                    <div className="text-xs text-green-600 mt-1">Redirigiendo al dashboard...</div>
+                  </div>
+                </div>
               </div>
             )}
 

@@ -28,6 +28,26 @@
         "function": "getUserStats"
       },
       {
+        "source": "/api/admin/user/disable",
+        "function": "disableUser"
+      },
+      {
+        "source": "/api/admin/user/enable",
+        "function": "enableUser"
+      },
+      {
+        "source": "/api/admin/user/cleanup",
+        "function": "cleanupUser"
+      },
+      {
+        "source": "/api/admin/user/update-status",
+        "function": "updateUserStatus"
+      },
+      {
+        "source": "/api/admin/user/status",
+        "function": "getUserStatus"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
