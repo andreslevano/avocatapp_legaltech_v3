@@ -8,6 +8,26 @@
     ],
     "rewrites": [
       {
+        "source": "/api/hello",
+        "function": "helloWorld"
+      },
+      {
+        "source": "/api/test-openai",
+        "function": "testOpenAI"
+      },
+      {
+        "source": "/api/reclamacion-cantidades",
+        "function": "reclamacionCantidades"
+      },
+      {
+        "source": "/api/accion-tutela",
+        "function": "accionTutela"
+      },
+      {
+        "source": "/api/user-stats",
+        "function": "getUserStats"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
@@ -23,5 +43,9 @@
         ]
       }
     ]
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
   }
 }

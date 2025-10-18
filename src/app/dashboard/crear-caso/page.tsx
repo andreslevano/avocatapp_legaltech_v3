@@ -380,7 +380,7 @@ export default function CreateCasePage() {
                       name="clientSelection"
                       value="existing"
                       checked={formData.clientSelection === 'existing'}
-                      onChange={handleClientSelectionChange}
+                      onChange={(e) => handleClientSelectionChange(e as any)}
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700">Cliente Existente</span>
@@ -391,7 +391,7 @@ export default function CreateCasePage() {
                       name="clientSelection"
                       value="new"
                       checked={formData.clientSelection === 'new'}
-                      onChange={handleClientSelectionChange}
+                      onChange={(e) => handleClientSelectionChange(e as any)}
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700">Nuevo Cliente</span>

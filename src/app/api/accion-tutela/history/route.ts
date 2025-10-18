@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     const elapsedMs = Date.now() - startTime;
-    console.error('Tutela historial error', { requestId, error: error.message, elapsedMs });
+    console.error('Tutela historial error', { requestId, error: error instanceof Error ? error.message : String(error), elapsedMs });
     
     return NextResponse.json(
       {

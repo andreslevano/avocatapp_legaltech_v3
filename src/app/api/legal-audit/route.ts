@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validar datos de entrada
-    const { perfilCliente, contextoProcesal, textoBase, normasAdicionales, jurisMap } = body;
+    const { perfilCliente, contextoProcesal, textoBase, normasAdicionales } = body;
     
     if (!perfilCliente || !contextoProcesal || !textoBase) {
       return NextResponse.json(
@@ -58,21 +58,21 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    apiLogger.info(requestId, 'Legal audit request', {
+    console.log('Legal audit request', {
       paisISO: perfilCliente.paisISO,
       areaLegal: contextoProcesal.areaLegal,
       procedimiento: contextoProcesal.procedimiento
     });
     
     // Realizar auditoría legal
-    apiLogger.info(requestId, 'Starting legal audit');
+    console.log('Starting legal audit');
     const resultado = await auditarEscritoLegalSimple(
       perfilCliente as PerfilCliente,
       contextoProcesal as ContextoProcesal,
       textoBase,
       normasAdicionales as NormasAdicionales
     );
-    apiLogger.info(requestId, 'Legal audit completed');
+    console.log('Legal audit completed');
     
     const elapsedMs = Date.now() - startTime;
     

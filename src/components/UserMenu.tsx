@@ -35,11 +35,20 @@ export default function UserMenu({ user, currentPlan = 'Abogados', onSignOut }: 
   const handleSignOut = async () => {
     setIsLoading(true);
     try {
-      await signOut(auth);
-      if (onSignOut) {
-        onSignOut();
+      // Check if auth is properly initialized
+      if (auth && typeof auth.signOut === 'function') {
+        await signOut(auth as any);
+        if (onSignOut) {
+          onSignOut();
+        }
+        router.push('/');
+      } else {
+        console.error('Firebase auth not properly initialized');
+        if (onSignOut) {
+          onSignOut();
+        }
+        router.push('/');
       }
-      router.push('/');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     } finally {

@@ -3,7 +3,7 @@ import { isAdmin } from '@/lib/auth-admin';
 
 export const runtime = 'nodejs' as const;
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // En un entorno real, obtendrías el UID del token de autenticación
     const currentUserId = 'demo_admin_user'; // TODO: Obtener del contexto de autenticación

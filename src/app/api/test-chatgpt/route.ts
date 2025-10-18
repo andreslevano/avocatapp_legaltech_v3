@@ -18,7 +18,7 @@ export async function GET() {
     console.log('✅ ChatGPT funcionando:', {
       content: result.content.substring(0, 100) + '...',
       tokens: result.usage?.totalTokens,
-      model: result.metadata?.model
+      model: result.model
     });
 
     return NextResponse.json({
@@ -27,8 +27,8 @@ export async function GET() {
       data: {
         content: result.content,
         tokens: result.usage?.totalTokens,
-        model: result.metadata?.model,
-        processingTime: result.metadata?.processingTime
+        model: result.model,
+        processingTime: 0 // TODO: Get from result metadata when available
       }
     });
 

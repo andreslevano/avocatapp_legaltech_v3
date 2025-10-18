@@ -5,7 +5,7 @@ import { checkRateLimit } from '@/lib/ratelimit';
 export const runtime = 'nodejs' as const;
 
 export async function POST(request: NextRequest) {
-  const requestId = uuidv4();
+  // const requestId = uuidv4();
   const startTime = Date.now();
   
   try {
@@ -94,13 +94,12 @@ export async function POST(request: NextRequest) {
     // Procesar archivos (simulación de OCR)
     const processedFiles = await Promise.all(
       validFiles.map(async (file, index) => {
-        const buffer = await file.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString('base64');
+        // const buffer = await file.arrayBuffer();
+        // const base64 = Buffer.from(buffer).toString('base64');
         
         // Simulación de extracción de datos (en producción usarías un servicio OCR real)
         const extractedData = {
           filename: file.name,
-          size: file.size,
           type: file.type,
           extractedText: `[TEXTO EXTRAÍDO DEL PDF ${index + 1}]\n\nEste es un texto simulado extraído del documento PDF. En una implementación real, aquí aparecería el texto extraído por OCR del documento escaneado.\n\nDatos simulados:\n- Vulnerador: [Nombre extraído del documento]\n- Hechos: [Descripción de hechos extraída]\n- Derecho vulnerado: [Derecho identificado]\n- Peticiones: [Solicitudes identificadas]`,
           confidence: 0.85 + (Math.random() * 0.1), // Simulación de confianza
@@ -136,7 +135,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    const elapsedMs = Date.now() - startTime;
+    // const elapsedMs = Date.now() - startTime;
     console.error(`❌ Error en OCR:`, error);
     
     return NextResponse.json(

@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     });
 
     const content = result.content;
-    const timeMs = result.metadata?.processingTime || 0;
+    // const timeMs = 0; // TODO: Get from result metadata when available
 
     if (!content) {
       throw new Error('No se recibió análisis del modelo');
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     let analisisJSON;
     try {
       analisisJSON = JSON.parse(content);
-    } catch (parseError) {
+    } catch (_parseError: any) {
       // Si falla el parseo, intentar extraer JSON del contenido
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       porcentajeExito: analisisJSON.analisis?.porcentajeExito || 0,
       nivelConfianza: analisisJSON.analisis?.nivelConfianza || 'baja',
       elapsedMs,
-      tokensUsados: result.metadata?.tokensUsed || 0
+      tokensUsados: 0 // TODO: Get from result metadata when available
     });
 
     // Devolver análisis completo
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           requestId,
           elapsedMs,
-          tokensUsados: result.metadata?.tokensUsados || 0,
+          tokensUsados: 0, // TODO: Get from result metadata when available
           modelo: 'gpt-4o',
           timestamp: new Date().toISOString()
         }

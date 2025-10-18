@@ -1,9 +1,9 @@
-import { initializeApp, getApps } from 'firebase-admin/app';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
 // Initialize Firebase Admin (sin credenciales para desarrollo)
-let adminApp;
+let adminApp: App;
 if (!getApps().length) {
   try {
     adminApp = initializeApp({

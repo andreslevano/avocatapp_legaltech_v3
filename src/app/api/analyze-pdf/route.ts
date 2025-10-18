@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    apiLogger.info(requestId, 'Iniciando análisis de PDF', {
+    console.log('Iniciando análisis de PDF', {
       uid,
       docId,
       analysisType,
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     await saveAnalysisToFirestore(uid, docId, analysisResult, analysisType);
     
     const elapsedMs = Date.now() - startTime;
-    apiLogger.success(requestId, 'Análisis completado', {
+    console.log('Análisis completado', {
       uid,
       docId,
       analysisType,
@@ -267,7 +267,7 @@ function enhancePromptForAnalysis(prompt: string, analysisType: string): string 
 /**
  * Parsea la respuesta de GPT-5 para extraer información estructurada
  */
-function parseAnalysisResponse(content: string, analysisType: string): {
+function parseAnalysisResponse(content: string, _analysisType: string): {
   summary: string;
   risks: string[];
   recommendations: string[];
@@ -293,7 +293,7 @@ function parseAnalysisResponse(content: string, analysisType: string): {
       risks,
       recommendations
     };
-  } catch (error) {
+  } catch {
     console.warn('⚠️ Error parseando respuesta, usando contenido completo');
     return {
       summary: content.substring(0, 500),

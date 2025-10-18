@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function sendEmail({ to, subject, pdfUrl, userName }: {
+async function sendEmail({ to, subject, pdfUrl }: {
   to: string;
   subject: string;
   pdfUrl: string;

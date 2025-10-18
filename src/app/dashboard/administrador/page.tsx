@@ -48,10 +48,13 @@ export default function AdminDashboard() {
   const [generatedEmail, setGeneratedEmail] = useState<any>(null);
   const [showEmailFrame, setShowEmailFrame] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
     checkAdminPermissions();
+    checkSyncStatus();
   }, []);
 
   const checkAdminPermissions = async () => {
@@ -242,6 +245,60 @@ export default function AdminDashboard() {
     }).format(amount);
   };
 
+  const checkSyncStatus = async () => {
+    try {
+      const response = await fetch('/api/admin/sync-users');
+      const data = await response.json();
+      
+      if (data.success) {
+        setSyncStatus(data.status);
+      } else {
+        throw new Error(data.error?.message || 'Error checking sync status');
+      }
+    } catch (err) {
+      console.error('Error checking sync status:', err);
+      setError(err instanceof Error ? err.message : 'Error checking sync status');
+    }
+  };
+
+  const syncUsers = async () => {
+    setIsSyncing(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/admin/sync-users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setSyncStatus(data.summary);
+        alert(`✅ Sincronización completada exitosamente!\n\n` +
+              `📊 Resumen:\n` +
+              `• Usuarios en Auth: ${data.summary.authUsers}\n` +
+              `• Creados: ${data.summary.created}\n` +
+              `• Actualizados: ${data.summary.updated}\n` +
+              `• Eliminados: ${data.summary.deleted.users} usuarios\n` +
+              `• Documentos eliminados: ${data.summary.deleted.documents}\n` +
+              `• Compras eliminadas: ${data.summary.deleted.purchases}`);
+        
+        // Refresh users list
+        await fetchData();
+      } else {
+        throw new Error(data.error?.message || 'Error during sync');
+      }
+    } catch (err) {
+      console.error('Error syncing users:', err);
+      setError(err instanceof Error ? err.message : 'Error syncing users');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const getPlanColor = (plan: string) => {
     switch (plan) {
       case 'free': return 'bg-gray-100 text-gray-800';
@@ -264,7 +321,7 @@ export default function AdminDashboard() {
   if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <DashboardNavigation />
+        <DashboardNavigation currentPlan="basic" />
         <div className="py-8">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center">
@@ -308,7 +365,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardNavigation />
+      <DashboardNavigation currentPlan="basic" />
       <div className="py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="mb-8">
@@ -318,6 +375,68 @@ export default function AdminDashboard() {
             <p className="text-gray-600">
               Gestión de usuarios y análisis del sistema
             </p>
+          </div>
+
+          {/* Sync Section */}
+          <div className="mb-8 bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Sincronización de Usuarios</h2>
+                <p className="text-sm text-gray-500">
+                  Sincronizar usuarios entre Firebase Authentication y Firestore
+                </p>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={checkSyncStatus}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Ver Estado
+                </button>
+                <button
+                  onClick={syncUsers}
+                  disabled={isSyncing}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSyncing ? 'Sincronizando...' : 'Sincronizar Usuarios'}
+                </button>
+              </div>
+            </div>
+
+            {syncStatus && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Estado de Sincronización</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{syncStatus.authUsers}</div>
+                    <div className="text-sm text-gray-500">En Auth</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{syncStatus.firestoreUsers}</div>
+                    <div className="text-sm text-gray-500">En Firestore</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">{syncStatus.orphanedUsers}</div>
+                    <div className="text-sm text-gray-500">Huérfanos</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold ${syncStatus.orphanedUsers === 0 ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {syncStatus.orphanedUsers === 0 ? '✓' : '⚠'}
+                    </div>
+                    <div className="text-sm text-gray-500">Estado</div>
+                  </div>
+                </div>
+                
+                {syncStatus.orphanedUserIds && syncStatus.orphanedUserIds.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-2">Usuarios huérfanos (en Firestore pero no en Auth):</p>
+                    <div className="text-xs text-gray-500 font-mono bg-gray-100 p-2 rounded">
+                      {syncStatus.orphanedUserIds.join(', ')}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {error && (

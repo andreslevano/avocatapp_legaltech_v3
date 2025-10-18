@@ -3,7 +3,7 @@ import { db } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs' as const;
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     console.log('📊 Obteniendo estadísticas globales...');
     
@@ -12,15 +12,15 @@ export async function GET(request: NextRequest) {
     const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
     // Calcular estadísticas
-    const activeUsers = users.filter(u => u.isActive !== false);
-    const totalRevenue = users.reduce((sum, u) => sum + (u.stats?.totalSpent || 0), 0);
-    const totalDocuments = users.reduce((sum, u) => sum + (u.stats?.totalDocuments || 0), 0);
+    const activeUsers = users.filter((u: any) => u.isActive !== false);
+    const totalRevenue = users.reduce((sum, u: any) => sum + (u.stats?.totalSpent || 0), 0);
+    const totalDocuments = users.reduce((sum, u: any) => sum + (u.stats?.totalDocuments || 0), 0);
     
     const stats = {
       users: {
         total: users.length,
         active: activeUsers.length,
-        newThisMonth: users.filter(u => {
+        newThisMonth: users.filter((u: any) => {
           const createdAt = new Date(u.createdAt);
           const now = new Date();
           return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear();

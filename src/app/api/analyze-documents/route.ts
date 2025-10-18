@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       }))
     );
     
-    apiLogger.info(requestId, 'OCR analysis request', {
+    console.log('OCR analysis request', {
       fileCount: files.length,
       filenames: files.map(f => f.name)
     });

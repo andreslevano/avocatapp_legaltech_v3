@@ -133,7 +133,7 @@ export default function TutelaHistoryPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <DashboardNavigation />
+        <DashboardNavigation currentPlan="basic" />
         <div className="py-8">
           <div className="max-w-6xl mx-auto px-4">
             <div className="bg-white rounded-lg shadow-lg p-8">
@@ -150,7 +150,7 @@ export default function TutelaHistoryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardNavigation />
+      <DashboardNavigation currentPlan="basic" />
       <div className="py-8">
         <div className="max-w-6xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg p-8">

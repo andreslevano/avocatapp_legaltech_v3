@@ -56,12 +56,12 @@ export async function GET() {
       
       out.ok = true; 
       out.model = model;
-      out.timeMs = res.timeMs;
-      out.responseLength = res.content?.length || 0;
+      out.timeMs = res?.timeMs || 0;
+      out.responseLength = res?.content?.length || 0;
       out.message = 'OpenAI connection successful';
       
       return NextResponse.json(out, { status: 200 });
-    } catch (importError) {
+    } catch (_importError) {
       out.errorType = 'IMPORT_FAIL';
       out.errorMessage = 'Failed to import AI provider';
       out.hint = 'Check if the provider file exists';

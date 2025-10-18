@@ -1,6 +1,8 @@
 // Sistema de persistencia simplificado para desarrollo
 // Simula Firestore y Storage usando archivos locales
 
+import { db } from './firebase-admin';
+
 interface DocumentData {
   docId: string;
   userId: string;
@@ -87,19 +89,19 @@ export async function signedUrlFor(
 
 // Funciones para analytics y administración
 export async function saveUserProfile(uid: string, profileData: any) {
-  await admDb().collection('users').doc(uid).set(profileData, { merge: true });
+  await db().collection('users').doc(uid).set(profileData, { merge: true });
 }
 
 export async function saveDocumentGeneration(docId: string, generationData: any) {
-  await admDb().collection('documents').doc(docId).set(generationData);
+  await db().collection('documents').doc(docId).set(generationData);
 }
 
 export async function savePurchase(purchaseId: string, purchaseData: any) {
-  await admDb().collection('purchases').doc(purchaseId).set(purchaseData);
+  await db().collection('purchases').doc(purchaseId).set(purchaseData);
 }
 
 export async function updateUserStats(uid: string, stats: any) {
-  await admDb().collection('users').doc(uid).update({
+  await db().collection('users').doc(uid).update({
     stats: stats,
     lastLoginAt: new Date().toISOString()
   });

@@ -43,7 +43,7 @@ export default function ReclamacionCantidadesDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardNavigation />
+      <DashboardNavigation currentPlan="basic" />
 
       {/* Dashboard Identification Banner */}
       <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6">

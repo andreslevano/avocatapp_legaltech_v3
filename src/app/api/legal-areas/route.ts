@@ -4,7 +4,7 @@ import { apiLogger } from '@/lib/logger';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock database - en producción usar Firebase/Prisma
-let legalAreas: any[] = [
+const legalAreas: any[] = [
   {
     id: '1',
     nombre: 'Derecho Constitucional',
