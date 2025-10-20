@@ -267,12 +267,18 @@ export default function AdminDashboard() {
     checkSyncStatus();
   }, []);
 
-  // Redirect non-admin users
+  // Redirect non-admin users - only after we've actually checked and confirmed they're not admin
   useEffect(() => {
     console.log('🔄 Redirect check:', { adminChecked, isAuthorized });
-    if (adminChecked && !isAuthorized) {
-      console.log('🚫 Redirecting non-admin user to dashboard');
-      router.push('/dashboard');
+    // Only redirect if we've completed the admin check AND confirmed they're not authorized
+    // Add a small delay to ensure Firestore query has completed
+    if (adminChecked && isAuthorized === false) {
+      const redirectTimer = setTimeout(() => {
+        console.log('🚫 Redirecting non-admin user to dashboard');
+        router.push('/dashboard');
+      }, 100); // Small delay to ensure Firestore query completed
+      
+      return () => clearTimeout(redirectTimer);
     }
   }, [adminChecked, isAuthorized, router]);
 
