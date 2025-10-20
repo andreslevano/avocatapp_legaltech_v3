@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // Habilitado para Firebase Hosting
+  output: 'export', // Re-enabled for Firebase Hosting
   trailingSlash: false, // Cambiado a false para evitar redirects 308
   typescript: {
     ignoreBuildErrors: false, // Habilitado para mejor DX

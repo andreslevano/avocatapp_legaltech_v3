@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, User as FirebaseUser, Auth } from 'firebase/auth';
 import DashboardNavigation from '@/components/DashboardNavigation';
+import UserMenu from '@/components/UserMenu';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface User {
   uid: string;
@@ -37,10 +42,14 @@ interface UserSummary {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [userSummary, setUserSummary] = useState<UserSummary | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -52,10 +61,107 @@ export default function AdminDashboard() {
   const [syncStatus, setSyncStatus] = useState<any>(null);
 
   useEffect(() => {
+    // Add global error handler for runtime errors
+    const handleRuntimeError = (event: ErrorEvent) => {
+      console.warn('Caught runtime error:', event.error);
+      event.preventDefault();
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.warn('Caught unhandled promise rejection:', event.reason);
+      event.preventDefault();
+    };
+
+    window.addEventListener('error', handleRuntimeError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    // Defer any redirect until we have definitively checked auth state
+    if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
+      setIsFirebaseReady(true);
+      const unsubscribe = onAuthStateChanged(auth as Auth, (u) => {
+        try {
+          setUser(u);
+          setAuthChecked(true);
+          setLoading(false);
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+          setLoading(false);
+          setAuthChecked(true);
+        }
+      });
+      return () => {
+        try {
+          unsubscribe();
+        } catch (error) {
+          console.error('Error unsubscribing from auth:', error);
+        } finally {
+          window.removeEventListener('error', handleRuntimeError);
+          window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        }
+      };
+    } else {
+      setLoading(false);
+      setAuthChecked(true);
+      window.removeEventListener('error', handleRuntimeError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Only redirect if we've definitely checked auth and confirmed no user
+    if (authChecked && isFirebaseReady && !user) {
+      const timer = setTimeout(() => {
+        if (auth && typeof auth.currentUser === 'function') {
+          try {
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+              router.push('/login');
+            }
+          } catch (error) {
+            console.error('Error checking current user:', error);
+          }
+        } else {
+          router.push('/login');
+        }
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [authChecked, isFirebaseReady, user, router]);
+
+  const handleSignOut = async () => {
+    if (!isFirebaseReady || !auth || typeof auth.signOut !== 'function') {
+      return;
+    }
+
+    try {
+      await signOut(auth as Auth);
+      router.push('/');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
+
+  useEffect(() => {
     setMounted(true);
     checkAdminPermissions();
     checkSyncStatus();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando Administrador...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !isFirebaseReady) {
+    return null;
+  }
 
   const checkAdminPermissions = async () => {
     try {
@@ -364,7 +470,24 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center mr-3">
+                <span className="text-white font-bold text-lg">A</span>
+              </div>
+              <span className="text-xl font-bold text-gray-900">Administrador</span>
+            </div>
+            
+            <UserMenu user={user} currentPlan="Administrador" onSignOut={handleSignOut} />
+          </div>
+        </div>
+      </header>
+
       <DashboardNavigation currentPlan="basic" />
       <div className="py-8">
         <div className="max-w-7xl mx-auto px-4">
@@ -848,6 +971,7 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

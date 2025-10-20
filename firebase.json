@@ -43,10 +43,18 @@
         "source": "/api/admin/user/update-status",
         "function": "updateUserStatus"
       },
-      {
-        "source": "/api/admin/user/status",
-        "function": "getUserStatus"
-      },
+              {
+                "source": "/api/admin/user/status",
+                "function": "getUserStatus"
+              },
+              {
+                "source": "/api/admin/user/check-status",
+                "function": "checkUserStatusByEmail"
+              },
+              {
+                "source": "/api/admin/user/reactivate",
+                "function": "reactivateUser"
+              },
       {
         "source": "**",
         "destination": "/index.html"

@@ -1,61 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createCheckoutSession } from '@/lib/stripe';
-import { StripeCheckoutSchema } from '@/lib/validate';
-import { apiLogger } from '@/lib/logger';
-import { v4 as uuidv4 } from 'uuid';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2023-10-16',
+});
 
 export async function POST(request: NextRequest) {
-  const requestId = uuidv4();
-  
   try {
     const body = await request.json();
-    const validationResult = StripeCheckoutSchema.safeParse(body);
+    const { items, customerEmail, successUrl, cancelUrl } = body;
     
-    if (!validationResult.success) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Datos de checkout inválidos',
-            hint: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
-          }
-        },
+        { success: false, error: 'No items provided' },
         { status: 400 }
       );
     }
-    
-    const { planId, successUrl, cancelUrl } = validationResult.data;
-    
-    // En producción, obtener userId del token de autenticación
-    const userId = 'user_' + Date.now(); // Mock para desarrollo
-    
-    const session = await createCheckoutSession(planId, userId, successUrl, cancelUrl);
-    
-    apiLogger.success(requestId, { 
-      sessionId: session.id, 
-      planId,
-      userId 
+
+    // Create line items for Stripe checkout
+    const lineItems = items.map((item: any) => ({
+      price_data: {
+        currency: 'eur',
+        product_data: {
+          name: item.name,
+          description: `Área: ${item.area}`,
+        },
+        unit_amount: item.price, // Already in cents
+      },
+      quantity: item.quantity,
+    }));
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      customer_email: customerEmail,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        items: JSON.stringify(items),
+        totalItems: items.reduce((sum: number, item: any) => sum + item.quantity, 0),
+      },
     });
     
     return NextResponse.json({
       success: true,
-      data: {
-        sessionId: session.id,
-        url: session.url
-      }
+      url: session.url,
+      sessionId: session.id
     });
     
   } catch (error) {
-    apiLogger.error(requestId, error);
+    console.error('Error creating checkout session:', error);
     return NextResponse.json(
       {
         success: false,
-        error: {
-          code: 'CHECKOUT_SESSION_FAILED',
-          message: 'Error creando sesión de checkout',
-          hint: 'Intenta de nuevo'
-        }
+        error: 'Error creating checkout session'
       },
       { status: 500 }
     );
