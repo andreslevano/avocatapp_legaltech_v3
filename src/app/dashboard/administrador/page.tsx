@@ -142,6 +142,42 @@ export default function AdminDashboard() {
     }
   };
 
+  // MOVED FUNCTIONS TO TOP TO FIX REACT HOOKS RULE
+  const checkAdminPermissions = async () => {
+    try {
+      const response = await fetch('/api/admin/check-permissions');
+      const data = await response.json();
+      
+      if (data.success && data.isAdmin) {
+        setIsAuthorized(true);
+        await fetchData();
+      } else {
+        setIsAuthorized(false);
+        setError('No tienes permisos de administrador');
+      }
+    } catch (error) {
+      console.error('Error checking admin permissions:', error);
+      setIsAuthorized(false);
+      setError('Error verificando permisos de administrador');
+    }
+  };
+
+  const checkSyncStatus = async () => {
+    try {
+      const response = await fetch('/api/admin/sync-users');
+      const data = await response.json();
+      
+      if (data.success) {
+        setSyncStatus(data);
+        if (data.stats) {
+          console.log('Sync status:', data.stats);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking sync status:', error);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     checkAdminPermissions();
@@ -163,23 +199,6 @@ export default function AdminDashboard() {
     return null;
   }
 
-  const checkAdminPermissions = async () => {
-    try {
-      const response = await fetch('/api/admin/check-permissions');
-      const data = await response.json();
-      
-      if (data.success && data.isAdmin) {
-        setIsAuthorized(true);
-        fetchData();
-      } else {
-        setError('Acceso denegado. Se requieren permisos de administrador.');
-        setLoading(false);
-      }
-    } catch (err) {
-      setError('Error verificando permisos de administrador.');
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (selectedUser) {
@@ -351,21 +370,6 @@ export default function AdminDashboard() {
     }).format(amount);
   };
 
-  const checkSyncStatus = async () => {
-    try {
-      const response = await fetch('/api/admin/sync-users');
-      const data = await response.json();
-      
-      if (data.success) {
-        setSyncStatus(data.status);
-      } else {
-        throw new Error(data.error?.message || 'Error checking sync status');
-      }
-    } catch (err) {
-      console.error('Error checking sync status:', err);
-      setError(err instanceof Error ? err.message : 'Error checking sync status');
-    }
-  };
 
   const syncUsers = async () => {
     setIsSyncing(true);
