@@ -62,6 +62,12 @@ export default function AccionTutelaPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  // Estados para OCR - MOVED TO TOP TO FIX REACT HOOKS RULE
+  const [ocrFiles, setOcrFiles] = useState<OCRFile[]>([]);
+  const [isProcessingOcr, setIsProcessingOcr] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [useOcrData, setUseOcrData] = useState(false);
 
   useEffect(() => {
     // Add global error handler for runtime errors
@@ -128,22 +134,8 @@ export default function AccionTutelaPage() {
   useEffect(() => {
     // Only redirect if we've definitely checked auth and confirmed no user
     if (authChecked && isFirebaseReady && !user) {
-      const timer = setTimeout(() => {
-        if (auth && typeof auth.currentUser === 'function') {
-          try {
-            const currentUser = auth.currentUser;
-            if (!currentUser) {
-              router.push('/login');
-            }
-          } catch (error) {
-            console.error('Error checking current user:', error);
-          }
-        } else {
-          router.push('/login');
-        }
-      }, 200);
-      
-      return () => clearTimeout(timer);
+      console.log('Redirecting to login - no user found');
+      router.push('/login');
     }
   }, [authChecked, isFirebaseReady, user, router]);
 
@@ -171,11 +163,6 @@ export default function AccionTutelaPage() {
     );
   }
 
-  // Estados para OCR
-  const [ocrFiles, setOcrFiles] = useState<OCRFile[]>([]);
-  const [isProcessingOcr, setIsProcessingOcr] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-  const [useOcrData, setUseOcrData] = useState(false);
 
   if (!user || !isFirebaseReady) {
     return null;
