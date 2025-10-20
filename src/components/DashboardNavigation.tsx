@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface DashboardNavigationProps {
   currentPlan: string;
@@ -17,24 +19,38 @@ export default function DashboardNavigation({ currentPlan, user }: DashboardNavi
 
   // Check admin status when user changes
   useEffect(() => {
-    const checkAdminStatus = () => {
+    const checkAdminStatus = async () => {
       if (!user?.uid) {
         setIsAdmin(false);
         setAdminChecked(true);
         return;
       }
 
-      // For now, hardcode admin UIDs since API routes don't work with static export
-      const adminUIDs = [
-        'jdwWMhOqVCggIRjLVBtxbvhOwPq1', // Your UID from Firestore
-        'demo_admin_user'
-      ];
-      
-      const isAdminUser = adminUIDs.includes(user.uid);
-      setIsAdmin(isAdminUser);
-      setAdminChecked(true);
-      
-      console.log(`🔐 Client-side admin check for ${user.uid}: ${isAdminUser}`);
+      try {
+        console.log(`🔐 Checking admin status for UID: ${user.uid}`);
+        
+        // Query Firestore users collection for the user's isAdmin attribute
+        const userDocRef = doc(db as any, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const isAdminUser = userData.isAdmin === true;
+          
+          console.log(`📊 User data from Firestore:`, userData);
+          console.log(`🔐 Admin check result for ${user.uid}: ${isAdminUser}`);
+          
+          setIsAdmin(isAdminUser);
+        } else {
+          console.log(`❌ User document not found in Firestore for UID: ${user.uid}`);
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error('❌ Error checking admin status from Firestore:', error);
+        setIsAdmin(false);
+      } finally {
+        setAdminChecked(true);
+      }
     };
 
     checkAdminStatus();

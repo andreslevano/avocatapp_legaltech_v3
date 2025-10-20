@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import DashboardNavigation from '@/components/DashboardNavigation';
 import UserMenu from '@/components/UserMenu';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -69,20 +70,32 @@ export default function AdminDashboard() {
         return;
       }
 
-      // For now, hardcode admin UIDs since API routes don't work with static export
-      const adminUIDs = [
-        'jdwWMhOqVCggIRjLVBtxbvhOwPq1', // Your UID from Firestore
-        'demo_admin_user'
-      ];
+      console.log(`🔐 Checking admin permissions for UID: ${user.uid}`);
       
-      const isAdminUser = adminUIDs.includes(user.uid);
+      // Query Firestore users collection for the user's isAdmin attribute
+      const userDocRef = doc(db as any, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
       
-      if (isAdminUser) {
-        setIsAuthorized(true);
-        await fetchData();
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const isAdminUser = userData.isAdmin === true;
+        
+        console.log('📊 User data from Firestore:', userData);
+        console.log('🔐 Admin check result:', { uid: user.uid, isAdminUser });
+        
+        if (isAdminUser) {
+          console.log('✅ Setting isAuthorized to true');
+          setIsAuthorized(true);
+          await fetchData();
+        } else {
+          console.log('❌ Setting isAuthorized to false - user is not admin');
+          setIsAuthorized(false);
+          setError('No tienes permisos de administrador');
+        }
       } else {
+        console.log(`❌ User document not found in Firestore for UID: ${user.uid}`);
         setIsAuthorized(false);
-        setError('No tienes permisos de administrador');
+        setError('Usuario no encontrado en la base de datos');
       }
     } catch (error) {
       console.error('Error checking admin permissions:', error);
@@ -256,7 +269,9 @@ export default function AdminDashboard() {
 
   // Redirect non-admin users
   useEffect(() => {
+    console.log('🔄 Redirect check:', { adminChecked, isAuthorized });
     if (adminChecked && !isAuthorized) {
+      console.log('🚫 Redirecting non-admin user to dashboard');
       router.push('/dashboard');
     }
   }, [adminChecked, isAuthorized, router]);
