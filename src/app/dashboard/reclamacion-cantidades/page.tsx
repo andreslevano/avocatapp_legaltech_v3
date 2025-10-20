@@ -84,7 +84,7 @@ export default function ReclamacionCantidadesDashboard() {
         </div>
       </header>
 
-      <DashboardNavigation currentPlan="basic" />
+      <DashboardNavigation currentPlan="basic" user={user} />
 
       {/* Dashboard Identification Banner */}
       <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6">

@@ -87,7 +87,7 @@ export default function Dashboard() {
       </header>
 
       {/* Dashboard Navigation */}
-      <DashboardNavigation currentPlan="Abogados" />
+      <DashboardNavigation currentPlan="Abogados" user={user} />
 
       {/* Dashboard Identification Banner */}
       <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">

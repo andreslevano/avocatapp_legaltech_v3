@@ -374,7 +374,7 @@ export default function AccionTutelaPage() {
         </div>
       </header>
 
-      <DashboardNavigation currentPlan="basic" />
+      <DashboardNavigation currentPlan="basic" user={user} />
       <div className="py-8">
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-white rounded-lg shadow-lg p-8">

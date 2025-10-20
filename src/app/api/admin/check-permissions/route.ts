@@ -3,17 +3,29 @@ import { isAdmin } from '@/lib/auth-admin';
 
 export const runtime = 'nodejs' as const;
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    // En un entorno real, obtendrías el UID del token de autenticación
-    const currentUserId = 'demo_admin_user'; // TODO: Obtener del contexto de autenticación
+    // Get user UID from query parameters
+    const { searchParams } = new URL(request.url);
+    const uid = searchParams.get('uid');
     
-    const hasAdminAccess = await isAdmin(currentUserId);
+    if (!uid) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'UID is required',
+          isAdmin: false 
+        },
+        { status: 400 }
+      );
+    }
+    
+    const hasAdminAccess = await isAdmin(uid);
     
     return NextResponse.json({
       success: true,
       isAdmin: hasAdminAccess,
-      userId: currentUserId
+      userId: uid
     });
 
   } catch (error: any) {

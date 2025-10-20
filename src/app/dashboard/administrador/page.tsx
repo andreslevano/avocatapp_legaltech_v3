@@ -59,6 +59,7 @@ export default function AdminDashboard() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<any>(null);
+  const [adminChecked, setAdminChecked] = useState(false);
 
   useEffect(() => {
     // Add global error handler for runtime errors
@@ -145,7 +146,13 @@ export default function AdminDashboard() {
   // MOVED FUNCTIONS TO TOP TO FIX REACT HOOKS RULE
   const checkAdminPermissions = async () => {
     try {
-      const response = await fetch('/api/admin/check-permissions');
+      if (!user?.uid) {
+        setIsAuthorized(false);
+        setAdminChecked(true);
+        return;
+      }
+
+      const response = await fetch(`/api/admin/check-permissions?uid=${user.uid}`);
       const data = await response.json();
       
       if (data.success && data.isAdmin) {
@@ -159,6 +166,8 @@ export default function AdminDashboard() {
       console.error('Error checking admin permissions:', error);
       setIsAuthorized(false);
       setError('Error verificando permisos de administrador');
+    } finally {
+      setAdminChecked(true);
     }
   };
 
@@ -183,6 +192,13 @@ export default function AdminDashboard() {
     checkAdminPermissions();
     checkSyncStatus();
   }, []);
+
+  // Redirect non-admin users
+  useEffect(() => {
+    if (adminChecked && !isAuthorized) {
+      router.push('/dashboard');
+    }
+  }, [adminChecked, isAuthorized, router]);
 
   if (loading) {
     return (
@@ -431,7 +447,7 @@ export default function AdminDashboard() {
   if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <DashboardNavigation currentPlan="basic" />
+        <DashboardNavigation currentPlan="basic" user={user} />
         <div className="py-8">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center">
@@ -492,7 +508,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <DashboardNavigation currentPlan="basic" />
+      <DashboardNavigation currentPlan="basic" user={user} />
       <div className="py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="mb-8">

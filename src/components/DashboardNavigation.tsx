@@ -2,13 +2,42 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { User } from 'firebase/auth';
 
 interface DashboardNavigationProps {
   currentPlan: string;
+  user?: User | null;
 }
 
-export default function DashboardNavigation({ currentPlan }: DashboardNavigationProps) {
+export default function DashboardNavigation({ currentPlan, user }: DashboardNavigationProps) {
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminChecked, setAdminChecked] = useState(false);
+
+  // Check admin status when user changes
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user?.uid) {
+        setIsAdmin(false);
+        setAdminChecked(true);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/admin/check-permissions?uid=${user.uid}`);
+        const data = await response.json();
+        setIsAdmin(data.success && data.isAdmin);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      } finally {
+        setAdminChecked(true);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user?.uid]);
 
   const plans = [
     {
@@ -52,6 +81,14 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
       description: 'Panel de administración del sistema'
     }
   ];
+
+  // Filter plans based on admin status
+  const filteredPlans = plans.filter(plan => {
+    if (plan.id === 'administrador') {
+      return isAdmin && adminChecked;
+    }
+    return true;
+  });
 
   const getColorClasses = (color: string, isActive: boolean) => {
     if (isActive) {
@@ -108,7 +145,7 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
     <div className="bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <nav className="flex space-x-1 sm:space-x-2 lg:space-x-4 overflow-x-auto scrollbar-hide">
-          {plans.map((plan) => {
+          {filteredPlans.map((plan) => {
             const isActive = pathname === plan.path;
             const colorClasses = getColorClasses(plan.color, isActive);
             const activeBorderClasses = getActiveBorderClasses(plan.color);
