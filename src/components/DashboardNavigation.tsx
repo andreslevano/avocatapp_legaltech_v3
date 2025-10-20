@@ -17,23 +17,24 @@ export default function DashboardNavigation({ currentPlan, user }: DashboardNavi
 
   // Check admin status when user changes
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    const checkAdminStatus = () => {
       if (!user?.uid) {
         setIsAdmin(false);
         setAdminChecked(true);
         return;
       }
 
-      try {
-        const response = await fetch(`/api/admin/check-permissions?uid=${user.uid}`);
-        const data = await response.json();
-        setIsAdmin(data.success && data.isAdmin);
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-      } finally {
-        setAdminChecked(true);
-      }
+      // For now, hardcode admin UIDs since API routes don't work with static export
+      const adminUIDs = [
+        'jdwWMhOqVCggIRjLVBtxbvhOwPq1', // Your UID from Firestore
+        'demo_admin_user'
+      ];
+      
+      const isAdminUser = adminUIDs.includes(user.uid);
+      setIsAdmin(isAdminUser);
+      setAdminChecked(true);
+      
+      console.log(`🔐 Client-side admin check for ${user.uid}: ${isAdminUser}`);
     };
 
     checkAdminStatus();

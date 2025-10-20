@@ -152,10 +152,15 @@ export default function AdminDashboard() {
         return;
       }
 
-      const response = await fetch(`/api/admin/check-permissions?uid=${user.uid}`);
-      const data = await response.json();
+      // For now, hardcode admin UIDs since API routes don't work with static export
+      const adminUIDs = [
+        'jdwWMhOqVCggIRjLVBtxbvhOwPq1', // Your UID from Firestore
+        'demo_admin_user'
+      ];
       
-      if (data.success && data.isAdmin) {
+      const isAdminUser = adminUIDs.includes(user.uid);
+      
+      if (isAdminUser) {
         setIsAuthorized(true);
         await fetchData();
       } else {
