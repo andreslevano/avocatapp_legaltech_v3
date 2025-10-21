@@ -549,6 +549,8 @@ export default function EstudiantesDashboard() {
                               hechos: 'Hechos del caso para estudiantes - ejemplo de reclamación de cantidad',
                               peticiones: 'Se solicita el pago de la cantidad adeudada más intereses de demora',
                               tono: 'formal',
+                              userId: user.uid, // Enviar el ID del usuario autenticado
+                              userEmail: user.email, // Enviar el email del usuario para envío automático
                               datosCliente: {
                                 nombre: 'Estudiante Ejemplo',
                                 dni: '12345678A',

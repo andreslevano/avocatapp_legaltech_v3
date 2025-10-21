@@ -94,7 +94,8 @@ export async function POST(request: NextRequest) {
     const filename = `${data.tipoEscrito.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
     
     // Persistir en Firebase Storage y Firestore
-    const uid = 'demo_user'; // TODO: Obtener del auth real
+    const uid = data.userId || 'demo_user'; // Usar el ID del usuario enviado desde el frontend
+    const userEmail = data.userEmail; // Email del usuario para envío automático
     const docId = uuidv4();
     
     try {
@@ -132,6 +133,36 @@ export async function POST(request: NextRequest) {
       
       // Generar URL de descarga
       const downloadUrl = await signedUrlFor(uid, docId, { expiresMinutes: 15 });
+      
+      // Enviar email automático al estudiante si tiene email
+      if (userEmail) {
+        try {
+          const emailResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/send-student-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              to: userEmail,
+              subject: `📄 Documento Legal Generado - ${data.tipoEscrito}`,
+              documentName: data.tipoEscrito,
+              areaLegal: data.areaLegal,
+              filename: filename,
+              downloadUrl: downloadUrl,
+              userId: uid,
+              docId: docId
+            })
+          });
+          
+          if (emailResponse.ok) {
+            console.log(`✅ Email enviado exitosamente a ${userEmail}`);
+          } else {
+            console.error('❌ Error enviando email:', await emailResponse.text());
+          }
+        } catch (emailError) {
+          console.error('❌ Error en envío de email:', emailError);
+        }
+      }
       
       return NextResponse.json({
         success: true,

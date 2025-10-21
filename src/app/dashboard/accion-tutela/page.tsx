@@ -213,6 +213,7 @@ export default function AccionTutelaPage() {
         body: JSON.stringify({
           ...formData,
           userId: 'demo_user',
+          userEmail: 'demo@example.com', // TODO: Obtener del usuario autenticado
           ocrFiles: useOcrData ? ocrFiles : []
         }),
       });

@@ -261,6 +261,37 @@ Confianza: ${(file.confidence * 100).toFixed(1)}%
       // Generar URL de descarga
       const downloadUrl = await signedUrlFor(uid, docId, { expiresMinutes: 15 });
       
+      // Enviar email automático al usuario si tiene email
+      const userEmail = body.userEmail;
+      if (userEmail) {
+        try {
+          const emailResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/send-student-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              to: userEmail,
+              subject: `📄 Acción de Tutela Generada - ${data.derecho}`,
+              documentName: `Acción de Tutela - ${data.derecho}`,
+              areaLegal: 'Derecho Constitucional',
+              filename: `accion-tutela-${data.derecho}-${new Date().toISOString().split('T')[0]}.pdf`,
+              downloadUrl: downloadUrl,
+              userId: uid,
+              docId: docId
+            })
+          });
+          
+          if (emailResponse.ok) {
+            console.log(`✅ Email enviado exitosamente a ${userEmail}`);
+          } else {
+            console.error('❌ Error enviando email:', await emailResponse.text());
+          }
+        } catch (emailError) {
+          console.error('❌ Error en envío de email:', emailError);
+        }
+      }
+      
       const elapsedMs = Date.now() - startTime;
       
       console.log('✅ Tutela generada exitosamente', {
