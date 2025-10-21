@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { signOut, User } from 'firebase/auth';
 import Link from 'next/link';
+import AccountDeactivationModal from './AccountDeactivationModal';
 
 interface UserMenuProps {
   user: User;
@@ -15,6 +16,7 @@ interface UserMenuProps {
 export default function UserMenu({ user, currentPlan = 'Abogados', onSignOut }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeactivationModal, setShowDeactivationModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -35,17 +37,31 @@ export default function UserMenu({ user, currentPlan = 'Abogados', onSignOut }: 
   const handleSignOut = async () => {
     setIsLoading(true);
     try {
-      await signOut(auth);
-      if (onSignOut) {
-        onSignOut();
+      // Check if auth is properly initialized
+      if (auth && typeof auth.signOut === 'function') {
+        await signOut(auth as any);
+        if (onSignOut) {
+          onSignOut();
+        }
+        router.push('/');
+      } else {
+        console.error('Firebase auth not properly initialized');
+        if (onSignOut) {
+          onSignOut();
+        }
+        router.push('/');
       }
-      router.push('/');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     } finally {
       setIsLoading(false);
       setIsOpen(false);
     }
+  };
+
+  const handleDeactivationSuccess = () => {
+    // Sign out user after successful deactivation
+    handleSignOut();
   };
 
   const getUserInitials = (email: string) => {
@@ -234,8 +250,7 @@ export default function UserMenu({ user, currentPlan = 'Abogados', onSignOut }: 
             <button
               onClick={() => {
                 setIsOpen(false);
-                // TODO: Implement close account functionality
-                alert('Función de cerrar cuenta en desarrollo');
+                setShowDeactivationModal(true);
               }}
               className="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
             >
@@ -281,6 +296,14 @@ export default function UserMenu({ user, currentPlan = 'Abogados', onSignOut }: 
           </div>
         </div>
       )}
+
+      {/* Account Deactivation Modal */}
+      <AccountDeactivationModal
+        isOpen={showDeactivationModal}
+        onClose={() => setShowDeactivationModal(false)}
+        user={user}
+        onSuccess={handleDeactivationSuccess}
+      />
     </div>
   );
 }

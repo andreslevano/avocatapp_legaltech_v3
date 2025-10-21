@@ -45,7 +45,7 @@ export async function generateEmailPDF(data: EmailData): Promise<Buffer> {
   });
 }
 
-function generateHeader(doc: PDFDocument, data: EmailData) {
+function generateHeader(doc: any, data: EmailData) {
   // Fondo del header
   doc.rect(0, 0, doc.page.width, 120)
      .fill('#4a90e2');
@@ -89,7 +89,7 @@ function generateHeader(doc: PDFDocument, data: EmailData) {
      .text(`Generado: ${new Date().toLocaleString('es-ES')}`, 50, 210);
 }
 
-function generateStats(doc: PDFDocument, data: EmailData) {
+function generateStats(doc: any, data: EmailData) {
   const { summary } = data.userSummary;
   
   doc.fillColor('#2c3e50')
@@ -133,7 +133,7 @@ function generateStats(doc: PDFDocument, data: EmailData) {
   });
 }
 
-function generateMainContent(doc: PDFDocument, data: EmailData) {
+function generateMainContent(doc: any, data: EmailData) {
   doc.fillColor('#2c3e50')
      .fontSize(16)
      .font('Helvetica-Bold')
@@ -149,7 +149,7 @@ function generateMainContent(doc: PDFDocument, data: EmailData) {
      });
 }
 
-function generateRecommendations(doc: PDFDocument, data: EmailData) {
+function generateRecommendations(doc: any, data: EmailData) {
   // Título de la página
   doc.fillColor('#2c3e50')
      .fontSize(20)
@@ -217,12 +217,12 @@ function generateRecommendations(doc: PDFDocument, data: EmailData) {
   });
 }
 
-function generateNextSteps(doc: PDFDocument, data: EmailData) {
+function generateNextSteps(doc: any, data: EmailData) {
   // Esta función ya está implementada en generateRecommendations
   // Se mantiene para futuras expansiones
 }
 
-function generateTechnicalInfo(doc: PDFDocument, data: EmailData) {
+function generateTechnicalInfo(doc: any, data: EmailData) {
   // Título de la página
   doc.fillColor('#2c3e50')
      .fontSize(20)
@@ -291,7 +291,7 @@ function generateTechnicalInfo(doc: PDFDocument, data: EmailData) {
   });
 }
 
-function generateFooter(doc: PDFDocument, data: EmailData) {
+function generateFooter(doc: any, data: EmailData) {
   const footerY = doc.page.height - 100;
 
   // Línea separadora

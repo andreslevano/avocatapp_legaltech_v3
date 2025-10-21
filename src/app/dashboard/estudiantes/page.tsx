@@ -7,6 +7,7 @@ import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
 import UserMenu from '@/components/UserMenu';
+// import { getFirestore, collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 // Data structure for legal areas and document types with pricing
 const legalAreas = {
@@ -93,6 +94,7 @@ interface Purchase {
 export default function EstudiantesDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const [selectedLegalArea, setSelectedLegalArea] = useState('');
   const [selectedDocumentType, setSelectedDocumentType] = useState('');
@@ -169,6 +171,50 @@ export default function EstudiantesDashboard() {
     }
   ]);
   const router = useRouter();
+
+  // Create a payment intent record and send user to Stripe Checkout Session
+  const handleProceedToPayment = async () => {
+    if (!user || cart.length === 0) return;
+
+    try {
+      const itemCount = cart.reduce((sum, i) => sum + i.quantity, 0);
+      const totalAmount = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+      console.log('Cart items for checkout:', cart);
+      console.log('Item count:', itemCount);
+      console.log('Total amount:', totalAmount);
+
+      // Create checkout session with multiple line items
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: cart.map(item => ({
+            name: item.name,
+            price: Math.round(item.price * 100), // Convert to cents
+            quantity: item.quantity,
+            area: item.area
+          })),
+          customerEmail: user.email,
+          successUrl: `${window.location.origin}/dashboard/estudiantes?payment=success`,
+          cancelUrl: `${window.location.origin}/dashboard/estudiantes?payment=cancelled`
+        })
+      });
+
+      if (response.ok) {
+        const { url } = await response.json();
+        window.location.href = url;
+      } else {
+        console.error('Error creating checkout session');
+        alert('Error al procesar el pago. Inténtalo de nuevo.');
+      }
+    } catch (e) {
+      console.error('Error preparing Stripe checkout:', e);
+      alert('Error al procesar el pago. Inténtalo de nuevo.');
+    }
+  };
 
   // Function to generate and download invoice
   const downloadInvoice = (purchase: Purchase) => {
@@ -339,24 +385,78 @@ export default function EstudiantesDashboard() {
   };
 
   useEffect(() => {
-    // Check if Firebase is properly initialized
+    // Add global error handler for runtime errors
+    const handleRuntimeError = (event: ErrorEvent) => {
+      console.warn('Caught runtime error:', event.error);
+      // Don't let runtime errors affect auth state
+      event.preventDefault();
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.warn('Caught unhandled promise rejection:', event.reason);
+      // Don't let promise rejections affect auth state
+      event.preventDefault();
+    };
+
+    window.addEventListener('error', handleRuntimeError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    // Defer any redirect until we have definitively checked auth state
     if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
       setIsFirebaseReady(true);
-      const unsubscribe = onAuthStateChanged(auth as Auth, (user) => {
-        if (user) {
-          setUser(user);
+      const unsubscribe = onAuthStateChanged(auth as Auth, (u) => {
+        try {
+          setUser(u);
+          setAuthChecked(true);
+          setLoading(false);
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+          setLoading(false);
+          setAuthChecked(true);
+        }
+      });
+      return () => {
+        try {
+          unsubscribe();
+        } catch (error) {
+          console.error('Error unsubscribing from auth:', error);
+        } finally {
+          window.removeEventListener('error', handleRuntimeError);
+          window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        }
+      };
+    } else {
+      setLoading(false);
+      setAuthChecked(true);
+      window.removeEventListener('error', handleRuntimeError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Only redirect if we've definitely checked auth and confirmed no user
+    // Add a small delay to prevent race conditions on page refresh
+    if (authChecked && isFirebaseReady && !user) {
+      const timer = setTimeout(() => {
+        // Double-check auth state before redirecting
+        if (auth && typeof auth.currentUser === 'function') {
+          try {
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+              router.push('/login');
+            }
+          } catch (error) {
+            console.error('Error checking current user:', error);
+            // Don't redirect on error, let the user stay
+          }
         } else {
           router.push('/login');
         }
-        setLoading(false);
-      });
-
-      return () => unsubscribe();
-    } else {
-      setLoading(false);
-      router.push('/login');
+      }, 200); // 200ms delay to allow auth state to stabilize
+      
+      return () => clearTimeout(timer);
     }
-  }, [router]);
+  }, [authChecked, isFirebaseReady, user, router]);
 
   const handleSignOut = async () => {
     if (!isFirebaseReady || !auth || typeof auth.signOut !== 'function') {
@@ -405,7 +505,7 @@ export default function EstudiantesDashboard() {
       </header>
 
       {/* Dashboard Navigation */}
-      <DashboardNavigation currentPlan="Estudiantes" />
+      <DashboardNavigation currentPlan="Estudiantes" user={user} />
 
       {/* Dashboard Identification Banner */}
       <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
@@ -718,23 +818,7 @@ export default function EstudiantesDashboard() {
                         🗑️ Vaciar Carrito
                       </button>
                       <button 
-                        onClick={() => {
-                          // Simulate adding purchase to history
-                          const newPurchase: Purchase = {
-                            id: (purchaseHistory.length + 1).toString(),
-                            date: new Date().toISOString().split('T')[0],
-                            items: [...cart],
-                            total: cart.reduce((total, item) => total + (item.price * item.quantity), 0),
-                            status: 'completed'
-                          };
-                          setPurchaseHistory([newPurchase, ...purchaseHistory]);
-                          setCart([]); // Clear cart after purchase
-                          
-                          // Auto-download invoice after purchase
-                          setTimeout(() => {
-                            downloadInvoice(newPurchase);
-                          }, 500);
-                        }}
+                        onClick={handleProceedToPayment}
                         className="flex-1 btn-primary"
                       >
                         💳 Proceder al Pago

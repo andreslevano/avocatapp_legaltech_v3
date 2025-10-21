@@ -154,7 +154,7 @@ export interface GeneratedDocument {
   id: string;
   title: string;
   content: string;
-  type: 'reclamacion_cantidades';
+  type: 'reclamacion_cantidades' | 'accion_tutela';
   generatedAt: Date;
   downloadUrl?: string;
 }

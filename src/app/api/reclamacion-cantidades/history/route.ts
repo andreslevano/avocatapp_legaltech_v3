@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { obtenerHistorial, obtenerResumenHistorial } from '@/lib/historial';
-import { apiLogger } from '@/lib/logger';
+// import { apiLogger } from '@/lib/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { getHistoryByUser } from '@/lib/simple-storage';
 
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     const elapsedMs = Date.now() - startTime;
-    console.error('Historial error', { requestId, error: error.message, elapsedMs });
+    console.error('Historial error', { requestId, error: error instanceof Error ? error.message : String(error), elapsedMs });
     
     // Fallback al historial en memoria
     try {
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
           }
         }
       });
-    } catch (fallbackError) {
+    } catch (_fallbackError) {
       return NextResponse.json(
         {
           success: false,

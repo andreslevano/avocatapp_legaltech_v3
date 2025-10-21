@@ -3,7 +3,7 @@ import { db } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs' as const;
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     console.log('🔍 Obteniendo usuarios de Firestore...');
     
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        users: users.map(user => ({
+        users: users.map((user: any) => ({
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,

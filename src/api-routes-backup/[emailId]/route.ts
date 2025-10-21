@@ -29,7 +29,7 @@ export async function GET(
       ...emailDoc.data()
     };
 
-    console.log(`✅ Email encontrado: ${emailData.emailType}`);
+    console.log(`✅ Email encontrado: ${emailId}`);
 
     return NextResponse.json({
       success: true,

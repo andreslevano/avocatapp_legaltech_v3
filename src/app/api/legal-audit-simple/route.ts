@@ -77,7 +77,7 @@ ${body.textoBase}
 
 ## 6. DOCUMENTOS APORTADOS
 
-${body.contextoProcesal.documentos.map((doc, index) => `DOC-${index + 1}: ${doc}`).join('\n')}
+${body.contextoProcesal.documentos.map((doc: any, index: number) => `DOC-${index + 1}: ${doc}`).join('\n')}
 
 ## 7. LUGAR, FECHA Y FIRMA
 

@@ -6,12 +6,14 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import UserMenu from '@/components/UserMenu';
+import { useI18n } from '@/hooks/useI18n';
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const router = useRouter();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
@@ -69,14 +71,14 @@ export default function Profile() {
         <div className="space-y-8">
           {/* Page Header */}
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Mi Perfil</h1>
-            <p className="mt-2 text-gray-600">Gestiona tu información personal y configuración de cuenta</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('profile.title')}</h1>
+            <p className="mt-2 text-gray-600">{t('profile.subtitle')}</p>
           </div>
 
           {/* Profile Information Card */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Información Personal</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t('profile.personalInfo')}</h2>
             </div>
             <div className="px-6 py-6">
               <div className="flex items-center space-x-6">
@@ -87,11 +89,11 @@ export default function Profile() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-gray-900">
-                    {user.displayName || 'Usuario'}
+                    {user.displayName || t('profile.user')}
                   </h3>
                   <p className="text-gray-600">{user.email}</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Miembro desde {new Date(user.metadata.creationTime || '').toLocaleDateString('es-ES')}
+                    {t('profile.memberSince')} {new Date(user.metadata.creationTime || '').toLocaleDateString('es-ES')}
                   </p>
                 </div>
               </div>
@@ -101,24 +103,24 @@ export default function Profile() {
           {/* Account Settings Card */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Configuración de Cuenta</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t('profile.accountSettings')}</h2>
             </div>
             <div className="px-6 py-6 space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre completo
+                  {t('profile.fullName')}
                 </label>
                 <input
                   type="text"
                   defaultValue={user.displayName || ''}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Ingresa tu nombre completo"
+                  placeholder={t('profile.enterFullName')}
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Correo electrónico
+                  {t('profile.email')}
                 </label>
                 <input
                   type="email"
@@ -126,23 +128,23 @@ export default function Profile() {
                   disabled
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
                 />
-                <p className="mt-1 text-sm text-gray-500">El correo electrónico no se puede cambiar</p>
+                <p className="mt-1 text-sm text-gray-500">{t('profile.emailCannotChange')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Teléfono
+                  {t('profile.phone')}
                 </label>
                 <input
                   type="tel"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Ingresa tu número de teléfono"
+                  placeholder={t('profile.enterPhone')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Especialidad legal
+                  {t('profile.legalSpecialty')}
                 </label>
                 <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <option>Derecho Civil</option>
@@ -160,17 +162,17 @@ export default function Profile() {
           {/* Subscription Information Card */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Información de Suscripción</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t('profile.subscriptionInfo')}</h2>
             </div>
             <div className="px-6 py-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Plan Abogados</h3>
-                  <p className="text-gray-600">Acceso completo a todas las funcionalidades</p>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('profile.lawyerPlan')}</h3>
+                  <p className="text-gray-600">{t('profile.fullAccess')}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-blue-600">€29.99/mes</p>
-                  <p className="text-sm text-gray-500">Renovación automática</p>
+                  <p className="text-sm text-gray-500">{t('profile.autoRenewal')}</p>
                 </div>
               </div>
               <div className="mt-6">
@@ -178,7 +180,7 @@ export default function Profile() {
                   href="/subscription"
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  Gestionar Suscripción
+                  {t('profile.manageSubscription')}
                 </Link>
               </div>
             </div>
@@ -187,10 +189,10 @@ export default function Profile() {
           {/* Actions */}
           <div className="flex justify-end space-x-4">
             <button className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-              Cancelar
+              {t('profile.cancel')}
             </button>
             <button className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-              Guardar Cambios
+              {t('profile.saveChanges')}
             </button>
           </div>
         </div>

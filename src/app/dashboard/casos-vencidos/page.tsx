@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
+import { useI18n } from '@/hooks/useI18n';
 
 interface ExpiredCase {
   id: string;
@@ -29,6 +30,7 @@ export default function ExpiredCasesPage() {
   const [expiredCases, setExpiredCases] = useState<ExpiredCase[]>([]);
   const [casesLoading, setCasesLoading] = useState(true);
   const router = useRouter();
+  const { t } = useI18n();
 
   useEffect(() => {
     // Check if Firebase is properly initialized
@@ -197,7 +199,7 @@ export default function ExpiredCasesPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -222,13 +224,13 @@ export default function ExpiredCasesPage() {
             
             <div className="flex items-center space-x-4">
               <span className="text-gray-700">
-                Bienvenido, {user.email}
+                {t('dashboard.welcome')}, {user.email}
               </span>
               <button
                 onClick={handleSignOut}
                 className="btn-secondary"
               >
-                Cerrar Sesión
+                {t('navigation.logout')}
               </button>
             </div>
           </div>
@@ -249,10 +251,10 @@ export default function ExpiredCasesPage() {
             </div>
             <div className="ml-3">
               <h1 className="text-lg font-semibold text-orange-800">
-                Casos Vencidos
+                {t('dashboard.overdueCases.title')}
               </h1>
               <p className="text-sm text-orange-700">
-                Casos que han superado su fecha límite
+                {t('dashboard.overdueCases.subtitle')}
               </p>
             </div>
           </div>
@@ -260,7 +262,7 @@ export default function ExpiredCasesPage() {
             href="/dashboard"
             className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
           >
-            ← Volver al Dashboard
+            ← {t('dashboard.backToDashboard')}
           </Link>
         </div>
       </div>
@@ -274,25 +276,25 @@ export default function ExpiredCasesPage() {
               <div className="text-2xl font-bold text-orange-600">
                 {expiredCases.length}
               </div>
-              <div className="text-sm text-gray-600">Total Vencidos</div>
+              <div className="text-sm text-gray-600">{t('dashboard.overdueCases.totalOverdue')}</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div className="text-2xl font-bold text-red-600">
                 {expiredCases.filter(c => c.priority === 'critical').length}
               </div>
-              <div className="text-sm text-gray-600">Críticos</div>
+              <div className="text-sm text-gray-600">{t('dashboard.overdueCases.critical')}</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div className="text-2xl font-bold text-orange-600">
                 {expiredCases.filter(c => c.priority === 'urgent').length}
               </div>
-              <div className="text-sm text-gray-600">Urgentes</div>
+              <div className="text-sm text-gray-600">{t('dashboard.overdueCases.urgent')}</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div className="text-2xl font-bold text-yellow-600">
                 {Math.round(expiredCases.reduce((acc, c) => acc + c.daysOverdue, 0) / expiredCases.length)}
               </div>
-              <div className="text-sm text-gray-600">Días Promedio</div>
+              <div className="text-sm text-gray-600">{t('dashboard.overdueCases.averageDays')}</div>
             </div>
           </div>
 

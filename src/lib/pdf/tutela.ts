@@ -1,7 +1,7 @@
 import PDFDocument from 'pdfkit';
 import { TutelaModel } from '../validate-tutela';
 
-export function renderTutelaPDF(modelo: TutelaModel): Buffer {
+export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
   const doc = new PDFDocument({
     size: 'A4',
     margins: {
@@ -15,7 +15,7 @@ export function renderTutelaPDF(modelo: TutelaModel): Buffer {
   const buffers: Buffer[] = [];
   doc.on('data', buffers.push.bind(buffers));
 
-  return new Promise((resolve, reject) => {
+  return new Promise<Buffer>((resolve, reject) => {
     doc.on('end', () => {
       const pdfData = Buffer.concat(buffers);
       resolve(pdfData);
@@ -241,9 +241,9 @@ export function renderTutelaPDF(modelo: TutelaModel): Buffer {
     };
 
     doc.on('pageAdded', () => {
-      const currentPage = doc.page;
+      const currentPageNumber = doc.bufferedPageRange().count;
       const totalPages = doc.bufferedPageRange().count;
-      pageNumber(currentPage, totalPages);
+      pageNumber(currentPageNumber, totalPages);
     });
 
     doc.end();

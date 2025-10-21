@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validationResult.data;
-    const uid = data.userId || 'demo_user';
+    // const uid = data.userId || 'demo_user';
     
     // Log request
     console.log(`📝 Generando Reclamación de Cantidades para ${data.nombreTrabajador}`, {
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     });
 
     const content = result.content;
-    const timeMs = result.metadata?.processingTime || 0;
+    const timeMs = 0; // TODO: Get from result metadata when available
     const mock = false;
 
     if (!content) {
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     // Devolver PDF directamente
     const filename = `reclamacion-cantidades-${data.nombreTrabajador}-${new Date().toISOString().split('T')[0]}.pdf`;
     
-    return new Response(pdfBuffer, {
+    return new Response(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

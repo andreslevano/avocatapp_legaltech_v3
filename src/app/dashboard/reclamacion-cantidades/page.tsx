@@ -2,35 +2,56 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import DashboardNavigation from '@/components/DashboardNavigation';
 import ReclamacionProcessSimple from '@/components/ReclamacionProcessSimple';
 import PurchaseHistoryComponent from '@/components/PurchaseHistory';
 import UserMenu from '@/components/UserMenu';
 
 export default function ReclamacionCantidadesDashboard() {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
+  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    setMounted(true);
-    // Simular carga rápida para demo
-    const timer = setTimeout(() => {
+    // Defer any redirect until we have definitively checked auth state
+    if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
+      setIsFirebaseReady(true);
+      const unsubscribe = onAuthStateChanged(auth as Auth, (u) => {
+        setUser(u);
+        setAuthChecked(true);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    } else {
       setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
+      setAuthChecked(true);
+    }
   }, []);
 
+  useEffect(() => {
+    if (authChecked && !user) {
+      router.push('/login');
+    }
+  }, [authChecked, user, router]);
+
   const handleSignOut = async () => {
+    if (!isFirebaseReady || !auth || typeof auth.signOut !== 'function') {
+      return;
+    }
+
     try {
+      await signOut(auth as Auth);
       router.push('/');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
   };
 
-  if (!mounted || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -41,9 +62,29 @@ export default function ReclamacionCantidadesDashboard() {
     );
   }
 
+  if (!user || !isFirebaseReady) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardNavigation />
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center mr-3">
+                <span className="text-white font-bold text-lg">R</span>
+              </div>
+              <span className="text-xl font-bold text-gray-900">Reclamación de Cantidades</span>
+            </div>
+            
+            <UserMenu user={user} currentPlan="Reclamación" onSignOut={handleSignOut} />
+          </div>
+        </div>
+      </header>
+
+      <DashboardNavigation currentPlan="basic" user={user} />
 
       {/* Dashboard Identification Banner */}
       <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6">

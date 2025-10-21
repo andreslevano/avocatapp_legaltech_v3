@@ -178,15 +178,19 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
           }]
         });
         const buffer = await Packer.toBuffer(wordDoc);
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        const blob = new Blob([new Uint8Array(buffer)], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${document.documentTitle}.docx`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        
+        // Only create download link in browser environment
+        if (typeof window !== 'undefined') {
+          const a = window.document.createElement('a');
+          a.href = url;
+          a.download = `${document.documentTitle}.docx`;
+          window.document.body.appendChild(a);
+          a.click();
+          window.document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
       }
     } catch (error) {
       console.error('Error downloading document:', error);

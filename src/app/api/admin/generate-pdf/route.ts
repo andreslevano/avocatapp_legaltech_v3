@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       elapsedMs: Date.now() - startTime
     });
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="email_fidelizacion_${userData.uid}.pdf"`,
@@ -69,7 +69,7 @@ async function generateSimplePDF(userData: any, userSummary: any): Promise<Buffe
         bufferPages: true,
       });
 
-      let buffers: Buffer[] = [];
+      const buffers: Buffer[] = [];
       doc.on('data', buffers.push.bind(buffers));
       doc.on('end', () => {
         resolve(Buffer.concat(buffers));

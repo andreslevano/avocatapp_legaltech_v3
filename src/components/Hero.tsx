@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useI18n } from '@/hooks/useI18n';
 
 export default function Hero() {
   const [email, setEmail] = useState('');
+  const { t } = useI18n();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,25 +19,21 @@ export default function Hero() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           {/* Main Headline */}
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Revolucionando
-            <span className="text-primary-600 block">la Práctica Legal</span>
-            con IA
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6" dangerouslySetInnerHTML={{ __html: t('hero.title') }}>
           </h1>
           
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Optimiza tu flujo de trabajo legal con análisis inteligente de documentos, 
-            resúmenes de casos e investigación legal automatizada impulsada por tecnología de IA de vanguardia.
+            {t('hero.subtitle')}
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link href="/signup" className="btn-primary text-lg px-8 py-3">
-              Prueba Gratuita
+              {t('hero.cta')}
             </Link>
             <Link href="#demo" className="btn-secondary text-lg px-8 py-3">
-              Ver Demo
+              {t('hero.learnMore')}
             </Link>
           </div>
 
@@ -44,24 +42,24 @@ export default function Hero() {
             <form onSubmit={handleSubmit} className="flex gap-2">
               <input
                 type="email"
-                placeholder="Ingresa tu email para actualizaciones"
+                placeholder={t('hero.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-field flex-1"
                 required
               />
               <button type="submit" className="btn-primary whitespace-nowrap">
-                Suscribirse
+                {t('hero.subscribe')}
               </button>
             </form>
             <p className="text-sm text-gray-500 mt-2">
-              Recibe notificaciones sobre nuevas funciones y actualizaciones
+              {t('hero.subscribeInfo')}
             </p>
           </div>
 
           {/* Trust Indicators */}
           <div className="mt-16">
-            <p className="text-sm text-gray-500 mb-4">Confiado por bufetes líderes</p>
+            <p className="text-sm text-gray-500 mb-4">{t('hero.trustedBy')}</p>
             <div className="flex justify-center items-center space-x-8 opacity-60">
               <div className="w-24 h-12 bg-gray-300 rounded flex items-center justify-center">
                 <span className="text-gray-600 font-semibold">Bufete A</span>

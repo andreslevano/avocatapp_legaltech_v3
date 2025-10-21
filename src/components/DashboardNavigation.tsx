@@ -2,13 +2,59 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface DashboardNavigationProps {
   currentPlan: string;
+  user?: User | null;
 }
 
-export default function DashboardNavigation({ currentPlan }: DashboardNavigationProps) {
+export default function DashboardNavigation({ currentPlan, user }: DashboardNavigationProps) {
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminChecked, setAdminChecked] = useState(false);
+
+  // Check admin status when user changes
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user?.uid) {
+        setIsAdmin(false);
+        setAdminChecked(true);
+        return;
+      }
+
+      try {
+        console.log(`🔐 Checking admin status for UID: ${user.uid}`);
+        
+        // Query Firestore users collection for the user's isAdmin attribute
+        const userDocRef = doc(db as any, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const isAdminUser = userData.isAdmin === true;
+          
+          console.log(`📊 User data from Firestore:`, userData);
+          console.log(`🔐 Admin check result for ${user.uid}: ${isAdminUser}`);
+          
+          setIsAdmin(isAdminUser);
+        } else {
+          console.log(`❌ User document not found in Firestore for UID: ${user.uid}`);
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error('❌ Error checking admin status from Firestore:', error);
+        setIsAdmin(false);
+      } finally {
+        setAdminChecked(true);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user?.uid]);
 
   const plans = [
     {
@@ -52,6 +98,14 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
       description: 'Panel de administración del sistema'
     }
   ];
+
+  // Filter plans based on admin status
+  const filteredPlans = plans.filter(plan => {
+    if (plan.id === 'administrador') {
+      return isAdmin && adminChecked;
+    }
+    return true;
+  });
 
   const getColorClasses = (color: string, isActive: boolean) => {
     if (isActive) {
@@ -108,7 +162,7 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
     <div className="bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <nav className="flex space-x-1 sm:space-x-2 lg:space-x-4 overflow-x-auto scrollbar-hide">
-          {plans.map((plan) => {
+          {filteredPlans.map((plan) => {
             const isActive = pathname === plan.path;
             const colorClasses = getColorClasses(plan.color, isActive);
             const activeBorderClasses = getActiveBorderClasses(plan.color);

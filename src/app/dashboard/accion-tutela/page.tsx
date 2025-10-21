@@ -1,8 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import DashboardNavigation from '@/components/DashboardNavigation';
+import UserMenu from '@/components/UserMenu';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface TutelaFormData {
   vulnerador: string;
@@ -40,6 +44,10 @@ const DERECHOS_OPTIONS = [
 
 export default function AccionTutelaPage() {
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [formData, setFormData] = useState<TutelaFormData>({
     vulnerador: '',
     hechos: '',
@@ -55,11 +63,110 @@ export default function AccionTutelaPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
-  // Estados para OCR
+  // Estados para OCR - MOVED TO TOP TO FIX REACT HOOKS RULE
   const [ocrFiles, setOcrFiles] = useState<OCRFile[]>([]);
   const [isProcessingOcr, setIsProcessingOcr] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [useOcrData, setUseOcrData] = useState(false);
+
+  useEffect(() => {
+    // Add global error handler for runtime errors
+    const handleRuntimeError = (event: ErrorEvent) => {
+      console.warn('Caught runtime error:', event.error);
+      // Don't prevent default for React errors, just log them
+      if (event.error?.message?.includes('Minified React error') || 
+          event.error?.message?.includes('runtime.lastError') ||
+          event.error?.message?.includes('message port closed')) {
+        console.error('Runtime error detected:', event.error);
+        // Don't prevent default for these specific errors
+        return;
+      }
+      event.preventDefault();
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.warn('Caught unhandled promise rejection:', event.reason);
+      // Don't prevent default for React-related rejections
+      if (event.reason?.message?.includes('React') || 
+          event.reason?.message?.includes('useState') ||
+          event.reason?.message?.includes('runtime.lastError')) {
+        console.error('Runtime-related promise rejection:', event.reason);
+        return;
+      }
+      event.preventDefault();
+    };
+
+    window.addEventListener('error', handleRuntimeError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    // Defer any redirect until we have definitively checked auth state
+    if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
+      setIsFirebaseReady(true);
+      const unsubscribe = onAuthStateChanged(auth as Auth, (u) => {
+        try {
+          setUser(u);
+          setAuthChecked(true);
+          setLoading(false);
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+          setLoading(false);
+          setAuthChecked(true);
+        }
+      });
+      return () => {
+        try {
+          unsubscribe();
+        } catch (error) {
+          console.error('Error unsubscribing from auth:', error);
+        } finally {
+          window.removeEventListener('error', handleRuntimeError);
+          window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        }
+      };
+    } else {
+      setLoading(false);
+      setAuthChecked(true);
+      window.removeEventListener('error', handleRuntimeError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Only redirect if we've definitely checked auth and confirmed no user
+    if (authChecked && isFirebaseReady && !user) {
+      console.log('Redirecting to login - no user found');
+      router.push('/login');
+    }
+  }, [authChecked, isFirebaseReady, user, router]);
+
+  const handleSignOut = async () => {
+    if (!isFirebaseReady || !auth || typeof auth.signOut !== 'function') {
+      return;
+    }
+
+    try {
+      await signOut(auth as Auth);
+      router.push('/');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando Acción de Tutela...</p>
+        </div>
+      </div>
+    );
+  }
+
+
+  if (!user || !isFirebaseReady) {
+    return null;
+  }
 
   const handleInputChange = (field: keyof TutelaFormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -250,8 +357,25 @@ export default function AccionTutelaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardNavigation />
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center mr-3">
+                <span className="text-white font-bold text-lg">T</span>
+              </div>
+              <span className="text-xl font-bold text-gray-900">Acción de Tutela</span>
+            </div>
+            
+            <UserMenu user={user} currentPlan="Tutela" onSignOut={handleSignOut} />
+          </div>
+        </div>
+      </header>
+
+      <DashboardNavigation currentPlan="basic" user={user} />
       <div className="py-8">
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-white rounded-lg shadow-lg p-8">
@@ -586,6 +710,7 @@ export default function AccionTutelaPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

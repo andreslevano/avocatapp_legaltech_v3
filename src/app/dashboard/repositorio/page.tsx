@@ -238,9 +238,7 @@ export default function RepositorioPage() {
       setCurrentPath([...currentPath, file.name]);
     } else {
       setSelectedFile(file);
-      if (file.type !== 'folder') {
-        loadVersionHistory(file.id);
-      }
+      loadVersionHistory(file.id);
     }
   };
 

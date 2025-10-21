@@ -67,7 +67,7 @@ ESTADÍSTICAS DE USO:
 - Tiempo promedio de procesamiento: ${userSummary.summary.averageProcessingTime}ms
 
 GENERACIONES RECIENTES:
-${userSummary.recentGenerations.slice(0, 3).map(gen => 
+${userSummary.recentGenerations.slice(0, 3).map((gen: any) => 
   `- ${gen.tipoEscrito} (${gen.areaLegal}) - ${new Date(gen.createdAt).toLocaleDateString('es-ES')}`
 ).join('\n')}
 
@@ -82,7 +82,7 @@ STRICT JSON ONLY.
 
     console.log('Generando email de fidelización', { requestId, userId: userData.uid });
 
-    const { content, timeMs, mock } = await callChat({
+    const result = await callChat({
       model: process.env.USE_CHEAPER_MODEL === 'true' ? 'gpt-4o-mini' : 'gpt-4o-2024-08-06',
       system: EMAIL_SYSTEM_PROMPT,
       user: userPrompt,
@@ -90,6 +90,8 @@ STRICT JSON ONLY.
       top_p: 1
     });
 
+    const { content, timeMs, mock } = result as any;
+    
     if (!content) {
       throw new Error('No se recibió contenido del modelo');
     }

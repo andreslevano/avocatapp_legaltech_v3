@@ -37,7 +37,7 @@
     "object-inspect": "^1.13.4",
     "openai": "^4.0.0",
     "pdfkit": "^0.17.2",
-    "pino": "^9.11.0",
+    "pino": "^9.13.1",
     "postcss": "^8.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",

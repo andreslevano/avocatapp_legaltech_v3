@@ -2,25 +2,27 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useI18n } from '@/hooks/useI18n';
 
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(true);
+  const { t } = useI18n();
 
   const plans = [
     {
-      name: '🇪🇸 Estudiantes',
+      name: t('pricing.students.title'),
       price: '3,00',
-      period: 'escrito',
-      description: 'Acceso completo para estudiantes de derecho y pasantes',
+      period: t('pricing.students.period'),
+      description: t('pricing.students.description'),
       features: [
-        'Análisis de Documentos con IA (50 docs/mes)',
-        'Investigación Legal Básica',
-        'Portal de Clientes (hasta 10 clientes)',
-        'Soporte por Email',
-        'Análisis Básico',
+        t('pricing.students.aiDocs'),
+        t('pricing.students.basicLegalResearch'),
+        t('pricing.students.clientPortal'),
+        t('pricing.students.emailSupport'),
+        t('pricing.students.basicAnalytics'),
       ],
       popular: false,
-      cta: 'Empezar ahora',
+      cta: t('pricing.students.startNow'),
       href: '/signup?plan=estudiantes',
       isFixedPrice: true,
     },

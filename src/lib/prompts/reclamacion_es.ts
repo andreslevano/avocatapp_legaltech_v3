@@ -48,8 +48,8 @@ export function buildUserPrompt(payload: ReclamacionCantidadRequest): string {
 
   return `
 DATOS
-Acreedor: ${payload.acreedor.nombre} (${payload.acreedor.nif || "[DNI/NIE]"}), domicilio: ${payload.acreedor.domicilio || "[DOMICILIO]"}
-Deudor: ${payload.deudor.nombre} (${payload.deudor.nif || "[DNI/NIE]"}), domicilio: ${payload.deudor.domicilio || "[DOMICILIO]"}
+Acreedor: ${payload.acreedor?.nombre || "[NOMBRE]"} (${payload.acreedor?.nif || "[DNI/NIE]"}), domicilio: ${payload.acreedor?.domicilio || "[DOMICILIO]"}
+Deudor: ${payload.deudor?.nombre || "[NOMBRE]"} (${payload.deudor?.nif || "[DNI/NIE]"}), domicilio: ${payload.deudor?.domicilio || "[DOMICILIO]"}
 Cuantía principal: ${cuantia} EUR (${payload.cuantiaOverride ? 'editada por usuario' : 'detectada por OCR'})
 Base negocial: ${baseNegocial}
 Hechos resumidos: ${hechos}
@@ -159,12 +159,12 @@ function generarBaseNegocialDesdeOCR(ocr: any): string {
 export function puedeSerMonitorio(payload: ReclamacionCantidadRequest): boolean {
   // Monitorio requiere: deuda dineraria, líquida, determinada, vencida y exigible
   const tieneDocumentos = (payload.docs && payload.docs.length > 0) || 
-                         (payload.documentosOCR && payload.documentosOCR.length > 0);
+                         (payload.ocr && payload.ocr.files && payload.ocr.files.length > 0);
   
-  const cuantiaValida = payload.cuantia > 0;
+  const cuantiaValida = (payload.cantidadReclamada || 0) > 0;
   
   // Si hay documentos OCR con alta precisión, es más probable que proceda monitorio
-  const documentosConfiables = payload.documentosOCR?.some(doc => doc.precision >= 80) || false;
+  const documentosConfiables = payload.ocr?.files?.some(doc => (doc.confidence || 0) >= 80) || false;
   
   return tieneDocumentos && cuantiaValida && (documentosConfiables || payload.docs.length > 0);
 }
@@ -178,7 +178,7 @@ export function puedeSerProSe(payload: ReclamacionCantidadRequest, cauceRecomend
   
   if (cauceRecomendado === 'verbal') {
     // Verbal: art. 31.2 LEC - NO exige abogado si cuantía ≤ 2.000€
-    return payload.cuantia <= 2000;
+    return (payload.cantidadReclamada || 0) <= 2000;
   }
   
   return false;

@@ -175,8 +175,8 @@ export default function ReclamacionProcessSimple({ onComplete }: ReclamacionProc
           fecha: doc.uploadDate.toISOString(),
           relevancia: doc.category?.required ? 'Alta' : 'Media'
         })),
-        resumen: documentSummary?.recommendations || [],
-        completitud: documentSummary?.completenessScore || 0
+        resumen: [], // TODO: Add recommendations to DocumentSummary interface
+        completitud: 0 // TODO: Add completenessScore to DocumentSummary interface
       };
 
       const response = await fetch('/api/analisis-exito', {

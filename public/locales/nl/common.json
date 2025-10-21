@@ -1,0 +1,240 @@
+{
+  "navigation": {
+    "features": "Functies",
+    "pricing": "Prijzen",
+    "about": "Over Ons",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "logout": "Uitloggen",
+    "login": "Inloggen",
+    "signup": "Aan de Slag"
+  },
+  "hero": {
+    "title": "Revolutie in<span class=\"text-primary-600 block\">de Juridische Praktijk</span>met AI",
+    "subtitle": "Optimaliseer uw juridische workflow met intelligente documentanalyse, zaakssamenvattingen en geautomatiseerd juridisch onderzoek aangedreven door geavanceerde AI-technologie.",
+    "cta": "Gratis Proefperiode",
+    "learnMore": "Bekijk Demo",
+    "emailPlaceholder": "Voer uw e-mail in voor updates",
+    "subscribe": "Abonneren",
+    "subscribeInfo": "Ontvang meldingen over nieuwe functies en updates",
+    "trustedBy": "Vertrouwd door toonaangevende advocatenkantoren"
+  },
+  "features": {
+    "title": "Krachtige Functies voor Moderne Juridische Praktijk",
+    "subtitle": "Ons AI-aangedreven platform combineert geavanceerde technologie met diepgaande juridische expertise om te transformeren hoe u werkt met zaken en cliënten.",
+    "documentAnalysis": {
+      "title": "AI Documentanalyse",
+      "description": "Intelligente analyse van juridische documenten met geautomatiseerde extractie van belangrijke informatie, clausules en potentiële risico's."
+    },
+    "legalResearch": {
+      "title": "Juridisch Onderzoek Assistent",
+      "description": "AI-aangedreven juridisch onderzoek dat jurisprudentie, wetten en regelgeving analyseert om uitgebreide inzichten en precedenten te bieden."
+    },
+    "caseSummaries": {
+      "title": "Zaakssamenvattingen",
+      "description": "Geautomatiseerde generatie van beknopte zaakssamenvattingen, met nadruk op belangrijke feiten, juridische kwesties en resultaten voor snelle referentie."
+    },
+    "clientManagement": {
+      "title": "Cliëntbeheer",
+      "description": "Uitgebreide cliëntportal met veilige documentdeling, communicatietools en factureringsintegratie."
+    },
+    "analytics": {
+      "title": "Analytics & Rapporten",
+      "description": "Geavanceerd analytics dashboard dat inzichten biedt over zaaksprestaties, tijdbijhouden en bedrijfsmetrieken."
+    },
+    "security": {
+      "title": "Bedrijfsbeveiliging",
+      "description": "Bankniveau beveiliging met end-to-end encryptie, rolgebaseerde toegangscontrole en naleving van juridische industrienormen."
+    }
+  },
+  "pricing": {
+    "title": "Eenvoudige en Transparante Prijzen",
+    "subtitle": "Kies het plan dat bij uw praktijk past. Alle plannen bevatten een 14-daagse gratis proefperiode zonder creditcard vereist.",
+    "students": {
+      "title": "🇪🇸 Studenten",
+      "description": "Volledige toegang voor rechtenstudenten en stagiaires",
+      "price": "€3,00",
+      "period": "/document",
+      "aiDocs": "AI Documentanalyse (50 doc/maand)",
+      "basicLegalResearch": "Basis Juridisch Onderzoek",
+      "clientPortal": "Cliëntportaal (tot 10 cliënten)",
+      "emailSupport": "E-mailondersteuning",
+      "basicAnalytics": "Basis Analyse",
+      "startNow": "Start Nu"
+    },
+    "tutela": {
+      "title": "🇨🇴 Tutela Actie",
+      "description": "Gespecialiseerd in Colombiaanse tutela procedures",
+      "price": "$50.000",
+      "period": "/document"
+    },
+    "reclamacion": {
+      "title": "🇪🇸 Kwantiteitsclaims",
+      "description": "Gefocust op kwantiteitsclaims in Spanje",
+      "price": "€10,00",
+      "period": "/document"
+    },
+    "lawyers": {
+      "title": "🌍 Advocaten",
+      "description": "Volledige oplossing voor gevestigde advocatenkantoren",
+      "price": "€550,00",
+      "period": "/jaar"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Inloggen",
+      "subtitle": "Toegang tot uw Avocat account",
+      "email": "E-mail",
+      "password": "Wachtwoord",
+      "loginButton": "Inloggen",
+      "loggingIn": "Inloggen...",
+      "forgotPassword": "Wachtwoord vergeten?",
+      "noAccount": "Geen account?",
+      "signupLink": "Registreer hier"
+    },
+    "signup": {
+      "title": "Maak je account aan",
+      "subtitle": "Word lid van Avocat en revolutioneer je juridische praktijk",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "name": "Volledige naam",
+      "email": "E-mail",
+      "password": "Wachtwoord",
+      "confirmPassword": "Bevestig wachtwoord",
+      "createAccount": "Account Aanmaken",
+      "creating": "Account aanmaken...",
+      "haveAccount": "Al een account?",
+      "loginLink": "Log hier in"
+    }
+  },
+  "dashboard": {
+    "title": "Advocaten Dashboard",
+    "subtitle": "Volledig panel voor juridische professionals met geavanceerde AI-tools",
+    "controlPanel": "Controlepaneel",
+    "welcome": "Welkom bij Avocat!",
+    "welcomeMessage": "Uw account is succesvol aangemaakt. Begin met het verkennen van de functies van ons LegalTech-platform.",
+    "backToDashboard": "Terug naar Dashboard",
+    "createCase": {
+      "title": "Nieuwe Zaak Aanmaken",
+      "subtitle": "Vul de informatie in om een nieuwe juridische zaak aan te maken",
+      "caseInfo": "Zaak Informatie"
+    },
+        "caseAnalysis": {
+          "loading": "Zaakanalyse laden...",
+          "client": "Cliënt",
+          "assignedLawyer": "Toegewezen Advocaat",
+          "caseInfo": "Zaak Informatie"
+        },
+        "onTimeCases": {
+          "title": "Zaken op Tijd",
+          "subtitle": "Zaken met normale oplossingstermijn",
+          "totalOnTime": "Totaal op Tijd",
+          "mediumPriority": "Gemiddelde Prioriteit",
+          "normalPriority": "Normale Prioriteit",
+          "averageProgress": "Gemiddelde Voortgang"
+        },
+        "urgentCases": {
+          "title": "Urgente Zaken",
+          "subtitle": "Zaken met minder dan 5 dagen tot vervaldatum",
+          "totalUrgent": "Totaal Urgent",
+          "critical": "Kritiek",
+          "urgent": "Urgent",
+          "highPriority": "Hoge Prioriteit",
+          "casesList": "Lijst van Urgente Zaken",
+          "loading": "Urgente zaken laden..."
+        },
+        "overdueCases": {
+          "title": "Verlopen Zaken",
+          "subtitle": "Zaken die hun deadline hebben overschreden",
+          "totalOverdue": "Totaal Verlopen",
+          "critical": "Kritiek",
+          "urgent": "Urgent",
+          "averageDays": "Gemiddelde Dagen"
+        },
+        "clientDirectory": {
+          "title": "Klantendirectory",
+          "subtitle": "Volledig beheer van de klantenbasis",
+          "totalClients": "Totaal Klanten",
+          "active": "Actief",
+          "pending": "In behandeling",
+          "inactive": "Inactief",
+          "totalCases": "Totaal Zaken",
+          "searchClient": "Klant Zoeken",
+          "searchPlaceholder": "Naam, e-mail of telefoon...",
+          "status": "Status",
+          "allStatuses": "Alle statussen",
+          "city": "Stad",
+          "allCities": "Alle steden"
+        },
+        "repository": {
+          "title": "Zaak Documenten Repository",
+          "subtitle": "Beheer en controleer versies van alle zaakdocumenten",
+          "backToAnalysis": "Terug naar Analyse",
+          "searchFiles": "Bestanden zoeken...",
+          "allTypes": "Alle typen",
+          "folders": "Mappen",
+          "text": "Tekst",
+          "images": "Afbeeldingen"
+        },
+        "generateDocuments": {
+          "title": "Juridische Document Generator met AI",
+          "subtitle": "Selecteer een documenttype en genereer professionele juridische documenten",
+          "backToAnalysis": "Terug naar Analyse",
+          "documentType": "Document Type",
+          "specialInstructions": "Speciale Instructies (Optioneel)",
+          "instructionsPlaceholder": "Voeg specifieke instructies toe om het gegenereerde document aan te passen...",
+          "generating": "Genereren met AI...",
+          "generate": "Genereren",
+          "generatedDocument": "Gegenereerd Document"
+        }
+  },
+  "profile": {
+    "title": "Mijn Profiel",
+    "subtitle": "Beheer uw persoonlijke informatie en accountinstellingen",
+    "personalInfo": "Persoonlijke Informatie",
+    "user": "Gebruiker",
+    "memberSince": "Lid sinds",
+    "accountSettings": "Account Instellingen",
+    "fullName": "Volledige naam",
+    "enterFullName": "Voer uw volledige naam in",
+    "email": "E-mailadres",
+    "emailCannotChange": "Het e-mailadres kan niet worden gewijzigd",
+    "phone": "Telefoon",
+    "enterPhone": "Voer uw telefoonnummer in",
+    "legalSpecialty": "Juridische specialiteit",
+    "subscriptionInfo": "Abonnementsinformatie",
+    "lawyerPlan": "Advocaten Plan",
+    "fullAccess": "Volledige toegang tot alle functionaliteiten",
+    "autoRenewal": "Automatische verlenging",
+    "manageSubscription": "Abonnement Beheren",
+    "cancel": "Annuleren",
+    "saveChanges": "Wijzigingen Opslaan"
+  },
+  "subscription": {
+    "title": "Abonnement",
+    "subtitle": "Beheer uw abonnementsplan en facturering",
+    "currentPlan": "Huidig Plan",
+    "lawyerPlan": "Advocaten Plan",
+    "fullAccess": "Volledige toegang tot alle functionaliteiten",
+    "perMonth": "per maand",
+    "updatePlan": "Plan Bijwerken",
+    "cancelSubscription": "Abonnement Annuleren",
+    "availablePlans": "Beschikbare Plannen"
+  },
+  "footer": {
+    "description": "Revolutie in de juridische praktijk met AI-aangedreven tools en intelligente workflows ontworpen voor moderne advocatenkantoren.",
+    "product": "Product",
+    "company": "Bedrijf",
+    "support": "Ondersteuning",
+    "stayUpdated": "Blijf Op de Hoogte",
+    "stayUpdatedDesc": "Ontvang de laatste updates over nieuwe functies en juridische technologie informatie.",
+    "emailPlaceholder": "Voer uw e-mail in",
+    "subscribe": "Abonneren",
+    "copyright": "© 2025 Avocat LegalTech. Alle rechten voorbehouden.",
+    "privacy": "Privacybeleid",
+    "terms": "Servicevoorwaarden",
+    "cookies": "Cookiebeleid",
+    "gdpr": "GDPR"
+  }
+}

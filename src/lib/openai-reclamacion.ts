@@ -23,13 +23,20 @@ export async function generateReclamacionCantidad(input: ReclamacionCantidadRequ
     const userPrompt = buildUserPrompt(input);
     
     // Usar el provider resiliente
-    const { content, timeMs, mock } = await callChat({
+    const result = await callChat({
       model: getModel(),
       system: SYSTEM_PROMPT,
       user: userPrompt,
       temperature: 0.3,
       top_p: 1
     });
+    
+    if (!result) {
+      throw new Error('No se recibió respuesta del modelo');
+    }
+    
+    const { content, timeMs } = result;
+    const mock = 'mock' in result ? result.mock : false;
     
     if (!content) {
       throw new Error('No se recibió contenido del modelo');
@@ -59,24 +66,19 @@ export async function generateReclamacionCantidad(input: ReclamacionCantidadRequ
       });
       
       // Reintentar con mensaje más estricto
-      const retryCompletion = await openai.chat.completions.create({
+      const retryResult = await callChat({
         model: getModel(),
-        messages: [
-          {
-            role: 'system',
-            content: SYSTEM_PROMPT + '\n\nIMPORTANTE: Debes devolver EXCLUSIVAMENTE un JSON válido. No incluyas texto adicional, explicaciones o markdown.',
-          },
-          {
-            role: 'user',
-            content: userPrompt + '\n\nResponde SOLO con el JSON válido según el esquema MODEL_OUTPUT.',
-          },
-        ],
-        max_tokens: 4000,
+        system: SYSTEM_PROMPT + '\n\nIMPORTANTE: Debes devolver EXCLUSIVAMENTE un JSON válido. No incluyas texto adicional, explicaciones o markdown.',
+        user: userPrompt + '\n\nResponde SOLO con el JSON válido según el esquema MODEL_OUTPUT.',
         temperature: 0.1,
-        top_p: 1,
+        top_p: 1
       });
 
-      const retryContent = retryCompletion.choices[0]?.message?.content;
+      if (!retryResult) {
+        throw new Error('No se recibió respuesta en el reintento');
+      }
+      
+      const retryContent = retryResult.content;
       if (!retryContent) {
         throw new Error('No se recibió contenido en el reintento');
       }
@@ -92,7 +94,7 @@ export async function generateReclamacionCantidad(input: ReclamacionCantidadRequ
     }
 
     const elapsedMs = Date.now() - startTime;
-    apiLogger.info('reclamacion-generated', {
+    console.log('reclamacion-generated', {
       model: getModel(),
       elapsedMs: timeMs || elapsedMs,
       mock: mock || false,

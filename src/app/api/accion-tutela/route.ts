@@ -5,6 +5,8 @@ import { renderTutelaPDF } from '@/lib/pdf/tutela';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { v4 as uuidv4 } from 'uuid';
 import { getOpenAIClient } from '@/lib/openai-client';
+import { savePdfForUser, signedUrlFor } from '@/lib/storage';
+import { saveDocument, saveHistoryItem, saveDocumentGeneration, updateUserStats } from '@/lib/simple-storage';
 
 export const runtime = 'nodejs' as const;
 
@@ -93,7 +95,7 @@ Confianza: ${(file.confidence * 100).toFixed(1)}%
     });
 
     const content = result.content;
-    const timeMs = result.metadata?.processingTime || 0;
+    // const timeMs = 0; // TODO: Get from result metadata when available
     const mock = false;
 
     if (!content) {
@@ -104,7 +106,7 @@ Confianza: ${(file.confidence * 100).toFixed(1)}%
     let parsedContent;
     try {
       parsedContent = JSON.parse(content);
-    } catch (parseError) {
+    } catch (_parseError: any) {
       // Si falla el parseo, intentar extraer JSON del contenido
       let jsonContent = content;
       
@@ -130,7 +132,7 @@ Confianza: ${(file.confidence * 100).toFixed(1)}%
       try {
         parsedContent = JSON.parse(jsonContent);
       } catch (secondError) {
-        throw new Error(`No se pudo extraer JSON válido de la respuesta: ${secondError.message}`);
+        throw new Error(`No se pudo extraer JSON válido de la respuesta: ${secondError instanceof Error ? secondError.message : String(secondError)}`);
       }
     }
 
@@ -199,7 +201,9 @@ Confianza: ${(file.confidence * 100).toFixed(1)}%
         storageBucket: storageResult.bucket,
         userId: uid,
         docId,
-        mock: mock || false
+        mock: mock || false,
+        areaLegal: 'Derecho Constitucional',
+        tipoEscrito: 'Acción de Tutela'
       };
       
       await saveDocument(uid, docId, documentData);
@@ -225,10 +229,10 @@ Confianza: ${(file.confidence * 100).toFixed(1)}%
         createdAt: new Date().toISOString(),
         status: 'completed',
         metadata: {
-          model: model,
+          model: 'gpt-4o',
           tokensUsed: 0, // TODO: obtener del response
-          processingTime: elapsedMs,
-          mock: mock || false,
+          processingTime: Date.now() - startTime,
+          mock: false,
           ocrFiles: hasOcrData ? body.ocrFiles.length : 0,
           confidence: 0.95
         },
@@ -236,7 +240,7 @@ Confianza: ${(file.confidence * 100).toFixed(1)}%
           docId,
           storagePath: storageResult.storagePath,
           size: storageResult.size,
-          downloadUrl
+          downloadUrl: await signedUrlFor(uid, docId, { expiresMinutes: 15 })
         },
         content: {
           inputData: data,
@@ -321,7 +325,7 @@ Confianza: ${(file.confidence * 100).toFixed(1)}%
       // Fallback: devolver PDF directamente
       const filename = `accion-tutela-${data.derecho}-${new Date().toISOString().split('T')[0]}.pdf`;
       
-      return new Response(pdfBuffer, {
+      return new Response(new Uint8Array(pdfBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',

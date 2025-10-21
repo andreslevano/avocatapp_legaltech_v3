@@ -1,0 +1,242 @@
+{
+  "common": {
+    "loading": "Loading..."
+  },
+  "navigation": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "about": "About",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "logout": "Log Out",
+    "login": "Log In",
+    "signup": "Get Started"
+  },
+  "hero": {
+    "title": "Revolutionising<span class=\"text-primary-600 block\">Legal Practice</span>with AI",
+    "subtitle": "Optimise your legal workflow with intelligent document analysis, case summaries, and automated legal research powered by cutting-edge AI technology.",
+    "cta": "Free Trial",
+    "learnMore": "View Demo",
+    "emailPlaceholder": "Enter your email for updates",
+    "subscribe": "Subscribe",
+    "subscribeInfo": "Receive notifications about new features and updates",
+    "trustedBy": "Trusted by leading law firms"
+  },
+  "features": {
+    "title": "Powerful Features for Modern Legal Practice",
+    "subtitle": "Our AI-powered platform combines cutting-edge technology with deep legal expertise to transform how you work with cases and clients.",
+    "documentAnalysis": {
+      "title": "AI Document Analysis",
+      "description": "Intelligent analysis and review of legal documents with automated extraction of key information, clauses, and potential risks."
+    },
+    "legalResearch": {
+      "title": "Legal Research Assistant",
+      "description": "AI-powered legal research that analyses case law, statutes, and regulations to provide comprehensive insights and precedents."
+    },
+    "caseSummaries": {
+      "title": "Case Summaries",
+      "description": "Automated generation of concise case summaries, highlighting key facts, legal issues, and outcomes for quick reference."
+    },
+    "clientManagement": {
+      "title": "Client Management",
+      "description": "Comprehensive client portal with secure document sharing, communication tools, and billing integration."
+    },
+    "analytics": {
+      "title": "Analytics & Reporting",
+      "description": "Advanced analytics dashboard providing insights into case performance, time tracking, and business metrics."
+    },
+    "security": {
+      "title": "Enterprise Security",
+      "description": "Bank-level security with end-to-end encryption, role-based access control, and compliance with legal industry standards."
+    }
+  },
+  "pricing": {
+    "title": "Simple and Transparent Pricing",
+    "subtitle": "Choose the plan that fits your practice. All plans include a 14-day free trial with no credit card required.",
+    "students": {
+      "title": "🇪🇸 Students",
+      "description": "Full access for law students and trainees",
+      "price": "€3.00",
+      "period": "/document",
+      "aiDocs": "AI Document Analysis (50 docs/month)",
+      "basicLegalResearch": "Basic Legal Research",
+      "clientPortal": "Client Portal (up to 10 clients)",
+      "emailSupport": "Email Support",
+      "basicAnalytics": "Basic Analytics",
+      "startNow": "Start Now"
+    },
+    "tutela": {
+      "title": "🇨🇴 Tutela Action",
+      "description": "Specialised in Colombian tutela procedures",
+      "price": "$50.000",
+      "period": "/document"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Log In",
+      "subtitle": "Access your Avocat account",
+      "email": "Email",
+      "password": "Password",
+      "loginButton": "Log In",
+      "loggingIn": "Logging in...",
+      "forgotPassword": "Forgot your password?",
+      "noAccount": "Don't have an account?",
+      "signupLink": "Sign up here"
+    },
+    "signup": {
+      "title": "Create your account",
+      "subtitle": "Join Avocat and revolutionise your legal practice",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "name": "Full Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "createAccount": "Create Account",
+      "creating": "Creating account...",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Log in here"
+    }
+  },
+  "dashboard": {
+    "title": "Solicitors Dashboard",
+    "subtitle": "Complete panel for legal professionals with advanced AI tools",
+    "controlPanel": "Control Panel",
+    "welcome": "Welcome to Avocat!",
+    "welcomeMessage": "Your account has been created successfully. Start exploring our LegalTech platform features.",
+    "backToDashboard": "Back to Dashboard",
+    "createCase": {
+      "title": "Create New Case",
+      "subtitle": "Complete the information to create a new legal case",
+      "caseInfo": "Case Information"
+    },
+    "caseAnalysis": {
+      "loading": "Loading case analysis...",
+      "client": "Client",
+      "assignedLawyer": "Assigned Solicitor",
+      "caseInfo": "Case Information"
+    },
+    "onTimeCases": {
+      "title": "On-Time Cases",
+      "subtitle": "Cases with normal resolution deadline",
+      "totalOnTime": "Total On Time",
+      "mediumPriority": "Medium Priority",
+      "normalPriority": "Normal Priority",
+      "averageProgress": "Average Progress"
+    },
+    "urgentCases": {
+      "title": "Urgent Cases",
+      "subtitle": "Cases with less than 5 days to deadline",
+      "totalUrgent": "Total Urgent",
+      "critical": "Critical",
+      "urgent": "Urgent",
+      "highPriority": "High Priority",
+      "casesList": "Urgent Cases List",
+      "loading": "Loading urgent cases..."
+    },
+    "overdueCases": {
+      "title": "Overdue Cases",
+      "subtitle": "Cases that have exceeded their deadline",
+      "totalOverdue": "Total Overdue",
+      "critical": "Critical",
+      "urgent": "Urgent",
+      "averageDays": "Average Days"
+    },
+    "clientDirectory": {
+      "title": "Client Directory",
+      "subtitle": "Complete management of the client base",
+      "totalClients": "Total Clients",
+      "active": "Active",
+      "pending": "Pending",
+      "inactive": "Inactive",
+      "totalCases": "Total Cases",
+      "searchClient": "Search Client",
+      "searchPlaceholder": "Name, email or phone...",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "city": "City",
+      "allCities": "All cities"
+    },
+    "repository": {
+      "title": "Case Documents Repository",
+      "subtitle": "Manage and control versions of all case documents",
+      "backToAnalysis": "Back to Analysis",
+      "searchFiles": "Search files...",
+      "allTypes": "All types",
+      "folders": "Folders",
+      "text": "Text",
+      "images": "Images"
+    },
+    "generateDocuments": {
+      "title": "Legal Document Generator with AI",
+      "subtitle": "Select a document type and generate professional legal documents",
+      "backToAnalysis": "Back to Analysis",
+      "documentType": "Document Type",
+      "specialInstructions": "Special Instructions (Optional)",
+      "instructionsPlaceholder": "Add specific instructions to customise the generated document...",
+      "generating": "Generating with AI...",
+      "generate": "Generate",
+      "generatedDocument": "Generated Document"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "Manage your personal information and account settings",
+    "personalInfo": "Personal Information",
+    "user": "User",
+    "memberSince": "Member since",
+    "accountSettings": "Account Settings",
+    "fullName": "Full Name",
+    "enterFullName": "Enter your full name",
+    "email": "Email Address",
+    "emailCannotChange": "Email address cannot be changed",
+    "phone": "Phone",
+    "enterPhone": "Enter your phone number",
+    "legalSpecialty": "Legal Speciality",
+    "subscriptionInfo": "Subscription Information",
+    "lawyerPlan": "Solicitors Plan",
+    "fullAccess": "Full access to all features",
+    "autoRenewal": "Auto-renewal",
+    "manageSubscription": "Manage Subscription",
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes"
+  },
+  "subscription": {
+    "title": "Subscription",
+    "subtitle": "Manage your subscription plan and billing",
+    "currentPlan": "Current Plan",
+    "lawyerPlan": "Solicitors Plan",
+    "fullAccess": "Full access to all features",
+    "perMonth": "per month",
+    "updatePlan": "Update Plan",
+    "cancelSubscription": "Cancel Subscription",
+    "availablePlans": "Available Plans"
+  },
+  "footer": {
+    "description": "Revolutionising legal practice with AI-powered tools and intelligent workflows designed for modern law firms.",
+    "product": "Product",
+    "company": "Company",
+    "support": "Support",
+    "stayUpdated": "Stay Updated",
+    "features": "Features",
+    "pricing": "Pricing",
+    "api": "API",
+    "integrations": "Integrations",
+    "about": "About",
+    "blog": "Blog",
+    "careers": "Careers",
+    "press": "Press",
+    "helpCenter": "Help Centre",
+    "contact": "Contact",
+    "status": "Status",
+    "documentation": "Documentation",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "cookies": "Cookie Policy",
+    "gdpr": "GDPR"
+  }
+}
+
+
+
