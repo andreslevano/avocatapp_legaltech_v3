@@ -4,6 +4,8 @@ import { z } from 'zod';
 export const GenerateDocumentSchema = z.object({
   areaLegal: z.string().min(1, 'El área legal es requerida'),
   tipoEscrito: z.string().min(1, 'El tipo de escrito es requerido'),
+  userId: z.string().optional(),
+  userEmail: z.string().email().optional(),
   datosCliente: z.object({
     nombre: z.string().optional(),
     dni: z.string().optional(),

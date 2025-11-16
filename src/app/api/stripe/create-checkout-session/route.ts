@@ -17,6 +17,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // IMPORTANT: Do NOT create purchase records here.
+    // Purchases are ONLY created after successful payment via the webhook handler
+    // (src/lib/stripe.ts -> processCheckoutSession -> called by webhook on checkout.session.completed)
+
     // Create line items for Stripe checkout
     const lineItems = items.map((item: any) => ({
       price_data: {
@@ -40,9 +44,12 @@ export async function POST(request: NextRequest) {
       metadata: {
         items: JSON.stringify(items),
         totalItems: items.reduce((sum: number, item: any) => sum + item.quantity, 0),
+        userId: body.userId || 'unknown',
       },
     });
     
+    // Return checkout session URL - user will be redirected to Stripe
+    // Purchase will be created ONLY after successful payment via webhook
     return NextResponse.json({
       success: true,
       url: session.url,

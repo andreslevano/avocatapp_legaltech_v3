@@ -23,10 +23,10 @@ console.log('Firebase config check:', {
 
 // Initialize Firebase only on the client side
 let app: FirebaseApp | undefined;
-let auth: Auth | Record<string, never>;
-let db: Firestore | Record<string, never>;
-let storage: FirebaseStorage | Record<string, never>;
-let functions: Functions | Record<string, never>;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
+let functions: Functions | null = null;
 
 if (typeof window !== 'undefined') {
   // Client-side initialization with valid config
@@ -58,17 +58,17 @@ if (typeof window !== 'undefined') {
   } catch {
     console.error('Error initializing Firebase');
     // Create mock objects for build time
-    auth = {};
-    db = {};
-    storage = {};
-    functions = {};
+    auth = null;
+    db = null;
+    storage = null;
+    functions = null;
   }
 } else {
   // Server-side or no valid config: create mock objects
-  auth = {};
-  db = {};
-  storage = {};
-  functions = {};
+  auth = null;
+  db = null;
+  storage = null;
+  functions = null;
 }
 
 export { app, auth, db, storage, functions };

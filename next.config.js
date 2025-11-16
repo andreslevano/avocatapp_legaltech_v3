@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // Re-enabled for Firebase Hosting
+  output: 'export', // Static export for Firebase Hosting - API routes handled by Cloud Functions via firebase.json rewrites
   trailingSlash: false, // Cambiado a false para evitar redirects 308
   typescript: {
     ignoreBuildErrors: false, // Habilitado para mejor DX

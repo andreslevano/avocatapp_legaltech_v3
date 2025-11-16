@@ -1,5 +1,6 @@
-import PDFDocument from 'pdfkit';
+import PDFDocument from './pdfkit';
 import { ModelOutput } from '../validate-reclamacion';
+import { applyPdfFonts, PDF_FONT_FAMILY, PDF_FONT_PATHS } from './fonts';
 
 export async function renderReclamacionPDF(
   model: ModelOutput, 
@@ -14,8 +15,11 @@ export async function renderReclamacionPDF(
         bottom: 50,
         left: 60,
         right: 60
-      }
+      },
+      font: PDF_FONT_PATHS.regular
     });
+
+    applyPdfFonts(doc);
 
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
@@ -34,12 +38,12 @@ export async function renderReclamacionPDF(
 
       // Título principal
       doc.fontSize(titleFontSize)
-         .font('Helvetica-Bold')
+         .font(PDF_FONT_FAMILY.bold)
          .text(model.encabezado.toUpperCase(), { align: 'center' });
       
       // Información de cuantía y precisión
       doc.fontSize(smallFontSize)
-         .font('Helvetica')
+         .font(PDF_FONT_FAMILY.regular)
          .text(`Cuantía reclamada: ${cuantia.toLocaleString('es-ES')} €`, { align: 'center' });
       
       if (precision > 0) {
@@ -50,22 +54,22 @@ export async function renderReclamacionPDF(
 
       // Partes
       doc.fontSize(sectionFontSize)
-         .font('Helvetica-Bold')
+         .font(PDF_FONT_FAMILY.bold)
          .text('PARTES', { underline: true });
       
       doc.fontSize(bodyFontSize)
-         .font('Helvetica')
+         .font(PDF_FONT_FAMILY.regular)
          .text(model.partes);
       
       doc.moveDown(1);
 
       // Hechos
       doc.fontSize(sectionFontSize)
-         .font('Helvetica-Bold')
+         .font(PDF_FONT_FAMILY.bold)
          .text('HECHOS', { underline: true });
       
       doc.fontSize(bodyFontSize)
-         .font('Helvetica');
+         .font(PDF_FONT_FAMILY.regular);
       
       model.hechos.forEach((hecho, index) => {
         doc.text(`${index + 1}.- ${hecho}`);
@@ -76,16 +80,16 @@ export async function renderReclamacionPDF(
 
       // Fundamentos de Derecho
       doc.fontSize(sectionFontSize)
-         .font('Helvetica-Bold')
+         .font(PDF_FONT_FAMILY.bold)
          .text('FUNDAMENTOS DE DERECHO', { underline: true });
       
       doc.fontSize(bodyFontSize)
-         .font('Helvetica');
+         .font(PDF_FONT_FAMILY.regular);
 
       // Competencia
       if (model.fundamentos.competencia.length > 0) {
-        doc.font('Helvetica-Bold').text('Competencia y Procedimiento:');
-        doc.font('Helvetica');
+        doc.font(PDF_FONT_FAMILY.bold).text('Competencia y Procedimiento:');
+        doc.font(PDF_FONT_FAMILY.regular);
         model.fundamentos.competencia.forEach(fundamento => {
           doc.text(`• ${fundamento}`);
         });
@@ -94,8 +98,8 @@ export async function renderReclamacionPDF(
 
       // Legitimación
       if (model.fundamentos.legitimacion.length > 0) {
-        doc.font('Helvetica-Bold').text('Legitimación:');
-        doc.font('Helvetica');
+        doc.font(PDF_FONT_FAMILY.bold).text('Legitimación:');
+        doc.font(PDF_FONT_FAMILY.regular);
         model.fundamentos.legitimacion.forEach(fundamento => {
           doc.text(`• ${fundamento}`);
         });
@@ -104,8 +108,8 @@ export async function renderReclamacionPDF(
 
       // Fondo
       if (model.fundamentos.fondo.length > 0) {
-        doc.font('Helvetica-Bold').text('Fondo del Asunto:');
-        doc.font('Helvetica');
+        doc.font(PDF_FONT_FAMILY.bold).text('Fondo del Asunto:');
+        doc.font(PDF_FONT_FAMILY.regular);
         model.fundamentos.fondo.forEach(fundamento => {
           doc.text(`• ${fundamento}`);
         });
@@ -114,8 +118,8 @@ export async function renderReclamacionPDF(
 
       // Intereses y Costas
       if (model.fundamentos.interesesYCostas.length > 0) {
-        doc.font('Helvetica-Bold').text('Intereses y Costas:');
-        doc.font('Helvetica');
+        doc.font(PDF_FONT_FAMILY.bold).text('Intereses y Costas:');
+        doc.font(PDF_FONT_FAMILY.regular);
         model.fundamentos.interesesYCostas.forEach(fundamento => {
           doc.text(`• ${fundamento}`);
         });
@@ -126,11 +130,11 @@ export async function renderReclamacionPDF(
 
       // Súplica
       doc.fontSize(sectionFontSize)
-         .font('Helvetica-Bold')
+         .font(PDF_FONT_FAMILY.bold)
          .text('SÚPLICA', { underline: true });
       
       doc.fontSize(bodyFontSize)
-         .font('Helvetica');
+         .font(PDF_FONT_FAMILY.regular);
       
       model.suplico.forEach((solicitud, index) => {
         doc.text(`${index + 1}.- ${solicitud}`);
@@ -142,11 +146,11 @@ export async function renderReclamacionPDF(
       // Otrosí
       if (model.otrosi.length > 0) {
         doc.fontSize(sectionFontSize)
-           .font('Helvetica-Bold')
+           .font(PDF_FONT_FAMILY.bold)
            .text('OTROSÍ', { underline: true });
         
         doc.fontSize(bodyFontSize)
-           .font('Helvetica');
+           .font(PDF_FONT_FAMILY.regular);
         
         model.otrosi.forEach((otrosi, index) => {
           doc.text(`${index + 1}.- ${otrosi}`);
@@ -159,11 +163,11 @@ export async function renderReclamacionPDF(
       // Documentos
       if (model.documentos.length > 0) {
         doc.fontSize(sectionFontSize)
-           .font('Helvetica-Bold')
+           .font(PDF_FONT_FAMILY.bold)
            .text('DOCUMENTOS APORTADOS', { underline: true });
         
         doc.fontSize(bodyFontSize)
-           .font('Helvetica');
+           .font(PDF_FONT_FAMILY.regular);
         
         model.documentos.forEach((documento, index) => {
           doc.text(`${index + 1}.- ${documento}`);
@@ -174,7 +178,7 @@ export async function renderReclamacionPDF(
 
       // Lugar y Fecha
       doc.fontSize(bodyFontSize)
-         .font('Helvetica')
+         .font(PDF_FONT_FAMILY.regular)
          .text(model.lugarFecha, { align: 'right' });
       
       doc.moveDown(2);
@@ -182,10 +186,10 @@ export async function renderReclamacionPDF(
       // Notas Pro Se (si aplica)
       if (model.notasProSe.length > 0) {
         doc.fontSize(smallFontSize)
-           .font('Helvetica-Bold')
+           .font(PDF_FONT_FAMILY.bold)
            .text('NOTAS PARA PRESENTACIÓN SIN ABOGADO:', { underline: true });
         
-        doc.font('Helvetica');
+        doc.font(PDF_FONT_FAMILY.regular);
         model.notasProSe.forEach((nota, index) => {
           doc.text(`• ${nota}`);
         });
@@ -196,10 +200,10 @@ export async function renderReclamacionPDF(
       // Citas legales
       if (model.citas.length > 0) {
         doc.fontSize(smallFontSize)
-           .font('Helvetica-Bold')
+           .font(PDF_FONT_FAMILY.bold)
            .text('CITAS LEGALES:', { underline: true });
         
-        doc.font('Helvetica');
+        doc.font(PDF_FONT_FAMILY.regular);
         model.citas.forEach(cita => {
           doc.text(`• ${cita}`);
         });

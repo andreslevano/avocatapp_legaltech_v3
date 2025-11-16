@@ -138,28 +138,51 @@ async function populateFirestore() {
       {
         id: 'purchase-1',
         userId: 'test-user-1',
-        item: 'Reclamación de Cantidad',
-        price: 10.00,
-        currency: 'EUR',
         status: 'completed',
+        currency: 'EUR',
+        paymentMethod: 'stripe',
         createdAt: new Date().toISOString(),
-        paymentMethod: 'stripe'
+        total: 10.0,
+        items: [
+          {
+            id: 'purchase-1-doc-1',
+            name: 'Reclamación de Cantidad - ACME SL',
+            price: 10.0,
+            quantity: 1,
+            area: 'Derecho Civil y Procesal Civil',
+            documentId: 'doc-1',
+            storagePath: 'generated/reclamacion-acme-sl.pdf',
+            fileType: 'pdf'
+          }
+        ]
       },
       {
         id: 'purchase-2',
         userId: 'test-user-2',
-        item: 'Acción de Tutela',
-        price: 15.00,
-        currency: 'EUR',
         status: 'completed',
+        currency: 'EUR',
+        paymentMethod: 'stripe',
         createdAt: new Date().toISOString(),
-        paymentMethod: 'stripe'
+        total: 15.0,
+        items: [
+          {
+            id: 'purchase-2-doc-1',
+            name: 'Acción de Tutela - Ana López',
+            price: 15.0,
+            quantity: 1,
+            area: 'Derecho Constitucional',
+            documentId: 'doc-2',
+            storagePath: 'generated/accion-tutela-ana-lopez.pdf',
+            fileType: 'pdf'
+          }
+        ]
       }
     ];
     
     for (const purchase of purchases) {
       await setDoc(doc(db, 'purchases', purchase.id), purchase);
-      console.log(`✅ Compra registrada: ${purchase.item}`);
+      const firstItemName = purchase.items?.[0]?.name || 'Compra sin items';
+      console.log(`✅ Compra registrada: ${firstItemName}`);
     }
     
     // 5. Plantillas

@@ -61,6 +61,8 @@ export interface DocumentGeneration {
   };
 }
 
+// DEPRECATED: Use Purchase from @/types/purchase instead
+// This interface is kept for backward compatibility only
 export interface Purchase {
   id: string;
   userId: string;
@@ -78,6 +80,9 @@ export interface Purchase {
     stripePaymentIntentId?: string;
   };
 }
+
+// Re-export the canonical Purchase type
+export type { Purchase as PurchaseV2 } from '@/types/purchase';
 
 export interface UserAnalytics {
   userId: string;

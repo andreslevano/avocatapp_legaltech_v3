@@ -124,12 +124,20 @@ STRIPE_SECRET_KEY=sk_test_tu_clave_secreta_stripe
 STRIPE_WEBHOOK_SECRET=whsec_tu_secreto_webhook
 
 # Configuración de OpenAI
+# (solo servidor; no la expongas en el cliente)
 OPENAI_API_KEY=sk-tu_clave_api_openai
 
 # Configuración de la App
 NEXTAUTH_SECRET=tu_secreto_nextauth
 NEXTAUTH_URL=http://localhost:3000
 ```
+
+> ℹ️ **Backend (Cloud Functions)**: además de definir `OPENAI_API_KEY` en tu `.env.local`, registra el secreto para Functions con:
+> ```bash
+> firebase functions:config:set openai.key="sk-..." 
+> firebase deploy --only functions
+> ```
+> También puedes almacenarlo en Google Secret Manager y referenciarlo desde `firebase-functions/params` si prefieres rotación automática.
 
 ## 🚀 Despliegue
 

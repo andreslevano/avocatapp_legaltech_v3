@@ -15,7 +15,10 @@
     "test:api": "playwright test tests/api",
     "test:unit": "playwright test tests/unit",
     "test:watch": "jest --watch",
-    "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook"
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook",
+    "reprocess:purchase": "ts-node --project tsconfig.scripts.json scripts/reprocess-purchase.ts",
+    "reprocess:all": "ts-node --project tsconfig.scripts.json scripts/reprocess-purchase.ts --all",
+    "list:documents": "ts-node --project tsconfig.scripts.json scripts/list-purchase-documents.ts"
   },
   "dependencies": {
     "@stripe/stripe-js": "^2.4.0",
@@ -50,6 +53,7 @@
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "@types/node": "^24.5.2",
+    "dotenv": "^17.2.3",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
     "pdf-parse": "^1.1.1",
