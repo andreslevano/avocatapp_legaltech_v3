@@ -17,8 +17,6 @@ export const GenerateDocumentSchema = z.object({
   peticiones: z.string().min(5, 'Las peticiones deben tener al menos 5 caracteres'),
   tono: z.enum(['formal', 'informal', 'técnico']).default('formal'),
   plantillaId: z.string().optional(),
-  userId: z.string().optional(),
-  userEmail: z.string().email().optional(),
 });
 
 export const TemplateSchema = z.object({

@@ -15,10 +15,9 @@ const nextConfig = {
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-  // Configuración para API routes
-  experimental: {
-    serverComponentsExternalPackages: ['pino']
-  }
+  // Exclude API routes from build (handled by Firebase Functions)
+  // Note: API routes in src/app/api are handled by Firebase Cloud Functions
+  // and should not be built as part of the static export
 }
 
 module.exports = nextConfig

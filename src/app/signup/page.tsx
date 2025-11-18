@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword, Auth, signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/hooks/useI18n';
 import AccountReactivationModal from '@/components/AccountReactivationModal';
 import { checkUserStatus, reactivateUserAccount } from '@/lib/user-reactivation';
+import { trackSignupStart, trackRegistrationConversion } from '@/lib/gtag';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -88,6 +90,24 @@ export default function SignUp() {
     }
   }, []);
 
+  // Track signup start when user first interacts with the form
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      trackSignupStart();
+      // Remove listeners after first interaction
+      document.removeEventListener('focusin', handleFirstInteraction);
+      document.removeEventListener('click', handleFirstInteraction);
+    };
+    
+    document.addEventListener('focusin', handleFirstInteraction, { once: true });
+    document.addEventListener('click', handleFirstInteraction, { once: true });
+    
+    return () => {
+      document.removeEventListener('focusin', handleFirstInteraction);
+      document.removeEventListener('click', handleFirstInteraction);
+    };
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
@@ -138,17 +158,67 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      await createUserWithEmailAndPassword(
+      const userCredential = await createUserWithEmailAndPassword(
         auth as Auth,
         formData.email,
         formData.password
       );
 
-      // Skip Firestore for now to ensure navigation works
-      console.log('Account created successfully, skipping Firestore for now');
+      const user = userCredential.user;
+      console.log('Account created successfully in Firebase Auth:', user.uid);
       console.log('Selected plan:', formData.plan);
       
+      // Create user document in Firestore
+      if (user && db) {
+        try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const displayName = `${formData.firstName} ${formData.lastName}`.trim() || formData.email.split('@')[0];
+          
+          const userData = {
+            uid: user.uid,
+            email: formData.email,
+            displayName: displayName,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: formData.phone || null,
+            country: formData.country || null,
+            plan: formData.plan || null,
+            firm: formData.firm || null,
+            isAdmin: false,
+            isActive: true,
+            role: 'user',
+            createdAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+            subscription: {
+              plan: 'free',
+              startDate: serverTimestamp(),
+              isActive: true
+            },
+            preferences: {
+              language: 'es',
+              notifications: true,
+              theme: 'light'
+            },
+            stats: {
+              totalDocuments: 0,
+              totalGenerations: 0,
+              totalSpent: 0
+            }
+          };
+          
+          await setDoc(userDocRef, userData);
+          console.log('✅ User document created in Firestore:', user.uid);
+        } catch (firestoreError) {
+          console.error('❌ Error creating user document in Firestore:', firestoreError);
+          // Don't block navigation if Firestore fails, but log the error
+          // The webhook will try to create it if missing
+        }
+      }
+      
       setSuccess('¡Cuenta creada exitosamente! Redirigiendo...');
+      
+      // Track registration conversion
+      trackRegistrationConversion();
       
       // Redirigir directamente al dashboard seleccionado
       const dashboardUrl = getDashboardUrl(formData.plan);

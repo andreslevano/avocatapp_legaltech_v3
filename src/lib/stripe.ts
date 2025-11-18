@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { db, storage } from './firebase-admin';
+import { getAuth } from 'firebase-admin/auth';
 import { getOpenAIClient } from './openai-client';
 import { renderWordDocument } from './pdf/word-generator';
 import { v4 as uuidv4 } from 'uuid';
@@ -318,10 +319,62 @@ async function processCheckoutSession(session: Stripe.Checkout.Session) {
           
           if (!usersSnapshot.empty) {
             userId = usersSnapshot.docs[0].id;
-            console.log(`✅ Usuario encontrado por email: ${userId}`);
+            console.log(`✅ Usuario encontrado por email en Firestore: ${userId}`);
           } else {
-            console.warn(`⚠️ Usuario no encontrado para email: ${customerEmail}`);
-            userId = 'unknown';
+            // User not found in Firestore, try to find in Firebase Auth and create document
+            console.warn(`⚠️ Usuario no encontrado en Firestore para email: ${customerEmail}`);
+            console.log(`🔍 Buscando usuario en Firebase Auth...`);
+            
+            try {
+              const auth = getAuth();
+              const authUser = await auth.getUserByEmail(customerEmail);
+              
+              if (authUser) {
+                userId = authUser.uid;
+                console.log(`✅ Usuario encontrado en Firebase Auth: ${userId}`);
+                
+                // Create user document in Firestore
+                const userDocRef = db().collection('users').doc(userId);
+                const displayName = authUser.displayName || customerEmail.split('@')[0];
+                
+                const userData = {
+                  uid: userId,
+                  email: customerEmail,
+                  displayName: displayName,
+                  isAdmin: false,
+                  isActive: true,
+                  role: 'user',
+                  createdAt: authUser.metadata.creationTime || new Date().toISOString(),
+                  lastLoginAt: authUser.metadata.lastSignInTime || authUser.metadata.creationTime || new Date().toISOString(),
+                  subscription: {
+                    plan: 'free',
+                    startDate: authUser.metadata.creationTime || new Date().toISOString(),
+                    isActive: true
+                  },
+                  preferences: {
+                    language: 'es',
+                    notifications: true,
+                    theme: 'light'
+                  },
+                  stats: {
+                    totalDocuments: 0,
+                    totalGenerations: 0,
+                    totalSpent: 0
+                  }
+                };
+                
+                await userDocRef.set(userData, { merge: true });
+                console.log(`✅ Usuario creado en Firestore: ${userId}`);
+              } else {
+                console.warn(`⚠️ Usuario no encontrado en Firebase Auth para email: ${customerEmail}`);
+                userId = 'unknown';
+              }
+            } catch (authError: any) {
+              console.error('❌ Error buscando/creando usuario en Firebase Auth:', authError);
+              // If user doesn't exist in Auth either, we can't create it here
+              // This should not happen if signup worked correctly
+              userId = 'unknown';
+            }
           }
         } catch (error) {
           console.error('Error buscando usuario por email:', error);

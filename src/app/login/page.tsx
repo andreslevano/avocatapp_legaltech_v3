@@ -16,6 +16,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [reactivationMessage, setReactivationMessage] = useState('');
+  const [passwordResetMessage, setPasswordResetMessage] = useState('');
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const router = useRouter();
   const { t } = useI18n();
@@ -33,6 +34,18 @@ export default function Login() {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  useEffect(() => {
+    // Check for password reset success message
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('passwordReset') === 'success') {
+        setPasswordResetMessage('Tu contraseña ha sido restablecida exitosamente. Por favor, inicia sesión con tu nueva contraseña.');
+        // Clean up URL
+        router.replace('/login', { scroll: false });
+      }
+    }
+  }, [router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -167,6 +180,21 @@ export default function Login() {
             {error && (
               <div className="rounded-md bg-red-50 p-4">
                 <div className="text-sm text-red-700">{error}</div>
+              </div>
+            )}
+
+            {passwordResetMessage && (
+              <div className="rounded-md bg-green-50 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <div className="text-sm text-green-700">{passwordResetMessage}</div>
+                  </div>
+                </div>
               </div>
             )}
 

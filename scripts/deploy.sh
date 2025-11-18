@@ -30,8 +30,31 @@ fi
 echo "Installing root dependencies..."
 npm install
 
+# Temporarily move API routes to avoid build conflicts with static export
+# API routes are handled by Firebase Cloud Functions
+if [ -d "src/app/api" ]; then
+  echo "Temporarily moving API routes for build..."
+  mv src/app/api src/app/api.backup
+  API_MOVED=true
+else
+  API_MOVED=false
+fi
+
 echo "Building Next.js application..."
-npm run build
+# Workaround for Next.js static export pages-manifest.json issue
+mkdir -p .next/server
+echo '{}' > .next/server/pages-manifest.json
+npm run build || {
+  # If build fails, try again after ensuring directory exists
+  mkdir -p .next/server
+  npm run build
+}
+
+# Restore API routes after build
+if [ "$API_MOVED" = true ]; then
+  echo "Restoring API routes..."
+  mv src/app/api.backup src/app/api
+fi
 
 if [ -d "functions" ]; then
   echo "Installing Firebase Functions dependencies..."

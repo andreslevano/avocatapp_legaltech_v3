@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import DashboardNavigation from '@/components/DashboardNavigation';
@@ -9,12 +9,13 @@ import ReclamacionProcessSimple from '@/components/ReclamacionProcessSimple';
 import PurchaseHistoryComponent from '@/components/PurchaseHistory';
 import UserMenu from '@/components/UserMenu';
 
-export default function ReclamacionCantidadesDashboard() {
+function ReclamacionCantidadesDashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     // Defer any redirect until we have definitively checked auth state
@@ -37,6 +38,17 @@ export default function ReclamacionCantidadesDashboard() {
       router.push('/login');
     }
   }, [authChecked, user, router]);
+
+  // Track payment success conversion
+  useEffect(() => {
+    const paymentStatus = searchParams?.get('payment');
+    if (paymentStatus === 'success' && typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'subscribe_success', {});
+      window.gtag('event', 'conversion', {
+        'send_to': 'AW-16479671897/8Q-oCPbm0bgbENmsj719'
+      });
+    }
+  }, [searchParams]);
 
   const handleSignOut = async () => {
     if (!isFirebaseReady || !auth || typeof auth.signOut !== 'function') {
@@ -132,5 +144,20 @@ export default function ReclamacionCantidadesDashboard() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ReclamacionCantidadesDashboard() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    }>
+      <ReclamacionCantidadesDashboardContent />
+    </Suspense>
   );
 }

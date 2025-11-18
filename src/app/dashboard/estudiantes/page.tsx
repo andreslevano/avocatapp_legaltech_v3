@@ -788,6 +788,14 @@ function EstudiantesDashboardContent() {
     const paymentStatus = searchParams?.get('payment');
     
     if (paymentStatus === 'success') {
+      // Track subscription success conversion
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'subscribe_success', {});
+        window.gtag('event', 'conversion', {
+          'send_to': 'AW-16479671897/8Q-oCPbm0bgbENmsj719'
+        });
+      }
+      
       setShowPaymentSuccess(true);
       setProcessingStatus('processing');
       
@@ -1442,138 +1450,141 @@ function EstudiantesDashboardContent() {
                         ) : (
                           <div className="space-y-2">
                             {purchase.items.map((item) => (
-                            <div key={item.id} className="bg-gray-50 rounded-md p-3">
-                              <div className="flex flex-col space-y-3">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                            <details key={item.id} className="bg-gray-50 rounded-md group">
+                              <summary className="list-none p-3 cursor-pointer">
+                                <div className="flex items-center">
                                   <div className="flex-1 min-w-0">
-                                    <h6 className="text-sm font-medium text-gray-900 line-clamp-2 sm:line-clamp-1">{item.name}</h6>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {(item.area || 'Área no especificada')} - {item.country || DEFAULT_COUNTRY}
+                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                      {(item.area || 'Área no especificada')} — {item.name}
                                     </p>
                                   </div>
-                                  <div className="flex items-center justify-between sm:justify-end sm:space-x-4 text-sm">
-                                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0">
-                                      <span className="text-gray-500 text-xs sm:text-sm">
-                                        <span className="sm:hidden">Qty: </span>
-                                        <span className="hidden sm:inline">Cantidad: </span>
-                                        <span className="font-medium">{item.quantity}</span>
-                                      </span>
-                                      <span className="text-gray-500 text-xs sm:text-sm">
-                                        <span className="sm:hidden">{formatCurrency(item.price, purchase.currency)}</span>
-                                        <span className="hidden sm:inline">Precio: {formatCurrency(item.price, purchase.currency)}</span>
-                                      </span>
-                                    </div>
-                                    <span className="font-medium text-gray-900 text-sm sm:text-base">
+                                  <div className="ml-4 flex items-center space-x-4 text-xs sm:text-sm">
+                                    <span className="text-gray-500">
+                                      <span className="hidden sm:inline">Cantidad: </span>
+                                      <span className="sm:hidden">Qty: </span>
+                                      <span className="font-medium">{item.quantity}</span>
+                                    </span>
+                                    <span className="text-gray-500">
+                                      <span className="hidden sm:inline">Precio: </span>
+                                      {formatCurrency(item.price, purchase.currency)}
+                                    </span>
+                                    <span className="font-medium text-gray-900">
                                       {formatCurrency(item.price * item.quantity, purchase.currency)}
                                     </span>
+                                    <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
                                   </div>
                                 </div>
-                                
-                                <div className="flex flex-col sm:flex-row sm:justify-end sm:space-x-3 space-y-2 sm:space-y-0">
-                                  <button
-                                    onClick={() => handleViewDocument(item as any)}
-                                    disabled={
-                                      documentActionLoadingId === item.id ||
-                                      (!(item as any).packageFiles?.studyMaterialPdf?.downloadUrl &&
-                                        !(item as any).downloadUrl &&
-                                        !(item as any).previewUrl &&
-                                        !(item as any).storagePath &&
-                                        !(item as any).documentId)
-                                    }
-                                    className={`text-sm font-medium px-3 py-2 rounded-md transition-colors ${
-                                      documentActionLoadingId === item.id
-                                        ? 'bg-blue-100 text-blue-500 cursor-not-allowed'
-                                        : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                                    }`}
-                                  >
-                                    {documentActionLoadingId === item.id ? 'Abriendo...' : 'Ver documento'}
-                                  </button>
-                                  <button
-                                    onClick={() => handleDownloadDocument(item as any)}
-                                    disabled={
-                                      documentActionLoadingId === item.id ||
-                                      (!(item as any).packageFiles?.studyMaterialPdf?.downloadUrl &&
-                                        !(item as any).downloadUrl &&
-                                        !(item as any).previewUrl &&
-                                        !(item as any).storagePath &&
-                                        !(item as any).documentId)
-                                    }
-                                    className={`text-sm font-medium px-3 py-2 rounded-md transition-colors ${
-                                      documentActionLoadingId === item.id
-                                        ? 'bg-green-100 text-green-500 cursor-not-allowed'
-                                        : 'bg-green-50 text-green-700 hover:bg-green-100'
-                                    }`}
-                                  >
-                                    {documentActionLoadingId === item.id ? 'Descargando...' : 'Descargar'}
-                                  </button>
-                                </div>
+                              </summary>
+                              <div className="px-3 pb-3">
+                                <div className="border-t border-gray-100 pt-3">
+                                  <div className="flex flex-col sm:flex-row sm:justify-end sm:space-x-3 space-y-2 sm:space-y-0">
+                                    <button
+                                      onClick={() => handleViewDocument(item as any)}
+                                      disabled={
+                                        documentActionLoadingId === item.id ||
+                                        (!(item as any).packageFiles?.studyMaterialPdf?.downloadUrl &&
+                                          !(item as any).downloadUrl &&
+                                          !(item as any).previewUrl &&
+                                          !(item as any).storagePath &&
+                                          !(item as any).documentId)
+                                      }
+                                      className={`text-sm font-medium px-3 py-2 rounded-md transition-colors ${
+                                        documentActionLoadingId === item.id
+                                          ? 'bg-blue-100 text-blue-500 cursor-not-allowed'
+                                          : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                      }`}
+                                    >
+                                      {documentActionLoadingId === item.id ? 'Abriendo...' : 'Ver documento'}
+                                    </button>
+                                    <button
+                                      onClick={() => handleDownloadDocument(item as any)}
+                                      disabled={
+                                        documentActionLoadingId === item.id ||
+                                        (!(item as any).packageFiles?.studyMaterialPdf?.downloadUrl &&
+                                          !(item as any).downloadUrl &&
+                                          !(item as any).previewUrl &&
+                                          !(item as any).storagePath &&
+                                          !(item as any).documentId)
+                                      }
+                                      className={`text-sm font-medium px-3 py-2 rounded-md transition-colors ${
+                                        documentActionLoadingId === item.id
+                                          ? 'bg-green-100 text-green-500 cursor-not-allowed'
+                                          : 'bg-green-50 text-green-700 hover:bg-green-100'
+                                      }`}
+                                    >
+                                      {documentActionLoadingId === item.id ? 'Descargando...' : 'Descargar'}
+                                    </button>
+                                  </div>
 
-                                {item.packageFiles && (
-                                  <div className="mt-3 border border-green-100 bg-green-50 rounded-md p-3">
-                                    <p className="text-xs font-medium text-green-700 mb-2">
-                                      Materiales descargables
-                                    </p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                      {item.packageFiles.templateDocx?.downloadUrl && (
-                                        <a
-                                          href={item.packageFiles.templateDocx.downloadUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
-                                        >
-                                          Plantilla (Word)
-                                          <span className="text-[10px] text-green-500 ml-2">.docx</span>
-                                        </a>
-                                      )}
-                                      {item.packageFiles.templatePdf?.downloadUrl && (
-                                        <a
-                                          href={item.packageFiles.templatePdf.downloadUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
-                                        >
-                                          Plantilla (PDF)
-                                          <span className="text-[10px] text-green-500 ml-2">.pdf</span>
-                                        </a>
-                                      )}
-                                      {item.packageFiles.sampleDocx?.downloadUrl && (
-                                        <a
-                                          href={item.packageFiles.sampleDocx.downloadUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
-                                        >
-                                          Ejemplo (Word)
-                                          <span className="text-[10px] text-green-500 ml-2">.docx</span>
-                                        </a>
-                                      )}
-                                      {item.packageFiles.samplePdf?.downloadUrl && (
-                                        <a
-                                          href={item.packageFiles.samplePdf.downloadUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
-                                        >
-                                          Ejemplo (PDF)
-                                          <span className="text-[10px] text-green-500 ml-2">.pdf</span>
-                                        </a>
-                                      )}
-                                      {item.packageFiles.studyMaterialPdf?.downloadUrl && (
-                                        <a
-                                          href={item.packageFiles.studyMaterialPdf.downloadUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors sm:col-span-2"
-                                        >
-                                          Dossier académico (PDF)
-                                          <span className="text-[10px] text-green-500 ml-2">≥ 3 páginas</span>
-                                        </a>
-                                      )}
+                                  {item.packageFiles && (
+                                    <div className="mt-3 border border-green-100 bg-green-50 rounded-md p-3">
+                                      <p className="text-xs font-medium text-green-700 mb-2">
+                                        Materiales descargables
+                                      </p>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                        {item.packageFiles.templateDocx?.downloadUrl && (
+                                          <a
+                                            href={item.packageFiles.templateDocx.downloadUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
+                                          >
+                                            Plantilla (Word)
+                                            <span className="text-[10px] text-green-500 ml-2">.docx</span>
+                                          </a>
+                                        )}
+                                        {item.packageFiles.templatePdf?.downloadUrl && (
+                                          <a
+                                            href={item.packageFiles.templatePdf.downloadUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
+                                          >
+                                            Plantilla (PDF)
+                                            <span className="text-[10px] text-green-500 ml-2">.pdf</span>
+                                          </a>
+                                        )}
+                                        {item.packageFiles.sampleDocx?.downloadUrl && (
+                                          <a
+                                            href={item.packageFiles.sampleDocx.downloadUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
+                                          >
+                                            Ejemplo (Word)
+                                            <span className="text-[10px] text-green-500 ml-2">.docx</span>
+                                          </a>
+                                        )}
+                                        {item.packageFiles.samplePdf?.downloadUrl && (
+                                          <a
+                                            href={item.packageFiles.samplePdf.downloadUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
+                                          >
+                                            Ejemplo (PDF)
+                                            <span className="text-[10px] text-green-500 ml-2">.pdf</span>
+                                          </a>
+                                        )}
+                                        {item.packageFiles.studyMaterialPdf?.downloadUrl && (
+                                          <a
+                                            href={item.packageFiles.studyMaterialPdf.downloadUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors sm:col-span-2"
+                                          >
+                                            Dossier académico (PDF)
+                                            <span className="text-[10px] text-green-500 ml-2">≥ 3 páginas</span>
+                                          </a>
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
-                                )}
+                                  )}
+                                </div>
                               </div>
-                            </div>
+                            </details>
                             ))}
                           </div>
                         )}
