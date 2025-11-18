@@ -34,7 +34,7 @@ export default function Header() {
             <Link href="#precios" className="text-gray-600 hover:text-primary-600 transition-colors">
               {t('navigation.pricing')}
             </Link>
-            <Link href="#acerca-de" className="text-gray-600 hover:text-primary-600 transition-colors">
+            <Link href="/acerca-de" className="text-gray-600 hover:text-primary-600 transition-colors">
               {t('navigation.about')}
             </Link>
             <Link href="/contacto" className="text-gray-600 hover:text-primary-600 transition-colors">
@@ -114,7 +114,7 @@ export default function Header() {
               <Link href="#precios" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
                 {t('navigation.pricing')}
               </Link>
-              <Link href="#acerca-de" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
+              <Link href="/acerca-de" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
                 {t('navigation.about')}
               </Link>
               <Link href="/contacto" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">

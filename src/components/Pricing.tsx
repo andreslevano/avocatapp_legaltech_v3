@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/hooks/useI18n';
 
 export default function Pricing() {
-  const [isAnnual, setIsAnnual] = useState(true);
   const { t } = useI18n();
 
   const plans = [
@@ -27,48 +25,28 @@ export default function Pricing() {
       isFixedPrice: true,
     },
     {
-      name: '🇨🇴 Acción de Tutela',
-      price: '50.000',
-      period: 'escrito',
-      description: 'Especializado en procedimientos de tutela colombianos',
-      features: [
-        'Análisis de Documentos con IA (200 docs/mes)',
-        'Investigación Legal Avanzada',
-        'Portal de Clientes (hasta 50 clientes)',
-        'Soporte Prioritario',
-        'Análisis Avanzado',
-        'Colaboración en Equipo',
-        'Plantillas Personalizadas',
-      ],
-      popular: false,
-      cta: 'Empezar ahora',
-      href: '/signup?plan=colombia-tutela',
-      isFixedPrice: true,
-    },
-    {
-      name: '🇪🇸 Reclamación de Cantidades',
+      name: 'Autoservicio',
       price: '10,00',
       period: 'escrito',
-      description: 'Enfoque en reclamaciones de cantidades en España',
+      description: 'Genera documentos legales profesionales de forma automática con IA',
       features: [
-        'Análisis de Documentos con IA Ilimitado',
-        'Investigación Legal Premium',
-        'Clientes Ilimitados',
-        'Soporte Telefónico 24/7',
-        'Integraciones Personalizadas',
-        'Seguridad Avanzada',
-        'Gerente de Cuenta Dedicado',
-        'Capacitación Personalizada',
+        'Reclamación de Cantidades (España)',
+        'Acción de Tutela (Colombia)',
+        'Análisis inteligente de documentos con IA',
+        'Generación automática de demandas',
+        'OCR para extracción de texto',
+        'Documentos listos para presentar',
+        'Soporte para múltiples tipos de reclamaciones',
       ],
       popular: false,
       cta: 'Empezar ahora',
-      href: '/signup?plan=espana-reclamacion',
+      href: '/signup?plan=autoservicio',
       isFixedPrice: true,
     },
     {
       name: '🌍 Abogados',
-      price: isAnnual ? '550,00' : '50,00',
-      period: isAnnual ? 'anual' : 'mes',
+      price: null,
+      period: null,
       description: 'Solución completa para bufetes de abogados establecidos',
       features: [
         'Análisis de Documentos con IA Ilimitado',
@@ -85,11 +63,10 @@ export default function Pricing() {
       popular: true,
       cta: 'Empezar ahora',
       href: '/signup?plan=abogados',
-      hasBillingToggle: true,
+      isBeta: true,
     },
   ];
 
-  const savings = isAnnual ? 'Ahorra 10% con facturación anual' : '';
 
   return (
     <section id="precios" className="py-20 bg-gray-50">
@@ -99,23 +76,15 @@ export default function Pricing() {
               Precios Simples y Transparentes
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Elige el plan que se adapte a tu práctica. Todos los planes incluyen una prueba gratuita de 14 días 
-              sin tarjeta de crédito requerida.
+              Elige el plan que se adapte a tu práctica.
             </p>
         </div>
 
 
 
-        {savings && plans.some(plan => !plan.isFixedPrice) && (
-          <div className="text-center mb-8">
-            <span className="inline-block bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-medium">
-              {savings}
-            </span>
-          </div>
-        )}
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {plans.map((plan, index) => (
             <div
               key={index}
@@ -137,58 +106,29 @@ export default function Pricing() {
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                   <p className="text-gray-600 mb-4">{plan.description}</p>
                   
-                  {/* Billing Toggle for Abogados card */}
-                  {plan.hasBillingToggle && (
-                    <div className="flex justify-center mb-4">
-                      <div className="bg-white rounded-lg p-1 shadow-sm border border-gray-200">
-                        <button
-                          onClick={() => setIsAnnual(false)}
-                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                            !isAnnual
-                              ? 'bg-primary-600 text-white'
-                              : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                        >
-                          Mensual
-                        </button>
-                        <button
-                          onClick={() => setIsAnnual(true)}
-                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                            isAnnual
-                              ? 'bg-primary-600 text-white'
-                              : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                        >
-                          Anual
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  
                   <div className="mb-2">
-                    {plan.name === '🇪🇸 Estudiantes' ? (
+                    {plan.isBeta ? (
+                      <div className="text-center">
+                        <div className="inline-block bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-lg font-semibold text-lg mb-2">
+                          🚀 Versión Beta Gratuita
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">
+                          Acceso completo sin costo durante la fase beta
+                        </p>
+                      </div>
+                    ) : plan.name === t('pricing.students.title') || plan.name === '🇪🇸 Estudiantes' ? (
                       <>
                         <span className="text-4xl font-bold text-gray-900">€{plan.price}</span>
                         <span className="text-gray-600">/{plan.period}</span>
                       </>
-                    ) : plan.name === '🇨🇴 Acción de Tutela' ? (
-                      <>
-                        <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
-                        <span className="text-gray-600">/{plan.period}</span>
-                      </>
-                    ) : plan.name === '🇪🇸 Reclamación de Cantidades' ? (
-                      <>
-                        <span className="text-4xl font-bold text-gray-900">€{plan.price}</span>
-                        <span className="text-gray-600">/{plan.period}</span>
-                      </>
-                    ) : plan.name === '🌍 Abogados' ? (
+                    ) : plan.name === 'Autoservicio' ? (
                       <>
                         <span className="text-4xl font-bold text-gray-900">€{plan.price}</span>
                         <span className="text-gray-600">/{plan.period}</span>
                       </>
                     ) : (
                       <>
-                        <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
+                        <span className="text-4xl font-bold text-gray-900">€{plan.price}</span>
                         <span className="text-gray-600">/{plan.period}</span>
                       </>
                     )}
@@ -242,28 +182,12 @@ export default function Pricing() {
               <Link href="/contact" className="btn-primary">
                 Contactar Ventas
               </Link>
-              <Link href="/demo" className="btn-secondary">
-                Programar Demo
-              </Link>
             </div>
           </div>
         </div>
 
-        {/* FAQ Preview */}
-        <div className="mt-16 text-center">
-                      <p className="text-gray-600 mb-4">
-              ¿Preguntas sobre precios? Revisa nuestras{' '}
-              <Link href="/faq" className="text-primary-600 hover:text-primary-700 font-medium">
-                Preguntas Frecuentes
-              </Link>{' '}
-              o{' '}
-              <Link href="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
-                contacta soporte
-              </Link>
-              .
-            </p>
-        </div>
       </div>
     </section>
   );
 }
+
