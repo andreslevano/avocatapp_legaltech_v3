@@ -9,6 +9,43 @@ import { db } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs' as const;
 
+/**
+ * Normaliza el JSON de reclamación para que coincida con el esquema esperado
+ * Convierte campos como "encabezado.tribunal" a "encabezado.juzgado" y "encabezado.localidad"
+ */
+function normalizeReclamacionJSON(data: any): any {
+  const normalized: any = { ...data };
+  
+  // Normalizar encabezado
+  if (normalized.encabezado) {
+    if (normalized.encabezado.tribunal && !normalized.encabezado.juzgado) {
+      normalized.encabezado.juzgado = normalized.encabezado.tribunal;
+      delete normalized.encabezado.tribunal;
+    }
+    // Asegurar que localidad existe
+    if (!normalized.encabezado.localidad && normalized.encabezado.juzgado) {
+      // Intentar extraer localidad del juzgado
+      const match = normalized.encabezado.juzgado.match(/\[LOCALIDAD\]|DE\s+([A-ZÁÉÍÓÚÑ\s]+)/);
+      normalized.encabezado.localidad = match ? match[1]?.trim() || 'Madrid' : 'Madrid';
+    }
+  }
+  
+  // Remover campos no esperados
+  delete normalized.notaAclaratoria;
+  
+  // Asegurar que todos los campos requeridos existen
+  if (!normalized.hechos?.primer) normalized.hechos = { ...normalized.hechos, primer: {} };
+  if (!normalized.hechos?.segundo) normalized.hechos = { ...normalized.hechos, segundo: { cantidadesAdeudadas: [], interesDemora: false } };
+  if (!normalized.hechos?.tercer) normalized.hechos = { ...normalized.hechos, tercer: { cargoSindical: false } };
+  if (!normalized.hechos?.cuarto) normalized.hechos = { ...normalized.hechos, cuarto: { fechaPapeleta: '', fechaConciliacion: '', resultado: '' } };
+  
+  if (!normalized.fundamentos) normalized.fundamentos = { primero: '', segundo: '', tercero: '', cuarto: '' };
+  if (!normalized.petitorio) normalized.petitorio = { cantidadReclamada: '', intereses: false, lugar: '', fecha: '' };
+  if (!normalized.otrosi) normalized.otrosi = { asistenciaLetrada: false, mediosPrueba: { documental: [], interrogatorio: '' } };
+  
+  return normalized;
+}
+
 export async function POST(request: NextRequest) {
   const requestId = uuidv4();
   const startTime = Date.now();
@@ -143,26 +180,148 @@ INSTRUCCIONES ESPECIALES PARA USAR DATOS OCR:
       throw new Error('No se recibió contenido del modelo');
     }
 
-    // Parsear y validar JSON
+    // Parsear y validar JSON - manejar markdown code blocks
     let parsedContent;
     try {
+      // Primero intentar parsear directamente
       parsedContent = JSON.parse(content);
-    } catch (parseError) {
-      // Si falla el parseo, intentar extraer JSON del contenido
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsedContent = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('No se pudo extraer JSON válido de la respuesta');
+    } catch (parseError: any) {
+      // Si falla, intentar extraer JSON del markdown
+      let jsonContent = content;
+      
+      // Remover markdown code blocks si existen
+      // Patrón más robusto que maneja diferentes formatos de markdown
+      if (content.includes('```json')) {
+        // Buscar ```json ... ```
+        const jsonMatch = content.match(/```json\s*\n?([\s\S]*?)\n?\s*```/);
+        if (jsonMatch && jsonMatch[1]) {
+          jsonContent = jsonMatch[1].trim();
+          console.log('✅ JSON extraído de markdown code block (```json)');
+        } else {
+          // Intentar sin el salto de línea
+          const jsonMatch2 = content.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonMatch2 && jsonMatch2[1]) {
+            jsonContent = jsonMatch2[1].trim();
+            console.log('✅ JSON extraído de markdown code block (```json, sin salto de línea)');
+          }
+        }
+      } else if (content.includes('```')) {
+        // Intentar con cualquier code block (puede ser ``` sin especificar tipo)
+        const jsonMatch = content.match(/```[a-z]*\s*\n?([\s\S]*?)\n?\s*```/);
+        if (jsonMatch && jsonMatch[1]) {
+          jsonContent = jsonMatch[1].trim();
+          console.log('✅ JSON extraído de markdown code block (```)');
+        } else {
+          // Intentar sin salto de línea
+          const jsonMatch2 = content.match(/```[a-z]*\s*([\s\S]*?)\s*```/);
+          if (jsonMatch2 && jsonMatch2[1]) {
+            jsonContent = jsonMatch2[1].trim();
+            console.log('✅ JSON extraído de markdown code block (```, sin salto de línea)');
+          }
+        }
+      }
+      
+      // Si aún no tenemos JSON válido, buscar entre llaves
+      if (jsonContent === content) {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonContent = jsonMatch[0];
+          console.log('✅ JSON extraído usando regex de llaves');
+        }
+      }
+      
+      try {
+        parsedContent = JSON.parse(jsonContent);
+        console.log('✅ JSON parseado correctamente después de extracción');
+      } catch (secondError: any) {
+        console.error('❌ Error parseando JSON extraído:', secondError.message);
+        console.error('📄 Contenido recibido (primeros 500 chars):', content.substring(0, 500));
+        throw new Error(`No se pudo extraer JSON válido de la respuesta: ${secondError.message}. Contenido: ${content.substring(0, 200)}...`);
       }
     }
 
+    // Intentar normalizar el JSON antes de validar
+    const normalizedContent = normalizeReclamacionJSON(parsedContent);
+    
     // Validar con Zod
-    const modelValidation = ReclamacionCantidadesModelSchema.safeParse(parsedContent);
+    const modelValidation = ReclamacionCantidadesModelSchema.safeParse(normalizedContent);
     
     if (!modelValidation.success) {
-      // Reintentar una vez con prompt más específico
-      const retryPrompt = userPrompt + '\n\nIMPORTANTE: Devuelve EXCLUSIVAMENTE JSON válido. No incluyas texto adicional, explicaciones ni formato Markdown. STRICT_JSON_ONLY.';
+      // Log detallado de errores de validación
+      console.error('❌ Error de validación en primera respuesta:', {
+        errors: modelValidation.error.errors.map(e => ({
+          path: e.path.join('.'),
+          message: e.message,
+          code: e.code
+        })),
+        receivedKeys: Object.keys(parsedContent || {}),
+        sampleContent: JSON.stringify(parsedContent).substring(0, 500)
+      });
+      
+      // Reintentar una vez con prompt más específico que incluya el esquema exacto
+      const retryPrompt = userPrompt + `\n\nIMPORTANTE: El JSON debe tener EXACTAMENTE esta estructura (sin campos adicionales como "notaAclaratoria"):
+{
+  "encabezado": {
+    "juzgado": "AL TRIBUNAL DE INSTANCIA, SECCIÓN SOCIAL DE [LOCALIDAD]",
+    "localidad": "string"
+  },
+  "demandante": {
+    "nombre": "string",
+    "dni": "string",
+    "domicilio": "string",
+    "telefono": "string"
+  },
+  "demandada": {
+    "nombre": "string",
+    "cif": "string",
+    "domicilio": "string"
+  },
+  "hechos": {
+    "primer": {
+      "tipoContrato": "string",
+      "jornada": "string",
+      "coeficienteParcialidad": "string",
+      "tareas": "string",
+      "antiguedad": "string",
+      "duracion": "string",
+      "salario": "string",
+      "convenio": "string"
+    },
+    "segundo": {
+      "cantidadesAdeudadas": ["string"],
+      "interesDemora": true
+    },
+    "tercer": {
+      "cargoSindical": false
+    },
+    "cuarto": {
+      "fechaPapeleta": "string",
+      "fechaConciliacion": "string",
+      "resultado": "string"
+    }
+  },
+  "fundamentos": {
+    "primero": "string",
+    "segundo": "string",
+    "tercero": "string",
+    "cuarto": "string"
+  },
+  "petitorio": {
+    "cantidadReclamada": "string",
+    "intereses": true,
+    "lugar": "string",
+    "fecha": "string"
+  },
+  "otrosi": {
+    "asistenciaLetrada": true,
+    "mediosPrueba": {
+      "documental": ["string"],
+      "interrogatorio": "string"
+    }
+  }
+}
+
+NO incluyas "notaAclaratoria" ni otros campos adicionales. Devuelve EXCLUSIVAMENTE el JSON válido sin formato Markdown.`;
       
       const retryResult = await openaiClient.generateContent(retryPrompt, {
         systemPrompt: SYSTEM_PROMPT,
@@ -174,11 +333,65 @@ INSTRUCCIONES ESPECIALES PARA USAR DATOS OCR:
         throw new Error('No se recibió contenido en el reintento');
       }
 
-      const retryParsed = JSON.parse(retryResult.content);
+      // Parsear JSON del reintento - manejar markdown code blocks
+      let retryParsed;
+      try {
+        retryParsed = JSON.parse(retryResult.content);
+      } catch (retryParseError: any) {
+        // Extraer JSON del markdown si es necesario
+        let retryJsonContent = retryResult.content;
+        
+        if (retryResult.content.includes('```json')) {
+          const jsonMatch = retryResult.content.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonMatch) {
+            retryJsonContent = jsonMatch[1].trim();
+          }
+        } else if (retryResult.content.includes('```')) {
+          const jsonMatch = retryResult.content.match(/```\s*([\s\S]*?)\s*```/);
+          if (jsonMatch) {
+            retryJsonContent = jsonMatch[1].trim();
+          }
+        } else {
+          const jsonMatch = retryResult.content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            retryJsonContent = jsonMatch[0];
+          }
+        }
+        
+        try {
+          retryParsed = JSON.parse(retryJsonContent);
+        } catch (secondRetryError: any) {
+          throw new Error(`No se pudo extraer JSON válido del reintento: ${secondRetryError.message}`);
+        }
+      }
+      
       const retryValidation = ReclamacionCantidadesModelSchema.safeParse(retryParsed);
       
       if (!retryValidation.success) {
-        throw new Error(`Validación fallida en reintento: ${retryValidation.error.errors.map(e => e.message).join(', ')}`);
+        // Log detallado de errores en el reintento
+        console.error('❌ Error de validación en reintento:', {
+          errors: retryValidation.error.errors.map(e => ({
+            path: e.path.join('.'),
+            message: e.message,
+            code: e.code,
+            received: e.path.length > 0 ? (retryParsed as any)?.[e.path[0]] : undefined
+          })),
+          receivedKeys: Object.keys(retryParsed || {}),
+          sampleContent: JSON.stringify(retryParsed).substring(0, 500)
+        });
+        
+        // Intentar normalizar el JSON antes de fallar
+        const normalized = normalizeReclamacionJSON(retryParsed);
+        const normalizedValidation = ReclamacionCantidadesModelSchema.safeParse(normalized);
+        
+        if (normalizedValidation.success) {
+          console.log('✅ JSON normalizado exitosamente');
+          parsedContent = normalizedValidation.data;
+        } else {
+          throw new Error(`Validación fallida en reintento: ${retryValidation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+        }
+      } else {
+        parsedContent = retryValidation.data;
       }
       
       parsedContent = retryValidation.data;

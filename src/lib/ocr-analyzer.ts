@@ -1,5 +1,6 @@
 import { createWorker } from 'tesseract.js';
 import { DocumentoOCR, DocumentoOCRSchema } from './validate-reclamacion';
+import pdfParse from 'pdf-parse';
 
 export interface OCRResult {
   contenido: string;
@@ -10,20 +11,79 @@ export interface OCRResult {
 }
 
 export async function analyzeDocumentOCR(fileBuffer: Buffer, filename: string): Promise<OCRResult> {
-  // TEMPORALMENTE: Deshabilitar OCR en servidor para evitar problemas con workers
-  // TODO: Implementar OCR alternativo o mover a cliente
   const isServer = typeof window === 'undefined';
   
   if (isServer) {
-    // En servidor, devolver resultado básico sin OCR para evitar problemas con workers
-    console.log(`⚠️ OCR deshabilitado en servidor para ${filename}. Usando metadatos básicos.`);
-    return {
-      contenido: `[Documento: ${filename}]`,
-      precision: 0,
-      cantidadDetectada: undefined,
-      fechaDetectada: undefined,
-      tipoDocumento: detectarTipoDocumento(filename.toLowerCase(), filename)
-    };
+    // En servidor, usar pdf-parse para extraer texto de PDFs
+    try {
+      // Verificar si es un PDF
+      const isPDF = filename.toLowerCase().endsWith('.pdf') || 
+                    fileBuffer.toString('utf8', 0, 4) === '%PDF';
+      
+      if (isPDF) {
+        console.log(`📄 Extrayendo texto de PDF: ${filename}`);
+        
+        try {
+          const pdfData = await pdfParse(fileBuffer);
+          const contenido = pdfData.text.trim();
+          const numPages = pdfData.numpages;
+          
+          // Calcular precisión basada en la cantidad de texto extraído
+          // Si hay mucho texto, asumimos alta precisión (PDF con texto)
+          // Si hay poco texto, puede ser un PDF escaneado (baja precisión)
+          const precision = contenido.length > 100 ? 85 : 30;
+          
+          console.log(`✅ Texto extraído de PDF: ${contenido.length} caracteres, ${numPages} páginas`);
+          
+          // Detectar cantidad monetaria
+          const cantidadDetectada = detectarCantidad(contenido);
+          
+          // Detectar fecha
+          const fechaDetectada = detectarFecha(contenido);
+          
+          // Detectar tipo de documento
+          const tipoDocumento = detectarTipoDocumento(contenido, filename);
+          
+          return {
+            contenido: contenido || `[Documento PDF: ${filename}]`,
+            precision,
+            cantidadDetectada,
+            fechaDetectada,
+            tipoDocumento
+          };
+        } catch (pdfError: any) {
+          console.warn(`⚠️ Error extrayendo texto del PDF ${filename}:`, pdfError.message);
+          // Si falla pdf-parse, puede ser un PDF escaneado o corrupto
+          // Devolver resultado básico
+          return {
+            contenido: `[PDF no procesable: ${pdfError.message}]`,
+            precision: 0,
+            cantidadDetectada: undefined,
+            fechaDetectada: undefined,
+            tipoDocumento: detectarTipoDocumento(filename.toLowerCase(), filename)
+          };
+        }
+      } else {
+        // No es un PDF, devolver resultado básico
+        console.log(`⚠️ Archivo no es PDF: ${filename}`);
+        return {
+          contenido: `[Documento: ${filename}]`,
+          precision: 0,
+          cantidadDetectada: undefined,
+          fechaDetectada: undefined,
+          tipoDocumento: detectarTipoDocumento(filename.toLowerCase(), filename)
+        };
+      }
+    } catch (error: any) {
+      console.error(`❌ Error procesando documento en servidor ${filename}:`, error.message);
+      return {
+        contenido: `[Error procesando: ${error.message}]`,
+        precision: 0,
+        cantidadDetectada: undefined,
+        fechaDetectada: undefined,
+        tipoDocumento: detectarTipoDocumento(filename.toLowerCase(), filename)
+      };
+    }
   }
   
   // En cliente, intentar OCR si está disponible

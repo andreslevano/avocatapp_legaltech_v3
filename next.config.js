@@ -20,6 +20,7 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['pino', 'pdfkit', 'tesseract.js']
   },
+<<<<<<< Updated upstream
   // Configuración webpack para PDFKit y Tesseract.js - copiar archivos de fuente
   webpack: (config, { isServer }) => {
     if (isServer) {
@@ -65,6 +66,24 @@ const nextConfig = {
     }
     return config;
   },
+=======
+  // Configuración para copiar archivos de fuente de PDFKit
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Configurar PDFKit para que funcione en el servidor
+      config.resolve.alias = {
+        ...config.resolve.alias,
+      };
+      
+      // Asegurar que los archivos de fuente se incluyan
+      config.externals = config.externals || [];
+      config.externals.push({
+        canvas: 'canvas',
+      });
+    }
+    return config;
+  }
+>>>>>>> Stashed changes
 }
 
 module.exports = nextConfig
