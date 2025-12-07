@@ -8,15 +8,9 @@ export interface AuthResult {
 }
 
 /**
-<<<<<<< Updated upstream
- * Obtiene el userId del token de autenticación en el header Authorization
- * @param request - Request de Next.js
- * @returns userId si el token es válido, null si no hay token o es inválido
-=======
  * Obtiene el userId desde el token de autenticación en el header Authorization
  * @param request - Request de Next.js
  * @returns AuthResult con userId o null si no hay token válido
->>>>>>> Stashed changes
  */
 export async function getUserIdFromAuth(request: NextRequest): Promise<AuthResult> {
   try {
