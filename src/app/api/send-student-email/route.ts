@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import nodemailer from 'nodemailer';
+import { GoogleChatNotifications } from '@/lib/google-chat';
 
 export async function POST(request: NextRequest) {
   const requestId = uuidv4();
@@ -121,6 +122,16 @@ export async function POST(request: NextRequest) {
     const info = await transporter.sendMail(mailOptions);
     console.log('✅ Email enviado exitosamente:', info.messageId);
     
+    // Notificar a Google Chat sobre el envío exitoso (no bloqueante)
+    GoogleChatNotifications.emailSent({
+      to,
+      subject,
+      documentName,
+      status: 'sent',
+    }).catch((err) => {
+      console.warn('⚠️ Error enviando notificación a Google Chat:', err);
+    });
+    
     // Guardar registro del email en Firestore (simulado)
     const emailRecord = {
       id: requestId,
@@ -152,6 +163,17 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('❌ Error enviando email:', error);
+    
+    // Notificar error a Google Chat (no bloqueante)
+    GoogleChatNotifications.emailSent({
+      to,
+      subject,
+      documentName,
+      status: 'failed',
+    }).catch((err) => {
+      console.warn('⚠️ Error enviando notificación de error a Google Chat:', err);
+    });
+    
     return NextResponse.json(
       { 
         success: false, 

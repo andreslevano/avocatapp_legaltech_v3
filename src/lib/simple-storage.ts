@@ -106,3 +106,60 @@ export async function updateUserStats(uid: string, stats: any) {
     lastLoginAt: new Date().toISOString()
   });
 }
+
+// Guardar reclamación en Firestore
+export async function saveReclamacion(reclId: string, reclamacionData: any) {
+  await db().collection('reclamaciones').doc(reclId).set(reclamacionData, { merge: true });
+  console.log(`✅ Reclamación guardada en Firestore: ${reclId}`);
+}
+
+// Guardar información de archivos subidos en Firestore
+export async function saveUploadedFilesToFirestore(
+  userId: string,
+  reclId: string,
+  files: Array<{
+    fileName: string;
+    storagePath?: string;
+    downloadUrl?: string;
+    size?: number;
+    contentType?: string;
+    extractedText?: string;
+    confidence?: number;
+  }>
+) {
+  try {
+    const reclamacionRef = db().collection('reclamaciones').doc(reclId);
+    
+    // Obtener datos existentes o crear nuevos
+    const existingDoc = await reclamacionRef.get();
+    const existingData = existingDoc.exists ? existingDoc.data() : {};
+    
+    // Actualizar con información de archivos
+    const updatedData = {
+      ...existingData,
+      id: reclId,
+      userId: userId,
+      uploadedFiles: files.map(file => ({
+        fileName: file.fileName,
+        storagePath: file.storagePath,
+        downloadUrl: file.downloadUrl,
+        size: file.size,
+        contentType: file.contentType || 'application/pdf',
+        uploadedAt: new Date().toISOString(),
+        extractedText: file.extractedText,
+        confidence: file.confidence
+      })),
+      totalFiles: files.length,
+      updatedAt: new Date().toISOString(),
+      createdAt: existingData.createdAt || new Date().toISOString()
+    };
+    
+    await reclamacionRef.set(updatedData, { merge: true });
+    console.log(`✅ ${files.length} archivos guardados en Firestore para reclamación ${reclId}`);
+    
+    return updatedData;
+  } catch (error: any) {
+    console.error(`❌ Error guardando archivos en Firestore:`, error);
+    throw error;
+  }
+}

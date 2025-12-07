@@ -67,13 +67,13 @@ export async function POST(request: NextRequest) {
 </head>
 <body>
     <div class="header">
-        <h1>REGLAMENTO DE CANTIDADES</h1>
+        <h1>RECLAMACIÓN DE CANTIDADES</h1>
     </div>
     
     <div class="content">
 Estimado/a Sr./Sra.,
 
-Por medio del presente, me dirigo a ustedes para reclamar las cantidades adeudadas por la empresa en concepto de salarios, horas extras y otros conceptos laborales.
+Por medio del presente, me dirijo a ustedes para reclamar las cantidades adeudadas por la empresa en concepto de salarios, horas extras y otros conceptos laborales.
 
 DETALLES DE LA RECLAMACIÓN:
 - Trabajador: ${body.nombreTrabajador}

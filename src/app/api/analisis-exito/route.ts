@@ -28,16 +28,41 @@ export async function POST(request: NextRequest) {
       userId: userId || 'demo_user'
     });
 
+    // Validar que OpenAI esté configurado
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    if (!openaiApiKey || openaiApiKey === 'your_openai_api_key_here') {
+      console.error('❌ OPENAI_API_KEY no está configurada');
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'OPENAI_NOT_CONFIGURED',
+            message: 'OpenAI API Key no está configurada',
+            hint: 'Configura OPENAI_API_KEY en .env.local'
+          }
+        },
+        { status: 500 }
+      );
+    }
+
     // Generar análisis con ChatGPT
     const userPrompt = buildAnalisisPrompt(datosOCR, tipoDocumento);
     
     console.log('🤖 Enviando prompt de análisis a ChatGPT...');
     const openaiClient = getOpenAIClient();
-    const result = await openaiClient.generateContent(userPrompt, {
+    
+    // Añadir timeout para evitar que se quede colgado
+    const generatePromise = openaiClient.generateContent(userPrompt, {
       systemPrompt: SYSTEM_PROMPT_ANALISIS,
       temperature: 0.2,
       maxTokens: 2000
     });
+    
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout: La generación de OpenAI tardó más de 60 segundos')), 60000);
+    });
+    
+    const result = await Promise.race([generatePromise, timeoutPromise]) as any;
 
     const content = result.content;
     // const timeMs = 0; // TODO: Get from result metadata when available
@@ -84,17 +109,34 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     const elapsedMs = Date.now() - startTime;
     console.error('❌ Error en análisis de éxito:', error);
+    console.error('Stack:', error.stack);
+    
+    // Mensajes de error más específicos
+    let errorMessage = 'Error realizando análisis de éxito';
+    let errorHint = 'Intenta de nuevo o contacta soporte si el problema persiste';
+    
+    if (error.message?.includes('OPENAI_API_KEY') || error.message?.includes('API key')) {
+      errorMessage = 'OpenAI API Key no configurada';
+      errorHint = 'Verifica que OPENAI_API_KEY esté configurada en .env.local';
+    } else if (error.message?.includes('rate limit')) {
+      errorMessage = 'Límite de tasa de OpenAI excedido';
+      errorHint = 'Espera unos minutos e intenta de nuevo';
+    } else if (error.message?.includes('No se recibió')) {
+      errorMessage = 'No se recibió respuesta de OpenAI';
+      errorHint = 'Verifica la configuración de OpenAI';
+    }
     
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'ANALISIS_FAILED',
-          message: 'Error realizando análisis de éxito',
-          hint: 'Intenta de nuevo o contacta soporte si el problema persiste'
+          message: errorMessage,
+          details: error.message,
+          hint: errorHint
         },
         metadata: {
           requestId,
