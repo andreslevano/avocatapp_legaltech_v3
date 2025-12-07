@@ -1,5 +1,29 @@
 import { ReclamacionCantidadesModel } from '@/lib/validate-reclamacion-cantidades';
 import PDFDocument from 'pdfkit';
+import path from 'path';
+import fs from 'fs';
+
+// Configurar ruta de fuentes de PDFKit para Next.js
+const setupPdfKitFonts = () => {
+  try {
+    // Intentar encontrar los archivos de fuente en node_modules
+    const pdfkitPath = require.resolve('pdfkit');
+    const pdfkitDir = path.dirname(pdfkitPath);
+    const dataDir = path.join(pdfkitDir, 'js', 'data');
+    
+    // Verificar si el directorio existe
+    if (fs.existsSync(dataDir)) {
+      // PDFKit debería encontrar los archivos automáticamente
+      return true;
+    }
+  } catch (error) {
+    console.warn('⚠️ No se pudo configurar fuentes de PDFKit:', error);
+  }
+  return false;
+};
+
+// Configurar fuentes al cargar el módulo
+setupPdfKitFonts();
 
 export function renderReclamacionCantidadesPDF(modeloJSON: ReclamacionCantidadesModel): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -11,7 +35,9 @@ export function renderReclamacionCantidadesPDF(modeloJSON: ReclamacionCantidades
           bottom: 50,
           left: 50,
           right: 50
-        }
+        },
+        // Especificar ruta de fuentes si es necesario
+        font: 'Helvetica'
       });
 
       const buffers: Buffer[] = [];
@@ -21,27 +47,36 @@ export function renderReclamacionCantidadesPDF(modeloJSON: ReclamacionCantidades
         resolve(pdfData);
       });
 
-      // Encabezado
+      // Nota aclaratoria (si existe)
+      if (modeloJSON.notaAclaratoria) {
+        doc.fontSize(9).font('Helvetica')
+           .text(modeloJSON.notaAclaratoria, { align: 'justify' });
+        doc.moveDown(2);
+      }
+
+      // Encabezado con Tribunal de Instancia (Ley Orgánica 1/2025)
+      // Compatibilidad: usar 'tribunal' si existe, sino 'juzgado' (formato antiguo)
+      const tribunalText = (modeloJSON.encabezado as any).tribunal || (modeloJSON.encabezado as any).juzgado || 'AL TRIBUNAL DE INSTANCIA, SECCIÓN SOCIAL QUE POR TURNO CORRESPONDA';
       doc.fontSize(12).font('Helvetica-Bold')
-         .text(modeloJSON.encabezado.juzgado, { align: 'center' });
+         .text(tribunalText, { align: 'center' });
       
       doc.moveDown(2);
 
-      // Datos del demandante
-      doc.fontSize(11).font('Helvetica-Bold')
-         .text(`Doña ${modeloJSON.demandante.nombre} con DNI ${modeloJSON.demandante.dni}, con domicilio a efecto de notificaciones en ${modeloJSON.demandante.domicilio} y número de teléfono ${modeloJSON.demandante.telefono} ante el JUZGADO DE LO SOCIAL comparezco y como mejor proceda en Derecho`);
+      // Datos del demandante con formato profesional
+      const demandanteNombre = modeloJSON.demandante.nombre;
+      const demandanteDNI = modeloJSON.demandante.dni;
+      const demandanteDomicilio = modeloJSON.demandante.domicilio;
+      const demandanteTelefono = modeloJSON.demandante.telefono;
+      const demandanteEmail = (modeloJSON.demandante as any).email || '';
       
-      doc.moveDown(1);
-
-      // D I G O
-      doc.fontSize(12).font('Helvetica-Bold')
-         .text('D I G O', { align: 'center' });
+      doc.fontSize(11).font('Helvetica')
+         .text(`DON/DOÑA ${demandanteNombre}, con DNI nº ${demandanteDNI}, domicilio en ${demandanteDomicilio}, teléfono ${demandanteTelefono}${demandanteEmail ? ` y correo electrónico ${demandanteEmail}` : ''}, ante el TRIBUNAL DE INSTANCIA comparezco y como mejor en Derecho proceda, DIGO:`, { align: 'justify' });
       
       doc.moveDown(1);
 
       // Demanda
       doc.fontSize(11).font('Helvetica')
-         .text(`Que por medio del presente interpongo DEMANDA DE RECLAMACIÓN DE CANTIDAD frente a ${modeloJSON.demandada.nombre} con CIF ${modeloJSON.demandada.cif}, a citar en la persona de su representante legal, con sede social a efecto de notificaciones sita en ${modeloJSON.demandada.domicilio} a fin de que se avenga a reconocer los siguientes`);
+         .text(`Que mediante el presente escrito y en la representación que ostento, de conformidad con lo dispuesto en los artículos 399 de la Ley de Enjuiciamiento Civil, paso a interponer DEMANDA DE JUICIO DECLARATIVO ORDINARIO en ejercicio de la acción de reclamación de cantidades frente a ${modeloJSON.demandada.nombre} con CIF ${modeloJSON.demandada.cif}, a citar en la persona de su representante legal, con sede social a efecto de notificaciones sita en ${modeloJSON.demandada.domicilio}, a fin de que se avenga a reconocer los siguientes`, { align: 'justify' });
 
       doc.moveDown(1);
 
@@ -103,31 +138,47 @@ export function renderReclamacionCantidadesPDF(modeloJSON: ReclamacionCantidades
       
       doc.moveDown(1);
 
+      // I.- Fundamentos de derecho (con texto completo mejorado)
       doc.fontSize(11).font('Helvetica-Bold')
          .text('I.-', { continued: true });
       doc.font('Helvetica')
-         .text(` ${modeloJSON.fundamentos.primero}, siendo competente dicho Juzgado de lo Social en razón de la materia y territorio.`);
+         .text(` ${modeloJSON.fundamentos.primero}`, {
+           align: 'justify',
+           lineGap: 2
+         });
 
       doc.moveDown(0.5);
 
+      // II.- Fundamentos de derecho (con texto completo mejorado)
       doc.fontSize(11).font('Helvetica-Bold')
          .text('II.-', { continued: true });
       doc.font('Helvetica')
-         .text(` ${modeloJSON.fundamentos.segundo}.`);
+         .text(` ${modeloJSON.fundamentos.segundo}`, {
+           align: 'justify',
+           lineGap: 2
+         });
 
       doc.moveDown(0.5);
 
+      // III.- Fundamentos de derecho (con texto completo mejorado)
       doc.fontSize(11).font('Helvetica-Bold')
          .text('III.-', { continued: true });
       doc.font('Helvetica')
-         .text(` ${modeloJSON.fundamentos.tercero}.`);
+         .text(` ${modeloJSON.fundamentos.tercero}`, {
+           align: 'justify',
+           lineGap: 2
+         });
 
       doc.moveDown(0.5);
 
+      // IV.- Fundamentos de derecho (con texto completo mejorado)
       doc.fontSize(11).font('Helvetica-Bold')
          .text('IV.-', { continued: true });
       doc.font('Helvetica')
-         .text(` ${modeloJSON.fundamentos.cuarto}.`);
+         .text(` ${modeloJSON.fundamentos.cuarto}`, {
+           align: 'justify',
+           lineGap: 2
+         });
 
       doc.moveDown(2);
 
