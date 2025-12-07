@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Contact messages: allow public writes, but only authenticated users can read
+    match /contact_messages/{messageId} {
+      allow create: if request.resource.data.keys().hasAll(['name', 'email', 'message', 'createdAt', 'status'])
+        && request.resource.data.name is string
+        && request.resource.data.email is string
+        && request.resource.data.message is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.email.size() > 0
+        && request.resource.data.message.size() >= 10
+        && (!('subject' in request.resource.data) || request.resource.data.subject is string);
+      allow read: if request.auth != null;
+    }
+    
+    // Allow read/write only for authenticated users by default.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+
+

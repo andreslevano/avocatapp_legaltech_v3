@@ -142,6 +142,13 @@ Sin otro particular, reciba un cordial saludo.
     const paymentStatus = urlParams.get('payment');
     
     if (paymentStatus === 'success' && currentStep === 2) {
+      // Track subscription success conversion
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'subscribe_success', {});
+        window.gtag('event', 'conversion', {
+          'send_to': 'AW-16479671897/8Q-oCPbm0bgbENmsj719'
+        });
+      }
       handlePaymentSuccess();
     }
   }, [currentStep, handlePaymentSuccess]);

@@ -1,0 +1,578 @@
+{
+  "summary": {
+    "total": 81,
+    "success": 81,
+    "errors": 0,
+    "emailsSent": 0,
+    "emailErrors": 81
+  },
+  "results": [
+    {
+      "email": "2002idiaz@gmail.com",
+      "success": true,
+      "uid": "vmqLCAGG81Z8rVsbtsFxBsw7qYm1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f0b894sm27868580f8f.26 - gsmtp"
+    },
+    {
+      "email": "laurajohanna36@gmail.com",
+      "success": true,
+      "uid": "g8Fvlbd4GEbiJ19OJehmjutLjr93",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f174afsm26727894f8f.33 - gsmtp"
+    },
+    {
+      "email": "ajgreenep@gmail.com",
+      "success": true,
+      "uid": "aR18LWpXLoQ15FD5MPXeKrdduNz1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779fab9b0esm98812315e9.12 - gsmtp"
+    },
+    {
+      "email": "akuerdos@gmail.com",
+      "success": true,
+      "uid": "dmfn9SerRrYuEYHlDEOTGi5kO082",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42c9628ebacsm14106420f8f.30 - gsmtp"
+    },
+    {
+      "email": "alex@maite.ai",
+      "success": true,
+      "uid": "4rb0umxzJxgR8x7StBX1YIOSASo1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53e84a4fsm27111852f8f.11 - gsmtp"
+    },
+    {
+      "email": "alexisrealpe10@gmail.com",
+      "success": true,
+      "uid": "4naayG7MuKYYIALzTXLYbmWbIR82",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f21948sm27087935f8f.43 - gsmtp"
+    },
+    {
+      "email": "anacristinaramosdiaz78@gmail.com",
+      "success": true,
+      "uid": "StYhjoYHguYYS7iA4LpSyGn4uiQ2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477a04157c2sm90501535e9.1 - gsmtp"
+    },
+    {
+      "email": "andres.levano@madcloudconsulting.com",
+      "success": true,
+      "uid": "A3ufZCwDvcY6jvTXTq4gFGZshup2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f206e2sm27523698f8f.41 - gsmtp"
+    },
+    {
+      "email": "andresmlevanofm@gmail.com",
+      "success": true,
+      "uid": "jdwWMhOqVCggIRjLVBtxbvhOwPq1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779525d2bcsm174552425e9.5 - gsmtp"
+    },
+    {
+      "email": "angulofuentesjanet@gmail.com",
+      "success": true,
+      "uid": "NwPOt8q51gPtpPapG2krVpdozhI3",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f1fd50sm27110435f8f.38 - gsmtp"
+    },
+    {
+      "email": "antonioa@tijuanalaw.com",
+      "success": true,
+      "uid": "FGw2rMgindXVv6aHdjwPu45I2GE3",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f21948sm27088964f8f.43 - gsmtp"
+    },
+    {
+      "email": "brandoramirez484@gmail.com",
+      "success": true,
+      "uid": "2mFOA2NeEthUJq3psdKFwYgMWIg2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779973ddcfsm140297615e9.15 - gsmtp"
+    },
+    {
+      "email": "cantonlojacz7@gmail.com",
+      "success": true,
+      "uid": "lBnVX8OqcVSJu5pH7iDW4sCdqw42",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53e91f2dsm27812588f8f.19 - gsmtp"
+    },
+    {
+      "email": "carboly25@gmail.com",
+      "success": true,
+      "uid": "GtMNY6Ih9ObRyQztiF2NXRy4En72",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-47787e442c2sm327375445e9.7 - gsmtp"
+    },
+    {
+      "email": "chhluis@gmail.com",
+      "success": true,
+      "uid": "024BwNAMFegVKuYk5h4eJsj9tPp2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477952823d3sm173618165e9.11 - gsmtp"
+    },
+    {
+      "email": "coljuridicaabogados@gmail.com",
+      "success": true,
+      "uid": "zugVAXQKQZXFQA0LcnGOoJUBX6L2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f19664sm27921180f8f.36 - gsmtp"
+    },
+    {
+      "email": "compuparis@live.com.mx",
+      "success": true,
+      "uid": "zEhI8DTosDhgtxwd0IpA5WMsrUL2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779d722bc5sm134623165e9.2 - gsmtp"
+    },
+    {
+      "email": "cortiz@colloky.cl",
+      "success": true,
+      "uid": "Mje2WwKLrohoYZ1o5ZEi72iepWu1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779fc42f25sm102693945e9.6 - gsmtp"
+    },
+    {
+      "email": "daniel.arellanes.m@gmail.com",
+      "success": true,
+      "uid": "zaOCMCyzcWVEcdElW77AVzcsDeY2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bd27e97sm118131135e9.7 - gsmtp"
+    },
+    {
+      "email": "danielgarciamarino945@gmail.com",
+      "success": true,
+      "uid": "BH84VzU0uKeVTy0zT8YXWT7hkk53",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779a684202sm139373135e9.10 - gsmtp"
+    },
+    {
+      "email": "dchavez17021980@gmail.com",
+      "success": true,
+      "uid": "gmrsy7nCLfeKsuX2KGkJCWVX0mX2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f19664sm27921992f8f.36 - gsmtp"
+    },
+    {
+      "email": "diarioperu.pe@gmail.com",
+      "success": true,
+      "uid": "BwYgA3nlmaeTmoweGXDfGqpoMre2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bae2a09sm121412425e9.0 - gsmtp"
+    },
+    {
+      "email": "die.facundo@gmail.com",
+      "success": true,
+      "uid": "1jDrGsZ4VXUNzZHSzCPCvuRjtQb2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779920f2cdsm164703675e9.10 - gsmtp"
+    },
+    {
+      "email": "diego.olortegui.salazar@gmail.com",
+      "success": true,
+      "uid": "ZELWILeS50MgXOb933tKKBJvRPP2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-47787e953e3sm311606145e9.14 - gsmtp"
+    },
+    {
+      "email": "egv08@hotmail.com",
+      "success": true,
+      "uid": "c8oTJpAtUgagRmt3EsJi2S7w4e62",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477991646b2sm146334045e9.7 - gsmtp"
+    },
+    {
+      "email": "eliana.guerrero.compras@gmail.com",
+      "success": true,
+      "uid": "r8q7CElMecYUFi7fgMDQUOAKF9F2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bb6262csm115511295e9.8 - gsmtp"
+    },
+    {
+      "email": "er.morales@gmail.com",
+      "success": true,
+      "uid": "xKR5WMJnChc8byspnUMX8MfNTOG3",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f0b8a0sm27758410f8f.25 - gsmtp"
+    },
+    {
+      "email": "fcardenasch@hotmail.com",
+      "success": true,
+      "uid": "RMUQkQ3Qq7SAJKyZNZGTH1A8TNQ2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bb6262csm115512685e9.8 - gsmtp"
+    },
+    {
+      "email": "fernando@diazruizabogados.es",
+      "success": true,
+      "uid": "b3GQhc5tdpT4tixV95LRDB48aJ12",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477969b3c12sm151603435e9.13 - gsmtp"
+    },
+    {
+      "email": "ferpena.19.21@gmail.com",
+      "success": true,
+      "uid": "FfK45ZlgE3RMEiW92vUIo46BO9i2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53e84a4fsm27116443f8f.11 - gsmtp"
+    },
+    {
+      "email": "florescachae@gmail.com",
+      "success": true,
+      "uid": "PPQVbZZbKJOHiDYJD4R6qdYIajr1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477a68ba89fsm15497445e9.1 - gsmtp"
+    },
+    {
+      "email": "georgeta_camelia@yahoo.es",
+      "success": true,
+      "uid": "xpNhHB0DfyZAiGjvDHNUqhIM0wU2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42c961f6e64sm13952238f8f.27 - gsmtp"
+    },
+    {
+      "email": "germania2486@hotmail.com",
+      "success": true,
+      "uid": "Wpk3W9bqxNRsBNXyxzksTmoZ2xC2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53e845bdsm26398287f8f.12 - gsmtp"
+    },
+    {
+      "email": "haitz_udaondo@hotmail.com",
+      "success": true,
+      "uid": "lIYmWWRisdYFf3MGTL17vgUsLzF3",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-47787e8e6acsm329178335e9.9 - gsmtp"
+    },
+    {
+      "email": "harm.krol@madcloudconsulting.com",
+      "success": true,
+      "uid": "pcqEpiRS61NSXDMygnmVS8BminL2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53e7b14bsm26915573f8f.9 - gsmtp"
+    },
+    {
+      "email": "hugce_castle@hotmail.com",
+      "success": true,
+      "uid": "QOqioRXtWqhgya1ftYHqRhqSni02",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53e7b14bsm26915766f8f.9 - gsmtp"
+    },
+    {
+      "email": "idelacruz@outlook.es",
+      "success": true,
+      "uid": "NpXSRDaE5IMlTS67phv3rckqD7u2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bb34cc1sm114214925e9.3 - gsmtp"
+    },
+    {
+      "email": "ilesamaniego@gmail.com",
+      "success": true,
+      "uid": "pzO7h66ZkzLmRjtrTyqHiOuWTAj2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779920f2cdsm164754915e9.10 - gsmtp"
+    },
+    {
+      "email": "info@logisticaenderecho.com",
+      "success": true,
+      "uid": "IO3vUM7R8waqVTCKum71uiPudeS2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-47787e2bcf9sm319218015e9.3 - gsmtp"
+    },
+    {
+      "email": "isabellasalazar183@gmail.com",
+      "success": true,
+      "uid": "b2wEwNHFjRPxaStbn4N7JrwjjS33",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bb34b0asm115694945e9.1 - gsmtp"
+    },
+    {
+      "email": "j.enriquedelgadodelgado@gmail.com",
+      "success": true,
+      "uid": "FtFrVQZK6zT2dnIlB2yYfgKXQzG2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779920f2cdsm164765435e9.10 - gsmtp"
+    },
+    {
+      "email": "j80hernandez@gmail.com",
+      "success": true,
+      "uid": "CeOL9WqT5hV9BmLs4qg0YIpSGS63",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779fc42f25sm102771735e9.6 - gsmtp"
+    },
+    {
+      "email": "johancamilo097@gmail.com",
+      "success": true,
+      "uid": "tG7BpVCvFSSlQHkl40cPDdv9u1G2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f203afsm27555211f8f.39 - gsmtp"
+    },
+    {
+      "email": "jorgerugeles_3@hotmail.com",
+      "success": true,
+      "uid": "h3VRi72gBQVMnJCBvA51u8g6w7x1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477969b3c12sm151627675e9.13 - gsmtp"
+    },
+    {
+      "email": "joseleonicaza87@hotmail.com",
+      "success": true,
+      "uid": "afG8O6UY4sanVXWGoaDn6qsc9mN2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477a0e580afsm36239065e9.3 - gsmtp"
+    },
+    {
+      "email": "jotajotapizon124@gmail.com",
+      "success": true,
+      "uid": "5WV8wuXKGBWdirm5Ibb8FlSpw472",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f174afsm26735982f8f.33 - gsmtp"
+    },
+    {
+      "email": "juriscorporation.ia@gmail.com",
+      "success": true,
+      "uid": "c4osqpXMtdTo0ybfXSpW0HtMSdH3",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778beafcf5sm118771645e9.0 - gsmtp"
+    },
+    {
+      "email": "laquerenciammo@gmail.com",
+      "success": true,
+      "uid": "EymaAJlbuLbKQ4lPr6ilpyWMIPA2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477980cb1aasm66097745e9.8 - gsmtp"
+    },
+    {
+      "email": "lavil36044@kelenson.com",
+      "success": true,
+      "uid": "jM3DYnQOiYPFAbHqSmNVLd4EBcJ2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477a5153d8fsm19376735e9.2 - gsmtp"
+    },
+    {
+      "email": "leoogomez17@gmail.com",
+      "success": true,
+      "uid": "f2GJWcE06ZdpyIHe8Yt0hZ1JHOz1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f1fd50sm27117126f8f.38 - gsmtp"
+    },
+    {
+      "email": "linamabual@hotmail.com",
+      "success": true,
+      "uid": "audBYDFTwKZl6kw23abLCXYP1WY2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53e84a4fsm27120133f8f.11 - gsmtp"
+    },
+    {
+      "email": "locarno.isacco@gmail.com",
+      "success": true,
+      "uid": "awR2MQfPrGXydRcZ2nDPUrEJrUI3",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f17cbfsm27272484f8f.35 - gsmtp"
+    },
+    {
+      "email": "luispipesuarez@gmail.com",
+      "success": true,
+      "uid": "NIJ0mCWthFgpqbhHrTKvFGH9hyp2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f0b622sm26551187f8f.29 - gsmtp"
+    },
+    {
+      "email": "luistellocarranza@gmail.com",
+      "success": true,
+      "uid": "fQ2RDZtPUaOoFUPw1flc1ZUI25r1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477991646b2sm146383185e9.7 - gsmtp"
+    },
+    {
+      "email": "m.simo@icamur.org",
+      "success": true,
+      "uid": "SPPDbVzHBBdo8W6mRyt5sjymHsd2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f17291sm27189846f8f.32 - gsmtp"
+    },
+    {
+      "email": "manuelvejer@gmail.com",
+      "success": true,
+      "uid": "jGGIzSyoBEYF3lbxXJhwVCXe9J42",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779fab9b0esm98941525e9.12 - gsmtp"
+    },
+    {
+      "email": "marycornejo726@gmail.com",
+      "success": true,
+      "uid": "rx5FGNCToHg47kCW4PAv5UtqeSL2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779b509a5esm139717835e9.2 - gsmtp"
+    },
+    {
+      "email": "migadc@hotmail.com",
+      "success": true,
+      "uid": "QdVhdLAlgEQYRHp75j4VuKgLqik2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-47787e8e6acsm329239735e9.9 - gsmtp"
+    },
+    {
+      "email": "n.mino@estudioju.com",
+      "success": true,
+      "uid": "vfeEgY6nK0Ucv8FKp1LG8bqvf8l1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-47787e43c2fsm303633935e9.6 - gsmtp"
+    },
+    {
+      "email": "nicoodelga.c40@gmail.com",
+      "success": true,
+      "uid": "KCVcyt1ACmXtRDRF3uwvDN9ky0c2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779b367556sm58470735e9.2 - gsmtp"
+    },
+    {
+      "email": "nubia.rascon.snsp@gmail.com",
+      "success": true,
+      "uid": "sIGPY4W7SeQYTqrQLmANaWIur2D3",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bb34278sm114740155e9.4 - gsmtp"
+    },
+    {
+      "email": "omarlud30@gmail.com",
+      "success": true,
+      "uid": "Nuo6cuGkd3av4Jm71FfXDWumlWH3",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f206aasm27389504f8f.40 - gsmtp"
+    },
+    {
+      "email": "pabrilarenas@gmail.com",
+      "success": true,
+      "uid": "gKqHmKsoKOhYBtKbVR7J07cNeij2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53e7b074sm26467911f8f.7 - gsmtp"
+    },
+    {
+      "email": "pamela.saguas@gmail.com",
+      "success": true,
+      "uid": "NFDTI9oUtLakzhOX2KglhigJ7Kt1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53e97a87sm27959247f8f.20 - gsmtp"
+    },
+    {
+      "email": "pedroangelmc@gmail.com",
+      "success": true,
+      "uid": "ZMmWACah5FNuyvkqWKxMZUZvn7w1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477a68ba89fsm15522055e9.1 - gsmtp"
+    },
+    {
+      "email": "pescador.marcelo@gmail.com",
+      "success": true,
+      "uid": "QyNnxGt6WNMrouy7BMyhgY0rQpB2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bd08bbasm121449105e9.2 - gsmtp"
+    },
+    {
+      "email": "psanhuezacortes@gmail.com",
+      "success": true,
+      "uid": "8xcg24KkBAT5Ym44P6yjlMlXOYq1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477952823d3sm173707875e9.11 - gsmtp"
+    },
+    {
+      "email": "rufinomartinez@gmail.com",
+      "success": true,
+      "uid": "OOALsgvWVeaEjoZ44lxucMHoBcm2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f0b617sm26958847f8f.31 - gsmtp"
+    },
+    {
+      "email": "sapolancoa07@gmail.com",
+      "success": true,
+      "uid": "fKNyH0LngRRtAiSAcbv4mE0O0hB2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779fc42f25sm102852285e9.6 - gsmtp"
+    },
+    {
+      "email": "sergio.pena@madcloudconsulting.com",
+      "success": true,
+      "uid": "jsEA1hxG6SZGuTfivccpBzGQ2uD2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-477983657cdsm66617375e9.5 - gsmtp"
+    },
+    {
+      "email": "sheilypilarfloresjuro.2698@gmail.com",
+      "success": true,
+      "uid": "ltu1HVdKooanCHn6Vgom8NX2mbl1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bb34278sm114746855e9.4 - gsmtp"
+    },
+    {
+      "email": "ultimeherospiderman@gmail.com",
+      "success": true,
+      "uid": "9sF3EohfRKMAzQf5jto8tX8aGXn1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779973ddcfsm140418655e9.15 - gsmtp"
+    },
+    {
+      "email": "vanesa@vlegalabogados.es",
+      "success": true,
+      "uid": "q74oR6eVbuYuxlWNOvMxBcjFleg1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bcf9f27sm113783915e9.11 - gsmtp"
+    },
+    {
+      "email": "vergarabularz@yahoo.com",
+      "success": true,
+      "uid": "EoxPDhUjf0f0GGEqe8kvxB9FBdk2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4778bd08bbasm121454555e9.2 - gsmtp"
+    },
+    {
+      "email": "victor.vergara@madcloudconsulting.com",
+      "success": true,
+      "uid": "gsJcOujm98dgr1y87G2GAh8ZH9i1",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42c9628ebacsm14119479f8f.30 - gsmtp"
+    },
+    {
+      "email": "vriverosbutorovic@gmail.com",
+      "success": true,
+      "uid": "lzKwLWDgS5aFQhXMZuJOlszx7i23",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42c961f6e64sm13959785f8f.27 - gsmtp"
+    },
+    {
+      "email": "yaalmaar@yahoo.es",
+      "success": true,
+      "uid": "uCV6s42Yf6hOjrFlOqkDOHsX9Lz2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f17cbfsm27277461f8f.35 - gsmtp"
+    },
+    {
+      "email": "yarenidelira@gmail.com",
+      "success": true,
+      "uid": "NJRaJ4kH9kWKYFzdra1M8PBz50B2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-4779b509a5esm139763925e9.2 - gsmtp"
+    },
+    {
+      "email": "yrecor@gmail.com",
+      "success": true,
+      "uid": "4fl4D1r1NeaOMGzpiVx5S0k5RXt2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f206e2sm27536143f8f.41 - gsmtp"
+    },
+    {
+      "email": "yulifer211@gmail.com",
+      "success": true,
+      "uid": "FBRuZtqod2QX9xQAjtzfiDRGSF62",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-42b53f0b8a0sm27768153f8f.25 - gsmtp"
+    },
+    {
+      "email": "zalen1992@hotmail.com",
+      "success": true,
+      "uid": "uMISiOKtrXVW2P8gx4balHCMGxE2",
+      "emailSent": false,
+      "emailError": "Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-47787e2bcf9sm319291275e9.3 - gsmtp"
+    }
+  ]
+}

@@ -25,8 +25,15 @@ export default function Sidebar({ user }: SidebarProps) {
         return;
       }
 
+      const firestore = db;
+
+      if (!firestore) {
+        setAdminChecked(true);
+        return;
+      }
+
       try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userDoc = await getDoc(doc(firestore, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setIsAdmin(userData.isAdmin === true);
