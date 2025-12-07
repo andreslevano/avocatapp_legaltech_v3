@@ -114,3 +114,4 @@ jspm_packages/
 # TernJS port file
 .tern-port
 env.local
+CONFIGURACION_CREDENCIALES.md
