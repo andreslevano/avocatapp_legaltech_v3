@@ -20,13 +20,29 @@ export const ReclamacionCantidadesRequestSchema = z.object({
   resultadoConciliacion: z.string().optional(),
   cantidadTotal: z.string().optional(),
   localidad: z.string().optional(),
-  userId: z.string().optional()
+  userId: z.string().optional(),
+  // IDs del documento y reclamación (vienen del pago de Stripe)
+  docId: z.string().optional(),
+  reclId: z.string().optional(),
+  // Datos OCR opcionales
+  ocrFiles: z.array(z.object({
+    originalName: z.string(),
+    extractedText: z.string(),
+    confidence: z.number().optional(),
+    category: z.string().optional(),
+    fileType: z.string().optional()
+  })).optional(),
+  documentSummary: z.any().optional() // Permitir cualquier estructura para documentSummary
 });
 
 export const ReclamacionCantidadesModelSchema = z.object({
+  notaAclaratoria: z.string().optional(),
   encabezado: z.object({
-    juzgado: z.string(),
+    tribunal: z.string().optional(),
+    juzgado: z.string().optional(), // Mantener compatibilidad con formato antiguo
     localidad: z.string()
+  }).refine(data => data.tribunal || data.juzgado, {
+    message: "Debe incluirse 'tribunal' o 'juzgado' en el encabezado"
   }),
   demandante: z.object({
     nombre: z.string(),

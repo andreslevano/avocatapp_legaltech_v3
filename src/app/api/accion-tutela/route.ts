@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getOpenAIClient } from '@/lib/openai-client';
 import { savePdfForUser, signedUrlFor } from '@/lib/storage';
 import { saveDocument, saveHistoryItem, saveDocumentGeneration, updateUserStats } from '@/lib/simple-storage';
+import { GoogleChatNotifications } from '@/lib/google-chat';
 
 export const runtime = 'nodejs' as const;
 
@@ -265,8 +266,24 @@ Confianza: ${(file.confidence * 100).toFixed(1)}%
       // Generar URL de descarga
       const downloadUrl = await signedUrlFor(uid, docId, { expiresMinutes: 15 });
       
-      // Enviar email automático al usuario si tiene email
+      const elapsedMs = Date.now() - startTime;
       const userEmail = body.userEmail;
+      
+      // Notificar a Google Chat sobre la generación exitosa (no bloqueante)
+      GoogleChatNotifications.documentGenerated({
+        userId: uid,
+        userEmail: userEmail || 'N/A',
+        docId,
+        documentType: `Acción de Tutela - ${data.derecho}`,
+        areaLegal: 'Derecho Constitucional',
+        filename: `accion-tutela-${data.derecho}-${new Date().toISOString().split('T')[0]}.pdf`,
+        downloadUrl,
+        processingTime: elapsedMs,
+      }).catch((err) => {
+        console.warn('⚠️ Error enviando notificación a Google Chat:', err);
+      });
+      
+      // Enviar email automático al usuario si tiene email
       if (userEmail) {
         try {
           const emailResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/send-student-email`, {
@@ -295,8 +312,6 @@ Confianza: ${(file.confidence * 100).toFixed(1)}%
           console.error('❌ Error en envío de email:', emailError);
         }
       }
-      
-      const elapsedMs = Date.now() - startTime;
       
       console.log('✅ Tutela generada exitosamente', {
         docId,

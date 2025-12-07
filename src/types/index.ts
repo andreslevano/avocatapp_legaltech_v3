@@ -148,6 +148,8 @@ export interface DocumentSummary {
   categorizedDocuments: { [categoryId: string]: UploadedDocument[] };
   missingRequired: string[];
   analysisComplete: boolean;
+  totalAmount?: number; // Cantidad total reclamada (opcional)
+  precision?: number; // Precisión del análisis OCR (opcional, 0-100)
 }
 
 export interface GeneratedDocument {
@@ -178,4 +180,8 @@ export interface PurchaseHistory {
   };
   emailSent: boolean;
   emailSentAt?: Date;
+  paid?: boolean; // Si el documento está pagado
+  docId?: string; // ID del documento en Firestore
+  documentContent?: string; // Contenido del documento generado (texto)
+  uploadedDocuments?: string[]; // Lista de nombres de documentos subidos
 }

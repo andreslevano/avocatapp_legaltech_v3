@@ -1,0 +1,423 @@
+╔════════════════════════════════════════════════════════════════════════╗
+║           🔍 RADIOGRAFÍA COMPLETA DE FIRESTORE                        ║
+║                    Avocat LegalTech v3                                 ║
+╚════════════════════════════════════════════════════════════════════════╝
+
+════════════════════════════════════════════════════════════════════════
+1️⃣  FIREBASE AUTH - Usuarios Registrados
+════════════════════════════════════════════════════════════════════════
+   Total usuarios en Firebase Auth: 14
+
+   Estadísticas:
+      - Email verificado: 2
+      - No verificado: 12
+      - Deshabilitados: 0
+      - Activos: 14
+   Proveedores de autenticación:
+      - password: 14
+
+   Primeros 10 usuarios:
+   1. danielgarciamarino945@gmail.com
+      UID: BH84VzU0uKeVTy0zT8YXWT7hkk53
+      Creado: Wed, 03 Sep 2025 17:54:03 GMT
+      Último login: Sat, 15 Nov 2025 19:48:08 GMT
+      Verificado: Sí
+
+   2. vergarabularz@yahoo.com
+      UID: EoxPDhUjf0f0GGEqe8kvxB9FBdk2
+      Creado: Tue, 16 Sep 2025 12:17:20 GMT
+      Último login: Tue, 16 Sep 2025 12:17:20 GMT
+      Verificado: No
+
+   3. pena.pineda.sergio@gmail.com
+      UID: GBMnLNUnH3NRMo61jVKPHCVOxAE3
+      Creado: Wed, 03 Sep 2025 16:27:33 GMT
+      Último login: Thu, 13 Nov 2025 13:57:14 GMT
+      Verificado: No
+
+   4. usuario.test@avocat.com
+      UID: Q62ZKh76u9dGmbgCb4ocGdg4GhE2
+      Creado: Wed, 22 Oct 2025 09:29:24 GMT
+      Último login: Wed, 22 Oct 2025 09:29:24 GMT
+      Verificado: No
+
+   5. krolhx@hotmail.com
+      UID: Up5SgswRu7fpiyt8uLvCuaV5mU42
+      Creado: Wed, 10 Sep 2025 14:53:17 GMT
+      Último login: Mon, 29 Sep 2025 07:46:31 GMT
+      Verificado: No
+
+   6. dgos8825@gmail.com
+      UID: VugYjlKhGyQG3C98fqbn6Fu2sMl1
+      Creado: Sun, 07 Sep 2025 13:47:16 GMT
+      Último login: Wed, 10 Sep 2025 05:53:18 GMT
+      Verificado: No
+
+   7. locarno.isacco@gmail.com
+      UID: awR2MQfPrGXydRcZ2nDPUrEJrUI3
+      Creado: Fri, 05 Sep 2025 15:16:42 GMT
+      Último login: Wed, 17 Sep 2025 16:26:22 GMT
+      Verificado: Sí
+
+   8. demo@avocat.com
+      UID: fAF5TgZ8WPYaAHTcGn6dtOtm40x1
+      Creado: Tue, 23 Sep 2025 18:12:32 GMT
+      Último login: Wed, 24 Sep 2025 03:04:59 GMT
+      Verificado: No
+
+   9. dchavez17021980@gmail.com
+      UID: gmrsy7nCLfeKsuX2KGkJCWVX0mX2
+      Creado: Sun, 07 Sep 2025 18:46:30 GMT
+      Último login: Sun, 07 Sep 2025 18:46:30 GMT
+      Verificado: No
+
+   10. test@avocat.com
+      UID: hSu7KsIBlTepIoMZ4N1SNX2oXn23
+      Creado: Mon, 22 Sep 2025 17:33:55 GMT
+      Último login: Tue, 23 Sep 2025 03:27:58 GMT
+      Verificado: No
+
+════════════════════════════════════════════════════════════════════════
+2️⃣  COLECCIONES DE FIRESTORE
+════════════════════════════════════════════════════════════════════════
+
+   📁 Colección: users
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 14
+   Estructura del documento (ejemplo):
+      {
+            "id": "string",
+            "uid": "string",
+            "email": "string",
+            "isActive": "boolean",
+            "createdAt": "string",
+            "updatedAt": "string",
+            "emailVerified": "boolean"
+      }
+
+   Campos encontrados:
+      - uid: string (presente en 100.0% de documentos)
+        Ejemplos: BH84VzU0uKeVTy0zT8YXWT7hkk53, EoxPDhUjf0f0GGEqe8kvxB9FBdk2
+      - email: string (presente en 100.0% de documentos)
+        Ejemplos: danielgarciamarino945@gmail.com, vergarabularz@yahoo.com
+      - isActive: boolean (presente en 100.0% de documentos)
+        Ejemplos: true, true
+      - createdAt: string (presente en 100.0% de documentos)
+        Ejemplos: 2025-11-15T19:48:12.118Z, Tue, 16 Sep 2025 12:17:20 GMT
+      - updatedAt: string (presente en 21.4% de documentos)
+        Ejemplos: 2025-11-15T19:48:12.118Z, 2025-11-13T10:21:47.801Z
+      - emailVerified: boolean (presente en 21.4% de documentos)
+        Ejemplos: true, false
+      - displayName: string (presente en 78.6% de documentos)
+        Ejemplos: vergarabularz, Usuario Test
+      - isAdmin: boolean (presente en 85.7% de documentos)
+        Ejemplos: false, false
+      - role: string (presente en 64.3% de documentos)
+        Ejemplos: user, user
+      - lastLoginAt: string (presente en 78.6% de documentos)
+        Ejemplos: Tue, 16 Sep 2025 12:17:20 GMT, 2025-10-22T09:29:25.612Z
+      - subscription: object (presente en 64.3% de documentos)
+      - preferences: object (presente en 64.3% de documentos)
+      - stats: object (presente en 64.3% de documentos)
+      - accessLevel: string (presente en 14.3% de documentos)
+        Ejemplos: basic, full
+      - permissions: object (presente en 14.3% de documentos)
+      - statusUpdatedAt: string (presente en 7.1% de documentos)
+        Ejemplos: 2025-10-18T18:49:44.486Z
+      - reactivatedAt: string (presente en 7.1% de documentos)
+        Ejemplos: 2025-10-19T08:06:46.104Z
+
+   📁 Colección: documents
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 2
+   Estructura del documento (ejemplo):
+      {
+            "id": "string",
+            "status": "string",
+            "title": "string",
+            "content": "string",
+            "userId": "string",
+            "createdAt": "string",
+            "type": "string",
+            "caseId": "string",
+            "pdfUrl": "string"
+      }
+
+   Campos encontrados:
+      - status: string (presente en 100.0% de documentos)
+        Ejemplos: generado, generado
+      - title: string (presente en 100.0% de documentos)
+        Ejemplos: Reclamación de Cantidad - ACME SL, Acción de Tutela - Ana López
+      - content: string (presente en 100.0% de documentos)
+        Ejemplos: Documento de reclamación de cantidad generado por ..., Documento de acción de tutela generado por IA
+      - userId: string (presente en 100.0% de documentos)
+        Ejemplos: test-user-1, test-user-2
+      - createdAt: string (presente en 100.0% de documentos)
+        Ejemplos: 2025-09-23T17:10:32.403Z, 2025-09-23T17:10:32.403Z
+      - type: string (presente en 100.0% de documentos)
+        Ejemplos: reclamacion_cantidad, accion_tutela
+      - caseId: string (presente en 100.0% de documentos)
+        Ejemplos: case-1, case-2
+      - pdfUrl: string (presente en 100.0% de documentos)
+        Ejemplos: /generated/reclamacion-acme-sl.pdf, /generated/accion-tutela-ana-lopez.pdf
+
+   📁 Colección: purchases
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 28
+   Estructura del documento (ejemplo):
+      {
+            "id": "string",
+            "userId": "string",
+            "customerEmail": "string",
+            "stripeSessionId": "string",
+            "stripePaymentIntentId": "string",
+            "items": "Array[1] of {\"id\":\"string\",\"name\":\"string\",\"area\":\"string\",\"country\":\"string\",\"price\":\"number\",\"quantity\":\"number\",\"status\":\"string\"}",
+            "total": "number",
+            "currency": "string",
+            "status": "string",
+            "source": "string",
+            "createdAt": "Timestamp",
+            "webhookProcessedAt": "Timestamp",
+            "updatedAt": "Timestamp"
+      }
+
+   Campos encontrados:
+      - userId: string (presente en 96.4% de documentos)
+        Ejemplos: jdwWMhOqVCggIRjLVBtxbvhOwPq1, jdwWMhOqVCggIRjLVBtxbvhOwPq1
+      - customerEmail: string (presente en 89.3% de documentos)
+        Ejemplos: andresmlevanofm@gmail.com, andresmlevanofm@gmail.com
+      - stripeSessionId: string (presente en 39.3% de documentos)
+        Ejemplos: cs_live_a1qpjEROA9qOsnHJmTRUpEAKbljDgbNg1TV22qqyAp..., cs_live_a19UwWhvaAlGUMh8BFi6u4MvKeYqOisn0omLqNxC4x...
+      - stripePaymentIntentId: string (presente en 39.3% de documentos)
+        Ejemplos: pi_3SThUlDy8puckbvK1v3cYksw, pi_3SToMvDy8puckbvK21XACN9y
+      - items: object (presente en 89.3% de documentos)
+      - total: number (presente en 89.3% de documentos)
+        Ejemplos: 3, 3
+      - currency: string (presente en 96.4% de documentos)
+        Ejemplos: EUR, EUR
+      - status: string (presente en 100.0% de documentos)
+        Ejemplos: completed, completed
+      - source: string (presente en 39.3% de documentos)
+        Ejemplos: stripe_webhook, stripe_webhook
+      - createdAt: object (presente en 96.4% de documentos)
+      - webhookProcessedAt: object (presente en 39.3% de documentos)
+      - updatedAt: object (presente en 92.9% de documentos)
+      - documentsGenerated: number (presente en 50.0% de documentos)
+        Ejemplos: 1, 1
+      - documentsFailed: number (presente en 50.0% de documentos)
+        Ejemplos: 0, 0
+      - totalCents: number (presente en 50.0% de documentos)
+        Ejemplos: 300, 300
+      - metadata: object (presente en 50.0% de documentos)
+      - stripe: object (presente en 50.0% de documentos)
+      - reprocessedAt: object (presente en 17.9% de documentos)
+      - documentsGenerationStatus: string (presente en 7.1% de documentos)
+        Ejemplos: processing, processing
+      - documentsGenerationRequestedAt: object (presente en 7.1% de documentos)
+      - item: string (presente en 7.1% de documentos)
+        Ejemplos: Reclamación de Cantidad, Acción de Tutela
+      - price: number (presente en 7.1% de documentos)
+        Ejemplos: 10, 15
+      - paymentMethod: string (presente en 7.1% de documentos)
+        Ejemplos: stripe, stripe
+
+   📁 Colección: reclamaciones
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 0
+   ⚠️  Colección vacía
+
+   📁 Colección: tutelas
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 0
+   ⚠️  Colección vacía
+
+   📁 Colección: cases
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 2
+   Estructura del documento (ejemplo):
+      {
+            "id": "string",
+            "currency": "string",
+            "amount": "number",
+            "client": {
+                  "phone": "string",
+                  "name": "string",
+                  "email": "string"
+            },
+            "createdAt": "string",
+            "description": "string",
+            "userId": "string",
+            "priority": "string",
+            "title": "string",
+            "status": "string",
+            "updatedAt": "string"
+      }
+
+   Campos encontrados:
+      - currency: string (presente en 100.0% de documentos)
+        Ejemplos: EUR, EUR
+      - amount: number (presente en 100.0% de documentos)
+        Ejemplos: 1575.4, 0
+      - client: object (presente en 100.0% de documentos)
+      - createdAt: string (presente en 100.0% de documentos)
+        Ejemplos: 2025-09-23T17:10:32.147Z, 2025-09-23T17:10:32.148Z
+      - description: string (presente en 100.0% de documentos)
+        Ejemplos: Cliente no ha pagado factura de 1.575,40€, Estudiante denegado acceso a beca universitaria
+      - userId: string (presente en 100.0% de documentos)
+        Ejemplos: test-user-1, test-user-2
+      - priority: string (presente en 100.0% de documentos)
+        Ejemplos: alta, media
+      - title: string (presente en 100.0% de documentos)
+        Ejemplos: Reclamación de cantidad - Factura impagada, Acción de tutela - Derecho a la educación
+      - status: string (presente en 100.0% de documentos)
+        Ejemplos: activo, activo
+      - updatedAt: string (presente en 100.0% de documentos)
+        Ejemplos: 2025-09-23T17:10:32.148Z, 2025-09-23T17:10:32.148Z
+
+   📁 Colección: email_sends
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 2
+   Estructura del documento (ejemplo):
+      {
+            "id": "string",
+            "emailId": "string",
+            "userEmail": "string",
+            "subject": "string",
+            "pdfUrl": "string",
+            "sentAt": "string",
+            "status": "string",
+            "provider": "string",
+            "messageId": "string",
+            "metadata": {
+                  "type": "string",
+                  "generatedBy": "string",
+                  "version": "string"
+            }
+      }
+
+   Campos encontrados:
+      - emailId: string (presente en 100.0% de documentos)
+        Ejemplos: 11ac3fbd-3d1f-480e-8970-0d5ab523cfb7, b13ec47e-0ea9-4eb3-95c1-62d8bfae6ba2
+      - userEmail: string (presente en 100.0% de documentos)
+        Ejemplos: admin@avocat.com, admin@avocat.com
+      - subject: string (presente en 100.0% de documentos)
+        Ejemplos: Email de Fidelización (LOYALTY) - Administrador, Email de Fidelización (LOYALTY) - Administrador
+      - pdfUrl: string (presente en 100.0% de documentos)
+        Ejemplos: blob:http://localhost:3000/aa803cfb-3128-4405-af65..., blob:http://localhost:3000/16c30de8-77be-4c00-80fd...
+      - sentAt: string (presente en 100.0% de documentos)
+        Ejemplos: 2025-09-25T03:50:48.172Z, 2025-09-25T06:39:52.699Z
+      - status: string (presente en 100.0% de documentos)
+        Ejemplos: sent, sent
+      - provider: string (presente en 100.0% de documentos)
+        Ejemplos: mock, mock
+      - messageId: string (presente en 100.0% de documentos)
+        Ejemplos: msg_1758772248172, msg_1758782392699
+      - metadata: object (presente en 100.0% de documentos)
+
+   📁 Colección: generated_emails
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 0
+   ⚠️  Colección vacía
+
+   📁 Colección: document_analysis
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 0
+   ⚠️  Colección vacía
+
+   📁 Colección: analytics
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 0
+   ⚠️  Colección vacía
+
+   📁 Colección: admin
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 0
+   ⚠️  Colección vacía
+
+   📁 Colección: templates
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 2
+   Estructura del documento (ejemplo):
+      {
+            "id": "string",
+            "description": "string",
+            "category": "string",
+            "createdAt": "string",
+            "name": "string",
+            "createdBy": "string",
+            "content": "string",
+            "isPublic": "boolean"
+      }
+
+   Campos encontrados:
+      - description: string (presente en 100.0% de documentos)
+        Ejemplos: Plantilla básica para reclamación de cantidades, Plantilla para acción de tutela en materia educati...
+      - category: string (presente en 100.0% de documentos)
+        Ejemplos: civil, constitucional
+      - createdAt: string (presente en 100.0% de documentos)
+        Ejemplos: 2025-09-23T17:10:32.766Z, 2025-09-23T17:10:32.766Z
+      - name: string (presente en 100.0% de documentos)
+        Ejemplos: Reclamación de Cantidad - Estándar, Acción de Tutela - Educación
+      - createdBy: string (presente en 100.0% de documentos)
+        Ejemplos: system, system
+      - content: string (presente en 100.0% de documentos)
+        Ejemplos: Contenido de la plantilla..., Contenido de la plantilla...
+      - isPublic: boolean (presente en 100.0% de documentos)
+        Ejemplos: true, true
+
+   📁 Colección: legal_areas
+   ────────────────────────────────────────────────────────────────────────
+   Total documentos: 0
+   ⚠️  Colección vacía
+
+════════════════════════════════════════════════════════════════════════
+3️⃣  ANÁLISIS DE RELACIONES Y CONSISTENCIA
+════════════════════════════════════════════════════════════════════════
+
+   Verificando usuarios sin documento en Firestore...
+      Usuarios en Auth sin documento Firestore: 0
+      Documentos Firestore sin usuario Auth: 0
+
+   Verificando documentos huérfanos...
+      Documentos con userId inválido: 2
+         - Doc ID: doc-1, UserId: test-user-1
+         - Doc ID: doc-2, UserId: test-user-2
+
+════════════════════════════════════════════════════════════════════════
+4️⃣  ESTADÍSTICAS GENERALES
+════════════════════════════════════════════════════════════════════════
+
+   Resumen:
+      👥 Usuarios en Auth: 14
+      👥 Usuarios en Firestore: 14
+      📄 Documentos generados: 2
+      💳 Compras: 28
+      📋 Reclamaciones: 0
+      ⚖️  Tutelas: 0
+      📁 Casos: 2
+      📧 Emails: 2
+
+════════════════════════════════════════════════════════════════════════
+5️⃣  SUBCOLECCIONES
+════════════════════════════════════════════════════════════════════════
+
+   Buscando subcolecciones en usuarios...
+      No se encontraron subcolecciones en los primeros 10 usuarios
+
+════════════════════════════════════════════════════════════════════════
+6️⃣  PROBLEMAS DETECTADOS Y RECOMENDACIONES
+════════════════════════════════════════════════════════════════════════
+
+   Problemas encontrados:
+      ⚠️  2 documentos con userId inválido
+
+   Recomendaciones:
+      - Sincronizar usuarios entre Auth y Firestore
+      - Revisar documentos huérfanos y vincularlos correctamente
+      - Crear índices compuestos para consultas frecuentes
+      - Implementar limpieza periódica de datos antiguos
+
+╔════════════════════════════════════════════════════════════════════════╗
+║                    📊 RADIOGRAFÍA COMPLETADA                           ║
+╚════════════════════════════════════════════════════════════════════════╝
+

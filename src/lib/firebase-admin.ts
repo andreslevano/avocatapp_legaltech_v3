@@ -18,20 +18,24 @@ if (!getApps().length) {
     console.log('Client Email:', serviceAccount.clientEmail ? 'Present' : 'Missing');
     console.log('Private Key:', serviceAccount.privateKey ? 'Present' : 'Missing');
 
+    const storageBucket = process.env.FIREBASE_STORAGE_BUCKET || "avocat-legaltech-v3.appspot.com";
+    
     if (serviceAccount.clientEmail && serviceAccount.privateKey) {
       adminApp = initializeApp({
         credential: cert(serviceAccount),
         projectId: serviceAccount.projectId,
-        storageBucket: "avocat-legaltech-v3.appspot.com"
+        storageBucket: storageBucket
       });
       console.log('✅ Firebase Admin initialized with service account credentials');
+      console.log(`📦 Storage Bucket: ${storageBucket}`);
     } else {
       // Fallback to default credentials
       adminApp = initializeApp({
         projectId: "avocat-legaltech-v3",
-        storageBucket: "avocat-legaltech-v3.appspot.com"
+        storageBucket: storageBucket
       });
       console.log('⚠️ Firebase Admin initialized with default credentials');
+      console.log(`📦 Storage Bucket: ${storageBucket}`);
     }
   } catch (error) {
     console.error('Error initializing Firebase Admin:', error);

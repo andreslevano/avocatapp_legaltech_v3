@@ -19,11 +19,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Simular generación de PDF
-    const pdfContent = `REGLAMENTO DE CANTIDADES
+    const pdfContent = `RECLAMACIÓN DE CANTIDADES
 
 Estimado/a Sr./Sra.,
 
-Por medio del presente, me dirigo a ustedes para reclamar las cantidades adeudadas por la empresa en concepto de salarios, horas extras y otros conceptos laborales.
+Por medio del presente, me dirijo a ustedes para reclamar las cantidades adeudadas por la empresa en concepto de salarios, horas extras y otros conceptos laborales.
 
 DETALLES DE LA RECLAMACIÓN:
 - Trabajador: ${body.nombreTrabajador}
@@ -53,7 +53,7 @@ A la espera de su respuesta,
     
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('REGLAMENTO DE CANTIDADES', 105, 20, { align: 'center' });
+    doc.text('RECLAMACIÓN DE CANTIDADES', 105, 20, { align: 'center' });
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');

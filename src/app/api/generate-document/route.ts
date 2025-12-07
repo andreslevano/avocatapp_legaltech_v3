@@ -6,6 +6,7 @@ import { apiLogger } from '@/lib/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { generateAreaSpecificPDF } from '@/lib/pdf-generator';
 import { savePdfForUser, signedUrlFor, saveDocument } from '@/lib/simple-storage';
+import { GoogleChatNotifications } from '@/lib/google-chat';
 
 export async function POST(request: NextRequest) {
   const requestId = uuidv4();
@@ -134,6 +135,21 @@ export async function POST(request: NextRequest) {
       // Generar URL de descarga
       const downloadUrl = await signedUrlFor(uid, docId, { expiresMinutes: 15 });
       
+      // Notificar a Google Chat sobre la generación exitosa (no bloqueante)
+      GoogleChatNotifications.documentGenerated({
+        userId: uid,
+        userEmail: userEmail || 'N/A',
+        docId,
+        documentType: data.tipoEscrito,
+        areaLegal: data.areaLegal,
+        filename,
+        downloadUrl,
+        tokensUsed: result.tokensUsed,
+        processingTime: elapsedMs,
+      }).catch((err) => {
+        console.warn('⚠️ Error enviando notificación a Google Chat:', err);
+      });
+      
       // Enviar email automático al estudiante si tiene email
       if (userEmail) {
         try {
@@ -188,6 +204,17 @@ export async function POST(request: NextRequest) {
     } catch (storageError) {
       console.error('Error persisting document:', storageError);
       
+      // Notificar error a Google Chat (no bloqueante)
+      GoogleChatNotifications.documentError({
+        userId: uid,
+        userEmail: userEmail || 'N/A',
+        error: storageError instanceof Error ? storageError.message : 'Error desconocido al persistir documento',
+        context: 'Error al guardar documento en Storage/Firestore',
+        docId,
+      }).catch((err) => {
+        console.warn('⚠️ Error enviando notificación de error a Google Chat:', err);
+      });
+      
       // Fallback: devolver sin persistencia
       return NextResponse.json({
         success: true,
@@ -208,6 +235,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const elapsedMs = Date.now() - startTime;
     apiLogger.error(requestId, error, { elapsedMs });
+    
+    // Notificar error crítico a Google Chat (no bloqueante)
+    GoogleChatNotifications.documentError({
+      error: error instanceof Error ? error.message : 'Error desconocido',
+      context: 'Error crítico en la generación del documento',
+    }).catch((err) => {
+      console.warn('⚠️ Error enviando notificación de error crítico a Google Chat:', err);
+    });
     
     return NextResponse.json(
       {

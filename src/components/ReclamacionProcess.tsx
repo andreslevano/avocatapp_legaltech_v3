@@ -87,7 +87,7 @@ export default function ReclamacionProcess({ onComplete }: ReclamacionProcessPro
     const generated: GeneratedDocument = {
       id: Math.random().toString(36).substr(2, 9),
       title: 'Reclamación de Cantidades - ' + new Date().toLocaleDateString('es-ES'),
-      content: `REGLAMENTO DE CANTIDADES
+      content: `RECLAMACIÓN DE CANTIDADES
 
 Estimado/a Sr./Sra.,
 

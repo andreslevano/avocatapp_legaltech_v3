@@ -10,9 +10,34 @@ export interface OCRResult {
 }
 
 export async function analyzeDocumentOCR(fileBuffer: Buffer, filename: string): Promise<OCRResult> {
-  const worker = await createWorker('spa'); // Español
+  // TEMPORALMENTE: Deshabilitar OCR en servidor para evitar problemas con workers
+  // TODO: Implementar OCR alternativo o mover a cliente
+  const isServer = typeof window === 'undefined';
+  
+  if (isServer) {
+    // En servidor, devolver resultado básico sin OCR para evitar problemas con workers
+    console.log(`⚠️ OCR deshabilitado en servidor para ${filename}. Usando metadatos básicos.`);
+    return {
+      contenido: `[Documento: ${filename}]`,
+      precision: 0,
+      cantidadDetectada: undefined,
+      fechaDetectada: undefined,
+      tipoDocumento: detectarTipoDocumento(filename.toLowerCase(), filename)
+    };
+  }
+  
+  // En cliente, intentar OCR si está disponible
+  let worker: any = null;
   
   try {
+    worker = await createWorker('spa', 1, {
+      logger: (m: any) => {
+        if (m.status === 'recognizing text') {
+          // Solo loggear progreso si es necesario
+        }
+      }
+    });
+    
     const { data: { text, confidence } } = await worker.recognize(fileBuffer);
     
     // Procesar el texto extraído
@@ -36,8 +61,25 @@ export async function analyzeDocumentOCR(fileBuffer: Buffer, filename: string): 
       tipoDocumento
     };
     
+  } catch (error: any) {
+    // Si el OCR falla, devolver resultado básico
+    console.warn(`⚠️ Error en OCR para ${filename}, usando resultado básico:`, error.message);
+    
+    return {
+      contenido: `[OCR no disponible: ${error.message}]`,
+      precision: 0,
+      cantidadDetectada: undefined,
+      fechaDetectada: undefined,
+      tipoDocumento: detectarTipoDocumento(filename.toLowerCase(), filename)
+    };
   } finally {
-    await worker.terminate();
+    if (worker) {
+      try {
+        await worker.terminate();
+      } catch (terminateError: any) {
+        console.warn('⚠️ Error terminando worker OCR:', terminateError.message);
+      }
+    }
   }
 }
 
@@ -130,10 +172,28 @@ export async function processMultipleDocuments(files: Array<{ buffer: Buffer; fi
         resultados.push(validation.data);
       } else {
         console.warn(`Error validando documento OCR ${file.filename}:`, validation.error);
+        // Aún así, agregar un resultado básico para que el flujo continúe
+        resultados.push({
+          nombre: file.filename,
+          contenido: resultado.contenido || `Documento: ${file.filename}`,
+          precision: resultado.precision || 0,
+          cantidadDetectada: resultado.cantidadDetectada,
+          fechaDetectada: resultado.fechaDetectada,
+          tipoDocumento: resultado.tipoDocumento || 'otro'
+        });
       }
       
-    } catch (error) {
-      console.error(`Error procesando documento ${file.filename}:`, error);
+    } catch (error: any) {
+      console.error(`❌ Error procesando documento ${file.filename}:`, error.message);
+      // Agregar resultado básico para que el flujo continúe
+      resultados.push({
+        nombre: file.filename,
+        contenido: `[Error procesando documento: ${error.message}]`,
+        precision: 0,
+        cantidadDetectada: undefined,
+        fechaDetectada: undefined,
+        tipoDocumento: 'otro'
+      });
     }
   }
   

@@ -123,11 +123,11 @@ export default function ReclamacionCantidadesDashboard() {
 
 
           {/* Document Processing Workflow */}
-          <ReclamacionProcessSimple />
+          <ReclamacionProcessSimple userId={user?.uid} userEmail={user?.email || undefined} />
 
           {/* Purchase History Section */}
           <div className="mt-12">
-            <PurchaseHistoryComponent userId="demo_user" documentType="reclamacion_cantidades" />
+            <PurchaseHistoryComponent userId={user?.uid || 'demo_user'} documentType="reclamacion_cantidades" />
           </div>
         </div>
       </main>
