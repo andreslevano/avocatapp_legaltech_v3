@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/hooks/useI18n';
 import LanguageSelector from './LanguageSelector';
+import ProductsDropdown from './ProductsDropdown';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,6 +27,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
+            <ProductsDropdown />
             <Link href="#caracteristicas" className="text-gray-600 hover:text-primary-600 transition-colors">
               {t('navigation.features')}
             </Link>
@@ -35,7 +37,7 @@ export default function Header() {
             <Link href="#acerca-de" className="text-gray-600 hover:text-primary-600 transition-colors">
               {t('navigation.about')}
             </Link>
-            <Link href="#contacto" className="text-gray-600 hover:text-primary-600 transition-colors">
+            <Link href="/contacto" className="text-gray-600 hover:text-primary-600 transition-colors">
               {t('navigation.contact')}
             </Link>
           </nav>
@@ -91,6 +93,21 @@ export default function Header() {
               <div className="px-3 py-2">
                 <LanguageSelector />
               </div>
+              <div className="px-3 py-2 border-b border-gray-200 mb-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Productos</p>
+                <Link href="/productos/gestion-abogados" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors rounded-md hover:bg-gray-50">
+                  <span className="flex items-center space-x-2">
+                    <span>Gestión para Abogados</span>
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Beta</span>
+                  </span>
+                </Link>
+                <Link href="/productos/material-estudiantes" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors rounded-md hover:bg-gray-50">
+                  Material para Estudiantes
+                </Link>
+                <Link href="/productos/autoservicio" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors rounded-md hover:bg-gray-50">
+                  Autoservicio
+                </Link>
+              </div>
               <Link href="#caracteristicas" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
                 {t('navigation.features')}
               </Link>
@@ -100,7 +117,7 @@ export default function Header() {
               <Link href="#acerca-de" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
                 {t('navigation.about')}
               </Link>
-              <Link href="#contacto" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
+              <Link href="/contacto" className="block px-3 py-2 text-gray-600 hover:text-primary-600 transition-colors">
                 {t('navigation.contact')}
               </Link>
               {isLoggedIn ? (

@@ -8,7 +8,7 @@ import Link from 'next/link';
 import AccountDeactivationModal from './AccountDeactivationModal';
 
 interface UserMenuProps {
-  user: User;
+  user?: User | null;
   currentPlan?: string;
   onSignOut?: () => void;
 }
@@ -20,6 +20,9 @@ export default function UserMenu({ user, currentPlan = 'Abogados', onSignOut }: 
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  if (!user) {
+    return null;
+  }
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
