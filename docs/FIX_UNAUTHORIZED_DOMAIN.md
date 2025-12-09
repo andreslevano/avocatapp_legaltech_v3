@@ -164,3 +164,4 @@ Después de agregar el dominio:
 ✅ **Enlace de redirección funciona** correctamente  
 ✅ **Email llega desde** `soporte@avocatapp.com`
 
+

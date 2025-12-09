@@ -64,20 +64,32 @@ export default function MaterialEstudiantesPage() {
       <Header />
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-green-50 via-white to-blue-50 py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative py-20 lg:py-32 min-h-[500px] md:min-h-[600px] lg:min-h-[700px] overflow-hidden">
+          {/* Background Image */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: 'url(/images/hero-estudiantes-background.png)',
+            }}
+          >
+            {/* Dark overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/60"></div>
+          </div>
+
+          {/* Content */}
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h1 className="text-5xl font-bold text-gray-900 mb-6">
+              <h1 className="text-5xl font-bold text-white mb-6 drop-shadow-lg">
                 Material de Estudio Legal
               </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              <p className="text-xl text-white/95 max-w-3xl mx-auto drop-shadow-md">
                 Accede a una amplia biblioteca de plantillas legales profesionales, ejemplos completos y material de estudio para estudiantes de derecho.
               </p>
             </div>
 
             {/* Hero Illustration */}
             <div className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-xl shadow-2xl p-8 border border-gray-200">
+              <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-8 border border-gray-200">
                 <div className="grid grid-cols-2 gap-6 mb-6">
                   <div className="bg-green-50 rounded-lg p-6">
                     <div className="text-4xl mb-3">📚</div>
@@ -110,6 +122,9 @@ export default function MaterialEstudiantesPage() {
               </div>
             </div>
           </div>
+
+          {/* Additional gradient overlay at bottom for smooth transition */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
         </section>
 
         {/* Legal Areas Section */}

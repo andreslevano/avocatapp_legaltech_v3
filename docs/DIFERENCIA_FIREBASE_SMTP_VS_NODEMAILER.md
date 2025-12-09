@@ -215,3 +215,4 @@ Para 75 usuarios, no hay problema.
 - [ ] Variables guardadas
 - [ ] Listo para ejecutar el script ✅
 
+

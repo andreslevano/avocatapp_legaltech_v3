@@ -126,3 +126,4 @@ npm run list:documents <purchaseId> --download-all
 4. **Dashboard**: El dashboard muestra los documentos agrupados por compra, con botones para ver/descargar cada tipo.
 
 
+

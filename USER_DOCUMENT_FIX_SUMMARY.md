@@ -175,3 +175,4 @@ The fixes ensure:
 - Payment successful but documents not generated
 - Purchases not appearing in user dashboard
 
+

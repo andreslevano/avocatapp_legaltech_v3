@@ -286,3 +286,4 @@
 - [ ] Plan de rollback si algo falla
 - [ ] Comunicación a usuarios (si aplica)
 
+

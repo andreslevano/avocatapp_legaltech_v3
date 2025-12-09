@@ -213,3 +213,4 @@ Para evitar que los emails vayan a spam:
 
 Si todo funciona correctamente, tu configuración SMTP está completa y funcionando. Todos los emails de Firebase Authentication ahora se enviarán desde `soporte@avocatapp.com`.
 
+

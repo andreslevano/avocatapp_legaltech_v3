@@ -81,20 +81,32 @@ export default function AutoservicioPage() {
       <Header />
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-orange-50 via-white to-red-50 py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative py-20 lg:py-32 min-h-[500px] md:min-h-[600px] lg:min-h-[700px] overflow-hidden">
+          {/* Background Image */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: 'url(/images/hero-autoservicio-background.png)',
+            }}
+          >
+            {/* Dark overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/60"></div>
+          </div>
+
+          {/* Content */}
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h1 className="text-5xl font-bold text-gray-900 mb-6">
+              <h1 className="text-5xl font-bold text-white mb-6 drop-shadow-lg">
                 Autoservicio Legal Inteligente
               </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              <p className="text-xl text-white/95 max-w-3xl mx-auto drop-shadow-md">
                 Genera documentos legales profesionales de forma automática con la ayuda de inteligencia artificial. Sin necesidad de conocimientos legales avanzados.
               </p>
             </div>
 
             {/* Hero Illustration */}
             <div className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-xl shadow-2xl p-8 border border-gray-200">
+              <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-8 border border-gray-200">
                 <div className="flex items-center justify-center space-x-8 mb-6">
                   <div className="text-center">
                     <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -125,6 +137,9 @@ export default function AutoservicioPage() {
               </div>
             </div>
           </div>
+
+          {/* Additional gradient overlay at bottom for smooth transition */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
         </section>
 
         {/* Services Section */}
