@@ -78,6 +78,62 @@ export default function ReclamacionProcess({ onComplete }: ReclamacionProcessPro
     initializeStripe();
   }, []);
 
+  const generateDocument = useCallback(async () => {
+    setIsProcessing(true);
+    
+    // Simulate document generation
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    const generated: GeneratedDocument = {
+      id: Math.random().toString(36).substr(2, 9),
+      title: 'Reclamación de Cantidades - ' + new Date().toLocaleDateString('es-ES'),
+      content: `RECLAMACIÓN DE CANTIDADES
+
+Estimado/a Sr./Sra.,
+
+Por medio del presente documento, y en mi condición de [TIPO DE RELACIÓN], me dirijo a usted para reclamar el pago de las cantidades que se detallan a continuación:
+
+DOCUMENTOS PRESENTADOS:
+${documentSummary?.categorizedDocuments ? Object.entries(documentSummary.categorizedDocuments).map(([categoryId, docs]) => {
+  const category = DOCUMENT_CATEGORIES.find(c => c.id === categoryId);
+  return `- ${category?.name}: ${docs.length} documento(s)`;
+}).join('\n') : ''}
+
+CANTIDAD RECLAMADA: [A DETERMINAR SEGÚN DOCUMENTOS]
+
+FUNDAMENTOS LEGALES:
+- Artículo 1101 del Código Civil
+- Ley 3/2004, de 29 de diciembre, de medidas contra la morosidad
+- Jurisprudencia del Tribunal Supremo
+
+Se solicita el pago de la cantidad adeudada en el plazo de 15 días naturales desde la recepción de esta reclamación.
+
+Sin otro particular, reciba un cordial saludo.
+
+[FECHA]
+[FIRMA]`,
+      type: 'reclamacion_cantidades',
+      generatedAt: new Date()
+    };
+
+    setGeneratedDocument(generated);
+    setCurrentStep(3);
+    setIsProcessing(false);
+    
+    if (onComplete) {
+      onComplete(generated);
+    }
+  }, [documentSummary, onComplete]);
+
+  // Handle payment completion (this would be called from a webhook or success page)
+  const handlePaymentSuccess = useCallback(() => {
+    setIsPaymentComplete(true);
+    // Call generateDocument directly to avoid circular dependency
+    if (documentSummary) {
+      generateDocument();
+    }
+  }, [documentSummary, generateDocument]);
+
   // Check for payment success in URL parameters
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -86,6 +142,13 @@ export default function ReclamacionProcess({ onComplete }: ReclamacionProcessPro
     const paymentStatus = urlParams.get('payment');
     
     if (paymentStatus === 'success' && currentStep === 2) {
+      // Track subscription success conversion
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'subscribe_success', {});
+        window.gtag('event', 'conversion', {
+          'send_to': 'AW-16479671897/8Q-oCPbm0bgbENmsj719'
+        });
+      }
       handlePaymentSuccess();
     }
   }, [currentStep, handlePaymentSuccess]);
@@ -213,53 +276,6 @@ export default function ReclamacionProcess({ onComplete }: ReclamacionProcessPro
     }
   }, [stripe, uploadedDocuments.length]);
 
-  const generateDocument = useCallback(async () => {
-    setIsProcessing(true);
-    
-    // Simulate document generation
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    const generated: GeneratedDocument = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: 'Reclamación de Cantidades - ' + new Date().toLocaleDateString('es-ES'),
-      content: `REGLAMENTO DE CANTIDADES
-
-Estimado/a Sr./Sra.,
-
-Por medio del presente documento, y en mi condición de [TIPO DE RELACIÓN], me dirijo a usted para reclamar el pago de las cantidades que se detallan a continuación:
-
-DOCUMENTOS PRESENTADOS:
-${documentSummary?.categorizedDocuments ? Object.entries(documentSummary.categorizedDocuments).map(([categoryId, docs]) => {
-  const category = DOCUMENT_CATEGORIES.find(c => c.id === categoryId);
-  return `- ${category?.name}: ${docs.length} documento(s)`;
-}).join('\n') : ''}
-
-CANTIDAD RECLAMADA: [A DETERMINAR SEGÚN DOCUMENTOS]
-
-FUNDAMENTOS LEGALES:
-- Artículo 1101 del Código Civil
-- Ley 3/2004, de 29 de diciembre, de medidas contra la morosidad
-- Jurisprudencia del Tribunal Supremo
-
-Se solicita el pago de la cantidad adeudada en el plazo de 15 días naturales desde la recepción de esta reclamación.
-
-Sin otro particular, reciba un cordial saludo.
-
-[FECHA]
-[FIRMA]`,
-      type: 'reclamacion_cantidades',
-      generatedAt: new Date()
-    };
-
-    setGeneratedDocument(generated);
-    setCurrentStep(3);
-    setIsProcessing(false);
-    
-    if (onComplete) {
-      onComplete(generated);
-    }
-  }, [documentSummary, onComplete]);
-
   const downloadDocument = useCallback(async () => {
     if (!generatedDocument) return;
     
@@ -363,15 +379,6 @@ Sin otro particular, reciba un cordial saludo.
       URL.revokeObjectURL(url);
     }
   }, [generatedDocument]);
-
-  // Handle payment completion (this would be called from a webhook or success page)
-  const handlePaymentSuccess = useCallback(() => {
-    setIsPaymentComplete(true);
-    // Call generateDocument directly to avoid circular dependency
-    if (documentSummary) {
-      generateDocument();
-    }
-  }, [documentSummary, generateDocument]);
 
   const resetProcess = useCallback(() => {
     setCurrentStep(1);

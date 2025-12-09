@@ -1,0 +1,1524 @@
+{
+  "summary": {
+    "totalInExcel": 81,
+    "totalInAuth": 14,
+    "totalInFirestore": 14,
+    "inAllThree": 6,
+    "inExcelAndAuthOnly": 0,
+    "inExcelAndFirestoreOnly": 0,
+    "inExcelButNotInAuthOrFirestore": 75
+  },
+  "missingUsers": [
+    {
+      "email": "2002idiaz@gmail.com",
+      "nombres": "Ivan",
+      "primer_apellido": "Diaz",
+      "pais": "Mexico",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "laurajohanna36@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "ajgreenep@gmail.com",
+      "nombres": "Arturo Javier",
+      "primer_apellido": "Greene",
+      "pais": "",
+      "area_legal": "Penal"
+    },
+    {
+      "email": "akuerdos@gmail.com",
+      "nombres": "SANTIAGO",
+      "primer_apellido": "ORBE",
+      "pais": "Ecuador",
+      "area_legal": "Derecho Laboral"
+    },
+    {
+      "email": "alex@maite.ai",
+      "nombres": "Pepe",
+      "primer_apellido": "Pepe",
+      "pais": "España",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "alexisrealpe10@gmail.com",
+      "nombres": "Alexis",
+      "primer_apellido": "Realpe",
+      "pais": "Colombia",
+      "area_legal": "Derecho Laboral"
+    },
+    {
+      "email": "anacristinaramosdiaz78@gmail.com",
+      "nombres": "Daniel",
+      "primer_apellido": "Garcia",
+      "pais": "España",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "andres.levano@madcloudconsulting.com",
+      "nombres": "Andres",
+      "primer_apellido": "Levano",
+      "pais": "Chile",
+      "area_legal": "Civil"
+    },
+    {
+      "email": "angulofuentesjanet@gmail.com",
+      "nombres": "JANET",
+      "primer_apellido": "angulo",
+      "pais": "Peru",
+      "area_legal": "Derecho Administrativo"
+    },
+    {
+      "email": "antonioa@tijuanalaw.com",
+      "nombres": "ANTONIO",
+      "primer_apellido": "AVILA",
+      "pais": "Mexico",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "brandoramirez484@gmail.com",
+      "nombres": "Brando Alberto",
+      "primer_apellido": "Ramirez",
+      "pais": "Mexico",
+      "area_legal": "Derecho Penal"
+    },
+    {
+      "email": "cantonlojacz7@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "carboly25@gmail.com",
+      "nombres": "CARLOS BOLIVAR",
+      "primer_apellido": "SUAREZ",
+      "pais": "Peru",
+      "area_legal": "Derecho Laboral"
+    },
+    {
+      "email": "chhluis@gmail.com",
+      "nombres": "Luis",
+      "primer_apellido": "Chauca",
+      "pais": "Peru",
+      "area_legal": "Derecho Penal"
+    },
+    {
+      "email": "coljuridicaabogados@gmail.com",
+      "nombres": "DANIEL",
+      "primer_apellido": "MESA",
+      "pais": "Colombia",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "compuparis@live.com.mx",
+      "nombres": "fidel",
+      "primer_apellido": "espinoza",
+      "pais": "Mexico",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "cortiz@colloky.cl",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "daniel.arellanes.m@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "diarioperu.pe@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "die.facundo@gmail.com",
+      "nombres": "Diego Facundo",
+      "primer_apellido": "Muñoz",
+      "pais": "Chile",
+      "area_legal": "Derecho Laboral"
+    },
+    {
+      "email": "diego.olortegui.salazar@gmail.com",
+      "nombres": "Diego",
+      "primer_apellido": "Olórtegui",
+      "pais": "España",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "egv08@hotmail.com",
+      "nombres": "Edgar",
+      "primer_apellido": "",
+      "pais": "Colombia",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "eliana.guerrero.compras@gmail.com",
+      "nombres": "ELIANA",
+      "primer_apellido": "GUERRERO",
+      "pais": "Colombia",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "er.morales@gmail.com",
+      "nombres": "Carlos",
+      "primer_apellido": "Garcia",
+      "pais": "Peru",
+      "area_legal": "Derecho Laboral"
+    },
+    {
+      "email": "fcardenasch@hotmail.com",
+      "nombres": "Fernando",
+      "primer_apellido": "Cárdenas",
+      "pais": "",
+      "area_legal": "Corporativo"
+    },
+    {
+      "email": "fernando@diazruizabogados.es",
+      "nombres": "Fernando",
+      "primer_apellido": "Diaz",
+      "pais": "",
+      "area_legal": "Penal"
+    },
+    {
+      "email": "ferpena.19.21@gmail.com",
+      "nombres": "Bianca",
+      "primer_apellido": "Huayanay",
+      "pais": "Peru",
+      "area_legal": "Derecho Laboral"
+    },
+    {
+      "email": "florescachae@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "georgeta_camelia@yahoo.es",
+      "nombres": "Camelia",
+      "primer_apellido": "Marcuta",
+      "pais": "España",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "germania2486@hotmail.com",
+      "nombres": "Carla",
+      "primer_apellido": "Chasi",
+      "pais": "Ecuador",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "haitz_udaondo@hotmail.com",
+      "nombres": "Haitz",
+      "primer_apellido": "Udaondo",
+      "pais": "España",
+      "area_legal": "Derecho Laboral"
+    },
+    {
+      "email": "harm.krol@madcloudconsulting.com",
+      "nombres": "Harm",
+      "primer_apellido": "Krol",
+      "pais": "Chile",
+      "area_legal": ""
+    },
+    {
+      "email": "hugce_castle@hotmail.com",
+      "nombres": "Cesar",
+      "primer_apellido": "Castillo",
+      "pais": "Mexico",
+      "area_legal": "Derecho Tributario"
+    },
+    {
+      "email": "idelacruz@outlook.es",
+      "nombres": "IDMIR",
+      "primer_apellido": "DE LA CRUZ",
+      "pais": "Peru",
+      "area_legal": "Derecho de Familia"
+    },
+    {
+      "email": "ilesamaniego@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "info@logisticaenderecho.com",
+      "nombres": "luis horacio",
+      "primer_apellido": "serrano",
+      "pais": "Mexico",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "isabellasalazar183@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "j.enriquedelgadodelgado@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "j80hernandez@gmail.com",
+      "nombres": "Jorge",
+      "primer_apellido": "Hernandez",
+      "pais": "Colombia",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "johancamilo097@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "jorgerugeles_3@hotmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "joseleonicaza87@hotmail.com",
+      "nombres": "JOSE ORLANDO",
+      "primer_apellido": "LEON",
+      "pais": "Ecuador",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "jotajotapizon124@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "juriscorporation.ia@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "laquerenciammo@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "lavil36044@kelenson.com",
+      "nombres": "Isacco",
+      "primer_apellido": "Locarno",
+      "pais": "Peru",
+      "area_legal": "Derecho Laboral"
+    },
+    {
+      "email": "leoogomez17@gmail.com",
+      "nombres": "Leonardo",
+      "primer_apellido": "Gómez",
+      "pais": "Colombia",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "linamabual@hotmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "luispipesuarez@gmail.com",
+      "nombres": "Luis",
+      "primer_apellido": "",
+      "pais": "Colombia",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "luistellocarranza@gmail.com",
+      "nombres": "Luis",
+      "primer_apellido": "Tello",
+      "pais": "Peru",
+      "area_legal": "Derecho Penal"
+    },
+    {
+      "email": "m.simo@icamur.org",
+      "nombres": "Marta",
+      "primer_apellido": "",
+      "pais": "España",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "manuelvejer@gmail.com",
+      "nombres": "Manuel",
+      "primer_apellido": "Manuel",
+      "pais": "España",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "marycornejo726@gmail.com",
+      "nombres": "Mary",
+      "primer_apellido": "Cornejo",
+      "pais": "Peru",
+      "area_legal": "Derecho Penal"
+    },
+    {
+      "email": "migadc@hotmail.com",
+      "nombres": "Miguel Ángel",
+      "primer_apellido": "Suarez",
+      "pais": "Colombia",
+      "area_legal": "Derecho Laboral"
+    },
+    {
+      "email": "n.mino@estudioju.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "nicoodelga.c40@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "nubia.rascon.snsp@gmail.com",
+      "nombres": "Nubia",
+      "primer_apellido": "Rascon",
+      "pais": "Mexico",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "omarlud30@gmail.com",
+      "nombres": "Omar",
+      "primer_apellido": "Ludeña",
+      "pais": "Ecuador",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "pabrilarenas@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "pamela.saguas@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "pedroangelmc@gmail.com",
+      "nombres": "Pedro Ángel",
+      "primer_apellido": "Martínez",
+      "pais": "Peru",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "pescador.marcelo@gmail.com",
+      "nombres": "Marcelo",
+      "primer_apellido": "Merino",
+      "pais": "Chile",
+      "area_legal": "Derecho Penal"
+    },
+    {
+      "email": "psanhuezacortes@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "rufinomartinez@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "sapolancoa07@gmail.com",
+      "nombres": "Samara",
+      "primer_apellido": "Polanco",
+      "pais": "Colombia",
+      "area_legal": "Derecho Civil"
+    },
+    {
+      "email": "sheilypilarfloresjuro.2698@gmail.com",
+      "nombres": "SHEYLU Pilar",
+      "primer_apellido": "Flores",
+      "pais": "Peru",
+      "area_legal": "Derecho de Familia"
+    },
+    {
+      "email": "ultimeherospiderman@gmail.com",
+      "nombres": "Nyls",
+      "primer_apellido": "Romero",
+      "pais": "Peru",
+      "area_legal": "Derecho de Familia"
+    },
+    {
+      "email": "vanesa@vlegalabogados.es",
+      "nombres": "Vanesa",
+      "primer_apellido": "González",
+      "pais": "España",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "victor.vergara@madcloudconsulting.com",
+      "nombres": "Víctor",
+      "primer_apellido": "Vergara",
+      "pais": "",
+      "area_legal": "Civil"
+    },
+    {
+      "email": "vriverosbutorovic@gmail.com",
+      "nombres": "Veronika",
+      "primer_apellido": "riveros",
+      "pais": "Chile",
+      "area_legal": "Derecho de Familia"
+    },
+    {
+      "email": "yaalmaar@yahoo.es",
+      "nombres": "Yasmin",
+      "primer_apellido": "Mariño",
+      "pais": "España",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "yarenidelira@gmail.com",
+      "nombres": "",
+      "primer_apellido": "",
+      "pais": "",
+      "area_legal": ""
+    },
+    {
+      "email": "yrecor@gmail.com",
+      "nombres": "yonathan",
+      "primer_apellido": "vega",
+      "pais": "Colombia",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "yulifer211@gmail.com",
+      "nombres": "YULI FERNANDA",
+      "primer_apellido": "MORENO",
+      "pais": "Colombia",
+      "area_legal": "Otros"
+    },
+    {
+      "email": "zalen1992@hotmail.com",
+      "nombres": "Gonzalo",
+      "primer_apellido": "Luis",
+      "pais": "España",
+      "area_legal": "Derecho Civil"
+    }
+  ],
+  "allComparisons": [
+    {
+      "email": "2002idiaz@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "2002idiaz@gmail.com",
+        "nombres": "Ivan",
+        "primer_apellido": "Diaz",
+        "pais": "Mexico",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "laurajohanna36@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "laurajohanna36@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "ajgreenep@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "ajgreenep@gmail.com",
+        "nombres": "Arturo Javier",
+        "primer_apellido": "Greene",
+        "pais": "",
+        "area_legal": "Penal"
+      }
+    },
+    {
+      "email": "akuerdos@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "akuerdos@gmail.com",
+        "nombres": "SANTIAGO",
+        "primer_apellido": "ORBE",
+        "pais": "Ecuador",
+        "area_legal": "Derecho Laboral"
+      }
+    },
+    {
+      "email": "alex@maite.ai",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "alex@maite.ai",
+        "nombres": "Pepe",
+        "primer_apellido": "Pepe",
+        "pais": "España",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "alexisrealpe10@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "alexisrealpe10@gmail.com",
+        "nombres": "Alexis",
+        "primer_apellido": "Realpe",
+        "pais": "Colombia",
+        "area_legal": "Derecho Laboral"
+      }
+    },
+    {
+      "email": "anacristinaramosdiaz78@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "anacristinaramosdiaz78@gmail.com",
+        "nombres": "Daniel",
+        "primer_apellido": "Garcia",
+        "pais": "España",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "andres.levano@madcloudconsulting.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "andres.levano@madcloudconsulting.com",
+        "nombres": "Andres",
+        "primer_apellido": "Levano",
+        "pais": "Chile",
+        "area_legal": "Civil"
+      }
+    },
+    {
+      "email": "andresmlevanofm@gmail.com",
+      "inAuth": true,
+      "inFirestore": true,
+      "authUid": "jdwWMhOqVCggIRjLVBtxbvhOwPq1",
+      "firestoreUid": "jdwWMhOqVCggIRjLVBtxbvhOwPq1",
+      "excelData": {
+        "email": "andresmlevanofm@gmail.com",
+        "nombres": "Andres",
+        "primer_apellido": "Levano",
+        "pais": "Chile",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "angulofuentesjanet@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "angulofuentesjanet@gmail.com",
+        "nombres": "JANET",
+        "primer_apellido": "angulo",
+        "pais": "Peru",
+        "area_legal": "Derecho Administrativo"
+      }
+    },
+    {
+      "email": "antonioa@tijuanalaw.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "antonioa@tijuanalaw.com",
+        "nombres": "ANTONIO",
+        "primer_apellido": "AVILA",
+        "pais": "Mexico",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "brandoramirez484@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "brandoramirez484@gmail.com",
+        "nombres": "Brando Alberto",
+        "primer_apellido": "Ramirez",
+        "pais": "Mexico",
+        "area_legal": "Derecho Penal"
+      }
+    },
+    {
+      "email": "cantonlojacz7@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "cantonlojacz7@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "carboly25@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "carboly25@gmail.com",
+        "nombres": "CARLOS BOLIVAR",
+        "primer_apellido": "SUAREZ",
+        "pais": "Peru",
+        "area_legal": "Derecho Laboral"
+      }
+    },
+    {
+      "email": "chhluis@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "chhluis@gmail.com",
+        "nombres": "Luis",
+        "primer_apellido": "Chauca",
+        "pais": "Peru",
+        "area_legal": "Derecho Penal"
+      }
+    },
+    {
+      "email": "coljuridicaabogados@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "coljuridicaabogados@gmail.com",
+        "nombres": "DANIEL",
+        "primer_apellido": "MESA",
+        "pais": "Colombia",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "compuparis@live.com.mx",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "compuparis@live.com.mx",
+        "nombres": "fidel",
+        "primer_apellido": "espinoza",
+        "pais": "Mexico",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "cortiz@colloky.cl",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "cortiz@colloky.cl",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "daniel.arellanes.m@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "daniel.arellanes.m@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "danielgarciamarino945@gmail.com",
+      "inAuth": true,
+      "inFirestore": true,
+      "authUid": "BH84VzU0uKeVTy0zT8YXWT7hkk53",
+      "firestoreUid": "BH84VzU0uKeVTy0zT8YXWT7hkk53",
+      "excelData": {
+        "email": "danielgarciamarino945@gmail.com",
+        "nombres": "Daniel",
+        "primer_apellido": "Garcia",
+        "pais": "España",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "dchavez17021980@gmail.com",
+      "inAuth": true,
+      "inFirestore": true,
+      "authUid": "gmrsy7nCLfeKsuX2KGkJCWVX0mX2",
+      "firestoreUid": "gmrsy7nCLfeKsuX2KGkJCWVX0mX2",
+      "excelData": {
+        "email": "dchavez17021980@gmail.com",
+        "nombres": "David",
+        "primer_apellido": "Chávez",
+        "pais": "Peru",
+        "area_legal": "Derecho Administrativo"
+      }
+    },
+    {
+      "email": "diarioperu.pe@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "diarioperu.pe@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "die.facundo@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "die.facundo@gmail.com",
+        "nombres": "Diego Facundo",
+        "primer_apellido": "Muñoz",
+        "pais": "Chile",
+        "area_legal": "Derecho Laboral"
+      }
+    },
+    {
+      "email": "diego.olortegui.salazar@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "diego.olortegui.salazar@gmail.com",
+        "nombres": "Diego",
+        "primer_apellido": "Olórtegui",
+        "pais": "España",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "egv08@hotmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "egv08@hotmail.com",
+        "nombres": "Edgar",
+        "primer_apellido": "",
+        "pais": "Colombia",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "eliana.guerrero.compras@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "eliana.guerrero.compras@gmail.com",
+        "nombres": "ELIANA",
+        "primer_apellido": "GUERRERO",
+        "pais": "Colombia",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "er.morales@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "er.morales@gmail.com",
+        "nombres": "Carlos",
+        "primer_apellido": "Garcia",
+        "pais": "Peru",
+        "area_legal": "Derecho Laboral"
+      }
+    },
+    {
+      "email": "fcardenasch@hotmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "fcardenasch@hotmail.com",
+        "nombres": "Fernando",
+        "primer_apellido": "Cárdenas",
+        "pais": "",
+        "area_legal": "Corporativo"
+      }
+    },
+    {
+      "email": "fernando@diazruizabogados.es",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "fernando@diazruizabogados.es",
+        "nombres": "Fernando",
+        "primer_apellido": "Diaz",
+        "pais": "",
+        "area_legal": "Penal"
+      }
+    },
+    {
+      "email": "ferpena.19.21@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "ferpena.19.21@gmail.com",
+        "nombres": "Bianca",
+        "primer_apellido": "Huayanay",
+        "pais": "Peru",
+        "area_legal": "Derecho Laboral"
+      }
+    },
+    {
+      "email": "florescachae@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "florescachae@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "georgeta_camelia@yahoo.es",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "georgeta_camelia@yahoo.es",
+        "nombres": "Camelia",
+        "primer_apellido": "Marcuta",
+        "pais": "España",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "germania2486@hotmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "germania2486@hotmail.com",
+        "nombres": "Carla",
+        "primer_apellido": "Chasi",
+        "pais": "Ecuador",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "haitz_udaondo@hotmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "haitz_udaondo@hotmail.com",
+        "nombres": "Haitz",
+        "primer_apellido": "Udaondo",
+        "pais": "España",
+        "area_legal": "Derecho Laboral"
+      }
+    },
+    {
+      "email": "harm.krol@madcloudconsulting.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "harm.krol@madcloudconsulting.com",
+        "nombres": "Harm",
+        "primer_apellido": "Krol",
+        "pais": "Chile",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "hugce_castle@hotmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "hugce_castle@hotmail.com",
+        "nombres": "Cesar",
+        "primer_apellido": "Castillo",
+        "pais": "Mexico",
+        "area_legal": "Derecho Tributario"
+      }
+    },
+    {
+      "email": "idelacruz@outlook.es",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "idelacruz@outlook.es",
+        "nombres": "IDMIR",
+        "primer_apellido": "DE LA CRUZ",
+        "pais": "Peru",
+        "area_legal": "Derecho de Familia"
+      }
+    },
+    {
+      "email": "ilesamaniego@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "ilesamaniego@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "info@logisticaenderecho.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "info@logisticaenderecho.com",
+        "nombres": "luis horacio",
+        "primer_apellido": "serrano",
+        "pais": "Mexico",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "isabellasalazar183@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "isabellasalazar183@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "j.enriquedelgadodelgado@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "j.enriquedelgadodelgado@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "j80hernandez@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "j80hernandez@gmail.com",
+        "nombres": "Jorge",
+        "primer_apellido": "Hernandez",
+        "pais": "Colombia",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "johancamilo097@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "johancamilo097@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "jorgerugeles_3@hotmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "jorgerugeles_3@hotmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "joseleonicaza87@hotmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "joseleonicaza87@hotmail.com",
+        "nombres": "JOSE ORLANDO",
+        "primer_apellido": "LEON",
+        "pais": "Ecuador",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "jotajotapizon124@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "jotajotapizon124@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "juriscorporation.ia@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "juriscorporation.ia@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "laquerenciammo@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "laquerenciammo@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "lavil36044@kelenson.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "lavil36044@kelenson.com",
+        "nombres": "Isacco",
+        "primer_apellido": "Locarno",
+        "pais": "Peru",
+        "area_legal": "Derecho Laboral"
+      }
+    },
+    {
+      "email": "leoogomez17@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "leoogomez17@gmail.com",
+        "nombres": "Leonardo",
+        "primer_apellido": "Gómez",
+        "pais": "Colombia",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "linamabual@hotmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "linamabual@hotmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "locarno.isacco@gmail.com",
+      "inAuth": true,
+      "inFirestore": true,
+      "authUid": "awR2MQfPrGXydRcZ2nDPUrEJrUI3",
+      "firestoreUid": "awR2MQfPrGXydRcZ2nDPUrEJrUI3",
+      "excelData": {
+        "email": "locarno.isacco@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "luispipesuarez@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "luispipesuarez@gmail.com",
+        "nombres": "Luis",
+        "primer_apellido": "",
+        "pais": "Colombia",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "luistellocarranza@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "luistellocarranza@gmail.com",
+        "nombres": "Luis",
+        "primer_apellido": "Tello",
+        "pais": "Peru",
+        "area_legal": "Derecho Penal"
+      }
+    },
+    {
+      "email": "m.simo@icamur.org",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "m.simo@icamur.org",
+        "nombres": "Marta",
+        "primer_apellido": "",
+        "pais": "España",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "manuelvejer@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "manuelvejer@gmail.com",
+        "nombres": "Manuel",
+        "primer_apellido": "Manuel",
+        "pais": "España",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "marycornejo726@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "marycornejo726@gmail.com",
+        "nombres": "Mary",
+        "primer_apellido": "Cornejo",
+        "pais": "Peru",
+        "area_legal": "Derecho Penal"
+      }
+    },
+    {
+      "email": "migadc@hotmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "migadc@hotmail.com",
+        "nombres": "Miguel Ángel",
+        "primer_apellido": "Suarez",
+        "pais": "Colombia",
+        "area_legal": "Derecho Laboral"
+      }
+    },
+    {
+      "email": "n.mino@estudioju.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "n.mino@estudioju.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "nicoodelga.c40@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "nicoodelga.c40@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "nubia.rascon.snsp@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "nubia.rascon.snsp@gmail.com",
+        "nombres": "Nubia",
+        "primer_apellido": "Rascon",
+        "pais": "Mexico",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "omarlud30@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "omarlud30@gmail.com",
+        "nombres": "Omar",
+        "primer_apellido": "Ludeña",
+        "pais": "Ecuador",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "pabrilarenas@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "pabrilarenas@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "pamela.saguas@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "pamela.saguas@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "pedroangelmc@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "pedroangelmc@gmail.com",
+        "nombres": "Pedro Ángel",
+        "primer_apellido": "Martínez",
+        "pais": "Peru",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "pescador.marcelo@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "pescador.marcelo@gmail.com",
+        "nombres": "Marcelo",
+        "primer_apellido": "Merino",
+        "pais": "Chile",
+        "area_legal": "Derecho Penal"
+      }
+    },
+    {
+      "email": "psanhuezacortes@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "psanhuezacortes@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "rufinomartinez@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "rufinomartinez@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "sapolancoa07@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "sapolancoa07@gmail.com",
+        "nombres": "Samara",
+        "primer_apellido": "Polanco",
+        "pais": "Colombia",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "sergio.pena@madcloudconsulting.com",
+      "inAuth": true,
+      "inFirestore": true,
+      "authUid": "jsEA1hxG6SZGuTfivccpBzGQ2uD2",
+      "firestoreUid": "jsEA1hxG6SZGuTfivccpBzGQ2uD2",
+      "excelData": {
+        "email": "sergio.pena@madcloudconsulting.com",
+        "nombres": "",
+        "primer_apellido": "Peña",
+        "pais": "España",
+        "area_legal": "Derecho Laboral"
+      }
+    },
+    {
+      "email": "sheilypilarfloresjuro.2698@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "sheilypilarfloresjuro.2698@gmail.com",
+        "nombres": "SHEYLU Pilar",
+        "primer_apellido": "Flores",
+        "pais": "Peru",
+        "area_legal": "Derecho de Familia"
+      }
+    },
+    {
+      "email": "ultimeherospiderman@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "ultimeherospiderman@gmail.com",
+        "nombres": "Nyls",
+        "primer_apellido": "Romero",
+        "pais": "Peru",
+        "area_legal": "Derecho de Familia"
+      }
+    },
+    {
+      "email": "vanesa@vlegalabogados.es",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "vanesa@vlegalabogados.es",
+        "nombres": "Vanesa",
+        "primer_apellido": "González",
+        "pais": "España",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "vergarabularz@yahoo.com",
+      "inAuth": true,
+      "inFirestore": true,
+      "authUid": "EoxPDhUjf0f0GGEqe8kvxB9FBdk2",
+      "firestoreUid": "EoxPDhUjf0f0GGEqe8kvxB9FBdk2",
+      "excelData": {
+        "email": "vergarabularz@yahoo.com",
+        "nombres": "Victor",
+        "primer_apellido": "Vergara",
+        "pais": "Chile",
+        "area_legal": "Derecho Civil"
+      }
+    },
+    {
+      "email": "victor.vergara@madcloudconsulting.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "victor.vergara@madcloudconsulting.com",
+        "nombres": "Víctor",
+        "primer_apellido": "Vergara",
+        "pais": "",
+        "area_legal": "Civil"
+      }
+    },
+    {
+      "email": "vriverosbutorovic@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "vriverosbutorovic@gmail.com",
+        "nombres": "Veronika",
+        "primer_apellido": "riveros",
+        "pais": "Chile",
+        "area_legal": "Derecho de Familia"
+      }
+    },
+    {
+      "email": "yaalmaar@yahoo.es",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "yaalmaar@yahoo.es",
+        "nombres": "Yasmin",
+        "primer_apellido": "Mariño",
+        "pais": "España",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "yarenidelira@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "yarenidelira@gmail.com",
+        "nombres": "",
+        "primer_apellido": "",
+        "pais": "",
+        "area_legal": ""
+      }
+    },
+    {
+      "email": "yrecor@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "yrecor@gmail.com",
+        "nombres": "yonathan",
+        "primer_apellido": "vega",
+        "pais": "Colombia",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "yulifer211@gmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "yulifer211@gmail.com",
+        "nombres": "YULI FERNANDA",
+        "primer_apellido": "MORENO",
+        "pais": "Colombia",
+        "area_legal": "Otros"
+      }
+    },
+    {
+      "email": "zalen1992@hotmail.com",
+      "inAuth": false,
+      "inFirestore": false,
+      "excelData": {
+        "email": "zalen1992@hotmail.com",
+        "nombres": "Gonzalo",
+        "primer_apellido": "Luis",
+        "pais": "España",
+        "area_legal": "Derecho Civil"
+      }
+    }
+  ]
+}

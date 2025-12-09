@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
-import Link from 'next/link';
 import DashboardNavigation from '@/components/DashboardNavigation';
 import ReclamacionProcessSimple from '@/components/ReclamacionProcessSimple';
 import PurchaseHistoryComponent from '@/components/PurchaseHistory';
@@ -14,27 +13,30 @@ export default function ReclamacionCantidadesDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Check if Firebase is properly initialized
+    // Defer any redirect until we have definitively checked auth state
     if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
       setIsFirebaseReady(true);
-      const unsubscribe = onAuthStateChanged(auth as Auth, (user) => {
-        if (user) {
-          setUser(user);
-        } else {
-          router.push('/login');
-        }
+      const unsubscribe = onAuthStateChanged(auth as Auth, (u) => {
+        setUser(u);
+        setAuthChecked(true);
         setLoading(false);
       });
-
       return () => unsubscribe();
     } else {
       setLoading(false);
+      setAuthChecked(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (authChecked && !user) {
       router.push('/login');
     }
-  }, [router]);
+  }, [authChecked, user, router]);
 
   const handleSignOut = async () => {
     if (!isFirebaseReady || !auth || typeof auth.signOut !== 'function') {
@@ -53,8 +55,8 @@ export default function ReclamacionCantidadesDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando Reclamación de Cantidades...</p>
         </div>
       </div>
     );
@@ -74,16 +76,15 @@ export default function ReclamacionCantidadesDashboard() {
               <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center mr-3">
                 <span className="text-white font-bold text-lg">R</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">Avocat - Reclamación de Cantidades</span>
+              <span className="text-xl font-bold text-gray-900">Reclamación de Cantidades</span>
             </div>
             
-            <UserMenu user={user} currentPlan="Reclamación de Cantidades" />
+            <UserMenu user={user} currentPlan="Reclamación" onSignOut={handleSignOut} />
           </div>
         </div>
       </header>
 
-      {/* Dashboard Navigation */}
-      <DashboardNavigation currentPlan="Reclamación de Cantidades" />
+      <DashboardNavigation currentPlan="basic" user={user} />
 
       {/* Dashboard Identification Banner */}
       <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6">
@@ -122,11 +123,11 @@ export default function ReclamacionCantidadesDashboard() {
 
 
           {/* Document Processing Workflow */}
-          <ReclamacionProcessSimple />
+          <ReclamacionProcessSimple userId={user?.uid} userEmail={user?.email || undefined} />
 
           {/* Purchase History Section */}
           <div className="mt-12">
-            <PurchaseHistoryComponent userId={user?.uid} documentType="reclamacion_cantidades" />
+            <PurchaseHistoryComponent userId={user?.uid || 'demo_user'} documentType="reclamacion_cantidades" />
           </div>
         </div>
       </main>

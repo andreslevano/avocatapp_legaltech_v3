@@ -91,9 +91,7 @@
       "loggingIn": "Iniciando sesión...",
       "forgotPassword": "¿Olvidaste tu contraseña?",
       "noAccount": "¿No tienes una cuenta?",
-      "signupLink": "Regístrate aquí",
-      "continueWithGoogle": "Continuar con Google",
-      "orEmail": "O iniciar sesión con email"
+      "signupLink": "Regístrate aquí"
     },
     "signup": {
       "title": "Crear tu cuenta",
@@ -107,9 +105,7 @@
       "createAccount": "Crear Cuenta",
       "creating": "Creando cuenta...",
       "haveAccount": "¿Ya tienes una cuenta?",
-      "loginLink": "Inicia sesión aquí",
-      "continueWithGoogle": "Continuar con Google",
-      "orEmail": "O registrarse con email"
+      "loginLink": "Inicia sesión aquí"
     }
   },
   "dashboard": {

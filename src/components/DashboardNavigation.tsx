@@ -2,13 +2,59 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface DashboardNavigationProps {
   currentPlan: string;
+  user?: User | null;
 }
 
-export default function DashboardNavigation({ currentPlan }: DashboardNavigationProps) {
+export default function DashboardNavigation({ currentPlan, user }: DashboardNavigationProps) {
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminChecked, setAdminChecked] = useState(false);
+
+  // Check admin status when user changes
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user?.uid) {
+        setIsAdmin(false);
+        setAdminChecked(true);
+        return;
+      }
+
+      try {
+        console.log(`🔐 Checking admin status for UID: ${user.uid}`);
+        
+        // Query Firestore users collection for the user's isAdmin attribute
+        const userDocRef = doc(db as any, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const isAdminUser = userData.isAdmin === true;
+          
+          console.log(`📊 User data from Firestore:`, userData);
+          console.log(`🔐 Admin check result for ${user.uid}: ${isAdminUser}`);
+          
+          setIsAdmin(isAdminUser);
+        } else {
+          console.log(`❌ User document not found in Firestore for UID: ${user.uid}`);
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error('❌ Error checking admin status from Firestore:', error);
+        setIsAdmin(false);
+      } finally {
+        setAdminChecked(true);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user?.uid]);
 
   const plans = [
     {
@@ -42,8 +88,24 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
       icon: 'T',
       color: 'red',
       description: 'Gestión de tutelas en Colombia'
+    },
+    {
+      id: 'administrador',
+      name: 'Administrador',
+      path: '/dashboard/administrador',
+      icon: 'A',
+      color: 'purple',
+      description: 'Panel de administración del sistema'
     }
   ];
+
+  // Filter plans based on admin status
+  const filteredPlans = plans.filter(plan => {
+    if (plan.id === 'administrador') {
+      return isAdmin && adminChecked;
+    }
+    return true;
+  });
 
   const getColorClasses = (color: string, isActive: boolean) => {
     if (isActive) {
@@ -56,6 +118,8 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
           return 'bg-orange-600 text-white border-orange-600 shadow-lg';
         case 'red':
           return 'bg-red-600 text-white border-red-600 shadow-lg';
+        case 'purple':
+          return 'bg-purple-600 text-white border-purple-600 shadow-lg';
         default:
           return 'bg-gray-600 text-white border-gray-600 shadow-lg';
       }
@@ -69,6 +133,8 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
           return 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 hover:border-orange-300';
         case 'red':
           return 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300';
+        case 'purple':
+          return 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100 hover:border-purple-300';
         default:
           return 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300';
       }
@@ -85,6 +151,8 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
         return 'border-orange-500';
       case 'red':
         return 'border-red-500';
+      case 'purple':
+        return 'border-purple-500';
       default:
         return 'border-gray-500';
     }
@@ -94,7 +162,7 @@ export default function DashboardNavigation({ currentPlan }: DashboardNavigation
     <div className="bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <nav className="flex space-x-1 sm:space-x-2 lg:space-x-4 overflow-x-auto scrollbar-hide">
-          {plans.map((plan) => {
+          {filteredPlans.map((plan) => {
             const isActive = pathname === plan.path;
             const colorClasses = getColorClasses(plan.color, isActive);
             const activeBorderClasses = getActiveBorderClasses(plan.color);

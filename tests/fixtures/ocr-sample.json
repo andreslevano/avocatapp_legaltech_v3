@@ -1,0 +1,47 @@
+{
+  "acreedor": { 
+    "nombre": "Juan Pérez", 
+    "nif": "12345678A",
+    "domicilio": "C/ Mayor 1, Madrid",
+    "email": "juan.perez@email.com",
+    "telefono": "600123456"
+  },
+  "deudor": { 
+    "nombre": "ACME SL", 
+    "nif": "B12345678",
+    "domicilio": "C/ Sol 5, Madrid" 
+  },
+  "plaza": "Madrid",
+  "idioma": "es-ES",
+  "viaPreferida": "auto",
+  "ocr": {
+    "files": [
+      {
+        "filename": "factura_123.pdf",
+        "docType": "factura",
+        "amounts": [{ "label": "total", "value": 1250.00, "currency": "EUR", "confidence": 0.93 }],
+        "dateISO": "2025-06-10",
+        "confidence": 0.93
+      },
+      {
+        "filename": "albaran_456.pdf",
+        "docType": "albaran",
+        "amounts": [{ "label": "total", "value": 325.40, "currency": "EUR", "confidence": 0.88 }],
+        "dateISO": "2025-06-10",
+        "confidence": 0.88
+      },
+      {
+        "filename": "burofax_01082025.pdf",
+        "docType": "burofax",
+        "amounts": [],
+        "dateISO": "2025-08-01",
+        "confidence": 0.99
+      }
+    ],
+    "summary": { "currency": "EUR", "totalDetected": 1575.40, "confidence": 0.92 }
+  },
+  "hechos": "Entrega de mercancía y emisión de factura; falta de pago pese a requerimiento fehaciente.",
+  "base_negocial": "Factura 123 y albarán 456",
+  "docs": ["DOC-1: Factura 123", "DOC-2: Albarán 456", "DOC-3: Burofax 01/08/2025"],
+  "intereses": { "tipo": "legal", "desde": "requerimiento" }
+}

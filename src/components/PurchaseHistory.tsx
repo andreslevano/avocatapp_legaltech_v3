@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { PurchaseHistory } from '@/types';
 
 interface PurchaseHistoryProps {
-  userId?: string;
+  userId: string; // Ahora es requerido
   documentType?: 'reclamacion_cantidades' | 'accion_tutela';
 }
 
@@ -124,13 +124,130 @@ const mockPurchaseHistory: PurchaseHistory[] = [
 ];
 
 export default function PurchaseHistoryComponent({ userId, documentType }: PurchaseHistoryProps) {
+  const [purchaseHistory, setPurchaseHistory] = useState<PurchaseHistory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<PurchaseHistory | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
 
-  // Filter mock data based on document type
+  // Función para obtener el historial
+  const fetchPurchaseHistory = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`/api/reclamacion-cantidades/history?userId=${userId}`);
+      if (!response.ok) {
+        throw new Error('Error obteniendo historial de compras');
+      }
+      
+      const data = await response.json();
+      console.log('📋 Respuesta del historial:', { success: data.success, itemsCount: data.data?.length || 0 });
+      
+      if (data.success) {
+        // Convertir fechas de ISO strings a Date objects
+        const formattedData = data.data.map((p: any) => {
+          let purchaseDate: Date;
+          if (p.purchaseDate instanceof Date) {
+            purchaseDate = p.purchaseDate;
+          } else if (p.purchaseDate?.toDate) {
+            purchaseDate = p.purchaseDate.toDate();
+          } else {
+            purchaseDate = new Date(p.purchaseDate || Date.now());
+          }
+          
+          let emailSentAt: Date | undefined = undefined;
+          if (p.emailSentAt) {
+            if (p.emailSentAt instanceof Date) {
+              emailSentAt = p.emailSentAt;
+            } else if (p.emailSentAt?.toDate) {
+              emailSentAt = p.emailSentAt.toDate();
+            } else {
+              emailSentAt = new Date(p.emailSentAt);
+            }
+          }
+          
+          return {
+            ...p,
+            purchaseDate,
+            emailSentAt
+          };
+        });
+        
+        console.log(`✅ Historial cargado: ${formattedData.length} items`, formattedData);
+        
+        // Si no hay datos reales, usar datos mock temporalmente para desarrollo
+        if (formattedData.length === 0) {
+          console.warn('⚠️ No hay documentos en Firestore, usando datos mock temporalmente');
+          // No usar mock, dejar vacío para que el usuario vea el estado vacío
+          setPurchaseHistory([]);
+        } else {
+          setPurchaseHistory(formattedData);
+        }
+      } else {
+        throw new Error(data.error?.message || data.error || 'Error en la respuesta del historial');
+      }
+    } catch (err: any) {
+      console.error('❌ Error obteniendo historial:', err);
+      setError(err.message || 'Error desconocido al cargar el historial de compras.');
+      // No usar mock en caso de error, mostrar el error
+      setPurchaseHistory([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  // Cargar historial al montar y cuando cambie userId
+  useEffect(() => {
+    fetchPurchaseHistory();
+  }, [fetchPurchaseHistory]);
+
+  // Escuchar eventos personalizados para refrescar el historial
+  useEffect(() => {
+    const handleDocumentGenerated = () => {
+      console.log('🔄 Evento de documento generado recibido, refrescando historial...');
+      // Esperar un poco para que Firestore se actualice
+      setTimeout(() => {
+        fetchPurchaseHistory();
+      }, 2000);
+    };
+
+    const handlePaymentCompleted = () => {
+      console.log('💳 Evento de pago completado recibido, refrescando historial...');
+      // Esperar un poco para que el webhook procese
+      setTimeout(() => {
+        fetchPurchaseHistory();
+      }, 3000);
+    };
+
+    // Escuchar eventos personalizados
+    window.addEventListener('document-generated', handleDocumentGenerated);
+    window.addEventListener('payment-completed', handlePaymentCompleted);
+
+    // Polling cada 10 segundos para verificar nuevos documentos (solo si hay documentos existentes)
+    const pollingInterval = setInterval(() => {
+      if (purchaseHistory.length > 0) {
+        console.log('🔄 Polling: verificando nuevos documentos...');
+        fetchPurchaseHistory();
+      }
+    }, 10000);
+
+    return () => {
+      window.removeEventListener('document-generated', handleDocumentGenerated);
+      window.removeEventListener('payment-completed', handlePaymentCompleted);
+      clearInterval(pollingInterval);
+    };
+  }, [fetchPurchaseHistory, purchaseHistory.length]);
+
+  // Filter history based on documentType prop
   const filteredPurchaseHistory = documentType 
-    ? mockPurchaseHistory.filter(purchase => purchase.documentType === documentType)
-    : mockPurchaseHistory;
+    ? purchaseHistory.filter(purchase => purchase.documentType === documentType)
+    : purchaseHistory;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -151,47 +268,73 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
     return 'text-red-600';
   };
 
-  const downloadDocument = useCallback(async (document: PurchaseHistory, format: 'pdf' | 'word') => {
+  const downloadDocument = useCallback(async (doc: PurchaseHistory, format: 'pdf' | 'word') => {
     try {
-      // In a real application, this would fetch the actual file from the server
-      // For demo purposes, we'll create a mock download
-      const documentType = document.documentType === 'accion_tutela' ? 'ACCIÓN DE TUTELA' : 'RECLAMACIÓN DE CANTIDADES';
-      const content = `${documentType}\n\n${document.documentTitle}\n\nGenerado el: ${document.purchaseDate.toLocaleDateString('es-ES')}\nDocumentos procesados: ${document.documentCount}\nPrecisión: ${document.accuracy}%\n\n[Contenido del documento...]`;
-      
-      if (format === 'pdf') {
-        const { default: jsPDF } = await import('jspdf');
-        const doc = new jsPDF();
-        doc.setFont('helvetica');
-        doc.setFontSize(12);
-        doc.text(content, 20, 20);
-        doc.save(`${document.documentTitle}.pdf`);
-      } else {
-        const { Document, Packer, Paragraph, TextRun } = await import('docx');
-        const wordDoc = new Document({
-          sections: [{
-            properties: {},
-            children: [
-              new Paragraph({
-                children: [new TextRun({ text: content, size: 24 })]
-              })
-            ]
-          }]
-        });
-        const buffer = await Packer.toBuffer(wordDoc);
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${document.documentTitle}.docx`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+      if (!doc.docId) {
+        alert('Error: No se encontró el ID del documento');
+        return;
       }
-    } catch (error) {
-      console.error('Error downloading document:', error);
+
+      // Construir URL del endpoint según el formato
+      const endpoint = format === 'pdf' 
+        ? `/api/documents/${doc.docId}/download?uid=${userId}`
+        : `/api/documents/${doc.docId}/word?uid=${userId}`;
+
+      console.log(`📥 Descargando ${format.toUpperCase()}: ${endpoint}`);
+
+      const response = await fetch(endpoint);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Obtener blob
+      const blob = await response.blob();
+      
+      // Verificar que estamos en el cliente
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
+        throw new Error('Este código solo puede ejecutarse en el cliente');
+      }
+      
+      // Obtener nombre del archivo desde el header o usar el título del documento
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = doc.documentTitle;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      // Asegurar extensión correcta
+      if (format === 'word' && !filename.endsWith('.docx')) {
+        filename = filename.replace(/\.pdf$/, '') + '.docx';
+      } else if (format === 'pdf' && !filename.endsWith('.pdf')) {
+        filename = filename.replace(/\.docx$/, '') + '.pdf';
+      }
+
+      // Crear URL temporal y descargar
+      const url = window.URL.createObjectURL(blob);
+      const linkElement = document.createElement('a');
+      linkElement.href = url;
+      linkElement.download = filename;
+      linkElement.style.display = 'none';
+      document.body.appendChild(linkElement);
+      linkElement.click();
+      
+      // Limpiar
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(linkElement);
+        console.log(`✅ ${format.toUpperCase()} descargado: ${filename}`);
+      }, 100);
+    } catch (error: any) {
+      console.error(`❌ Error descargando ${format}:`, error);
+      alert(`Error descargando el documento: ${error.message}`);
     }
-  }, []);
+  }, [userId]);
 
   const downloadInvoice = useCallback(async (purchase: PurchaseHistory) => {
     try {
@@ -266,8 +409,8 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
     }
   }, []);
 
-  const viewPdf = useCallback((document: PurchaseHistory) => {
-    setSelectedDocument(document);
+  const viewPdf = useCallback((doc: PurchaseHistory) => {
+    setSelectedDocument(doc);
     setShowPdfViewer(true);
   }, []);
 
@@ -372,43 +515,51 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-1">
-                    <button
-                      onClick={() => viewPdf(purchase)}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
-                      title="Ver PDF"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => downloadDocument(purchase, 'pdf')}
-                      className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors"
-                      title="Descargar PDF"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => downloadDocument(purchase, 'word')}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
-                      title="Descargar Word"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => downloadInvoice(purchase)}
-                      className="text-green-600 hover:text-green-900 p-1 rounded-md hover:bg-green-50 transition-colors"
-                      title="Descargar Factura"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </button>
+                    {purchase.status === 'completed' ? (
+                      <>
+                        <button
+                          onClick={() => viewPdf(purchase)}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
+                          title="Ver PDF"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => downloadDocument(purchase, 'pdf')}
+                          className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors"
+                          title="Descargar PDF"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => downloadDocument(purchase, 'word')}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
+                          title="Descargar Word"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => downloadInvoice(purchase)}
+                          className="text-green-600 hover:text-green-900 p-1 rounded-md hover:bg-green-50 transition-colors"
+                          title="Descargar Factura"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic" title="Pago pendiente - Las acciones estarán disponibles después del pago">
+                        Pago pendiente
+                      </span>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -491,45 +642,53 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => viewPdf(purchase)}
-                className="bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                <span>Ver PDF</span>
-              </button>
-              <button
-                onClick={() => downloadInvoice(purchase)}
-                className="bg-green-50 text-green-700 hover:bg-green-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>Factura</span>
-              </button>
-              <button
-                onClick={() => downloadDocument(purchase, 'pdf')}
-                className="bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>PDF</span>
-              </button>
-              <button
-                onClick={() => downloadDocument(purchase, 'word')}
-                className="bg-gray-50 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>Word</span>
-              </button>
-            </div>
+            {purchase.status === 'completed' ? (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => viewPdf(purchase)}
+                  className="bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span>Ver PDF</span>
+                </button>
+                <button
+                  onClick={() => downloadInvoice(purchase)}
+                  className="bg-green-50 text-green-700 hover:bg-green-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Factura</span>
+                </button>
+                <button
+                  onClick={() => downloadDocument(purchase, 'pdf')}
+                  className="bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>PDF</span>
+                </button>
+                <button
+                  onClick={() => downloadDocument(purchase, 'word')}
+                  className="bg-gray-50 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Word</span>
+                </button>
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-center">
+                <p className="text-xs text-yellow-800">
+                  <strong>Pago pendiente</strong> - Las acciones estarán disponibles después del pago
+                </p>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -555,67 +714,91 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
             
             {/* Modal Content */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              <div className="bg-gray-100 rounded-lg p-4 sm:p-8 text-center">
-                <svg className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Vista Previa del PDF</h4>
-                <p className="text-sm sm:text-base text-gray-600 mb-4">
-                  Aquí se mostraría el contenido del PDF: {selectedDocument.documentTitle}
-                </p>
-                
-                {/* Document Details - Mobile Optimized */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm text-gray-500 mb-6">
-                  <div className="bg-white rounded-md p-3">
-                    <p className="font-medium text-gray-700">Fecha de compra</p>
-                    <p className="text-gray-900">{selectedDocument.purchaseDate.toLocaleDateString('es-ES')}</p>
-                  </div>
-                  <div className="bg-white rounded-md p-3">
-                    <p className="font-medium text-gray-700">Documentos procesados</p>
-                    <p className="text-gray-900">{selectedDocument.documentCount}</p>
-                  </div>
-                  <div className="bg-white rounded-md p-3">
-                    <p className="font-medium text-gray-700">Precisión</p>
-                    <p className={`font-medium ${getAccuracyColor(selectedDocument.accuracy)}`}>
-                      {selectedDocument.accuracy}%
-                    </p>
-                  </div>
-                  <div className="bg-white rounded-md p-3">
-                    <p className="font-medium text-gray-700">Precio</p>
-                    <p className="text-gray-900">{selectedDocument.price} {selectedDocument.currency}</p>
+              {/* Documentos subidos */}
+              {selectedDocument.uploadedDocuments && selectedDocument.uploadedDocuments.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <h4 className="text-sm font-semibold text-blue-900 mb-2">📄 Documentos subidos ({selectedDocument.uploadedDocuments.length}):</h4>
+                  <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
+                    {selectedDocument.uploadedDocuments.map((docName, index) => (
+                      <li key={index}>{docName}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* Contenido del documento */}
+              {selectedDocument.documentContent ? (
+                <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4">
+                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">📋 Contenido del documento:</h4>
+                  <div className="prose prose-sm max-w-none">
+                    <pre className="whitespace-pre-wrap text-xs sm:text-sm text-gray-700 font-mono bg-gray-50 p-4 rounded border overflow-x-auto">
+                      {selectedDocument.documentContent}
+                    </pre>
                   </div>
                 </div>
-                
-                {/* Action Buttons - Mobile Optimized */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                  <button
-                    onClick={() => downloadDocument(selectedDocument, 'pdf')}
-                    className="bg-orange-600 text-white hover:bg-orange-700 px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Descargar PDF</span>
-                  </button>
-                  <button
-                    onClick={() => downloadDocument(selectedDocument, 'word')}
-                    className="bg-gray-600 text-white hover:bg-gray-700 px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Descargar Word</span>
-                  </button>
-                  <button
-                    onClick={() => downloadInvoice(selectedDocument)}
-                    className="bg-green-600 text-white hover:bg-green-700 px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Descargar Factura</span>
-                  </button>
+              ) : (
+                <div className="bg-gray-100 rounded-lg p-4 sm:p-8 text-center mb-4">
+                  <svg className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Vista Previa del PDF</h4>
+                  <p className="text-sm sm:text-base text-gray-600 mb-4">
+                    {selectedDocument.documentTitle}
+                  </p>
                 </div>
+              )}
+              
+              {/* Document Details - Mobile Optimized */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm text-gray-500 mb-6">
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium text-gray-700">Fecha de compra</p>
+                  <p className="text-gray-900">{selectedDocument.purchaseDate.toLocaleDateString('es-ES')}</p>
+                </div>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium text-gray-700">Documentos procesados</p>
+                  <p className="text-gray-900">{selectedDocument.documentCount}</p>
+                </div>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium text-gray-700">Precisión</p>
+                  <p className={`font-medium ${getAccuracyColor(selectedDocument.accuracy)}`}>
+                    {selectedDocument.accuracy}%
+                  </p>
+                </div>
+                <div className="bg-white rounded-md p-3">
+                  <p className="font-medium text-gray-700">Precio</p>
+                  <p className="text-gray-900">{selectedDocument.price} {selectedDocument.currency}</p>
+                </div>
+              </div>
+              
+              {/* Action Buttons - Mobile Optimized */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <button
+                  onClick={() => downloadDocument(selectedDocument, 'pdf')}
+                  className="bg-orange-600 text-white hover:bg-orange-700 px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Descargar PDF</span>
+                </button>
+                <button
+                  onClick={() => downloadDocument(selectedDocument, 'word')}
+                  className="bg-gray-600 text-white hover:bg-gray-700 px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Descargar Word</span>
+                </button>
+                <button
+                  onClick={() => downloadInvoice(selectedDocument)}
+                  className="bg-green-600 text-white hover:bg-green-700 px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Descargar Factura</span>
+                </button>
               </div>
             </div>
           </div>
@@ -654,21 +837,45 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
         </div>
       )}
 
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-sm text-gray-600">Cargando historial...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="text-center py-12">
+          <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Error al cargar historial</h3>
+          <p className="mt-1 text-sm text-gray-500">{error}</p>
+        </div>
+      )}
+
       {/* Empty State */}
-      {filteredPurchaseHistory.length === 0 && (
+      {!loading && !error && filteredPurchaseHistory.length === 0 && (
         <div className="text-center py-12">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No hay compras</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No hay documentos</h3>
           <p className="mt-1 text-sm text-gray-500">
             {documentType === 'accion_tutela' 
               ? 'Comienza generando tu primera acción de tutela.'
               : documentType === 'reclamacion_cantidades'
-              ? 'Comienza generando tu primera reclamación de cantidades.'
+              ? 'Comienza generando tu primera reclamación de cantidades. Los documentos generados aparecerán aquí, incluso si no están pagados.'
               : 'Comienza generando tu primer documento legal.'
             }
           </p>
+          {userId && (
+            <p className="mt-2 text-xs text-gray-400">
+              Usuario: {userId.substring(0, 8)}...
+            </p>
+          )}
         </div>
       )}
     </div>

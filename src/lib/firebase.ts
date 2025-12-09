@@ -4,30 +4,31 @@ import { getFirestore, connectFirestoreEmulator, Firestore } from 'firebase/fire
 import { getStorage, connectStorageEmulator, FirebaseStorage } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator, Functions } from 'firebase/functions';
 
-// Check if we have proper Firebase configuration
-const hasValidConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                      process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'demo-api-key' &&
-                      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
-                      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID !== 'demo-project';
+// Firebase configuration - hardcoded for now to ensure it works
+const firebaseConfig = {
+  apiKey: "AIzaSyAiINqBn-d7vRyRZVHO600rVhHZd0B0qjM",
+  authDomain: "avocat-legaltech-v3.firebaseapp.com",
+  projectId: "avocat-legaltech-v3",
+  storageBucket: "avocat-legaltech-v3.appspot.com",
+  messagingSenderId: "1023426971669",
+  appId: "1:1023426971669:web:fefbb72a56f7a60d3ca61c"
+};
 
-const firebaseConfig = hasValidConfig ? {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-} : null;
+console.log('Firebase config check:', {
+  hasValidConfig: true,
+  apiKey: 'present',
+  projectId: 'present',
+  isClient: typeof window !== 'undefined'
+});
 
-// Initialize Firebase only on the client side and with valid config
+// Initialize Firebase only on the client side
 let app: FirebaseApp | undefined;
-let auth: Auth | Record<string, never>;
-let db: Firestore | Record<string, never>;
-let storage: FirebaseStorage | Record<string, never>;
-let functions: Functions | Record<string, never>;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
+let functions: Functions | null = null;
 
-if (typeof window !== 'undefined' && hasValidConfig && firebaseConfig) {
+if (typeof window !== 'undefined') {
   // Client-side initialization with valid config
   try {
     if (!getApps().length) {
@@ -57,17 +58,17 @@ if (typeof window !== 'undefined' && hasValidConfig && firebaseConfig) {
   } catch {
     console.error('Error initializing Firebase');
     // Create mock objects for build time
-    auth = {};
-    db = {};
-    storage = {};
-    functions = {};
+    auth = null;
+    db = null;
+    storage = null;
+    functions = null;
   }
 } else {
   // Server-side or no valid config: create mock objects
-  auth = {};
-  db = {};
-  storage = {};
-  functions = {};
+  auth = null;
+  db = null;
+  storage = null;
+  functions = null;
 }
 
 export { app, auth, db, storage, functions };

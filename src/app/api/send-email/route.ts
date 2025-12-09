@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const maxWidth = 170;
     const leftMargin = 20;
     
-    contentLines.forEach((line) => {
+    contentLines.forEach((line: string) => {
       if (line.trim() === '') {
         yPosition += lineHeight;
         return;
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     const pdfBuffer = pdfDoc.output('arraybuffer');
 
     // Create email transporter
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'gmail', // You can change this to your preferred email service
       auth: {
         user: process.env.EMAIL_USER, // Your email

@@ -91,9 +91,7 @@
       "loggingIn": "Inloggen...",
       "forgotPassword": "Wachtwoord vergeten?",
       "noAccount": "Geen account?",
-      "signupLink": "Registreer hier",
-      "continueWithGoogle": "Doorgaan met Google",
-      "orEmail": "Of inloggen met e-mail"
+      "signupLink": "Registreer hier"
     },
     "signup": {
       "title": "Maak je account aan",
@@ -107,9 +105,7 @@
       "createAccount": "Account Aanmaken",
       "creating": "Account aanmaken...",
       "haveAccount": "Al een account?",
-      "loginLink": "Log hier in",
-      "continueWithGoogle": "Doorgaan met Google",
-      "orEmail": "Of registreren met e-mail"
+      "loginLink": "Log hier in"
     }
   },
   "dashboard": {

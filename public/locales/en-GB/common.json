@@ -82,9 +82,7 @@
       "loggingIn": "Logging in...",
       "forgotPassword": "Forgot your password?",
       "noAccount": "Don't have an account?",
-      "signupLink": "Sign up here",
-      "continueWithGoogle": "Continue with Google",
-      "orEmail": "Or log in with email"
+      "signupLink": "Sign up here"
     },
     "signup": {
       "title": "Create your account",
@@ -98,9 +96,7 @@
       "createAccount": "Create Account",
       "creating": "Creating account...",
       "haveAccount": "Already have an account?",
-      "loginLink": "Log in here",
-      "continueWithGoogle": "Continue with Google",
-      "orEmail": "Or sign up with email"
+      "loginLink": "Log in here"
     }
   },
   "dashboard": {
@@ -241,4 +237,6 @@
     "gdpr": "GDPR"
   }
 }
+
+
 

@@ -829,7 +829,7 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
                         <div>
                           <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">Información del Caso</h3>
                           <div className="space-y-2">
-                            <p className="text-sm"><span className="font-medium text-gray-700">Cliente:</span> {caseData.clientName}</p>
+                            <p className="text-sm"><span className="font-medium text-gray-700">Cliente:</span> {caseData?.clientName || 'N/A'}</p>
                             <p className="text-sm"><span className="font-medium text-gray-700">Fecha de Análisis:</span> {new Date().toLocaleDateString('es-ES', { 
                               year: 'numeric', 
                               month: 'long', 
@@ -841,10 +841,10 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
                         <div>
                           <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">Clasificación Legal</h3>
                           <div className="space-y-2">
-                            {caseData.selectedAreaLegal && (
+                            {caseData?.selectedAreaLegal && (
                               <p className="text-sm"><span className="font-medium text-gray-700">Área Legal:</span> <span className="text-blue-600 font-semibold">{caseData.selectedAreaLegal}</span></p>
                             )}
-                            {caseData.selectedProcedimiento && (
+                            {caseData?.selectedProcedimiento && (
                               <p className="text-sm"><span className="font-medium text-gray-700">Procedimiento:</span> <span className="text-green-600 font-semibold">{caseData.selectedProcedimiento}</span></p>
                             )}
                           </div>

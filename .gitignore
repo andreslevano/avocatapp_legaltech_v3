@@ -47,6 +47,7 @@ Thumbs.db
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+functions/
 
 # Logs
 logs
@@ -112,3 +113,6 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
+env.local
+CONFIGURACION_CREDENCIALES.md
+.env.local.bak
