@@ -115,3 +115,4 @@ jspm_packages/
 .tern-port
 env.local
 CONFIGURACION_CREDENCIALES.md
+.env.local.bak

@@ -123,12 +123,13 @@ export async function POST(request: NextRequest) {
     console.log('✅ Email enviado exitosamente:', info.messageId);
     
     // Notificar a Google Chat sobre el envío exitoso (no bloqueante)
-    GoogleChatNotifications.emailSent({
-      to,
-      subject,
-      documentName,
-      status: 'sent',
-    }).catch((err) => {
+    GoogleChatNotifications.sendNotification(
+      `📧 Email Enviado\n\n` +
+      `Para: ${to}\n` +
+      `Asunto: ${subject}\n` +
+      `Documento: ${documentName}\n` +
+      `Estado: Enviado`
+    ).catch((err) => {
       console.warn('⚠️ Error enviando notificación a Google Chat:', err);
     });
     
@@ -165,12 +166,19 @@ export async function POST(request: NextRequest) {
     console.error('❌ Error enviando email:', error);
     
     // Notificar error a Google Chat (no bloqueante)
-    GoogleChatNotifications.emailSent({
-      to,
-      subject,
-      documentName,
-      status: 'failed',
-    }).catch((err) => {
+    // Las variables pueden no estar disponibles en el catch, usar valores seguros
+    const errorTo = (error as any)?.to || 'N/A';
+    const errorSubject = (error as any)?.subject || 'N/A';
+    const errorDocName = (error as any)?.documentName || 'N/A';
+    
+    GoogleChatNotifications.sendNotification(
+      `❌ Error Enviando Email\n\n` +
+      `Para: ${errorTo}\n` +
+      `Asunto: ${errorSubject}\n` +
+      `Documento: ${errorDocName}\n` +
+      `Estado: Fallido\n` +
+      `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`
+    ).catch((err) => {
       console.warn('⚠️ Error enviando notificación de error a Google Chat:', err);
     });
     

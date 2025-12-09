@@ -400,6 +400,9 @@ NO incluyas "notaAclaratoria" ni otros campos adicionales. Devuelve EXCLUSIVAMEN
     }
 
     // Generar PDF
+    if (!parsedContent) {
+      throw new Error('No se pudo parsear el contenido del documento');
+    }
     const pdfBuffer = await renderReclamacionCantidadesPDF(parsedContent);
     
     const elapsedMs = Date.now() - startTime;

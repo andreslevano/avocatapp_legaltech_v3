@@ -144,7 +144,6 @@ export async function POST(request: NextRequest) {
         areaLegal: data.areaLegal,
         filename,
         downloadUrl,
-        tokensUsed: result.tokensUsed,
         processingTime: elapsedMs,
       }).catch((err) => {
         console.warn('⚠️ Error enviando notificación a Google Chat:', err);
@@ -205,13 +204,14 @@ export async function POST(request: NextRequest) {
       console.error('Error persisting document:', storageError);
       
       // Notificar error a Google Chat (no bloqueante)
-      GoogleChatNotifications.documentError({
-        userId: uid,
-        userEmail: userEmail || 'N/A',
-        error: storageError instanceof Error ? storageError.message : 'Error desconocido al persistir documento',
-        context: 'Error al guardar documento en Storage/Firestore',
-        docId,
-      }).catch((err) => {
+      GoogleChatNotifications.sendNotification(
+        `❌ Error al persistir documento\n\n` +
+        `Usuario: ${uid}\n` +
+        `Email: ${userEmail || 'N/A'}\n` +
+        `DocId: ${docId}\n` +
+        `Contexto: Error al guardar documento en Storage/Firestore\n` +
+        `Error: ${storageError instanceof Error ? storageError.message : 'Error desconocido al persistir documento'}`
+      ).catch((err) => {
         console.warn('⚠️ Error enviando notificación de error a Google Chat:', err);
       });
       
@@ -237,10 +237,11 @@ export async function POST(request: NextRequest) {
     apiLogger.error(requestId, error, { elapsedMs });
     
     // Notificar error crítico a Google Chat (no bloqueante)
-    GoogleChatNotifications.documentError({
-      error: error instanceof Error ? error.message : 'Error desconocido',
-      context: 'Error crítico en la generación del documento',
-    }).catch((err) => {
+    GoogleChatNotifications.sendNotification(
+      `❌ Error crítico en la generación del documento\n\n` +
+      `Contexto: Error crítico en la generación del documento\n` +
+      `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`
+    ).catch((err) => {
       console.warn('⚠️ Error enviando notificación de error crítico a Google Chat:', err);
     });
     

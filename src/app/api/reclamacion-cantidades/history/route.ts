@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     // Log detallado de documentos encontrados
     if (documentsSnapshot.docs && documentsSnapshot.docs.length > 0) {
       console.log('📋 Documentos encontrados:');
-      documentsSnapshot.docs.forEach((doc, index) => {
+      documentsSnapshot.docs.forEach((doc: any, index: number) => {
         const data = doc.data();
         console.log(`  ${index + 1}. docId: ${doc.id}`, {
           userId: data.userId,
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
     });
     
     // Combinar documentos y compras
-    const historyItems = (documentsSnapshot.docs || []).map(doc => {
+    const historyItems = (documentsSnapshot.docs || []).map((doc: any) => {
       const document = doc.data();
       const purchase = purchasesMap.get(doc.id) || null;
       

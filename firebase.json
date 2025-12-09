@@ -1,63 +1,12 @@
 {
   "hosting": {
-    "public": "out",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
     "rewrites": [
       {
-        "source": "/api/hello",
-        "function": "helloWorld"
-      },
-      {
-        "source": "/api/test-openai",
-        "function": "testOpenAI"
-      },
-      {
-        "source": "/api/reclamacion-cantidades",
-        "function": "reclamacionCantidades"
-      },
-      {
-        "source": "/api/accion-tutela",
-        "function": "accionTutela"
-      },
-      {
-        "source": "/api/user-stats",
-        "function": "getUserStats"
-      },
-      {
-        "source": "/api/admin/user/disable",
-        "function": "disableUser"
-      },
-      {
-        "source": "/api/admin/user/enable",
-        "function": "enableUser"
-      },
-      {
-        "source": "/api/admin/user/cleanup",
-        "function": "cleanupUser"
-      },
-      {
-        "source": "/api/admin/user/update-status",
-        "function": "updateUserStatus"
-      },
-              {
-                "source": "/api/admin/user/status",
-                "function": "getUserStatus"
-              },
-              {
-                "source": "/api/admin/user/check-status",
-                "function": "checkUserStatusByEmail"
-              },
-              {
-                "source": "/api/admin/user/reactivate",
-                "function": "reactivateUser"
-              },
-      {
         "source": "**",
-        "destination": "/index.html"
+        "run": {
+          "serviceId": "avocatapp-legaltech",
+          "region": "europe-west1"
+        }
       }
     ],
     "headers": [

@@ -151,7 +151,7 @@ export async function saveUploadedFilesToFirestore(
       })),
       totalFiles: files.length,
       updatedAt: new Date().toISOString(),
-      createdAt: existingData.createdAt || new Date().toISOString()
+      createdAt: existingData?.createdAt || new Date().toISOString()
     };
     
     await reclamacionRef.set(updatedData, { merge: true });

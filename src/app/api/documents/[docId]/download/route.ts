@@ -163,7 +163,7 @@ Confianza: ${file.confidence ? (file.confidence * 100).toFixed(1) + '%' : 'N/A'}
     }
 
     // Devolver PDF
-    return new Response(buffer, {
+    return new Response(buffer as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
