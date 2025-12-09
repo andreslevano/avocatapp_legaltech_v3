@@ -20,6 +20,8 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['pino', 'pdfkit', 'tesseract.js']
   },
+  // Exclude api.backup and api.disabled from page collection
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   // Configuración webpack para PDFKit y Tesseract.js
   webpack: (config, { isServer }) => {
     if (isServer) {
@@ -36,6 +38,14 @@ const nextConfig = {
           canvas: 'canvas',
         });
       }
+      
+      // Ignore api.backup and api.disabled directories
+      config.module = config.module || {};
+      config.module.rules = config.module.rules || [];
+      config.module.rules.push({
+        test: /api\.(backup|disabled)/,
+        use: 'ignore-loader'
+      });
     }
     return config;
   }

@@ -1,12 +1,15 @@
 {
   "hosting": {
+    "public": "out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
         "source": "**",
-        "run": {
-          "serviceId": "avocatapp-legaltech",
-          "region": "europe-west1"
-        }
+        "destination": "/index.html"
       }
     ],
     "headers": [
@@ -18,11 +21,18 @@
             "value": "public, max-age=31536000, immutable"
           }
         ]
-      }
-    ],
-    "headers": [
+      },
       {
-        "source": "/locales/**",
+        "source": "/images/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css|jpg|jpeg|gif|png|svg|webp|ico|woff|woff2|ttf|eot)",
         "headers": [
           {
             "key": "Cache-Control",

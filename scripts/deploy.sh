@@ -32,9 +32,10 @@ npm install
 
 # Temporarily move API routes to avoid build conflicts with static export
 # API routes are handled by Firebase Cloud Functions
+# Use .disabled extension so Next.js won't process it
 if [ -d "src/app/api" ]; then
   echo "Temporarily moving API routes for build..."
-  mv src/app/api src/app/api.backup
+  mv src/app/api src/app/api.disabled
   API_MOVED=true
 else
   API_MOVED=false
@@ -53,7 +54,7 @@ npm run build || {
 # Restore API routes after build
 if [ "$API_MOVED" = true ]; then
   echo "Restoring API routes..."
-  mv src/app/api.backup src/app/api
+  mv src/app/api.disabled src/app/api
 fi
 
 if [ -d "functions" ]; then

@@ -155,6 +155,7 @@ function EstudiantesDashboardContent() {
   const [processingPurchaseId, setProcessingPurchaseId] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<'processing' | 'completed' | 'failed' | null>(null);
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [pollingAttempts, setPollingAttempts] = useState(0);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -783,6 +784,198 @@ function EstudiantesDashboardContent() {
     loadPurchases();
   }, [user, db, purchaseReloadToken]);
 
+  // Polling function - checks purchase status and updates UI
+  const pollPurchaseStatus = async (purchaseId?: string | null) => {
+    if (!user || !db) {
+      return false; // Return false if polling should continue
+    }
+    
+    try {
+      const purchasesRef = collection(db, 'purchases');
+      let q;
+      let purchaseDoc;
+      
+      // If we have a specific purchase ID, query by it
+      if (purchaseId) {
+        try {
+          const purchaseRef = doc(db, 'purchases', purchaseId);
+          purchaseDoc = await getDoc(purchaseRef);
+          if (!purchaseDoc.exists()) {
+            console.warn('Purchase not found:', purchaseId);
+            return false;
+          }
+        } catch (error) {
+          console.error('Error fetching purchase by ID:', error);
+          return false;
+        }
+      } else {
+        // Otherwise, get the most recent purchase for this user
+        try {
+          q = query(
+            purchasesRef,
+            where('userId', '==', user.uid),
+            orderBy('createdAt', 'desc')
+          );
+          const snapshot = await getDocs(q);
+          
+          if (snapshot.empty) {
+            return false;
+          }
+          
+          purchaseDoc = snapshot.docs[0];
+        } catch (error) {
+          // Fallback: try without orderBy
+          console.warn('orderBy failed, trying without it:', error);
+          try {
+            q = query(
+              purchasesRef,
+              where('userId', '==', user.uid)
+            );
+            const snapshot = await getDocs(q);
+            
+            if (snapshot.empty) {
+              return false;
+            }
+            
+            // Sort manually by createdAt
+            const sortedDocs = snapshot.docs.sort((a, b) => {
+              const aData = a.data();
+              const bData = b.data();
+              const aTime = aData.createdAt?.toMillis?.() || aData.createdAt?.seconds || aData.createdAt || 0;
+              const bTime = bData.createdAt?.toMillis?.() || bData.createdAt?.seconds || bData.createdAt || 0;
+              return bTime - aTime;
+            });
+            
+            purchaseDoc = sortedDocs[0];
+          } catch (fallbackError) {
+            console.error('Error fetching purchases:', fallbackError);
+            return false;
+          }
+        }
+      }
+      
+      if (!purchaseDoc) {
+        return false;
+      }
+      
+      const purchaseData = purchaseDoc.data();
+      const currentPurchaseId = purchaseDoc.id;
+      
+      setProcessingPurchaseId(currentPurchaseId);
+      
+      // Check if documents are generated
+      const documentsGenerated = purchaseData.documentsGenerated ?? 0;
+      const documentsFailed = purchaseData.documentsFailed ?? 0;
+      const totalItems = purchaseData.items?.length || 0;
+      
+      // Also check item statuses as a fallback
+      const items = purchaseData.items || [];
+      const completedItems = items.filter((item: any) => item.status === 'completed').length;
+      const failedItems = items.filter((item: any) => item.status === 'failed').length;
+      const hasPackageFiles = items.some((item: any) => item.packageFiles && Object.keys(item.packageFiles).length > 0);
+      
+      // Documents are ready if:
+      // 1. documentsGenerated > 0 (webhook updated the counter), OR
+      // 2. All items have status 'completed' or 'failed', OR
+      // 3. Items have packageFiles (documents were generated)
+      const allItemsProcessed = (completedItems + failedItems) === totalItems && totalItems > 0;
+      const documentsReady = documentsGenerated > 0 || allItemsProcessed || hasPackageFiles;
+      
+      // Show progress if we have partial completion
+      if (documentsGenerated > 0 && documentsGenerated < totalItems) {
+        // Keep showing processing but with progress info
+        setProcessingStatus('processing');
+      }
+      
+      if (documentsReady) {
+        // Determine final status
+        const finalStatus = (documentsGenerated > 0 || completedItems > 0 || hasPackageFiles) ? 'completed' : 'failed';
+        
+        // Update status immediately
+        setProcessingStatus(finalStatus);
+        setPurchaseReloadToken(prev => prev + 1); // Reload purchases
+        
+        // Stop polling
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        
+        // Auto-hide success banner after 10 seconds
+        if (finalStatus === 'completed') {
+          setTimeout(() => {
+            setShowPaymentSuccess(false);
+            setProcessingStatus(null);
+            setProcessingPurchaseId(null);
+          }, 10000);
+        }
+        
+        return true; // Polling complete
+      }
+      
+      // Increment attempts counter
+      setPollingAttempts(prev => prev + 1);
+      
+      // Continue polling (return false)
+      return false;
+    } catch (error) {
+      console.error('Error polling purchase status:', error);
+      // Continue polling even on error (might be transient)
+      setPollingAttempts(prev => prev + 1);
+      return false;
+    }
+  };
+
+  // Start polling with a specific purchase ID or find the most recent pending purchase
+  const startPolling = (purchaseId?: string | null) => {
+    // Clear any existing polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    
+    setPollingAttempts(0);
+    setProcessingStatus('processing');
+    setShowPaymentSuccess(true);
+    
+    let attempts = 0;
+    const MAX_ATTEMPTS = 200; // 200 attempts × 3 seconds = 10 minutes
+    
+    // Poll immediately after a short delay to allow webhook to process
+    const initialTimeout = setTimeout(() => {
+      pollPurchaseStatus(purchaseId);
+      
+      // Then poll every 3 seconds
+      pollingIntervalRef.current = setInterval(async () => {
+        attempts++;
+        setPollingAttempts(attempts);
+        
+        const isComplete = await pollPurchaseStatus(purchaseId);
+        
+        // Stop if complete or max attempts reached
+        if (isComplete || attempts >= MAX_ATTEMPTS) {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          
+          if (attempts >= MAX_ATTEMPTS && !isComplete) {
+            // Timeout reached, check one more time before giving up
+            const finalCheck = await pollPurchaseStatus(purchaseId);
+            if (!finalCheck) {
+              setProcessingStatus('failed');
+              console.warn('Polling timeout reached after', MAX_ATTEMPTS, 'attempts');
+            }
+          }
+        }
+      }, 3000);
+    }, 2000);
+    
+    return () => {
+      clearTimeout(initialTimeout);
+    };
+  };
+
   // Check for payment success and start polling for document generation
   useEffect(() => {
     const paymentStatus = searchParams?.get('payment');
@@ -796,141 +989,13 @@ function EstudiantesDashboardContent() {
         });
       }
       
-      setShowPaymentSuccess(true);
-      setProcessingStatus('processing');
-      
       // Remove query parameter from URL (but keep the state)
       router.replace('/dashboard/estudiantes', { scroll: false });
       
       // Only start polling if user is loaded
-      if (!user || !db) {
-        return;
+      if (user && db) {
+        startPolling();
       }
-      
-      // Start polling for the latest purchase
-      const pollPurchaseStatus = async () => {
-        if (!user || !db) {
-          return;
-        }
-        
-        try {
-          // Get the most recent purchase for this user
-          const purchasesRef = collection(db, 'purchases');
-          // Get most recent purchase - try multiple orderBy strategies
-          let q = query(
-            purchasesRef,
-            where('userId', '==', user.uid),
-            orderBy('createdAt', 'desc')
-          );
-          
-          // If that fails, try without orderBy
-          try {
-            const snapshot = await getDocs(q);
-            if (snapshot.empty) {
-              q = query(
-                purchasesRef,
-                where('userId', '==', user.uid)
-              );
-            }
-          } catch (error) {
-            // Fallback to simple query
-            q = query(
-              purchasesRef,
-              where('userId', '==', user.uid)
-            );
-          }
-          
-          const snapshot = await getDocs(q);
-          
-          // Sort by createdAt if we got results
-          const sortedDocs = snapshot.docs.sort((a, b) => {
-            const aData = a.data();
-            const bData = b.data();
-            const aTime = aData.createdAt?.toMillis?.() || aData.createdAt?.seconds || aData.createdAt || 0;
-            const bTime = bData.createdAt?.toMillis?.() || bData.createdAt?.seconds || bData.createdAt || 0;
-            return bTime - aTime;
-          });
-          
-          if (sortedDocs.length > 0) {
-            const latestPurchase = sortedDocs[0];
-            const purchaseData = latestPurchase.data();
-            const purchaseId = latestPurchase.id;
-            
-            setProcessingPurchaseId(purchaseId);
-            
-            // Check if documents are generated
-            const documentsGenerated = purchaseData.documentsGenerated ?? 0;
-            const documentsFailed = purchaseData.documentsFailed ?? 0;
-            const totalItems = purchaseData.items?.length || 0;
-            
-            // Also check item statuses as a fallback
-            const items = purchaseData.items || [];
-            const completedItems = items.filter((item: any) => item.status === 'completed').length;
-            const failedItems = items.filter((item: any) => item.status === 'failed').length;
-            const hasPackageFiles = items.some((item: any) => item.packageFiles && Object.keys(item.packageFiles).length > 0);
-            
-            // Documents are ready if:
-            // 1. documentsGenerated > 0 (webhook updated the counter), OR
-            // 2. All items have status 'completed' or 'failed', OR
-            // 3. Items have packageFiles (documents were generated)
-            const allItemsProcessed = (completedItems + failedItems) === totalItems && totalItems > 0;
-            const documentsReady = documentsGenerated > 0 || allItemsProcessed || hasPackageFiles;
-            
-            if (documentsReady) {
-              // Determine final status
-              const finalStatus = (documentsGenerated > 0 || completedItems > 0 || hasPackageFiles) ? 'completed' : 'failed';
-              
-              // Update status immediately
-              setProcessingStatus(finalStatus);
-              setPurchaseReloadToken(prev => prev + 1); // Reload purchases
-              
-              // Stop polling
-              if (pollingIntervalRef.current) {
-                clearInterval(pollingIntervalRef.current);
-                pollingIntervalRef.current = null;
-              }
-              
-              // Auto-hide success banner after 10 seconds
-              if (finalStatus === 'completed') {
-                setTimeout(() => {
-                  setShowPaymentSuccess(false);
-                  setProcessingStatus(null);
-                }, 10000);
-              }
-            }
-            // If still processing, continue polling
-          }
-        } catch (error) {
-          console.error('Error polling purchase status:', error);
-        }
-      };
-      
-      // Poll immediately after a short delay to allow webhook to process
-      const initialTimeout = setTimeout(() => {
-        pollPurchaseStatus();
-        
-        // Then poll every 3 seconds
-        pollingIntervalRef.current = setInterval(pollPurchaseStatus, 3000);
-      }, 2000);
-      
-      // Stop polling after 5 minutes (max timeout)
-      const maxTimeout = setTimeout(() => {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = null;
-          // Check current status before setting to failed
-          setProcessingStatus(prev => prev === 'processing' ? 'failed' : prev);
-        }
-      }, 5 * 60 * 1000);
-      
-      return () => {
-        clearTimeout(initialTimeout);
-        clearTimeout(maxTimeout);
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = null;
-        }
-      };
     }
     
     if (paymentStatus === 'cancelled') {
@@ -938,7 +1003,89 @@ function EstudiantesDashboardContent() {
       alert('Pago cancelado. Puedes intentar de nuevo cuando estés listo.');
       router.replace('/dashboard/estudiantes', { scroll: false });
     }
-  }, [searchParams, user, db, router]); // Removed processingStatus from dependencies to prevent re-runs
+  }, [searchParams, user, db, router]);
+
+  // Persistent polling: Check for pending purchases on page load
+  useEffect(() => {
+    if (!user || !db || !authChecked || !isFirebaseReady) {
+      return;
+    }
+    
+    // Only start persistent polling if we're not already polling
+    if (pollingIntervalRef.current) {
+      return;
+    }
+    
+    // Check for pending purchases
+    const checkPendingPurchases = async () => {
+      if (!db) {
+        return;
+      }
+      
+      try {
+        const purchasesRef = collection(db, 'purchases');
+        
+        // Get all purchases for this user and filter client-side
+        // (More reliable than using 'in' operator which requires index)
+        const allPurchasesQuery = query(
+          purchasesRef,
+          where('userId', '==', user.uid)
+        );
+        
+        const allSnapshot = await getDocs(allPurchasesQuery);
+        const pendingPurchases = allSnapshot.docs.filter(doc => {
+          const data = doc.data();
+          const status = data.status;
+          const documentsGenerated = data.documentsGenerated ?? 0;
+          const totalItems = data.items?.length || 0;
+          const items = data.items || [];
+          const hasPackageFiles = items.some((item: any) => item.packageFiles && Object.keys(item.packageFiles).length > 0);
+          
+          // Consider pending if:
+          // 1. Status is pending/processing, OR
+          // 2. Documents are not yet complete (documentsGenerated < totalItems and no packageFiles)
+          return (status === 'pending' || status === 'processing' || 
+                  (documentsGenerated < totalItems && !hasPackageFiles && totalItems > 0));
+        });
+        
+        if (pendingPurchases.length > 0) {
+          // Sort by createdAt to get most recent
+          const sorted = pendingPurchases.sort((a, b) => {
+            const aData = a.data();
+            const bData = b.data();
+            const aTime = aData.createdAt?.toMillis?.() || aData.createdAt?.seconds || aData.createdAt || 0;
+            const bTime = bData.createdAt?.toMillis?.() || bData.createdAt?.seconds || bData.createdAt || 0;
+            return bTime - aTime;
+          });
+          
+          const pendingPurchase = sorted[0];
+          const purchaseData = pendingPurchase.data();
+          const purchaseId = pendingPurchase.id;
+          
+          // Double-check that documents are actually still being generated
+          const documentsGenerated = purchaseData.documentsGenerated ?? 0;
+          const totalItems = purchaseData.items?.length || 0;
+          const items = purchaseData.items || [];
+          const hasPackageFiles = items.some((item: any) => item.packageFiles && Object.keys(item.packageFiles).length > 0);
+          
+          // Only start polling if documents are not yet complete
+          if (documentsGenerated < totalItems && !hasPackageFiles) {
+            console.log('Found pending purchase, starting polling:', purchaseId);
+            startPolling(purchaseId);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking for pending purchases:', error);
+      }
+    };
+    
+    // Check after a short delay to allow initial load
+    const checkTimeout = setTimeout(checkPendingPurchases, 1000);
+    
+    return () => {
+      clearTimeout(checkTimeout);
+    };
+  }, [user, db, authChecked, isFirebaseReady]);
 
   // Cleanup polling on unmount
   useEffect(() => {
