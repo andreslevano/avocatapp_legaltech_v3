@@ -1,222 +1,266 @@
-import { storage } from './firebase-admin';
+import { getStorage, ref, uploadBytes, getDownloadURL, StorageReference } from 'firebase/storage';
+import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { storage, db } from './firebase';
+import { v4 as uuidv4 } from 'uuid';
 
-export interface SavePdfOptions {
-  contentType?: string;
-  metadata?: Record<string, any>;
-}
+/**
+ * Obtiene el plan del usuario desde Firestore
+ * @param userId - ID del usuario
+ * @returns Plan del usuario o null si no se encuentra
+ */
+async function getUserPlan(userId: string): Promise<string | null> {
+  try {
+    if (!db || typeof db === 'object' && Object.keys(db).length === 0) {
+      return null;
+    }
 
-export interface SavePdfResult {
-  storagePath: string;
-  size: number;
-  bucket: string;
-}
-
-export interface SignedUrlOptions {
-  expiresMinutes?: number;
+    const userRef = doc(collection(db as any, 'users'), userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      return userData?.plan || null;
+    }
+    return null;
+  } catch (error) {
+    console.warn('Error obteniendo plan del usuario:', error);
+    return null;
+  }
 }
 
 /**
- * Guarda un PDF en Firebase Storage bajo la ruta users/{uid}/documents/{docId}.pdf
+ * Determina la carpeta base según el plan del usuario o el tipo de documento
+ * @param userId - ID del usuario
+ * @param documentType - Tipo de documento (opcional)
+ * @returns 'students', 'reclamaciones' o 'users' según corresponda
+ */
+async function getStorageBasePath(userId: string, documentType?: string): Promise<string> {
+  // Si es un documento de reclamación, usar carpeta específica
+  if (documentType === 'reclamacion_cantidades') {
+    return 'reclamaciones';
+  }
+  
+  // Verificar el plan del usuario
+  const plan = await getUserPlan(userId);
+  if (plan === 'Estudiantes') {
+    return 'students';
+  }
+  if (plan === 'Reclamación de Cantidades') {
+    return 'reclamaciones';
+  }
+  
+  // Por defecto, usar 'users'
+  return 'users';
+}
+
+/**
+ * Guarda un archivo PDF en Firebase Storage
+ * @param userId - ID del usuario
+ * @param documentId - ID del documento
+ * @param fileBuffer - Buffer del archivo PDF
+ * @param metadata - Metadatos adicionales
+ * @returns Información del archivo guardado
  */
 export async function savePdfForUser(
-  uid: string, 
-  docId: string, 
-  buffer: Buffer, 
-  options: SavePdfOptions = {}
-): Promise<SavePdfResult> {
-  const bucket = process.env.FIREBASE_STORAGE_BUCKET || "avocat-legaltech-v3.appspot.com";
-  const filePath = `users/${uid}/documents/${docId}.pdf`;
-  
-  const file = storage().bucket(bucket).file(filePath);
-  
-  const uploadOptions = {
-    contentType: options.contentType || 'application/pdf',
-    metadata: {
-      ...options.metadata,
-      userId: uid,
-      docId,
-      uploadedAt: new Date().toISOString()
-    }
-  };
-  
-  await file.save(buffer, uploadOptions);
-  
-  const [metadata] = await file.getMetadata();
-  
-  return {
-    storagePath: filePath,
-    size: Number(metadata.size || buffer.length),
-    bucket
-  };
-}
-
-/**
- * Genera una URL firmada para descargar un PDF
- */
-export async function signedUrlFor(
-  uid: string, 
-  docId: string, 
-  options: SignedUrlOptions = {}
-): Promise<string> {
-  const bucket = process.env.FIREBASE_STORAGE_BUCKET || "avocat-legaltech-v3.appspot.com";
-  const filePath = `users/${uid}/documents/${docId}.pdf`;
-  
-  const file = storage().bucket(bucket).file(filePath);
-  
-  const expiresMinutes = options.expiresMinutes || 15;
-  const expiresAt = Date.now() + (expiresMinutes * 60 * 1000);
-  
-  const [url] = await file.getSignedUrl({
-    version: 'v4',
-    action: 'read',
-    expires: expiresAt
-  });
-  
-  return url;
-}
-
-/**
- * Obtiene metadatos de un archivo
- */
-export async function getFileMetadata(uid: string, docId: string) {
-  const bucket = process.env.FIREBASE_STORAGE_BUCKET || "avocat-legaltech-v3.appspot.com";
-  const filePath = `users/${uid}/documents/${docId}.pdf`;
-  
-  const file = storage().bucket(bucket).file(filePath);
-  const [metadata] = await file.getMetadata();
-  
-  return metadata;
-}
-
-/**
- * Elimina un archivo del storage
- */
-export async function deleteFile(uid: string, docId: string): Promise<boolean> {
+  userId: string,
+  documentId: string,
+  fileBuffer: Buffer | Uint8Array,
+  metadata?: {
+    fileName?: string;
+    contentType?: string;
+    documentType?: string;
+  }
+): Promise<{
+  storagePath: string;
+  downloadURL: string;
+  bucket: string;
+  size: number;
+}> {
   try {
-    const bucket = process.env.FIREBASE_STORAGE_BUCKET || "avocat-legaltech-v3.appspot.com";
-    const filePath = `users/${uid}/documents/${docId}.pdf`;
+    // Verificar que storage esté disponible
+    if (!storage || typeof storage === 'object' && Object.keys(storage).length === 0) {
+      throw new Error('Firebase Storage no está inicializado');
+    }
+
+    // Determinar la carpeta base según el plan del usuario o tipo de documento
+    const basePath = await getStorageBasePath(userId, metadata?.documentType);
+    const fileName = metadata?.fileName || `document_${documentId}.pdf`;
+    const storagePath = `${basePath}/${userId}/documents/${documentId}/${fileName}`;
     
-    const file = storage().bucket(bucket).file(filePath);
-    await file.delete();
+    // Crear referencia en Storage
+    const storageRef = ref(storage as any, storagePath);
     
-    return true;
+    // Subir el archivo
+    const snapshot = await uploadBytes(storageRef, fileBuffer, {
+      contentType: metadata?.contentType || 'application/pdf',
+      customMetadata: {
+        documentId,
+        documentType: metadata?.documentType || 'unknown',
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+
+    // Obtener URL de descarga
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    return {
+      storagePath,
+      downloadURL,
+      bucket: snapshot.metadata.bucket,
+      size: snapshot.metadata.size,
+    };
   } catch (error) {
-    console.error('Error deleting file:', error);
-    return false;
+    console.error('Error guardando PDF en Storage:', error);
+    throw error;
   }
 }
 
 /**
- * Guarda un archivo subido para OCR en Firebase Storage
- * Ruta: users/{uid}/uploads/{reclId}/{filename}
+ * Guarda un archivo subido por el usuario (para OCR)
+ * @param userId - ID del usuario
+ * @param file - Archivo a subir
+ * @param category - Categoría del documento
+ * @param documentType - Tipo de documento (opcional, para determinar carpeta)
+ * @returns Información del archivo guardado
  */
 export async function saveUploadedFile(
-  uid: string,
-  reclId: string,
-  filename: string,
-  buffer: Buffer,
-  options: SavePdfOptions = {}
-): Promise<SavePdfResult> {
-  const bucketName = process.env.FIREBASE_STORAGE_BUCKET || "avocat-legaltech-v3.appspot.com";
-  
-  // Obtener el bucket de Storage
-  const storageInstance = storage();
-  let bucket;
-  
+  userId: string,
+  file: File,
+  category?: string,
+  documentType?: string
+): Promise<{
+  storagePath: string;
+  downloadURL: string;
+  fileId: string;
+}> {
   try {
-    bucket = storageInstance.bucket(bucketName);
+    if (!storage || typeof storage === 'object' && Object.keys(storage).length === 0) {
+      throw new Error('Firebase Storage no está inicializado');
+    }
+
+    // Determinar la carpeta base según el plan del usuario o tipo de documento
+    const basePath = await getStorageBasePath(userId, documentType);
+    const fileId = uuidv4();
+    const fileName = `${fileId}_${file.name}`;
+    const storagePath = `${basePath}/${userId}/ocr/${fileName}`;
     
-    // Intentar verificar que el bucket existe (puede fallar si no tiene permisos)
-    try {
-      const [exists] = await bucket.exists();
-      if (!exists) {
-        console.warn(`⚠️ El bucket ${bucketName} no existe. Intentando crear...`);
-        // Intentar crear el bucket (puede fallar si no tiene permisos)
-        try {
-          await bucket.create();
-          console.log(`✅ Bucket ${bucketName} creado exitosamente`);
-        } catch (createError: any) {
-          console.warn(`⚠️ No se pudo crear el bucket (puede requerir permisos): ${createError.message}`);
-          throw new Error(`El bucket ${bucketName} no existe y no se pudo crear. Verifica la configuración de Firebase Storage.`);
-        }
+    // Convertir File a ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    // Crear referencia en Storage
+    const storageRef = ref(storage as any, storagePath);
+    
+    // Subir el archivo
+    const snapshot = await uploadBytes(storageRef, uint8Array, {
+      contentType: file.type,
+      customMetadata: {
+        originalName: file.name,
+        category: category || 'unknown',
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+
+    // Obtener URL de descarga
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    // Guardar metadatos en Firestore
+    if (db && typeof db !== 'object' || Object.keys(db).length > 0) {
+      try {
+        const fileDocRef = doc(collection(db as any, 'uploaded_files'), fileId);
+        await setDoc(fileDocRef, {
+          userId,
+          fileName: file.name,
+          storagePath,
+          downloadURL,
+          category: category || 'unknown',
+          size: file.size,
+          contentType: file.type,
+          uploadedAt: serverTimestamp(),
+        });
+      } catch (firestoreError) {
+        console.warn('Error guardando metadatos en Firestore:', firestoreError);
+        // No lanzar error, el archivo ya está en Storage
       }
-    } catch (checkError: any) {
-      // Si falla la verificación, intentar usar el bucket de todas formas
-      // (puede ser un problema de permisos, pero el bucket puede existir)
-      console.warn(`⚠️ No se pudo verificar el bucket (continuando de todas formas): ${checkError.message}`);
     }
-  } catch (error: any) {
-    console.error(`❌ Error accediendo al bucket ${bucketName}:`, error.message);
-    throw new Error(`No se pudo acceder al bucket de Storage: ${error.message}`);
-  }
-  
-  // Sanitizar el nombre del archivo para evitar problemas con caracteres especiales
-  const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const filePath = `users/${uid}/uploads/${reclId}/${sanitizedFilename}`;
-  
-  const file = bucket.file(filePath);
-  
-  const uploadOptions = {
-    contentType: options.contentType || 'application/pdf',
-    metadata: {
-      ...options.metadata,
-      userId: uid,
-      reclId,
-      originalFilename: filename,
-      uploadedAt: new Date().toISOString(),
-      purpose: 'ocr_analysis'
-    }
-  };
-  
-  try {
-    await file.save(buffer, uploadOptions);
-    
-    const [metadata] = await file.getMetadata();
-    
-    console.log(`💾 Archivo subido guardado: ${filePath} (${buffer.length} bytes) en bucket ${bucketName}`);
-    
+
     return {
-      storagePath: filePath,
-      size: Number(metadata.size || buffer.length),
-      bucket: bucketName
+      storagePath,
+      downloadURL,
+      fileId,
     };
-  } catch (error: any) {
-    console.error(`❌ Error guardando archivo en Storage:`, error);
-    throw new Error(`Error guardando archivo: ${error.message}`);
+  } catch (error) {
+    console.error('Error guardando archivo subido:', error);
+    throw error;
   }
 }
 
 /**
- * Genera una URL firmada para descargar un archivo subido
+ * Guarda información de una compra en Firestore
+ * @param purchaseId - ID de la compra (session ID de Stripe)
+ * @param purchaseData - Datos de la compra
  */
-export async function signedUrlForUploadedFile(
-  uid: string,
-  reclId: string,
-  filename: string,
-  options: SignedUrlOptions = {}
-): Promise<string> {
-  const bucketName = process.env.FIREBASE_STORAGE_BUCKET || "avocat-legaltech-v3.appspot.com";
-  const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const filePath = `users/${uid}/uploads/${reclId}/${sanitizedFilename}`;
-  
-  const storageInstance = storage();
-  const bucket = storageInstance.bucket(bucketName);
-  const file = bucket.file(filePath);
-  
-  // Verificar que el archivo existe
-  const [exists] = await file.exists();
-  if (!exists) {
-    throw new Error(`El archivo ${filePath} no existe en Storage`);
+export async function savePurchase(
+  purchaseId: string,
+  purchaseData: {
+    userId: string;
+    amount: number;
+    currency: string;
+    documentType?: string;
+    documentId?: string;
+    storagePath?: string;
+    metadata?: Record<string, any>;
   }
-  
-  const expiresMinutes = options.expiresMinutes || 60; // URLs más largas para archivos subidos
-  const expiresAt = Date.now() + (expiresMinutes * 60 * 1000);
-  
-  const [url] = await file.getSignedUrl({
-    version: 'v4',
-    action: 'read',
-    expires: expiresAt
-  });
-  
-  return url;
+): Promise<void> {
+  try {
+    if (!db || typeof db === 'object' && Object.keys(db).length === 0) {
+      console.warn('Firestore no está inicializado, no se puede guardar la compra');
+      return;
+    }
+
+    const purchaseRef = doc(collection(db as any, 'purchases'), purchaseId);
+    await setDoc(purchaseRef, {
+      ...purchaseData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    // Actualizar estadísticas del usuario
+    const userRef = doc(collection(db as any, 'users'), purchaseData.userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      await setDoc(userRef, {
+        ...userData,
+        totalPurchases: (userData?.totalPurchases || 0) + 1,
+        totalSpent: (userData?.totalSpent || 0) + purchaseData.amount,
+        lastPurchaseAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    }
+  } catch (error) {
+    console.error('Error guardando compra:', error);
+    throw error;
+  }
 }
+
+/**
+ * Obtiene la URL firmada de un archivo en Storage
+ * @param storagePath - Ruta del archivo en Storage
+ * @returns URL firmada
+ */
+export async function getSignedUrl(storagePath: string): Promise<string> {
+  try {
+    if (!storage || typeof storage === 'object' && Object.keys(storage).length === 0) {
+      throw new Error('Firebase Storage no está inicializado');
+    }
+
+    const storageRef = ref(storage as any, storagePath);
+    return await getDownloadURL(storageRef);
+  } catch (error) {
+    console.error('Error obteniendo URL firmada:', error);
+    throw error;
+  }
+}
+
