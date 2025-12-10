@@ -133,6 +133,9 @@ export interface UploadedDocument {
   category?: DocumentCategory;
   uploadDate: Date;
   previewUrl?: string;
+  storagePath?: string; // Ruta en Firebase Storage
+  downloadURL?: string; // URL de descarga desde Storage
+  fileId?: string; // ID del archivo en Firestore
 }
 
 export interface DocumentCategory {
@@ -156,7 +159,9 @@ export interface GeneratedDocument {
   content: string;
   type: 'reclamacion_cantidades';
   generatedAt: Date;
-  downloadUrl?: string;
+  downloadUrl?: string; // Mantener para compatibilidad
+  downloadURL?: string; // URL de descarga desde Storage
+  storagePath?: string; // Ruta en Firebase Storage
 }
 
 // Purchase History types

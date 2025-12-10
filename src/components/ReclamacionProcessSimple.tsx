@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { UploadedDocument, DocumentCategory, DocumentSummary, GeneratedDocument } from '@/types';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User, Auth } from 'firebase/auth';
+import { saveUploadedFile, savePdfForUser } from '@/lib/storage';
 
 interface ReclamacionProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -59,7 +62,19 @@ export default function ReclamacionProcessSimple({ onComplete }: ReclamacionProc
   const [generatedDocument, setGeneratedDocument] = useState<GeneratedDocument | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaymentComplete, setIsPaymentComplete] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Obtener usuario autenticado
+  useEffect(() => {
+    if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
+      const unsubscribe = onAuthStateChanged(auth as Auth, (user) => {
+        setUser(user);
+      });
+      return () => unsubscribe();
+    }
+  }, []);
 
   // Automatic document categorization based on filename keywords
   const categorizeDocument = (filename: string): DocumentCategory => {
@@ -84,24 +99,84 @@ export default function ReclamacionProcessSimple({ onComplete }: ReclamacionProc
     return DOCUMENT_CATEGORIES.find(c => c.id === 'other')!;
   };
 
-  const handleFileUpload = (files: FileList) => {
-    const newDocuments: UploadedDocument[] = Array.from(files)
-      .filter(file => file.type === 'application/pdf')
-      .map(file => {
-        const category = categorizeDocument(file.name);
-        return {
-          id: Math.random().toString(36).substr(2, 9),
-          name: file.name,
-          file,
-          size: file.size,
-          type: file.type,
-          category,
-          uploadDate: new Date(),
-          previewUrl: URL.createObjectURL(file)
-        };
-      });
+  const handleFileUpload = async (files: FileList) => {
+    if (!user) {
+      console.warn('Usuario no autenticado, no se pueden guardar archivos');
+      // Aún así permitir subir archivos localmente
+      const newDocuments: UploadedDocument[] = Array.from(files)
+        .filter(file => file.type === 'application/pdf')
+        .map(file => {
+          const category = categorizeDocument(file.name);
+          return {
+            id: Math.random().toString(36).substr(2, 9),
+            name: file.name,
+            file,
+            size: file.size,
+            type: file.type,
+            category,
+            uploadDate: new Date(),
+            previewUrl: URL.createObjectURL(file)
+          };
+        });
+      setUploadedDocuments(prev => [...prev, ...newDocuments]);
+      return;
+    }
 
-    setUploadedDocuments(prev => [...prev, ...newDocuments]);
+    setIsUploading(true);
+    try {
+      const newDocuments: UploadedDocument[] = [];
+
+      // Procesar cada archivo
+      for (const file of Array.from(files).filter(f => f.type === 'application/pdf')) {
+        const category = categorizeDocument(file.name);
+        const docId = Math.random().toString(36).substr(2, 9);
+        
+        // Guardar archivo en Firebase Storage
+        try {
+          const storageResult = await saveUploadedFile(
+            user.uid,
+            file,
+            category.id,
+            'reclamacion_cantidades' // Tipo de documento para determinar carpeta
+          );
+
+          newDocuments.push({
+            id: docId,
+            name: file.name,
+            file,
+            size: file.size,
+            type: file.type,
+            category,
+            uploadDate: new Date(),
+            previewUrl: URL.createObjectURL(file),
+            storagePath: storageResult.storagePath,
+            downloadURL: storageResult.downloadURL,
+            fileId: storageResult.fileId,
+          });
+
+          console.log('✅ Archivo guardado en Storage:', storageResult.storagePath);
+        } catch (error) {
+          console.error('❌ Error guardando archivo:', file.name, error);
+          // Aún así agregar el documento localmente
+          newDocuments.push({
+            id: docId,
+            name: file.name,
+            file,
+            size: file.size,
+            type: file.type,
+            category,
+            uploadDate: new Date(),
+            previewUrl: URL.createObjectURL(file)
+          });
+        }
+      }
+
+      setUploadedDocuments(prev => [...prev, ...newDocuments]);
+    } catch (error) {
+      console.error('Error procesando archivos:', error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -350,7 +425,39 @@ Sin otro particular, reciba un cordial saludo.
       yPosition += lineHeight;
       doc.text('Firma', 150, yPosition);
       
-      // Save the PDF
+      // Generar el PDF como blob
+      const pdfBlob = doc.output('blob');
+      const pdfBuffer = await pdfBlob.arrayBuffer();
+      const pdfUint8Array = new Uint8Array(pdfBuffer);
+
+      // Guardar en Firebase Storage si el usuario está autenticado
+      if (user && generatedDocument.id) {
+        try {
+          const storageResult = await savePdfForUser(
+            user.uid,
+            generatedDocument.id,
+            pdfUint8Array,
+            {
+              fileName: `${generatedDocument.title.replace(/\s+/g, '_')}.pdf`,
+              contentType: 'application/pdf',
+              documentType: 'reclamacion_cantidades'
+            }
+          );
+          console.log('✅ PDF guardado en Storage:', storageResult.storagePath);
+          
+          // Actualizar el documento generado con la información de Storage
+          setGeneratedDocument(prev => prev ? {
+            ...prev,
+            storagePath: storageResult.storagePath,
+            downloadURL: storageResult.downloadURL
+          } : null);
+        } catch (storageError) {
+          console.error('❌ Error guardando PDF en Storage:', storageError);
+          // Continuar con la descarga aunque falle el guardado
+        }
+      }
+
+      // Descargar el PDF
       doc.save(`${generatedDocument.title}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -454,11 +561,16 @@ Sin otro particular, reciba un cordial saludo.
               <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <p className="mt-2 text-sm text-gray-600">
-              Arrastra archivos PDF aquí o haz clic para seleccionar
+              {isUploading ? 'Subiendo archivos a Firebase Storage...' : 'Arrastra archivos PDF aquí o haz clic para seleccionar'}
             </p>
             <p className="text-xs text-gray-500 mt-1">
               Solo se permiten archivos PDF
             </p>
+            {isUploading && (
+              <div className="mt-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+              </div>
+            )}
           </div>
 
           <input
