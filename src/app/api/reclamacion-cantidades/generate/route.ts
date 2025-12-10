@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     // Paso 4: Guardar en Firestore (opcional, para tracking)
     const documentId = `recl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    if (db && typeof db !== 'object' || Object.keys(db).length > 0) {
+    if (db && (typeof db === 'object' && Object.keys(db).length > 0)) {
       try {
         const reclRef = doc(collection(db as any, 'reclamaciones'), documentId);
         await setDoc(reclRef, {

@@ -66,6 +66,13 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
   const [isPaymentComplete, setIsPaymentComplete] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showAnalisisModal, setShowAnalisisModal] = useState(false);
+  const [analisisExito, setAnalisisExito] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [paymentDocId, setPaymentDocId] = useState<string | null>(null);
+  const [paymentReclId, setPaymentReclId] = useState<string | null>(null);
+  const [currentReclId, setCurrentReclId] = useState<string | null>(null);
+  const [uploadedFilesInfo, setUploadedFilesInfo] = useState<Array<{ fileName: string; storagePath: string; downloadUrl?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Obtener usuario autenticado

@@ -95,15 +95,16 @@ export async function POST(request: NextRequest) {
         }
 
         // Guardar la compra en Firestore (compatibilidad con sistema anterior)
-        if (uid) {
+        const userId = uid || session.metadata?.userId;
+        if (userId) {
           try {
             await savePurchase(session.id, {
-              userId: uid,
+              userId,
               amount: (session.amount_total || 0) / 100,
               currency: session.currency || 'eur',
               documentType: type || 'reclamacion_cantidades',
               documentId: caseId,
-              metadata: session.metadata,
+              metadata: session.metadata || {},
             });
             console.log('✅ Compra guardada en Firestore');
           } catch (error) {
