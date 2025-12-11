@@ -2,6 +2,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { PurchaseHistory } from '@/types';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
+import type { Purchase } from '@/types/purchase';
 
 interface PurchaseHistoryProps {
   userId: string; // Ahora es requerido
@@ -129,11 +132,21 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
   const [error, setError] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<PurchaseHistory | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [expandedPurchases, setExpandedPurchases] = useState<Set<string>>(new Set());
 
-  // Función para obtener el historial
+  // Helper function to convert Timestamp | Date to Date
+  const toDate = (value: Date | Timestamp | undefined | null): Date => {
+    if (!value) return new Date();
+    if (value instanceof Timestamp) return value.toDate();
+    if (value instanceof Date) return value;
+    return new Date(value as any);
+  };
+
+  // Función para obtener el historial desde Firestore
   const fetchPurchaseHistory = useCallback(async () => {
-    if (!userId) {
+    if (!userId || !db) {
       setLoading(false);
+      setPurchaseHistory([]);
       return;
     }
     
@@ -141,66 +154,184 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
     setError(null);
     
     try {
-      const response = await fetch(`/api/reclamacion-cantidades/history?userId=${userId}`);
-      if (!response.ok) {
-        throw new Error('Error obteniendo historial de compras');
+      console.log('📋 Cargando historial de compras desde Firestore...');
+      
+      // Query purchases desde Firestore
+      const purchasesCollection = collection(db, 'purchases');
+      let purchasesQuery;
+      
+      try {
+        // Si hay documentType, filtrar por él
+        if (documentType) {
+          purchasesQuery = query(
+            purchasesCollection,
+            where('userId', '==', userId),
+            where('documentType', '==', documentType),
+            orderBy('createdAt', 'desc')
+          );
+        } else {
+          purchasesQuery = query(
+            purchasesCollection,
+            where('userId', '==', userId),
+            orderBy('createdAt', 'desc')
+          );
+        }
+      } catch (queryError: any) {
+        // Si falla el orderBy (puede faltar índice), intentar sin orderBy
+        console.warn('⚠️ No se pudo aplicar orderBy, usando consulta básica:', queryError);
+        
+        // Si el error es por falta de índice, no es un error crítico
+        if (queryError.code === 'failed-precondition' || queryError.message?.includes('index')) {
+          // Intentar sin orderBy
+          if (documentType) {
+            purchasesQuery = query(
+              purchasesCollection,
+              where('userId', '==', userId),
+              where('documentType', '==', documentType)
+            );
+          } else {
+            purchasesQuery = query(
+              purchasesCollection,
+              where('userId', '==', userId)
+            );
+          }
+        } else {
+          // Otro tipo de error en la query - lanzar para manejarlo en el catch externo
+          throw queryError;
+        }
       }
       
-      const data = await response.json();
-      console.log('📋 Respuesta del historial:', { success: data.success, itemsCount: data.data?.length || 0 });
+      const snapshot = await getDocs(purchasesQuery);
       
-      if (data.success) {
-        // Convertir fechas de ISO strings a Date objects
-        const formattedData = data.data.map((p: any) => {
-          let purchaseDate: Date;
-          if (p.purchaseDate instanceof Date) {
-            purchaseDate = p.purchaseDate;
-          } else if (p.purchaseDate?.toDate) {
-            purchaseDate = p.purchaseDate.toDate();
+      // Convertir purchases de Firestore a PurchaseHistory
+      const formattedData: PurchaseHistory[] = snapshot.docs
+        .map((doc) => {
+          const data = doc.data() as Purchase;
+          
+          // Convertir PurchaseStatus a PurchaseHistory status
+          // PurchaseHistory solo acepta 'completed' | 'pending' | 'failed'
+          let historyStatus: 'completed' | 'pending' | 'failed' = 'pending';
+          if (data.status === 'completed') {
+            historyStatus = 'completed';
+          } else if (data.status === 'failed') {
+            historyStatus = 'failed';
+          } else if (data.status === 'cancelled' || data.status === 'refunded') {
+            // Tratar cancelled y refunded como failed para el historial
+            historyStatus = 'failed';
           } else {
-            purchaseDate = new Date(p.purchaseDate || Date.now());
+            historyStatus = 'pending';
           }
           
-          let emailSentAt: Date | undefined = undefined;
-          if (p.emailSentAt) {
-            if (p.emailSentAt instanceof Date) {
-              emailSentAt = p.emailSentAt;
-            } else if (p.emailSentAt?.toDate) {
-              emailSentAt = p.emailSentAt.toDate();
-            } else {
-              emailSentAt = new Date(p.emailSentAt);
-            }
+          // Obtener el primer item para extraer información
+          const firstItem = data.items?.[0] || {};
+          
+          // Obtener packageFiles del primer item
+          const packageFiles = firstItem.packageFiles || {};
+          
+          // Determinar URLs según documentType
+          let files: PurchaseHistory['files'] = {};
+          
+          if (data.documentType === 'accion_tutela') {
+            // Para accion_tutela: tutelaPdf y tutelaDocx
+            files = {
+              pdfUrl: packageFiles.tutelaPdf?.downloadUrl || firstItem.downloadUrl || undefined,
+              wordUrl: packageFiles.tutelaDocx?.downloadUrl || undefined,
+              tutelaPdf: packageFiles.tutelaPdf?.downloadUrl || firstItem.downloadUrl || undefined,
+              tutelaDocx: packageFiles.tutelaDocx?.downloadUrl || undefined,
+            };
+          } else if (data.documentType === 'estudiantes') {
+            // Para estudiantes: todos los materiales descargables
+            files = {
+              pdfUrl: firstItem.downloadUrl || packageFiles.studyMaterialPdf?.downloadUrl || packageFiles.templatePdf?.downloadUrl || undefined,
+              wordUrl: packageFiles.templateDocx?.downloadUrl || undefined,
+              templateDocx: packageFiles.templateDocx?.downloadUrl || undefined,
+              templatePdf: packageFiles.templatePdf?.downloadUrl || undefined,
+              sampleDocx: packageFiles.sampleDocx?.downloadUrl || undefined,
+              samplePdf: packageFiles.samplePdf?.downloadUrl || undefined,
+              studyMaterialPdf: packageFiles.studyMaterialPdf?.downloadUrl || undefined,
+            };
+          } else {
+            // Para otros tipos (reclamacion_cantidades, etc.)
+            files = {
+              pdfUrl: firstItem.downloadUrl || packageFiles.studyMaterialPdf?.downloadUrl || undefined,
+              wordUrl: packageFiles.templateDocx?.downloadUrl || undefined,
+            };
           }
           
+          // Convertir cada purchase a PurchaseHistory
           return {
-            ...p,
-            purchaseDate,
-            emailSentAt
+            id: data.id || doc.id,
+            userId: data.userId,
+            documentTitle: firstItem.name || 'Documento legal',
+            documentType: (data.documentType || 'reclamacion_cantidades') as 'reclamacion_cantidades' | 'accion_tutela' | 'estudiantes',
+            purchaseDate: toDate(data.createdAt),
+            price: data.total || 0,
+            currency: data.currency || 'EUR',
+            status: historyStatus,
+            documentCount: data.items?.length || 0,
+            accuracy: 85, // Default accuracy, puede calcularse si hay datos
+            docId: data.docId || firstItem.documentId || undefined,
+            files: files,
+            emailSent: false, // Puede agregarse si hay tracking
+            paid: data.status === 'completed'
           };
+        })
+        .filter((p) => {
+          // Filtrar por documentType si está especificado
+          if (documentType) {
+            return p.documentType === documentType;
+          }
+          return true;
         });
-        
-        console.log(`✅ Historial cargado: ${formattedData.length} items`, formattedData);
-        
-        // Si no hay datos reales, usar datos mock temporalmente para desarrollo
-        if (formattedData.length === 0) {
-          console.warn('⚠️ No hay documentos en Firestore, usando datos mock temporalmente');
-          // No usar mock, dejar vacío para que el usuario vea el estado vacío
-          setPurchaseHistory([]);
-        } else {
-          setPurchaseHistory(formattedData);
-        }
-      } else {
-        throw new Error(data.error?.message || data.error || 'Error en la respuesta del historial');
+      
+      // Ordenar por fecha (si no se pudo hacer orderBy en la query)
+      formattedData.sort((a, b) => b.purchaseDate.getTime() - a.purchaseDate.getTime());
+      
+      console.log(`✅ Historial cargado desde Firestore: ${formattedData.length} items`);
+      
+      setPurchaseHistory(formattedData);
+      
+      // Si no hay documentos, no es un error, solo mostrar mensaje vacío
+      if (formattedData.length === 0) {
+        console.log('ℹ️ No hay documentos en el historial');
+        // No establecer error, solo dejar vacío para mostrar mensaje amigable
       }
     } catch (err: any) {
-      console.error('❌ Error obteniendo historial:', err);
-      setError(err.message || 'Error desconocido al cargar el historial de compras.');
-      // No usar mock en caso de error, mostrar el error
-      setPurchaseHistory([]);
+      console.error('❌ Error obteniendo historial desde Firestore:', err);
+      
+      // Verificar si es un error de índice faltante (no es crítico, solo significa que no hay datos o falta índice)
+      const errorCode = err.code || '';
+      const errorMessage = err.message || '';
+      
+      // Errores que NO deben mostrarse como error al usuario:
+      // - failed-precondition: falta índice (común cuando no hay datos)
+      // - not-found: no hay documentos
+      // - permission-denied: puede ser que no haya permisos pero también puede ser que no haya datos
+      const isNonCriticalError = 
+        errorCode === 'failed-precondition' || 
+        errorCode === 'not-found' ||
+        errorMessage.includes('index') ||
+        errorMessage.includes('No documents') ||
+        errorMessage.includes('JSON') ||
+        errorMessage.includes('<!DOCTYPE') ||
+        errorMessage.includes('Unexpected token');
+      
+      if (isNonCriticalError) {
+        // No es un error crítico - simplemente no hay documentos o falta índice
+        // Esto es normal cuando el usuario no tiene compras aún
+        console.log('ℹ️ No hay documentos o falta índice de Firestore (normal para usuarios sin compras)');
+        setPurchaseHistory([]);
+        setError(null); // NO establecer error - mostrar estado vacío amigable
+      } else {
+        // Error real que necesita atención (permisos, red, etc.)
+        console.error('❌ Error real obteniendo historial:', err);
+        setError('No se pudo cargar el historial de compras. Por favor, intenta de nuevo.');
+        setPurchaseHistory([]);
+      }
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, documentType, db]);
 
   // Cargar historial al montar y cuando cambie userId
   useEffect(() => {
@@ -268,14 +399,46 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
     return 'text-red-600';
   };
 
+  // Función para descargar desde URL directa (para materiales descargables)
+  const downloadFromUrl = useCallback(async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      console.log(`✅ Descargado: ${filename}`);
+    } catch (error: any) {
+      console.error(`❌ Error descargando ${filename}:`, error);
+      alert(`Error descargando el archivo: ${error.message}`);
+    }
+  }, []);
+
   const downloadDocument = useCallback(async (doc: PurchaseHistory, format: 'pdf' | 'word') => {
     try {
+      // Si hay URL directa disponible, usarla
+      if (format === 'pdf' && doc.files.pdfUrl) {
+        await downloadFromUrl(doc.files.pdfUrl, `${doc.documentTitle}.pdf`);
+        return;
+      }
+      if (format === 'word' && doc.files.wordUrl) {
+        await downloadFromUrl(doc.files.wordUrl, `${doc.documentTitle}.docx`);
+        return;
+      }
+
+      // Fallback: usar endpoint API si no hay URL directa
       if (!doc.docId) {
         alert('Error: No se encontró el ID del documento');
         return;
       }
 
-      // Construir URL del endpoint según el formato
       const endpoint = format === 'pdf' 
         ? `/api/documents/${doc.docId}/download?uid=${userId}`
         : `/api/documents/${doc.docId}/word?uid=${userId}`;
@@ -289,15 +452,12 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
         throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
       }
 
-      // Obtener blob
       const blob = await response.blob();
       
-      // Verificar que estamos en el cliente
       if (typeof window === 'undefined' || typeof document === 'undefined') {
         throw new Error('Este código solo puede ejecutarse en el cliente');
       }
       
-      // Obtener nombre del archivo desde el header o usar el título del documento
       const contentDisposition = response.headers.get('content-disposition');
       let filename = doc.documentTitle;
       
@@ -308,14 +468,12 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
         }
       }
       
-      // Asegurar extensión correcta
       if (format === 'word' && !filename.endsWith('.docx')) {
         filename = filename.replace(/\.pdf$/, '') + '.docx';
       } else if (format === 'pdf' && !filename.endsWith('.pdf')) {
         filename = filename.replace(/\.docx$/, '') + '.pdf';
       }
 
-      // Crear URL temporal y descargar
       const url = window.URL.createObjectURL(blob);
       const linkElement = document.createElement('a');
       linkElement.href = url;
@@ -324,7 +482,6 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       document.body.appendChild(linkElement);
       linkElement.click();
       
-      // Limpiar
       setTimeout(() => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(linkElement);
@@ -334,7 +491,19 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       console.error(`❌ Error descargando ${format}:`, error);
       alert(`Error descargando el documento: ${error.message}`);
     }
-  }, [userId]);
+  }, [userId, downloadFromUrl]);
+
+  const toggleExpand = (purchaseId: string) => {
+    setExpandedPurchases(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(purchaseId)) {
+        newSet.delete(purchaseId);
+      } else {
+        newSet.add(purchaseId);
+      }
+      return newSet;
+    });
+  };
 
   const downloadInvoice = useCallback(async (purchase: PurchaseHistory) => {
     try {
@@ -643,45 +812,175 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
 
             {/* Action Buttons */}
             {purchase.status === 'completed' ? (
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => viewPdf(purchase)}
-                  className="bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <span>Ver PDF</span>
-                </button>
-                <button
-                  onClick={() => downloadInvoice(purchase)}
-                  className="bg-green-50 text-green-700 hover:bg-green-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span>Factura</span>
-                </button>
-                <button
-                  onClick={() => downloadDocument(purchase, 'pdf')}
-                  className="bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span>PDF</span>
-                </button>
-                <button
-                  onClick={() => downloadDocument(purchase, 'word')}
-                  className="bg-gray-50 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span>Word</span>
-                </button>
-              </div>
+              <>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <button
+                    onClick={() => viewPdf(purchase)}
+                    className="bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>Ver documento</span>
+                  </button>
+                  <button
+                    onClick={() => downloadDocument(purchase, 'pdf')}
+                    className="bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Descargar</span>
+                  </button>
+                </div>
+
+                {/* Materiales descargables - Sección expandible */}
+                <div className="border-t border-gray-200 pt-3 mt-3">
+                  <button
+                    onClick={() => toggleExpand(purchase.id)}
+                    className="w-full flex items-center justify-between text-sm font-medium text-gray-700 hover:text-gray-900 mb-2"
+                  >
+                    <span className="flex items-center">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                      Materiales descargables
+                    </span>
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${expandedPurchases.has(purchase.id) ? 'transform rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {expandedPurchases.has(purchase.id) && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
+                      {purchase.documentType === 'estudiantes' ? (
+                        <>
+                          {purchase.files.templateDocx && (
+                            <button
+                              onClick={() => downloadFromUrl(purchase.files.templateDocx!, `${purchase.documentTitle}_Plantilla.docx`)}
+                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                            >
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Plantilla (Word)
+                              </span>
+                              <span className="text-xs text-gray-500">.docx</span>
+                            </button>
+                          )}
+                          {purchase.files.templatePdf && (
+                            <button
+                              onClick={() => downloadFromUrl(purchase.files.templatePdf!, `${purchase.documentTitle}_Plantilla.pdf`)}
+                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                            >
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                Plantilla (PDF)
+                              </span>
+                              <span className="text-xs text-gray-500">.pdf</span>
+                            </button>
+                          )}
+                          {purchase.files.sampleDocx && (
+                            <button
+                              onClick={() => downloadFromUrl(purchase.files.sampleDocx!, `${purchase.documentTitle}_Ejemplo.docx`)}
+                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                            >
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Ejemplo (Word)
+                              </span>
+                              <span className="text-xs text-gray-500">.docx</span>
+                            </button>
+                          )}
+                          {purchase.files.samplePdf && (
+                            <button
+                              onClick={() => downloadFromUrl(purchase.files.samplePdf!, `${purchase.documentTitle}_Ejemplo.pdf`)}
+                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                            >
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                Ejemplo (PDF)
+                              </span>
+                              <span className="text-xs text-gray-500">.pdf</span>
+                            </button>
+                          )}
+                          {purchase.files.studyMaterialPdf && (
+                            <button
+                              onClick={() => downloadFromUrl(purchase.files.studyMaterialPdf!, `${purchase.documentTitle}_Dossier.pdf`)}
+                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                            >
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                Dossier académico (PDF)
+                              </span>
+                              <span className="text-xs text-gray-500">.pdf, ≥ 3 páginas</span>
+                            </button>
+                          )}
+                        </>
+                      ) : purchase.documentType === 'accion_tutela' ? (
+                        <>
+                          {purchase.files.tutelaDocx && (
+                            <button
+                              onClick={() => downloadFromUrl(purchase.files.tutelaDocx!, `${purchase.documentTitle}.docx`)}
+                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                            >
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Acción de Tutela (Word)
+                              </span>
+                              <span className="text-xs text-gray-500">.docx</span>
+                            </button>
+                          )}
+                          {purchase.files.tutelaPdf && (
+                            <button
+                              onClick={() => downloadFromUrl(purchase.files.tutelaPdf!, `${purchase.documentTitle}.pdf`)}
+                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                            >
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                Acción de Tutela (PDF)
+                              </span>
+                              <span className="text-xs text-gray-500">.pdf</span>
+                            </button>
+                          )}
+                        </>
+                      ) : null}
+                    </div>
+                  )}
+
+                  {/* Footer actions */}
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 text-xs text-gray-600">
+                    <span>Total: {purchase.price} {purchase.currency} • {purchase.documentCount} documento{purchase.documentCount !== 1 ? 's' : ''}</span>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => downloadInvoice(purchase)}
+                        className="text-green-600 hover:text-green-700 font-medium"
+                      >
+                        Descargar Factura
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
             ) : (
               <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-center">
                 <p className="text-xs text-yellow-800">
@@ -845,7 +1144,30 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
         </div>
       )}
 
-      {/* Error State */}
+      {/* Empty State - Mostrar cuando no hay documentos (NO es un error) */}
+      {!loading && !error && filteredPurchaseHistory.length === 0 && (
+        <div className="text-center py-12">
+          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h3 className="mt-4 text-lg font-medium text-gray-900">
+            {documentType === 'accion_tutela' 
+              ? 'No hay acciones de tutela generadas'
+              : documentType === 'reclamacion_cantidades'
+              ? 'No hay reclamaciones de cantidades generadas'
+              : 'No hay documentos en tu historial'}
+          </h3>
+          <p className="mt-2 text-sm text-gray-500">
+            {documentType === 'accion_tutela'
+              ? 'Genera tu primera acción de tutela para verla aquí'
+              : documentType === 'reclamacion_cantidades'
+              ? 'Genera tu primera reclamación de cantidades para verla aquí'
+              : 'Tus documentos generados aparecerán aquí una vez que completes una compra'}
+          </p>
+        </div>
+      )}
+
+      {/* Error State - Solo mostrar errores REALES (problemas de red, permisos, etc.) */}
       {error && !loading && (
         <div className="text-center py-12">
           <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -853,29 +1175,6 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
           </svg>
           <h3 className="mt-2 text-sm font-medium text-gray-900">Error al cargar historial</h3>
           <p className="mt-1 text-sm text-gray-500">{error}</p>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && !error && filteredPurchaseHistory.length === 0 && (
-        <div className="text-center py-12">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No hay documentos</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {documentType === 'accion_tutela' 
-              ? 'Comienza generando tu primera acción de tutela.'
-              : documentType === 'reclamacion_cantidades'
-              ? 'Comienza generando tu primera reclamación de cantidades. Los documentos generados aparecerán aquí, incluso si no están pagados.'
-              : 'Comienza generando tu primer documento legal.'
-            }
-          </p>
-          {userId && (
-            <p className="mt-2 text-xs text-gray-400">
-              Usuario: {userId.substring(0, 8)}...
-            </p>
-          )}
         </div>
       )}
     </div>

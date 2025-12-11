@@ -20,7 +20,7 @@ echo "Deploy version: $VERSION"
 echo "Note: run this script outside restricted sandboxes (Cursor required_permissions=['all']) so npm can access ~/.nvm."
 
 echo "Clearing frontend caches..."
-rm -rf .next node_modules/.cache
+rm -rf .next node_modules/.cache out
 
 if [ -d "functions" ]; then
   echo "Clearing backend caches..."
@@ -41,15 +41,17 @@ else
   API_MOVED=false
 fi
 
-echo "Building Next.js application..."
-# Workaround for Next.js static export pages-manifest.json issue
-mkdir -p .next/server
-echo '{}' > .next/server/pages-manifest.json
-npm run build || {
-  # If build fails, try again after ensuring directory exists
-  mkdir -p .next/server
-  npm run build
-}
+echo "Building Next.js application with static export..."
+# Clean out directory before build
+rm -rf out
+# Build Next.js with static export
+npm run build
+# Verify out directory was created
+if [ ! -d "out" ]; then
+  echo "Error: 'out' directory was not created. Build may have failed."
+  exit 1
+fi
+echo "Build completed. Output directory: out/"
 
 # Restore API routes after build
 if [ "$API_MOVED" = true ]; then

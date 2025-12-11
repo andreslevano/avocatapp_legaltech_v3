@@ -67,3 +67,4 @@ After placing the image, test on:
 The image will automatically adapt to each screen size.
 
 
+

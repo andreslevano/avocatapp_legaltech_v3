@@ -1,160 +1,148 @@
-# Implementation Summary: Polling Fix & Parallel Document Generation
+# Resumen de Implementación: Acción de Tutela con Payment Link
 
-## ✅ Completed Changes
+## Cambios Implementados
 
-### 1. Frontend Polling Fix (`src/app/dashboard/estudiantes/page.tsx`)
+### 1. ✅ Stripe Payment Link Integrado
+- **URL**: `https://buy.stripe.com/cNi4gzcRUfxF1J08nl8g005`
+- **Precio**: 50,000 COP por documento
+- **Cantidad ajustable**: 0-99 documentos (configurado en Stripe Dashboard)
 
-#### Changes Made:
-- **Persistent Polling**: Added automatic polling on page load that checks for pending purchases
-- **Removed Hard Timeout**: Changed from 5-minute timeout to max attempts (200 attempts = 10 minutes)
-- **Better Purchase Identification**: Can track by specific purchase ID or find most recent pending purchase
-- **Enhanced Error Handling**: Better error logging and fallback queries
-- **Incremental Progress**: Shows progress as documents complete (not just at the end)
+### 2. ✅ Selector de Cantidad Agregado
+- Input numérico con botones +/- para seleccionar cantidad (1-99)
+- Muestra precio unitario y total calculado
+- Similar a la funcionalidad de estudiantes
 
-#### Key Features:
-1. **`pollPurchaseStatus()` function**: Centralized polling logic that can check a specific purchase or find the most recent
-2. **`startPolling()` function**: Starts polling with configurable purchase ID
-3. **Persistent polling on mount**: Automatically checks for pending purchases when page loads
-4. **Max attempts instead of timeout**: More reliable than time-based timeout
+### 3. ✅ Botón "Analizar Probabilidad de Éxito" Removido
+- Eliminado del paso 1
+- Función `analizarExito` y modal relacionados aún existen pero no se muestran
 
-#### How It Works:
-- On payment success: Starts polling immediately
-- On page load: Checks for any pending purchases and resumes polling if found
-- Polls every 3 seconds for up to 200 attempts (10 minutes)
-- Updates UI as documents become available
+### 4. ✅ Metadata Guardada en Firestore
+- Antes del pago, se guarda metadata en colección `payment_metadata`
+- Incluye: `documentType`, `docId`, `tutelaId`, `formData`, `quantity`, `items`
+- Permite que el webhook asocie el pago con los datos del formulario
 
----
+### 5. ✅ Webhook Actualizado para Payment Links
+- Detecta cuando no hay metadata en `session.metadata` (Payment Links)
+- Busca metadata en Firestore usando `customerEmail`
+- Construye items desde `line_items` si es necesario
+- Procesa `accion_tutela` correctamente con metadata recuperada
 
-### 2. Parallel Document Generation (`functions/src/index.ts`)
+### 6. ✅ Consistencia con Estudiantes Verificada
+- `documentType` se guarda correctamente en purchases (default: 'estudiantes')
+- Items incluyen `documentType` en la normalización
+- Purchase incluye `documentType` a nivel de documento y purchase
 
-#### Changes Made:
-- **Parallel Item Processing**: All items in a purchase are processed simultaneously using `Promise.all()`
-- **Parallel Quantity Processing**: All quantities of an item are generated in parallel
-- **Incremental Firestore Updates**: Updates Firestore as each item completes (real-time progress)
-- **Error Resilience**: Uses `Promise.allSettled()` to handle partial failures gracefully
+## Estructura de Datos
 
-#### Key Features:
-1. **`processItemDocuments()` function**: Handles generation for a single item (with all quantities in parallel)
-2. **`updateProgress()` function**: Updates Firestore with current progress incrementally
-3. **Shared state tracking**: Uses `itemsStatus` array to track all items as they complete
-4. **Error handling**: Continues processing even if some items fail
+### Payment Metadata (Firestore: `payment_metadata`)
+```typescript
+{
+  documentType: 'accion_tutela',
+  docId: string,
+  tutelaId: string,
+  userId: string,
+  customerEmail: string,
+  formData: {
+    vulnerador: string,
+    hechos: string,
+    derecho: string,
+    peticiones: string,
+    medidasProvisionales: boolean,
+    ciudad: string
+  },
+  quantity: number,
+  items: Array<{
+    name: string,
+    area: string,
+    country: string,
+    price: number,
+    quantity: number
+  }>,
+  status: 'pending_payment' | 'processed',
+  createdAt: Timestamp,
+  processedAt?: Timestamp,
+  sessionId?: string
+}
+```
 
-#### Performance Improvement:
-- **Before**: 3 items × 4 min = 12 minutes (sequential)
-- **After**: 3 items in parallel = 4 minutes (3x faster)
-- **Improvement**: 66% reduction in generation time
+### Purchase (Firestore: `purchases`)
+```typescript
+{
+  id: string,
+  userId: string,
+  customerEmail: string,
+  documentType: 'estudiantes' | 'accion_tutela' | 'reclamacion_cantidades',
+  items: Array<{
+    documentType: string,
+    quantity: number,
+    // ... otros campos
+  }>,
+  tutelaId?: string, // Para accion_tutela
+  docId?: string, // Para accion_tutela
+  formData?: Record<string, any>, // Para accion_tutela
+  // ... otros campos
+}
+```
 
-#### How It Works:
-1. All items start generating simultaneously
-2. Each item generates all quantities in parallel
-3. As each item completes, Firestore is updated immediately
-4. Frontend polling sees progress in real-time
-5. Final status update when all items complete
+## Flujo de Pago
 
----
+1. **Usuario completa formulario** → Paso 1
+2. **Usuario selecciona cantidad** → Paso 2
+3. **Usuario hace clic en "Procesar Pago"**:
+   - Se genera `docId` y `tutelaId`
+   - Se guarda metadata en Firestore (`payment_metadata`)
+   - Se guarda backup en localStorage
+   - Se redirige a Stripe Payment Link
+4. **Usuario completa pago en Stripe**
+5. **Webhook recibe evento `checkout.session.completed`**:
+   - Busca metadata en Firestore por `customerEmail`
+   - Crea purchase con `documentType: 'accion_tutela'`
+   - Procesa documentos según cantidad
+6. **Usuario regresa a la app** → Paso 3 (descarga)
 
-## 📊 Expected Behavior
+## Verificaciones de Consistencia
 
-### User Experience:
-1. User completes payment → Redirected to dashboard
-2. "Processing" message appears immediately
-3. Polling starts automatically
-4. As documents complete, progress updates in real-time
-5. "Completed" message appears when all documents are ready
-6. If user refreshes page, polling resumes automatically
+### ✅ Estudiantes
+- `documentType` se guarda como `'estudiantes'` (default)
+- Items incluyen `documentType` en normalización
+- Purchase incluye `documentType` a nivel de documento
 
-### Backend Behavior:
-1. Webhook receives payment confirmation
-2. Purchase created in Firestore with `status: 'pending'`
-3. All items start generating in parallel
-4. Each item updates Firestore as it completes
-5. Final status update when all items done
+### ✅ Acción de Tutela
+- `documentType` se guarda como `'accion_tutela'`
+- Items incluyen `documentType: 'accion_tutela'`
+- Purchase incluye `documentType`, `tutelaId`, `docId`, `formData`
 
----
+## Notas Importantes
 
-## 🔍 Testing Checklist
+1. **Payment Links no pasan metadata directamente**: Por eso se guarda en Firestore antes del pago
+2. **Cantidad se maneja en Stripe**: El Payment Link permite 0-99, el usuario ajusta en Stripe
+3. **Metadata se busca por email**: El webhook busca metadata pendiente usando `customerEmail`
+4. **Backup en localStorage**: Si Firestore falla, localStorage tiene backup (no usado por webhook)
 
-### Frontend Polling:
-- [ ] Test payment success flow
-- [ ] Test page refresh during generation
-- [ ] Test with multiple purchases
-- [ ] Test with slow network (simulate delays)
-- [ ] Verify polling stops when documents ready
-- [ ] Verify polling resumes on page load
+## Cambios Adicionales Implementados
 
-### Backend Generation:
-- [ ] Test with 1 item
-- [ ] Test with 3 items (should be ~4 minutes, not 12)
-- [ ] Test with item quantity > 1
-- [ ] Test with one item failing (others should continue)
-- [ ] Verify incremental Firestore updates
-- [ ] Check Cloud Function logs for parallel execution
+### ✅ Estudiantes - documentType Explícito
+- `handleProceedToPayment` ahora pasa `documentType: 'estudiantes'` explícitamente
+- Mantiene consistencia con accion_tutela
 
----
+### ✅ Webhook Mejorado para Payment Links
+- Expande sesión de Stripe para obtener `line_items` si no hay metadata
+- Detecta `documentType` desde el nombre del producto
+- Maneja casos donde no hay metadata ni line_items disponibles
 
-## ⚠️ Potential Issues & Mitigations
+## Pendientes / Mejoras Futuras
 
-### Issue 1: Firestore Write Conflicts
-- **Risk**: Multiple items updating Firestore simultaneously
-- **Mitigation**: Using shared `itemsStatus` array and atomic updates
-- **Status**: Should be safe, but monitor in production
+1. ⚠️ **Limpiar metadata antigua**: Implementar limpieza de metadata pendiente > 24 horas
+2. ⚠️ **Manejar casos edge**: ¿Qué pasa si hay múltiples metadata pendientes para el mismo email?
+3. ⚠️ **Testing**: Probar flujo completo con Payment Link real
+4. ⚠️ **Verificar índices Firestore**: Asegurar que existe índice para `payment_metadata` query (customerEmail + status)
 
-### Issue 2: OpenAI Rate Limiting
-- **Risk**: Too many parallel API calls
-- **Mitigation**: 10 items = 30 API calls (well under 500/min limit)
-- **Status**: Low risk, but add retry logic if needed
+## Comandos para Desplegar
 
-### Issue 3: Cloud Function Timeout
-- **Risk**: 540s (9 min) timeout might be exceeded
-- **Mitigation**: Parallel processing should complete in ~4 minutes
-- **Status**: Should be fine, but monitor
+```bash
+# Desplegar funciones
+firebase deploy --only functions
 
-### Issue 4: Memory Usage
-- **Risk**: Multiple document generations in parallel
-- **Mitigation**: Each generation is independent, 512MiB should be sufficient
-- **Status**: Monitor, increase if needed
-
----
-
-## 🚀 Deployment Steps
-
-1. **Test locally** (if possible with Firebase emulators)
-2. **Deploy frontend**:
-   ```bash
-   npm run build
-   firebase deploy --only hosting
-   ```
-3. **Deploy functions**:
-   ```bash
-   cd functions
-   npm run build
-   firebase deploy --only functions:stripeWebhook
-   ```
-4. **Monitor logs**:
-   ```bash
-   firebase functions:log --only stripeWebhook
-   ```
-5. **Test with real purchase** and verify:
-   - Polling works correctly
-   - Documents generate in parallel
-   - Progress updates in real-time
-
----
-
-## 📝 Notes
-
-- The polling fix makes the system more resilient to page refreshes
-- Parallel generation significantly improves user experience
-- Incremental updates allow users to see progress in real-time
-- Error handling ensures partial failures don't block other items
-
----
-
-## 🎯 Success Criteria
-
-✅ Polling persists across page refreshes
-✅ Documents generate 3x faster (parallel vs sequential)
-✅ Users see progress updates in real-time
-✅ System handles errors gracefully
-✅ No timeout issues for multiple items
-
+# Verificar logs
+firebase functions:log --only stripeWebhook --limit 50
+```

@@ -171,7 +171,7 @@ export interface PurchaseHistory {
   id: string;
   userId: string;
   documentTitle: string;
-  documentType: 'reclamacion_cantidades' | 'accion_tutela';
+  documentType: 'reclamacion_cantidades' | 'accion_tutela' | 'estudiantes';
   purchaseDate: Date;
   price: number;
   currency: string;
@@ -182,6 +182,15 @@ export interface PurchaseHistory {
   files: {
     wordUrl?: string;
     pdfUrl?: string;
+    // Para estudiantes: todos los materiales descargables
+    templateDocx?: string;
+    templatePdf?: string;
+    sampleDocx?: string;
+    samplePdf?: string;
+    studyMaterialPdf?: string;
+    // Para accion_tutela: documentos principales
+    tutelaDocx?: string;
+    tutelaPdf?: string;
   };
   emailSent: boolean;
   emailSentAt?: Date;

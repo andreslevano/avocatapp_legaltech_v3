@@ -22,11 +22,15 @@ export interface GeneratedPackageFile {
  * Package files structure for a document
  */
 export interface DocumentPackageFiles {
+  // For estudiantes
   templatePdf?: GeneratedPackageFile;
   templateDocx?: GeneratedPackageFile;
   samplePdf?: GeneratedPackageFile;
   sampleDocx?: GeneratedPackageFile;
   studyMaterialPdf?: GeneratedPackageFile;
+  // For accion_tutela
+  tutelaPdf?: GeneratedPackageFile;
+  tutelaDocx?: GeneratedPackageFile;
 }
 
 /**
@@ -41,6 +45,11 @@ export interface GeneratedDocument {
 }
 
 /**
+ * Document type for purchases
+ */
+export type DocumentType = 'estudiantes' | 'accion_tutela' | 'reclamacion_cantidades';
+
+/**
  * Purchase item (document type purchased)
  */
 export interface PurchaseItem {
@@ -52,6 +61,9 @@ export interface PurchaseItem {
   quantity: number;
   status: 'pending' | 'completed' | 'failed';
   
+  // Document type differentiation
+  documentType?: DocumentType;
+  
   // Document generation fields (populated after generation)
   documentId?: string | null;
   storagePath?: string | null;
@@ -60,6 +72,11 @@ export interface PurchaseItem {
   packageFiles?: DocumentPackageFiles;
   documents?: GeneratedDocument[];
   error?: string;
+  
+  // Additional metadata for specific document types
+  tutelaId?: string; // For accion_tutela
+  docId?: string; // For accion_tutela
+  formData?: Record<string, any>; // For accion_tutela form data
 }
 
 /**
@@ -87,6 +104,9 @@ export interface Purchase {
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;
   
+  // Document type differentiation
+  documentType?: DocumentType;
+  
   // Source tracking
   source: PurchaseSource;
   
@@ -102,6 +122,11 @@ export interface Purchase {
   // Payment metadata
   paymentMethod?: string;
   
+  // Additional metadata for specific document types
+  tutelaId?: string; // For accion_tutela
+  docId?: string; // For accion_tutela
+  formData?: Record<string, any>; // For accion_tutela form data
+  
   // Legacy fields (for backward compatibility)
   metadata?: Record<string, any>;
   orderId?: string; // Legacy: client_reference_id from old purchases
@@ -116,10 +141,14 @@ export interface CreatePurchaseInput {
   items: Omit<PurchaseItem, 'id' | 'status' | 'documentId' | 'storagePath' | 'downloadUrl' | 'generatedAt' | 'packageFiles' | 'documents' | 'error'>[];
   total: number;
   currency?: string;
+  documentType?: DocumentType;
   stripeSessionId?: string;
   stripePaymentIntentId?: string;
   source?: PurchaseSource;
   paymentMethod?: string;
+  tutelaId?: string; // For accion_tutela
+  docId?: string; // For accion_tutela
+  formData?: Record<string, any>; // For accion_tutela form data
 }
 
 /**
@@ -172,17 +201,22 @@ export function normalizePurchase(purchase: any): Purchase {
       price: item.price || 0,
       quantity: item.quantity || 1,
       status: item.status || 'pending',
+      documentType: item.documentType || purchase.documentType || 'estudiantes',
       documentId: item.documentId || null,
       storagePath: item.storagePath || null,
       downloadUrl: item.downloadUrl || null,
       packageFiles: item.packageFiles || {},
       documents: item.documents || [],
+      tutelaId: item.tutelaId || purchase.tutelaId,
+      docId: item.docId || purchase.docId,
+      formData: item.formData || purchase.formData,
     })) : [],
     total: purchase.total || 0,
     currency: purchase.currency || 'EUR',
     status: purchase.status || 'pending',
     createdAt: purchase.createdAt || new Date(),
     updatedAt: purchase.updatedAt || purchase.createdAt || new Date(),
+    documentType: purchase.documentType || 'estudiantes', // Default to estudiantes for backward compatibility
     source: purchase.source || (purchase.stripeSessionId ? 'stripe_webhook' : 'manual'),
     stripeSessionId: purchase.stripeSessionId,
     stripePaymentIntentId: purchase.stripePaymentIntentId,
@@ -190,6 +224,9 @@ export function normalizePurchase(purchase: any): Purchase {
     documentsFailed: purchase.documentsFailed || 0,
     webhookProcessedAt: purchase.webhookProcessedAt,
     paymentMethod: purchase.paymentMethod,
+    tutelaId: purchase.tutelaId,
+    docId: purchase.docId,
+    formData: purchase.formData,
     // Preserve legacy fields
     orderId: purchase.orderId || purchase.client_reference_id,
     metadata: purchase.metadata || {},

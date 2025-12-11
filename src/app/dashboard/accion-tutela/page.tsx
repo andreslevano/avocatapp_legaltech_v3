@@ -1,143 +1,355 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
+import { useEffect, useState, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
+import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
 import DashboardNavigation from '@/components/DashboardNavigation';
+import TutelaProcessSimple from '@/components/TutelaProcessSimple';
+import PurchaseHistoryComponent from '@/components/PurchaseHistory';
 import UserMenu from '@/components/UserMenu';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-interface TutelaFormData {
-  vulnerador: string;
-  hechos: string;
-  derecho: string;
-  peticiones: string;
-  medidasProvisionales: boolean;
-  anexos: string[];
-  ciudad: string;
-}
-
-interface OCRFile {
-  id: string;
-  originalName: string;
-  size: number;
-  extractedText: string;
-  confidence: number;
-  pages: number;
-  language: string;
-  processingTime: number;
-}
-
-const DERECHOS_OPTIONS = [
-  { value: 'vida', label: 'Derecho a la vida' },
-  { value: 'salud', label: 'Derecho a la salud' },
-  { value: 'minimo_vital', label: 'Derecho al mínimo vital' },
-  { value: 'peticion', label: 'Derecho de petición' },
-  { value: 'debido_proceso', label: 'Derecho al debido proceso' },
-  { value: 'igualdad', label: 'Derecho a la igualdad' },
-  { value: 'educacion', label: 'Derecho a la educación' },
-  { value: 'libertad_expresion', label: 'Derecho a la libertad de expresión' },
-  { value: 'intimidad', label: 'Derecho a la intimidad' },
-  { value: 'habeas_data', label: 'Derecho al hábeas data' }
-];
-
-export default function AccionTutelaPage() {
+function AccionTutelaContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
-  const [formData, setFormData] = useState<TutelaFormData>({
-    vulnerador: '',
-    hechos: '',
-    derecho: '',
-    peticiones: '',
-    medidasProvisionales: false,
-    anexos: [],
-    ciudad: 'Bogotá'
-  });
   
-  const [anexoInput, setAnexoInput] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  
-  // Estados para OCR - MOVED TO TOP TO FIX REACT HOOKS RULE
-  const [ocrFiles, setOcrFiles] = useState<OCRFile[]>([]);
-  const [isProcessingOcr, setIsProcessingOcr] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-  const [useOcrData, setUseOcrData] = useState(false);
+  // Payment success and polling state (similar to estudiantes)
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<'processing' | 'completed' | 'failed' | null>(null);
+  const [processingPurchaseId, setProcessingPurchaseId] = useState<string | null>(null);
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Add global error handler for runtime errors
-    const handleRuntimeError = (event: ErrorEvent) => {
-      console.warn('Caught runtime error:', event.error);
-      // Don't prevent default for React errors, just log them
-      if (event.error?.message?.includes('Minified React error') || 
-          event.error?.message?.includes('runtime.lastError') ||
-          event.error?.message?.includes('message port closed')) {
-        console.error('Runtime error detected:', event.error);
-        // Don't prevent default for these specific errors
-        return;
-      }
-      event.preventDefault();
-    };
-
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.warn('Caught unhandled promise rejection:', event.reason);
-      // Don't prevent default for React-related rejections
-      if (event.reason?.message?.includes('React') || 
-          event.reason?.message?.includes('useState') ||
-          event.reason?.message?.includes('runtime.lastError')) {
-        console.error('Runtime-related promise rejection:', event.reason);
-        return;
-      }
-      event.preventDefault();
-    };
-
-    window.addEventListener('error', handleRuntimeError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
     // Defer any redirect until we have definitively checked auth state
     if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
       setIsFirebaseReady(true);
       const unsubscribe = onAuthStateChanged(auth as Auth, (u) => {
-        try {
-          setUser(u);
-          setAuthChecked(true);
-          setLoading(false);
-        } catch (error) {
-          console.error('Error in auth state change:', error);
-          setLoading(false);
-          setAuthChecked(true);
-        }
+        // Only update state, don't redirect immediately
+        // Firebase will restore the session from localStorage
+        setUser(u);
+        setAuthChecked(true);
+        setLoading(false);
       });
-      return () => {
-        try {
-          unsubscribe();
-        } catch (error) {
-          console.error('Error unsubscribing from auth:', error);
-        } finally {
-          window.removeEventListener('error', handleRuntimeError);
-          window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-        }
-      };
+      return () => unsubscribe();
     } else {
       setLoading(false);
       setAuthChecked(true);
-      window.removeEventListener('error', handleRuntimeError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     }
   }, []);
 
   useEffect(() => {
     // Only redirect if we've definitely checked auth and confirmed no user
-    if (authChecked && isFirebaseReady && !user) {
-      console.log('Redirecting to login - no user found');
-      router.push('/login');
+    // Add a small delay to allow Firebase to restore session from localStorage
+    if (authChecked && !user && isFirebaseReady) {
+      const timer = setTimeout(() => {
+        // Double-check auth state before redirecting
+        if (auth && auth.currentUser === null) {
+          // Use replace instead of push to avoid adding to history
+          router.replace('/login');
+        }
+      }, 1000); // Give Firebase more time to restore session from localStorage
+      
+      return () => clearTimeout(timer);
     }
-  }, [authChecked, isFirebaseReady, user, router]);
+  }, [authChecked, user, router, isFirebaseReady]);
+
+  // Helper function to convert Firestore Timestamp to Date
+  const toDate = (value: any): Date => {
+    if (!value) return new Date();
+    if (value.toDate && typeof value.toDate === 'function') return value.toDate();
+    if (value instanceof Date) return value;
+    if (value.seconds) return new Date(value.seconds * 1000);
+    return new Date(value);
+  };
+
+  // Polling function - checks purchase status and updates UI
+  const pollPurchaseStatus = async (purchaseId?: string | null) => {
+    if (!user || !db) {
+      return false;
+    }
+    
+    try {
+      const purchasesRef = collection(db, 'purchases');
+      let purchaseDoc;
+      
+      if (purchaseId) {
+        try {
+          const purchaseRef = doc(db, 'purchases', purchaseId);
+          purchaseDoc = await getDoc(purchaseRef);
+          if (!purchaseDoc.exists()) {
+            console.warn('Purchase not found:', purchaseId);
+            return false;
+          }
+        } catch (error) {
+          console.error('Error fetching purchase by ID:', error);
+          return false;
+        }
+      } else {
+        // Get the most recent purchase for this user with documentType accion_tutela
+        try {
+          const q = query(
+            purchasesRef,
+            where('userId', '==', user.uid),
+            where('documentType', '==', 'accion_tutela'),
+            orderBy('createdAt', 'desc')
+          );
+          const snapshot = await getDocs(q);
+          
+          if (snapshot.empty) {
+            return false;
+          }
+          
+          purchaseDoc = snapshot.docs[0];
+        } catch (error: any) {
+          // Fallback: try without orderBy
+          console.warn('orderBy failed, trying without it:', error);
+          try {
+            const q = query(
+              purchasesRef,
+              where('userId', '==', user.uid),
+              where('documentType', '==', 'accion_tutela')
+            );
+            const snapshot = await getDocs(q);
+            
+            if (snapshot.empty) {
+              return false;
+            }
+            
+            // Sort manually by createdAt
+            const sortedDocs = snapshot.docs.sort((a, b) => {
+              const aData = a.data();
+              const bData = b.data();
+              const aTime = aData.createdAt?.toMillis?.() || aData.createdAt?.seconds || aData.createdAt || 0;
+              const bTime = bData.createdAt?.toMillis?.() || bData.createdAt?.seconds || bData.createdAt || 0;
+              return bTime - aTime;
+            });
+            
+            purchaseDoc = sortedDocs[0];
+          } catch (fallbackError) {
+            console.error('Error fetching purchases:', fallbackError);
+            return false;
+          }
+        }
+      }
+      
+      if (!purchaseDoc) {
+        return false;
+      }
+      
+      const purchaseData = purchaseDoc.data();
+      const currentPurchaseId = purchaseDoc.id;
+      
+      setProcessingPurchaseId(currentPurchaseId);
+      
+      // Check if documents are generated
+      const documentsGenerated = purchaseData.documentsGenerated ?? 0;
+      const documentsFailed = purchaseData.documentsFailed ?? 0;
+      const totalItems = purchaseData.items?.length || 0;
+      
+      // Also check item statuses
+      const items = purchaseData.items || [];
+      const completedItems = items.filter((item: any) => item.status === 'completed').length;
+      const failedItems = items.filter((item: any) => item.status === 'failed').length;
+      
+      // For accion_tutela, documents are ready when:
+      // 1. All items have status 'completed' or 'failed', OR
+      // 2. Purchase status is 'completed'
+      const allItemsProcessed = (completedItems + failedItems) === totalItems && totalItems > 0;
+      const documentsReady = allItemsProcessed || purchaseData.status === 'completed';
+      
+      if (documentsGenerated > 0 && documentsGenerated < totalItems) {
+        setProcessingStatus('processing');
+      }
+      
+      if (documentsReady) {
+        const finalStatus = (completedItems > 0 || purchaseData.status === 'completed') ? 'completed' : 'failed';
+        
+        setProcessingStatus(finalStatus);
+        
+        // Stop polling
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        
+        // Auto-hide success banner after 10 seconds
+        if (finalStatus === 'completed') {
+          setTimeout(() => {
+            setShowPaymentSuccess(false);
+            setProcessingStatus(null);
+            setProcessingPurchaseId(null);
+          }, 10000);
+        }
+        
+        return true;
+      }
+      
+      setPollingAttempts(prev => prev + 1);
+      return false;
+    } catch (error) {
+      console.error('Error polling purchase status:', error);
+      setPollingAttempts(prev => prev + 1);
+      return false;
+    }
+  };
+
+  // Start polling with a specific purchase ID or find the most recent pending purchase
+  const startPolling = (purchaseId?: string | null) => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    
+    setPollingAttempts(0);
+    setProcessingStatus('processing');
+    setShowPaymentSuccess(true);
+    
+    let attempts = 0;
+    const MAX_ATTEMPTS = 200; // 200 attempts × 3 seconds = 10 minutes
+    
+    // Poll immediately after a short delay
+    const initialTimeout = setTimeout(() => {
+      pollPurchaseStatus(purchaseId);
+      
+      pollingIntervalRef.current = setInterval(async () => {
+        attempts++;
+        setPollingAttempts(attempts);
+        
+        const isComplete = await pollPurchaseStatus(purchaseId);
+        
+        if (isComplete || attempts >= MAX_ATTEMPTS) {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          
+          if (attempts >= MAX_ATTEMPTS && !isComplete) {
+            const finalCheck = await pollPurchaseStatus(purchaseId);
+            if (!finalCheck) {
+              setProcessingStatus('failed');
+              console.warn('Polling timeout reached after', MAX_ATTEMPTS, 'attempts');
+            }
+          }
+        }
+      }, 3000);
+    }, 2000);
+    
+    return () => {
+      clearTimeout(initialTimeout);
+    };
+  };
+
+  // Check for payment success and start polling
+  useEffect(() => {
+    const paymentStatus = searchParams?.get('payment');
+    
+    if (paymentStatus === 'success') {
+      // Remove query parameter from URL
+      router.replace('/dashboard/accion-tutela', { scroll: false });
+      
+      // Start polling if user is loaded
+      if (user && db) {
+        startPolling();
+      }
+    }
+    
+    if (paymentStatus === 'cancelled') {
+      alert('Pago cancelado. Puedes intentar de nuevo cuando estés listo.');
+      router.replace('/dashboard/accion-tutela', { scroll: false });
+    }
+  }, [searchParams, user, db, router]);
+
+  // Persistent polling: Check for pending purchases on page load
+  useEffect(() => {
+    if (!user || !db || !authChecked || !isFirebaseReady) {
+      return;
+    }
+    
+    if (pollingIntervalRef.current) {
+      return;
+    }
+    
+    const checkPendingPurchases = async () => {
+      if (!db) {
+        return;
+      }
+      
+      try {
+        const purchasesRef = collection(db, 'purchases');
+        
+        const allPurchasesQuery = query(
+          purchasesRef,
+          where('userId', '==', user.uid),
+          where('documentType', '==', 'accion_tutela')
+        );
+        
+        const allSnapshot = await getDocs(allPurchasesQuery);
+        const pendingPurchases = allSnapshot.docs.filter(doc => {
+          const data = doc.data();
+          const status = data.status;
+          const documentsGenerated = data.documentsGenerated ?? 0;
+          const totalItems = data.items?.length || 0;
+          const items = data.items || [];
+          const completedItems = items.filter((item: any) => item.status === 'completed').length;
+          const failedItems = items.filter((item: any) => item.status === 'failed').length;
+          
+          // Consider pending if status is pending/processing or documents not complete
+          return (status === 'pending' || status === 'processing' || 
+                  ((completedItems + failedItems) < totalItems && totalItems > 0));
+        });
+        
+        if (pendingPurchases.length > 0) {
+          const sorted = pendingPurchases.sort((a, b) => {
+            const aData = a.data();
+            const bData = b.data();
+            const aTime = aData.createdAt?.toMillis?.() || aData.createdAt?.seconds || aData.createdAt || 0;
+            const bTime = bData.createdAt?.toMillis?.() || bData.createdAt?.seconds || bData.createdAt || 0;
+            return bTime - aTime;
+          });
+          
+          const pendingPurchase = sorted[0];
+          const purchaseData = pendingPurchase.data();
+          const purchaseId = pendingPurchase.id;
+          
+          const documentsGenerated = purchaseData.documentsGenerated ?? 0;
+          const totalItems = purchaseData.items?.length || 0;
+          const items = purchaseData.items || [];
+          const completedItems = items.filter((item: any) => item.status === 'completed').length;
+          const failedItems = items.filter((item: any) => item.status === 'failed').length;
+          
+          if ((completedItems + failedItems) < totalItems) {
+            console.log('Found pending accion_tutela purchase, starting polling:', purchaseId);
+            startPolling(purchaseId);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking for pending purchases:', error);
+      }
+    };
+    
+    const checkTimeout = setTimeout(checkPendingPurchases, 1000);
+    
+    return () => {
+      clearTimeout(checkTimeout);
+    };
+  }, [user, db, authChecked, isFirebaseReady]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSignOut = async () => {
     if (!isFirebaseReady || !auth || typeof auth.signOut !== 'function') {
@@ -152,7 +364,8 @@ export default function AccionTutelaPage() {
     }
   };
 
-  if (loading) {
+  // Show loading state while checking auth
+  if (loading || !authChecked || !isFirebaseReady) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -163,554 +376,200 @@ export default function AccionTutelaPage() {
     );
   }
 
-
-  if (!user || !isFirebaseReady) {
-    return null;
+  // Only redirect if we've confirmed no user after auth check
+  if (!user) {
+    // Don't render anything, the redirect will happen in useEffect
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Verificando sesión...</p>
+        </div>
+      </div>
+    );
   }
-
-  const handleInputChange = (field: keyof TutelaFormData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const addAnexo = () => {
-    if (anexoInput.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        anexos: [...prev.anexos, anexoInput.trim()]
-      }));
-      setAnexoInput('');
-    }
-  };
-
-  const removeAnexo = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      anexos: prev.anexos.filter((_, i) => i !== index)
-    }));
-  };
-
-  // Funciones para OCR
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      setSelectedFiles(files);
-    }
-  };
-
-  const processOcrFiles = async () => {
-    if (!selectedFiles || selectedFiles.length === 0) return;
-
-    setIsProcessingOcr(true);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      Array.from(selectedFiles).forEach(file => {
-        formData.append('files', file);
-      });
-
-      const response = await fetch('/api/accion-tutela/ocr', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Error procesando archivos');
-      }
-
-      const result = await response.json();
-      if (result.success) {
-        setOcrFiles(result.data.files);
-        setUseOcrData(true);
-        setSuccess(`Se procesaron ${result.data.files.length} archivo(s) correctamente`);
-      } else {
-        throw new Error('Error en el procesamiento');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-    } finally {
-      setIsProcessingOcr(false);
-    }
-  };
-
-  const removeOcrFile = (id: string) => {
-    setOcrFiles(prev => prev.filter(file => file.id !== id));
-    if (ocrFiles.length === 1) {
-      setUseOcrData(false);
-    }
-  };
-
-  const applyOcrData = async () => {
-    if (ocrFiles.length === 0) return;
-
-    // Extraer datos del primer archivo procesado
-    const firstFile = ocrFiles[0];
-    const extractedText = firstFile.extractedText;
-
-    // Simulación de extracción de datos (en producción usarías NLP)
-    const mockExtractedData = {
-      vulnerador: 'Entidad extraída del documento',
-      hechos: 'Hechos extraídos del documento PDF mediante OCR',
-      derecho: 'salud', // Derecho más común
-      peticiones: 'Peticiones extraídas del documento'
-    };
-
-    setFormData(prev => ({
-      ...prev,
-      vulnerador: mockExtractedData.vulnerador,
-      hechos: mockExtractedData.hechos,
-      derecho: mockExtractedData.derecho,
-      peticiones: mockExtractedData.peticiones
-    }));
-
-    setSuccess('Datos aplicados desde el documento procesado');
-
-    // Analizar éxito con ChatGPT
-    try {
-      console.log('🔍 Analizando éxito de Acción de Tutela con datos OCR...');
-      
-      const response = await fetch('/api/analisis-exito', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          datosOCR: {
-            documentos: ocrFiles.map(file => ({
-              nombre: file.originalName,
-              tipo: 'Documento legal',
-              contenido: file.extractedText,
-              fecha: new Date().toISOString(),
-              relevancia: 'Alta',
-              confianza: file.confidence
-            })),
-            resumen: [`Datos extraídos de ${ocrFiles.length} documento(s)`],
-            completitud: Math.min(100, ocrFiles.length * 25)
-          },
-          tipoDocumento: 'Acción de Tutela',
-          userId: 'demo_user'
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Análisis de éxito completado:', result.data.analisis.analisis?.porcentajeExito + '%');
-        
-        // Mostrar resultado en un alert por ahora
-        alert(`Análisis de Éxito: ${result.data.analisis.analisis?.porcentajeExito}% de probabilidad de éxito\nNivel: ${result.data.analisis.analisis?.nivelConfianza}`);
-      }
-    } catch (error) {
-      console.error('❌ Error en análisis de éxito:', error);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsGenerating(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const response = await fetch('/api/accion-tutela', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          userId: 'demo_user',
-          userEmail: 'demo@example.com', // TODO: Obtener del usuario autenticado
-          ocrFiles: useOcrData ? ocrFiles : []
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Error generando la tutela');
-      }
-
-      const result = await response.json();
-      
-      if (result.ok && result.downloadUrl) {
-        // Descargar el PDF
-        const pdfResponse = await fetch(result.downloadUrl);
-        const blob = await pdfResponse.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `accion-tutela-${formData.derecho}-${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        setSuccess('¡Acción de Tutela generada exitosamente! El PDF se ha descargado.');
-      } else {
-        throw new Error('No se pudo generar la tutela');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-lg">T</span>
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white font-bold text-lg">T</span>
+                </div>
+                <span className="text-xl font-bold text-gray-900">Acción de Tutela</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">Acción de Tutela</span>
-            </div>
-            
-            <UserMenu user={user} currentPlan="Tutela" onSignOut={handleSignOut} />
-          </div>
-        </div>
-      </header>
-
-      <DashboardNavigation currentPlan="basic" user={user} />
-      <div className="py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Acción de Tutela
-            </h1>
-            <p className="text-gray-600">
-              Genera una acción de tutela profesional conforme a la Constitución Política (art. 86) y el Decreto 2591 de 1991.
-            </p>
-          </div>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-800">{error}</p>
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-green-800">{success}</p>
-              <button
-                onClick={() => router.push('/dashboard/accion-tutela/history')}
-                className="mt-2 text-green-600 hover:text-green-800 underline"
-              >
-                Ver en historial
-              </button>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Sección de Carga de PDF con OCR */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4">
-                📄 Cargar Documentos PDF (Opcional)
-              </h3>
-              <p className="text-blue-700 mb-4">
-                Sube documentos PDF para extraer automáticamente los datos y completar el formulario.
-              </p>
               
-              <div className="space-y-4">
-                <div>
-                  <input
-                    type="file"
-                    id="pdf-files"
-                    accept=".pdf"
-                    multiple
-                    onChange={handleFileSelect}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Máximo 10MB por archivo. Se permiten múltiples archivos PDF.
-                  </p>
-                </div>
+              <UserMenu user={user} currentPlan="Tutela" onSignOut={handleSignOut} />
+            </div>
+          </div>
+        </header>
 
-                {selectedFiles && selectedFiles.length > 0 && (
-                  <div className="flex space-x-2">
-                    <button
-                      type="button"
-                      onClick={processOcrFiles}
-                      disabled={isProcessingOcr}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isProcessingOcr ? 'Procesando...' : `Procesar ${selectedFiles.length} archivo(s)`}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFiles(null)}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                    >
-                      Cancelar
-                    </button>
+        <DashboardNavigation currentPlan="basic" user={user} />
+
+        {/* Payment Success & Processing Status Banner */}
+        {showPaymentSuccess && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            {processingStatus === 'processing' && (
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md shadow-sm">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                   </div>
-                )}
-
-                {ocrFiles.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="font-medium text-gray-900 mb-2">Archivos Procesados:</h4>
-                    <div className="space-y-2">
-                      {ocrFiles.map((file) => (
-                        <div key={file.id} className="flex items-center justify-between bg-white p-3 rounded border">
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{file.originalName}</p>
-                            <p className="text-xs text-gray-500">
-                              {file.pages} página(s) • Confianza: {(file.confidence * 100).toFixed(1)}%
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeOcrFile(file.id)}
-                            className="text-red-600 hover:text-red-800 ml-2"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-3 flex space-x-2">
-                      <button
-                        type="button"
-                        onClick={applyOcrData}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                      >
-                        Aplicar Datos Extraídos
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setUseOcrData(!useOcrData)}
-                        className={`px-4 py-2 rounded-md ${
-                          useOcrData 
-                            ? 'bg-green-100 text-green-800 border border-green-300' 
-                            : 'bg-gray-100 text-gray-800 border border-gray-300'
-                        }`}
-                      >
-                        {useOcrData ? '✓ Usando datos OCR' : 'Usar datos OCR'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (ocrFiles.length === 0) {
-                            alert('Primero procesa algunos documentos con OCR');
-                            return;
-                          }
-                          
-                          try {
-                            console.log('🔍 Analizando éxito de Acción de Tutela...');
-                            
-                            const response = await fetch('/api/analisis-exito', {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json',
-                              },
-                              body: JSON.stringify({
-                                datosOCR: {
-                                  documentos: ocrFiles.map(file => ({
-                                    nombre: file.originalName,
-                                    tipo: 'Documento legal',
-                                    contenido: file.extractedText,
-                                    fecha: new Date().toISOString(),
-                                    relevancia: 'Alta',
-                                    confianza: file.confidence
-                                  })),
-                                  resumen: [`Datos extraídos de ${ocrFiles.length} documento(s)`],
-                                  completitud: Math.min(100, ocrFiles.length * 25)
-                                },
-                                tipoDocumento: 'Acción de Tutela',
-                                userId: 'demo_user'
-                              }),
-                            });
-
-                            if (response.ok) {
-                              const result = await response.json();
-                              console.log('✅ Análisis de éxito completado:', result.data.analisis.analisis?.porcentajeExito + '%');
-                              
-                              alert(`Análisis de Éxito: ${result.data.analisis.analisis?.porcentajeExito}% de probabilidad de éxito\nNivel: ${result.data.analisis.analisis?.nivelConfianza}`);
-                            }
-                          } catch (error) {
-                            console.error('❌ Error en análisis de éxito:', error);
-                            alert('Error analizando la probabilidad de éxito');
-                          }
-                        }}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center space-x-2"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        <span>Analizar Éxito</span>
-                      </button>
+                  <div className="ml-3 flex-1">
+                    <h3 className="text-sm font-medium text-blue-800">
+                      ¡Pago exitoso! Procesando tu compra...
+                    </h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p>Estamos procesando tu compra. Esto puede tardar unos minutos.</p>
+                      <p className="mt-1 text-xs text-blue-600">Por favor, no cierres esta página. Te notificaremos cuando esté listo.</p>
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Vulnerador */}
-            <div>
-              <label htmlFor="vulnerador" className="block text-sm font-medium text-gray-700 mb-2">
-                Nombre de persona o entidad que vulnera el derecho *
-              </label>
-              <input
-                type="text"
-                id="vulnerador"
-                value={formData.vulnerador}
-                onChange={(e) => handleInputChange('vulnerador', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: Alcaldía de Bogotá, Empresa XYZ, etc."
-                required
-              />
-            </div>
-
-            {/* Hechos */}
-            <div>
-              <label htmlFor="hechos" className="block text-sm font-medium text-gray-700 mb-2">
-                Relato detallado de los hechos *
-              </label>
-              <textarea
-                id="hechos"
-                value={formData.hechos}
-                onChange={(e) => handleInputChange('hechos', e.target.value)}
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Describe detalladamente qué sucedió, cuándo, dónde y cómo se vulneró el derecho..."
-                required
-              />
-            </div>
-
-            {/* Derecho */}
-            <div>
-              <label htmlFor="derecho" className="block text-sm font-medium text-gray-700 mb-2">
-                ¿Qué derecho piensa que ha sido vulnerado? *
-              </label>
-              <select
-                id="derecho"
-                value={formData.derecho}
-                onChange={(e) => handleInputChange('derecho', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Seleccione un derecho</option>
-                {DERECHOS_OPTIONS.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Peticiones */}
-            <div>
-              <label htmlFor="peticiones" className="block text-sm font-medium text-gray-700 mb-2">
-                ¿Qué se solicita? (órdenes concretas) *
-              </label>
-              <textarea
-                id="peticiones"
-                value={formData.peticiones}
-                onChange={(e) => handleInputChange('peticiones', e.target.value)}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Especifique claramente qué órdenes solicita al juez..."
-                required
-              />
-            </div>
-
-            {/* Medidas Provisionales */}
-            <div>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.medidasProvisionales}
-                  onChange={(e) => handleInputChange('medidasProvisionales', e.target.checked)}
-                  className="mr-2"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  Solicitar medidas provisionales
-                </span>
-              </label>
-            </div>
-
-            {/* Anexos */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Anexos (documentos de apoyo)
-              </label>
-              <div className="flex space-x-2 mb-2">
-                <input
-                  type="text"
-                  value={anexoInput}
-                  onChange={(e) => setAnexoInput(e.target.value)}
-                  placeholder="Ej: Certificado médico, contrato, etc."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={addAnexo}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Agregar
-                </button>
-              </div>
-              {formData.anexos.length > 0 && (
-                <div className="space-y-1">
-                  {formData.anexos.map((anexo, index) => (
-                    <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <span className="text-sm">{anexo}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeAnexo(index)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+                  <div className="ml-4 flex-shrink-0">
+                    <button
+                      onClick={() => setShowPaymentSuccess(false)}
+                      className="text-blue-400 hover:text-blue-600"
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+            
+            {processingStatus === 'completed' && (
+              <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-md shadow-sm">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <h3 className="text-sm font-medium text-green-800">
+                      ¡Compra procesada exitosamente!
+                    </h3>
+                    <div className="mt-2 text-sm text-green-700">
+                      <p>Tu compra ha sido procesada. Puedes encontrar los detalles en tu historial de compras a continuación.</p>
+                    </div>
+                  </div>
+                  <div className="ml-4 flex-shrink-0">
+                    <button
+                      onClick={() => {
+                        setShowPaymentSuccess(false);
+                        setProcessingStatus(null);
+                      }}
+                      className="text-green-400 hover:text-green-600"
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {processingStatus === 'failed' && (
+              <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md shadow-sm">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <h3 className="text-sm font-medium text-red-800">
+                      Error al procesar compra
+                    </h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      <p>Hubo un problema al procesar tu compra. Por favor, contacta con soporte o intenta realizar otra compra.</p>
+                    </div>
+                  </div>
+                  <div className="ml-4 flex-shrink-0">
+                    <button
+                      onClick={() => {
+                        setShowPaymentSuccess(false);
+                        setProcessingStatus(null);
+                      }}
+                      className="text-red-400 hover:text-red-600"
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
-            {/* Ciudad */}
-            <div>
-              <label htmlFor="ciudad" className="block text-sm font-medium text-gray-700 mb-2">
-                Ciudad
-              </label>
-              <input
-                type="text"
-                id="ciudad"
-                value={formData.ciudad}
-                onChange={(e) => handleInputChange('ciudad', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Bogotá"
-              />
+        {/* Dashboard Identification Banner */}
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
             </div>
-
-            {/* Botón de envío */}
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard')}
-                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isGenerating}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGenerating ? 'Generando Tutela (IA)...' : 'Generar Tutela (IA)'}
-              </button>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">
+                <strong>Dashboard de Acción de Tutela</strong> - Herramientas especializadas para acciones de tutela en Colombia
+              </p>
             </div>
-          </form>
           </div>
         </div>
-      </div>
+
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">
+              Panel de Acción de Tutela
+            </h1>
+
+            {/* Welcome Card */}
+            <div className="bg-white overflow-hidden shadow rounded-lg mb-8">
+              <div className="px-4 py-5 sm:p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
+                  ¡Bienvenido a Avocat para Acciones de Tutela!
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Genera una acción de tutela profesional conforme a la Constitución Política (art. 86) y el Decreto 2591 de 1991.
+                </p>
+              </div>
+            </div>
+
+            {/* Document Processing Workflow */}
+            <TutelaProcessSimple userId={user?.uid} userEmail={user?.email || undefined} />
+
+            {/* Purchase History Section */}
+            <div className="mt-12">
+              <PurchaseHistoryComponent userId={user?.uid || 'demo_user'} documentType="accion_tutela" />
+            </div>
+          </div>
+        </main>
       </div>
     </ErrorBoundary>
+  );
+}
+
+export default function AccionTutelaPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando Acción de Tutela...</p>
+        </div>
+      </div>
+    }>
+      <AccionTutelaContent />
+    </Suspense>
   );
 }

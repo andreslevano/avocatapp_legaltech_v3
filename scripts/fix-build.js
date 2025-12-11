@@ -25,3 +25,4 @@ if (!fs.existsSync(manifestPath)) {
 console.log('✓ Build fix applied: Created .next/server/pages-manifest.json');
 
 
+

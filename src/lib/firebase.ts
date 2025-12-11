@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator, Auth } from 'firebase/auth';
+import { getAuth, connectAuthEmulator, Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator, Firestore } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator, FirebaseStorage } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator, Functions } from 'firebase/functions';
@@ -38,6 +38,17 @@ if (typeof window !== 'undefined') {
     }
     
     auth = getAuth(app);
+    
+    // Set persistence to LOCAL to maintain session across refreshes
+    // Note: browserLocalPersistence is the default, but we set it explicitly
+    // This ensures the session persists across page refreshes
+    setPersistence(auth as Auth, browserLocalPersistence).catch((error) => {
+      // Persistence might already be set, ignore error
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Auth persistence already set or error setting it:', error);
+      }
+    });
+    
     db = getFirestore(app);
     storage = getStorage(app);
     functions = getFunctions(app);

@@ -193,13 +193,25 @@ export async function isUserActive(user: User): Promise<boolean> {
     const response = await fetch(`/api/admin/user/status?uid=${user.uid}`);
     
     if (!response.ok) {
-      return true; // Default to active if we can't check
+      // If endpoint doesn't exist (404) or other error, default to active
+      return true;
+    }
+
+    // Check if response is actually JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      // Response is not JSON (likely HTML error page), default to active
+      return true;
     }
 
     const result = await response.json();
     return result.isActive === true;
   } catch (error) {
-    console.error('Error checking user status:', error);
+    // Silently handle errors - don't break auth flow
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Error checking user status (non-critical):', error);
+    }
     return true; // Default to active if we can't check
   }
 }

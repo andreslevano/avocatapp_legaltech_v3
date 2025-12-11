@@ -252,6 +252,7 @@ function EstudiantesDashboardContent() {
             area: item.area,
             country: item.country ?? selectedCountry
           })),
+          documentType: 'estudiantes', // ⭐ NUEVO: Especificar documentType explícitamente
           customerEmail: user.email,
           userId: user.uid,
           successUrl: `${window.location.origin}/dashboard/estudiantes?payment=success`,
@@ -699,12 +700,16 @@ function EstudiantesDashboardContent() {
             ),
             quantity: coerceNumber(item.quantity ?? item.count ?? 1, 1),
             status: (item.status || 'completed') as 'pending' | 'completed' | 'failed',
+            documentType: item.documentType || data.documentType || 'estudiantes',
             documentId: item.documentId || item.docId || item.id || null,
             downloadUrl: item.downloadUrl || item.pdfUrl || item.fileUrl || null,
             storagePath: item.storagePath || item.storagePathPdf || item.storage?.path || null,
             packageFiles: item.packageFiles,
             documents: item.documents || [],
             error: item.error,
+            tutelaId: item.tutelaId || data.tutelaId,
+            docId: item.docId || data.docId,
+            formData: item.formData || data.formData,
             // Additional UI fields (not in PurchaseItem but used by UI)
             previewUrl: item.previewUrl || item.viewerUrl,
             fileType: item.fileType || item.format || item.type,
@@ -736,12 +741,16 @@ function EstudiantesDashboardContent() {
             currency: data.currency || 'EUR',
             paymentMethod: data.paymentMethod,
             items: normalizedItems as any, // Type assertion: normalizedItems extends PurchaseItem with additional UI fields
+            documentType: data.documentType || 'estudiantes', // Default to estudiantes for backward compatibility
             source: (data.source || (data.stripeSessionId ? 'stripe_webhook' : 'manual')) as Purchase['source'],
             stripeSessionId: data.stripeSessionId,
             stripePaymentIntentId: data.stripePaymentIntentId,
             documentsGenerated: data.documentsGenerated ?? 0,
             documentsFailed: data.documentsFailed ?? 0,
             webhookProcessedAt: data.webhookProcessedAt ? parseFirestoreDate(data.webhookProcessedAt) : undefined,
+            tutelaId: data.tutelaId,
+            docId: data.docId,
+            formData: data.formData,
             orderId: data.orderId || data.client_reference_id,
             metadata: data.metadata || {}
           } as Purchase;

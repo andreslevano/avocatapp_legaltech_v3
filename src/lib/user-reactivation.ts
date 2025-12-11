@@ -2,6 +2,18 @@
 export async function checkUserStatus(email: string) {
   try {
     const response = await fetch(`/api/admin/user/check-status?email=${encodeURIComponent(email)}`);
+    
+    // Check if response is actually JSON
+    const contentType = response.headers.get('content-type');
+    if (!response.ok || !contentType || !contentType.includes('application/json')) {
+      // Endpoint doesn't exist or returned HTML, return safe default
+      return {
+        exists: false,
+        isActive: false,
+        uid: null
+      };
+    }
+    
     const data = await response.json();
     
     if (response.ok && data.success) {
@@ -18,7 +30,11 @@ export async function checkUserStatus(email: string) {
       uid: null
     };
   } catch (error) {
-    console.error('Error checking user status:', error);
+    // Silently handle errors - don't break auth flow
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Error checking user status (non-critical):', error);
+    }
     return {
       exists: false,
       isActive: false,

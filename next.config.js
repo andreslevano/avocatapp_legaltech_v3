@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'export' - COMENTADO: Firebase Hosting usa Cloud Functions para API routes
-  // Las API routes se manejan con Cloud Functions según firebase.json
+  output: 'export', // Static export for Firebase Hosting
   trailingSlash: false, // Cambiado a false para evitar redirects 308
   typescript: {
     ignoreBuildErrors: false, // Habilitado para mejor DX
