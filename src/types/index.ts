@@ -136,6 +136,10 @@ export interface UploadedDocument {
   storagePath?: string; // Ruta en Firebase Storage
   downloadURL?: string; // URL de descarga desde Storage
   fileId?: string; // ID del archivo en Firestore
+  ocrText?: string; // Texto extraído por OCR
+  ocrConfidence?: number; // Precisión del OCR (0-100)
+  cantidadDetectada?: number; // Cantidad monetaria detectada
+  fechaDetectada?: string; // Fecha detectada en el documento
 }
 
 export interface DocumentCategory {
@@ -153,6 +157,9 @@ export interface DocumentSummary {
   analysisComplete: boolean;
   totalAmount?: number; // Cantidad total reclamada (opcional)
   precision?: number; // Precisión del análisis OCR (opcional, 0-100)
+  categorias?: { [categoryId: string]: UploadedDocument[] }; // Alias para categorizedDocuments
+  documentosPorCategoria?: { [categoryId: string]: number; total: number }; // Conteo de documentos por categoría
+  documentosFaltantes?: string[]; // Alias para missingRequired
 }
 
 export interface GeneratedDocument {

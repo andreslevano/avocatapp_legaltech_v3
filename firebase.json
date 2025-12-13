@@ -8,6 +8,14 @@
     ],
     "rewrites": [
       {
+        "source": "/api/stripe/create-checkout-session",
+        "function": "createCheckoutSession"
+      },
+      {
+        "source": "/api/analisis-exito",
+        "function": "reclamacionCantidades"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
@@ -55,5 +63,12 @@
   "functions": {
     "source": "functions",
     "runtime": "nodejs20"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }

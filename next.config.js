@@ -23,6 +23,15 @@ const nextConfig = {
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   // Configuración webpack para PDFKit y Tesseract.js
   webpack: (config, { isServer }) => {
+    // Polyfill de Buffer para el cliente (necesario para pdf-parse)
+    if (!isServer) {
+      config.resolve = config.resolve || {};
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        buffer: require.resolve('buffer'),
+      };
+    }
+    
     if (isServer) {
       // Configurar PDFKit para que funcione en el servidor
       config.resolve = config.resolve || {};

@@ -5,6 +5,7 @@ import { UploadedDocument, DocumentCategory, DocumentSummary, GeneratedDocument 
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 import { saveUploadedFile, savePdfForUser } from '@/lib/storage';
+import AnalisisExitoModal from './AnalisisExitoModal';
 
 interface ReclamacionProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -73,6 +74,8 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
   const [paymentReclId, setPaymentReclId] = useState<string | null>(null);
   const [currentReclId, setCurrentReclId] = useState<string | null>(null);
   const [uploadedFilesInfo, setUploadedFilesInfo] = useState<Array<{ fileName: string; storagePath: string; downloadUrl?: string }>>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [ocrProgress, setOcrProgress] = useState<{ [key: string]: 'processing' | 'completed' | 'error' }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Obtener usuario autenticado
@@ -131,26 +134,127 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
       return;
     }
 
-    setIsUploading(true);
+      setIsUploading(true);
     try {
-      const newDocuments: UploadedDocument[] = [];
+      // Validar que el usuario esté autenticado
+      if (!user || !user.uid) {
+        throw new Error('Debes estar autenticado para subir archivos. Por favor, inicia sesión.');
+      }
 
-      // Procesar cada archivo
-      for (const file of Array.from(files).filter(f => f.type === 'application/pdf')) {
-        const category = categorizeDocument(file.name);
-        const docId = Math.random().toString(36).substr(2, 9);
-        
-        // Guardar archivo en Firebase Storage
+      const userUniqueId = user.uid; // Usar siempre el ID único del usuario autenticado
+      const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf');
+
+      if (pdfFiles.length === 0) {
+        alert('Por favor, sube al menos un archivo PDF');
+        setIsUploading(false);
+        return;
+      }
+
+      console.log(`📤 Subiendo ${pdfFiles.length} archivos y procesando OCR...`);
+
+      // Inicializar estado de progreso OCR para cada archivo
+      const progressState: { [key: string]: 'processing' } = {};
+      pdfFiles.forEach(file => {
+        progressState[file.name] = 'processing';
+      });
+      setOcrProgress(prev => ({ ...prev, ...progressState }));
+
+      // Procesar cada archivo: guardar en Storage y procesar OCR en cliente
+      const newDocuments: UploadedDocument[] = [];
+      
+      for (let index = 0; index < pdfFiles.length; index++) {
+        const file = pdfFiles[index];
         try {
+          console.log(`📄 Procesando: ${file.name} (${index + 1}/${pdfFiles.length})`);
+
+          // Guardar archivo en Storage primero
           const storageResult = await saveUploadedFile(
-            user.uid,
+            userUniqueId,
             file,
-            category.id,
-            'reclamacion_cantidades' // Tipo de documento para determinar carpeta
+            'otros', // Categoría inicial, se actualizará con OCR
+            'reclamacion_cantidades'
           );
 
+          console.log(`✅ Archivo guardado en Storage: ${storageResult.storagePath}`);
+
+          // Procesar OCR en cliente usando pdfjs-dist para PDFs
+          console.log(`🔍 Iniciando OCR para: ${file.name}`);
+          const { analyzeDocumentOCR } = await import('@/lib/ocr-analyzer');
+          
+          // Convertir File a Uint8Array (no usar Buffer en cliente)
+          const arrayBuffer = await file.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          
+          const ocrResult = await analyzeDocumentOCR(uint8Array, file.name);
+          
+          console.log(`✅ OCR completado para ${file.name}:`, {
+            precision: ocrResult.precision,
+            caracteres: ocrResult.contenido.length,
+            cantidadDetectada: ocrResult.cantidadDetectada,
+            fechaDetectada: ocrResult.fechaDetectada,
+            tipoDocumento: ocrResult.tipoDocumento,
+            contenidoPreview: ocrResult.contenido.substring(0, 100) + '...'
+          });
+          
+          // Verificar si el OCR realmente extrajo texto
+          if (!ocrResult.contenido || ocrResult.contenido.length < 10) {
+            console.warn(`⚠️ El OCR no extrajo suficiente texto de ${file.name}. Puede ser un PDF escaneado.`);
+          }
+
+          // Actualizar estado de progreso OCR a completado
+          setOcrProgress(prev => ({ ...prev, [file.name]: 'completed' }));
+
+          // Determinar categoría basada en OCR o nombre de archivo
+          let category = categorizeDocument(file.name);
+          
+          // Si el OCR detectó un tipo de documento, usar esa categoría
+          if (ocrResult.tipoDocumento && ocrResult.tipoDocumento !== 'otro') {
+            const ocrCategory = DOCUMENT_CATEGORIES.find(c => 
+              c.id === ocrResult.tipoDocumento || 
+              c.name.toLowerCase().includes(ocrResult.tipoDocumento || '')
+            );
+            if (ocrCategory) {
+              category = ocrCategory;
+            }
+          }
+
+          // Crear documento con información de OCR
+          const doc: UploadedDocument = {
+            id: storageResult.fileId || Math.random().toString(36).substr(2, 9),
+            name: file.name,
+            file: file,
+            size: file.size,
+            type: 'application/pdf',
+            category,
+            uploadDate: new Date(),
+            previewUrl: URL.createObjectURL(file),
+            storagePath: storageResult.storagePath,
+            downloadURL: storageResult.downloadURL,
+            fileId: storageResult.fileId,
+            // Agregar datos de OCR
+            ocrText: ocrResult.contenido,
+            ocrConfidence: ocrResult.precision,
+            cantidadDetectada: ocrResult.cantidadDetectada,
+            fechaDetectada: ocrResult.fechaDetectada
+          };
+
+          newDocuments.push(doc);
+          
+        } catch (error: any) {
+          console.error(`❌ Error procesando archivo ${file.name}:`, error);
+          console.error('Detalles del error:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          });
+          
+          // Actualizar estado de progreso OCR a error
+          setOcrProgress(prev => ({ ...prev, [file.name]: 'error' }));
+          
+          // Aún así agregar el documento localmente sin OCR
+          const category = categorizeDocument(file.name);
           newDocuments.push({
-            id: docId,
+            id: Math.random().toString(36).substr(2, 9),
             name: file.name,
             file,
             size: file.size,
@@ -158,31 +262,44 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
             category,
             uploadDate: new Date(),
             previewUrl: URL.createObjectURL(file),
-            storagePath: storageResult.storagePath,
-            downloadURL: storageResult.downloadURL,
-            fileId: storageResult.fileId,
-          });
-
-          console.log('✅ Archivo guardado en Storage:', storageResult.storagePath);
-        } catch (error) {
-          console.error('❌ Error guardando archivo:', file.name, error);
-          // Aún así agregar el documento localmente
-          newDocuments.push({
-            id: docId,
-            name: file.name,
-            file,
-            size: file.size,
-            type: file.type,
-            category,
-            uploadDate: new Date(),
-            previewUrl: URL.createObjectURL(file)
+            ocrText: `[Error procesando: ${error.message || 'Error desconocido'}]`,
+            ocrConfidence: 0
           });
         }
       }
 
       setUploadedDocuments(prev => [...prev, ...newDocuments]);
-    } catch (error) {
+      
+      // Actualizar información de archivos subidos
+      const uploadedFiles = newDocuments
+        .filter(doc => (doc as any).storagePath)
+        .map(doc => ({
+          fileName: doc.name,
+          storagePath: (doc as any).storagePath,
+          downloadUrl: (doc as any).downloadURL,
+          fileId: (doc as any).fileId
+        }));
+      setUploadedFilesInfo(prev => [...prev, ...uploadedFiles]);
+
+      console.log(`✅ ${newDocuments.length} documentos agregados con OCR procesado`);
+      
+      // Mostrar resumen de OCR procesado
+      const ocrProcessed = newDocuments.filter(doc => (doc as any).ocrText);
+      const ocrErrors = newDocuments.length - ocrProcessed.length;
+      if (ocrProcessed.length > 0) {
+        console.log(`📊 Resumen OCR: ${ocrProcessed.length} procesados exitosamente${ocrErrors > 0 ? `, ${ocrErrors} con errores` : ''}`);
+      }
+    } catch (error: any) {
       console.error('Error procesando archivos:', error);
+      
+      // Actualizar estado de progreso OCR a error para los archivos que se intentaron procesar
+      const errorState: { [key: string]: 'error' } = {};
+      Array.from(files).filter(f => f.type === 'application/pdf').forEach(file => {
+        errorState[file.name] = 'error';
+      });
+      setOcrProgress(prev => ({ ...prev, ...errorState }));
+      
+      alert(`Error procesando OCR: ${error.message}`);
     } finally {
       setIsUploading(false);
     }
@@ -206,17 +323,49 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
       if (doc?.previewUrl) {
         URL.revokeObjectURL(doc.previewUrl);
       }
-      return prev.filter(d => d.id !== documentId);
+      const updated = prev.filter(d => d.id !== documentId);
+      
+      // Si no quedan documentos, limpiar el resumen
+      if (updated.length === 0 && documentSummary) {
+        setDocumentSummary(null);
+        setCurrentStep(1);
+      }
+      
+      return updated;
     });
   };
 
+  // Efecto para limpiar el resumen cuando no hay documentos
+  useEffect(() => {
+    if (uploadedDocuments.length === 0 && documentSummary) {
+      // Si no hay documentos pero hay resumen, limpiarlo y volver al paso 1
+      console.log('🧹 Limpiando resumen: no hay documentos');
+      setDocumentSummary(null);
+      if (currentStep > 1) {
+        setCurrentStep(1);
+      }
+    }
+  }, [uploadedDocuments.length, documentSummary, currentStep]);
+
   const generateSummary = () => {
+    // Validar que haya documentos subidos
+    if (uploadedDocuments.length === 0) {
+      alert('Por favor, sube al menos un documento antes de generar el resumen.');
+      return;
+    }
+
     const categorizedDocuments: { [categoryId: string]: UploadedDocument[] } = {};
     const missingRequired: string[] = [];
 
     DOCUMENT_CATEGORIES.forEach(category => {
       const docs = uploadedDocuments.filter(doc => doc.category?.id === category.id);
-      categorizedDocuments[category.id] = docs;
+      // Solo agregar categorías que tienen documentos
+      if (docs.length > 0) {
+        categorizedDocuments[category.id] = docs;
+      } else {
+        // Inicializar con array vacío para mantener estructura
+        categorizedDocuments[category.id] = [];
+      }
       
       if (category.required && docs.length === 0) {
         missingRequired.push(category.name);
@@ -246,17 +395,28 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
     try {
       console.log('🔍 Iniciando análisis de éxito...');
       
-      // Preparar datos OCR simulados basados en documentos subidos
+      // Preparar datos OCR basados en documentos subidos con contenido real del OCR
       const datosOCR = {
         documentos: uploadedDocuments.map(doc => ({
           nombre: doc.name,
           tipo: doc.category?.name || 'Documento',
-          contenido: `Contenido extraído de ${doc.name}`,
+          contenido: (doc as any).ocrText || `Contenido extraído de ${doc.name}`,
           fecha: doc.uploadDate.toISOString(),
-          relevancia: doc.category?.required ? 'Alta' : 'Media'
+          relevancia: doc.category?.required ? 'Alta' : 'Media',
+          cantidadDetectada: (doc as any).cantidadDetectada,
+          fechaDetectada: (doc as any).fechaDetectada,
+          precision: (doc as any).ocrConfidence || 0
         })),
-        resumen: [], // TODO: Add recommendations to DocumentSummary interface
-        completitud: 0 // TODO: Add completenessScore to DocumentSummary interface
+        resumen: documentSummary ? {
+          totalDocuments: documentSummary.totalDocuments || 0,
+          categorizedDocuments: documentSummary.categorizedDocuments || {},
+          missingRequired: documentSummary.missingRequired || []
+        } : {
+          totalDocuments: 0,
+          categorizedDocuments: {},
+          missingRequired: []
+        },
+        completitud: documentSummary ? (documentSummary.totalDocuments || 0) : 0
       };
 
       const response = await fetch('/api/analisis-exito', {
@@ -267,22 +427,45 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
         body: JSON.stringify({
           datosOCR,
           tipoDocumento: 'Reclamación de Cantidades',
-          userId: 'demo_user'
+          userId: userId || 'demo_user'
         }),
       });
 
+      // Verificar que la respuesta sea JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ La respuesta no es JSON:', text.substring(0, 200));
+        throw new Error('El servidor devolvió una respuesta no válida. Por favor, intenta de nuevo.');
+      }
+
       if (!response.ok) {
-        throw new Error('Error en el análisis de éxito');
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          const text = await response.text();
+          console.error('❌ Respuesta de error (no JSON):', text.substring(0, 500));
+          throw new Error(`Error ${response.status}: ${response.statusText}. La función Firebase puede estar esperando un formato diferente.`);
+        }
+        console.error('❌ Error en análisis de éxito:', errorData);
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
+      
+      if (!result.success || !result.data?.analisis) {
+        throw new Error(result.error || 'La respuesta del servidor no tiene el formato esperado');
+      }
+
       setAnalisisExito(result.data.analisis);
       
       console.log('✅ Análisis de éxito completado:', result.data.analisis.analisis?.porcentajeExito + '%');
 
     } catch (error) {
       console.error('❌ Error en análisis de éxito:', error);
-      alert('Error analizando la probabilidad de éxito. Intenta de nuevo.');
+      const errorMessage = error instanceof Error ? error.message : 'Error analizando la probabilidad de éxito. Intenta de nuevo.';
+      alert(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }
@@ -343,71 +526,80 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
       setPaymentDocId(docId);
       setPaymentReclId(reclId);
       
-      // Si hay archivos subidos pero no guardados, guardarlos ahora
-      if (userId && userId !== 'demo_user' && uploadedDocuments.length > 0 && uploadedFilesInfo.length === 0) {
-        try {
-          console.log(`💾 Guardando ${uploadedDocuments.length} archivos antes del pago...`);
-          const pdfFiles = uploadedDocuments.map(doc => doc.file).filter(Boolean) as File[];
+      // Los archivos ya se guardan automáticamente cuando se suben en handleFileUpload
+      // No es necesario guardarlos nuevamente antes del pago
+      if (uploadedDocuments.length > 0) {
+        console.log(`📋 ${uploadedDocuments.length} archivos listos para procesar el pago`);
+        
+        // Si uploadedFilesInfo está vacío pero hay documentos con storagePath, actualizar
+        if (uploadedFilesInfo.length === 0) {
+          const filesWithStorage = uploadedDocuments
+            .filter(doc => (doc as any).storagePath)
+            .map(doc => ({
+              fileName: doc.name,
+              storagePath: (doc as any).storagePath,
+              downloadUrl: (doc as any).downloadURL,
+              fileId: (doc as any).fileId
+            }));
           
-          if (pdfFiles.length > 0) {
-            const formData = new FormData();
-            pdfFiles.forEach(file => {
-              formData.append('files', file);
-            });
-            formData.append('userId', userId);
-            formData.append('reclId', reclId);
-
-            const response = await fetch('/api/analyze-documents', {
-              method: 'POST',
-              body: formData
-            });
-
-            if (response.ok) {
-              const result = await response.json();
-              if (result.success && result.data.uploadedFiles) {
-                console.log(`✅ ${result.data.uploadedFiles.length} archivos guardados antes del pago`);
-                setUploadedFilesInfo(result.data.uploadedFiles);
-              }
-            }
+          if (filesWithStorage.length > 0) {
+            setUploadedFilesInfo(filesWithStorage);
+            console.log(`✅ ${filesWithStorage.length} archivos ya guardados en Storage`);
           }
-        } catch (error: any) {
-          console.warn('⚠️ Error guardando archivos antes del pago:', error.message);
         }
       }
       
       // Crear sesión de checkout en Stripe
+      // La función createCheckoutSession espera un campo 'items' con el formato de Stripe
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          items: [{
+            name: 'Reclamación de Cantidades',
+            price: 50000, // Precio en centavos (500.00 EUR o equivalente)
+            quantity: 1,
+            area: 'reclamacion_cantidades',
+            country: 'ES'
+          }],
           documentType: 'reclamacion_cantidades',
           docId: docId,
           reclId: reclId,
-          userId: userId || 'demo_user',
-          customerEmail: userEmail || 'user@example.com',
+          userId: user?.uid || userId || '', // Usar siempre el ID único del usuario autenticado
+          customerEmail: userEmail || user?.email || 'user@example.com',
           successUrl: `${window.location.origin}/dashboard/reclamacion-cantidades?payment=success&docId=${docId}&reclId=${reclId}`,
           cancelUrl: `${window.location.origin}/dashboard/reclamacion-cantidades?payment=cancelled`
         }),
       });
 
+      // Verificar que la respuesta sea JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ La respuesta no es JSON:', text.substring(0, 200));
+        throw new Error('El servidor devolvió una respuesta no válida. Por favor, intenta de nuevo.');
+      }
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error creando sesión de checkout');
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
       
-      if (data.success && data.url) {
-        // Redirigir a Stripe Checkout
-        window.location.href = data.url;
-      } else {
-        throw new Error('No se recibió URL de checkout');
+      if (!data.success || !data.url) {
+        throw new Error(data.error || 'No se recibió URL de checkout válida');
       }
+
+      // Redirigir a Stripe Checkout
+      console.log('🔄 Redirigiendo a Stripe Checkout...');
+      window.location.href = data.url;
     } catch (error) {
-      console.error('Payment error:', error);
-      alert(error instanceof Error ? error.message : 'Error al procesar el pago. Inténtalo de nuevo.');
+      console.error('❌ Payment error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error al procesar el pago. Inténtalo de nuevo.';
+      alert(errorMessage);
       setIsProcessing(false);
     }
   };
@@ -996,7 +1188,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
               <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <p className="mt-2 text-sm text-gray-600">
-              {isUploading ? 'Subiendo archivos a Firebase Storage...' : 'Arrastra archivos PDF aquí o haz clic para seleccionar'}
+              {isUploading ? 'Subiendo archivos y procesando OCR...' : 'Arrastra archivos PDF aquí o haz clic para seleccionar'}
             </p>
             <p className="text-xs text-gray-500 mt-1">
               Solo se permiten archivos PDF
@@ -1023,25 +1215,85 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
               
               {/* Document List with Categories */}
               <div className="space-y-3">
-                {uploadedDocuments.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center">
-                      <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                {uploadedDocuments.map((doc) => {
+                  const ocrStatus = ocrProgress[doc.name];
+                  const hasOcrData = (doc as any).ocrText || (doc as any).ocrConfidence;
+                  const ocrConfidence = (doc as any).ocrConfidence || 0;
+                  
+                  return (
+                  <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <svg className="w-5 h-5 text-red-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                       </svg>
-                      <div>
-                        <span className="text-sm font-medium text-gray-900">{doc.name}</span>
-                        <span className="text-xs text-gray-500 ml-2">
-                          ({(doc.size / 1024 / 1024).toFixed(2)} MB)
-                        </span>
-                        {doc.category && (
-                          <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${doc.category.color}`}>
-                            {doc.category.name}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center flex-wrap gap-2 mb-1">
+                          <span className="text-sm font-medium text-gray-900 truncate">{doc.name}</span>
+                          <span className="text-xs text-gray-500 whitespace-nowrap">
+                            ({(doc.size / 1024 / 1024).toFixed(2)} MB)
                           </span>
-                        )}
+                          {doc.category && (
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${doc.category.color} whitespace-nowrap`}>
+                              {doc.category.name}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Indicadores de OCR */}
+                        <div className="flex items-center flex-wrap gap-2 mt-1">
+                          {/* Estado de procesamiento OCR */}
+                          {ocrStatus === 'processing' && (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 flex items-center gap-1 whitespace-nowrap">
+                              <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Procesando OCR...
+                            </span>
+                          )}
+                          
+                          {/* OCR completado con precisión */}
+                          {ocrStatus === 'completed' && hasOcrData && (
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                              ocrConfidence >= 70 ? 'bg-green-100 text-green-800' :
+                              ocrConfidence >= 40 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              ✓ OCR: {ocrConfidence}%
+                            </span>
+                          )}
+                          
+                          {/* Error en OCR */}
+                          {ocrStatus === 'error' && (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 whitespace-nowrap">
+                              ✗ Error OCR
+                            </span>
+                          )}
+                          
+                          {/* Datos extraídos del OCR */}
+                          {hasOcrData && ocrStatus === 'completed' && (
+                            <>
+                              {(doc as any).cantidadDetectada && (
+                                <span className="px-2 py-1 rounded text-xs bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+                                  💰 {(doc as any).cantidadDetectada}€
+                                </span>
+                              )}
+                              {(doc as any).fechaDetectada && (
+                                <span className="px-2 py-1 rounded text-xs bg-purple-50 text-purple-700 border border-purple-200 whitespace-nowrap">
+                                  📅 {(doc as any).fechaDetectada}
+                                </span>
+                              )}
+                              {(doc as any).ocrText && (doc as any).ocrText.length > 0 && (
+                                <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-700 border border-gray-200 whitespace-nowrap" title={`${(doc as any).ocrText.length} caracteres extraídos`}>
+                                  📄 {(doc as any).ocrText.length} chars
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 ml-4 flex-shrink-0">
                       <button
                         onClick={() => window.open(doc.previewUrl, '_blank')}
                         className="text-blue-600 hover:text-blue-700 text-sm"
@@ -1056,7 +1308,8 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Analysis Summary */}
@@ -1211,20 +1464,33 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
 
                 <div className="border-t pt-4">
                   <h5 className="font-medium text-gray-700 mb-2">Documentos por categoría:</h5>
-                  <div className="space-y-1">
-                    {Object.entries(documentSummary.categorizedDocuments).map(([categoryId, docs]) => {
-                      const category = DOCUMENT_CATEGORIES.find(c => c.id === categoryId);
-                      if (docs.length === 0) return null;
-                      return (
-                        <div key={categoryId} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">{category?.name}</span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${category?.color}`}>
-                            {docs.length} documento(s)
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  {documentSummary.totalDocuments === 0 ? (
+                    <p className="text-sm text-gray-500 italic">No hay documentos subidos</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {Object.entries(documentSummary.categorizedDocuments)
+                        .filter(([categoryId, docs]) => {
+                          // Filtrar solo categorías que tienen documentos
+                          const category = DOCUMENT_CATEGORIES.find(c => c.id === categoryId);
+                          return docs.length > 0 && category;
+                        })
+                        .map(([categoryId, docs]) => {
+                          const category = DOCUMENT_CATEGORIES.find(c => c.id === categoryId);
+                          if (!category || docs.length === 0) return null;
+                          return (
+                            <div key={categoryId} className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">{category.name}</span>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${category.color}`}>
+                                {docs.length} documento(s)
+                              </span>
+                            </div>
+                          );
+                        })}
+                      {Object.entries(documentSummary.categorizedDocuments).filter(([_, docs]) => docs.length > 0).length === 0 && (
+                        <p className="text-sm text-gray-500 italic">No hay documentos categorizados</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1248,10 +1514,6 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             >
               {isProcessing ? 'Procesando Pago...' : 'Procesar Pago'}
             </button>
-            
-            <p className="text-xs text-orange-600 mt-2 text-center">
-              Pago simulado para demostración
-            </p>
             
             {documentSummary && documentSummary.missingRequired.length > 0 && (
               <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">

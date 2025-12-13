@@ -82,9 +82,15 @@ export async function savePdfForUser(
       throw new Error('Firebase Storage no está inicializado');
     }
 
+    // Validar que userId sea válido y no sea un valor por defecto
+    if (!userId || userId === 'demo_user' || userId.trim() === '') {
+      throw new Error('ID de usuario inválido. Debe estar autenticado para guardar documentos.');
+    }
+
     // Determinar la carpeta base según el plan del usuario o tipo de documento
     const basePath = await getStorageBasePath(userId, metadata?.documentType);
     const fileName = metadata?.fileName || `document_${documentId}.pdf`;
+    // Asegurar que la ruta siempre incluya el userId único del usuario
     const storagePath = `${basePath}/${userId}/documents/${documentId}/${fileName}`;
     
     // Crear referencia en Storage
@@ -138,10 +144,16 @@ export async function saveUploadedFile(
       throw new Error('Firebase Storage no está inicializado');
     }
 
+    // Validar que userId sea válido y no sea un valor por defecto
+    if (!userId || userId === 'demo_user' || userId.trim() === '') {
+      throw new Error('ID de usuario inválido. Debe estar autenticado para subir archivos.');
+    }
+
     // Determinar la carpeta base según el plan del usuario o tipo de documento
     const basePath = await getStorageBasePath(userId, documentType);
     const fileId = uuidv4();
     const fileName = `${fileId}_${file.name}`;
+    // Asegurar que la ruta siempre incluya el userId único del usuario
     const storagePath = `${basePath}/${userId}/ocr/${fileName}`;
     
     // Convertir File a ArrayBuffer
@@ -165,7 +177,7 @@ export async function saveUploadedFile(
     const downloadURL = await getDownloadURL(snapshot.ref);
 
     // Guardar metadatos en Firestore
-    if (db && typeof db !== 'object' || Object.keys(db).length > 0) {
+    if (db && typeof db === 'object' && Object.keys(db as any).length > 0) {
       try {
         const fileDocRef = doc(collection(db as any, 'uploaded_files'), fileId);
         await setDoc(fileDocRef, {

@@ -9,7 +9,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAiINqBn-d7vRyRZVHO600rVhHZd0B0qjM",
   authDomain: "avocat-legaltech-v3.firebaseapp.com",
   projectId: "avocat-legaltech-v3",
-  storageBucket: "avocat-legaltech-v3.appspot.com",
+  storageBucket: "avocat-legaltech-v3.firebasestorage.app",
   messagingSenderId: "1023426971669",
   appId: "1:1023426971669:web:fefbb72a56f7a60d3ca61c"
 };

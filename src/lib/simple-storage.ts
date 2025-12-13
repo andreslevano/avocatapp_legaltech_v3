@@ -72,7 +72,7 @@ export async function savePdfForUser(
   return {
     storagePath: filePath,
     size,
-    bucket: 'avocat-legaltech-v3.appspot.com'
+    bucket: 'avocat-legaltech-v3.firebasestorage.app'
   };
 }
 

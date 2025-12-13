@@ -18,7 +18,7 @@ if (!getApps().length) {
     console.log('Client Email:', serviceAccount.clientEmail ? 'Present' : 'Missing');
     console.log('Private Key:', serviceAccount.privateKey ? 'Present' : 'Missing');
 
-    const storageBucket = process.env.FIREBASE_STORAGE_BUCKET || "avocat-legaltech-v3.appspot.com";
+    const storageBucket = process.env.FIREBASE_STORAGE_BUCKET || "avocat-legaltech-v3.firebasestorage.app";
     
     if (serviceAccount.clientEmail && serviceAccount.privateKey) {
       adminApp = initializeApp({

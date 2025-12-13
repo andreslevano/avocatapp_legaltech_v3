@@ -378,18 +378,33 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
         }),
       });
 
+      // Verificar que la respuesta sea JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ La respuesta no es JSON:', text.substring(0, 200));
+        throw new Error('El servidor devolvió una respuesta no válida. Por favor, intenta de nuevo.');
+      }
+
       if (!response.ok) {
-        throw new Error('Error en el análisis de éxito');
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
+      
+      if (!result.success || !result.data?.analisis) {
+        throw new Error(result.error || 'La respuesta del servidor no tiene el formato esperado');
+      }
+
       setAnalisisExito(result.data.analisis);
       
       console.log('✅ Análisis de éxito completado:', result.data.analisis.analisis?.porcentajeExito + '%');
 
     } catch (error) {
       console.error('❌ Error en análisis de éxito:', error);
-      alert('Error analizando la probabilidad de éxito. Intenta de nuevo.');
+      const errorMessage = error instanceof Error ? error.message : 'Error analizando la probabilidad de éxito. Intenta de nuevo.';
+      alert(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }
@@ -540,13 +555,6 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          items: [{
-            name: 'Acción de Tutela',
-            price: 50000, // 50,000 COP (COP no usa centavos, valor mínimo = 1)
-            quantity: quantity,
-            area: 'Derecho Constitucional',
-            country: 'Colombia'
-          }],
           documentType: 'accion_tutela',
           docId: docId,
           tutelaId: tutelaId,
@@ -558,20 +566,31 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
         })
       });
 
-      if (response.ok) {
-        const { url } = await response.json();
-        console.log('🔄 Redirigiendo a Stripe Checkout Session...');
-        window.location.href = url;
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Error creando checkout session:', errorText);
-        alert('Error al procesar el pago. Por favor, intenta de nuevo.');
-        setIsProcessing(false);
+      // Verificar que la respuesta sea JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ La respuesta no es JSON:', text.substring(0, 200));
+        throw new Error('El servidor devolvió una respuesta no válida. Por favor, intenta de nuevo.');
       }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
       
+      if (!data.success || !data.url) {
+        throw new Error(data.error || 'No se recibió URL de checkout válida');
+      }
+
+      console.log('🔄 Redirigiendo a Stripe Checkout Session...');
+      window.location.href = data.url;
     } catch (error) {
       console.error('❌ Payment error:', error);
-      alert(error instanceof Error ? error.message : 'Error al procesar el pago. Inténtalo de nuevo.');
+      const errorMessage = error instanceof Error ? error.message : 'Error al procesar el pago. Inténtalo de nuevo.';
+      alert(errorMessage);
       setIsProcessing(false);
     }
   };

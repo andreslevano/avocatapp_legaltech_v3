@@ -1,6 +1,5 @@
 import { createWorker } from 'tesseract.js';
 import { DocumentoOCR, DocumentoOCRSchema } from './validate-reclamacion';
-import pdfParse from 'pdf-parse';
 
 export interface OCRResult {
   contenido: string;
@@ -10,7 +9,7 @@ export interface OCRResult {
   tipoDocumento?: 'factura' | 'albaran' | 'contrato' | 'presupuesto' | 'otro';
 }
 
-export async function analyzeDocumentOCR(fileBuffer: Buffer, filename: string): Promise<OCRResult> {
+export async function analyzeDocumentOCR(fileBuffer: Buffer | Uint8Array, filename: string): Promise<OCRResult> {
   const isServer = typeof window === 'undefined';
   
   if (isServer) {
@@ -24,6 +23,8 @@ export async function analyzeDocumentOCR(fileBuffer: Buffer, filename: string): 
         console.log(`📄 Extrayendo texto de PDF: ${filename}`);
         
         try {
+          const pdfParseModule = await import('pdf-parse');
+          const pdfParse = (pdfParseModule as any).default || pdfParseModule;
           const pdfData = await pdfParse(fileBuffer);
           const contenido = pdfData.text.trim();
           const numPages = pdfData.numpages;
@@ -86,64 +87,169 @@ export async function analyzeDocumentOCR(fileBuffer: Buffer, filename: string): 
     }
   }
   
-  // En cliente, intentar OCR si está disponible
-  let worker: any = null;
-  
+  // En cliente, intentar extraer texto del PDF usando pdfjs-dist
   try {
-    worker = await createWorker('spa', 1, {
-      logger: (m: any) => {
-        if (m.status === 'recognizing text') {
-          // Solo loggear progreso si es necesario
+    // Verificar si es un PDF
+    const isPDF = filename.toLowerCase().endsWith('.pdf') || 
+                  (fileBuffer instanceof Uint8Array && fileBuffer[0] === 0x25 && fileBuffer[1] === 0x50 && fileBuffer[2] === 0x44 && fileBuffer[3] === 0x46);
+    
+    if (isPDF) {
+      console.log(`📄 Extrayendo texto de PDF en cliente: ${filename}`);
+      
+      try {
+        // Usar pdfjs-dist para extraer texto del PDF en el cliente
+        const pdfjsLib = await import('pdfjs-dist');
+        
+        // Configurar worker con CDN confiable (jsdelivr tiene mejor soporte CORS)
+        if (typeof window !== 'undefined') {
+          const version = pdfjsLib.version || '3.11.174';
+          // Forzar uso de jsdelivr (siempre configurar, incluso si ya está configurado)
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.js`;
+          console.log(`📦 PDF.js worker configurado: ${pdfjsLib.GlobalWorkerOptions.workerSrc}`);
+        }
+        
+        // Convertir Buffer/Uint8Array a ArrayBuffer
+        // Crear una copia nueva para evitar problemas con SharedArrayBuffer
+        let arrayBuffer: ArrayBuffer;
+        if (fileBuffer instanceof Uint8Array) {
+          // Crear un nuevo ArrayBuffer copiando los datos
+          const copy = new Uint8Array(fileBuffer);
+          arrayBuffer = copy.buffer;
+        } else {
+          // Para Buffer de Node.js o ArrayBuffer, convertir a Uint8Array primero
+          const uint8 = new Uint8Array(fileBuffer as any);
+          arrayBuffer = uint8.buffer;
+        }
+        
+        // Cargar el PDF
+        const loadingTask = pdfjsLib.getDocument({ 
+          data: arrayBuffer,
+          useSystemFonts: true,
+          verbosity: 0 // Reducir logs
+        });
+        const pdf = await loadingTask.promise;
+        
+        // Extraer texto de todas las páginas
+        let contenido = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item: any) => item.str).join(' ');
+          contenido += pageText + ' ';
+        }
+        
+        contenido = contenido.trim();
+        const numPages = pdf.numPages;
+        
+        // Calcular precisión basada en la cantidad de texto extraído
+        const precision = contenido.length > 100 ? 85 : contenido.length > 50 ? 50 : 30;
+        
+        console.log(`✅ Texto extraído de PDF: ${contenido.length} caracteres, ${numPages} páginas`);
+        
+        // Detectar cantidad monetaria
+        const cantidadDetectada = detectarCantidad(contenido);
+        
+        // Detectar fecha
+        const fechaDetectada = detectarFecha(contenido);
+        
+        // Detectar tipo de documento
+        const tipoDocumento = detectarTipoDocumento(contenido, filename);
+        
+        return {
+          contenido: contenido || `[Documento PDF: ${filename}]`,
+          precision,
+          cantidadDetectada,
+          fechaDetectada,
+          tipoDocumento
+        };
+        
+      } catch (pdfError: any) {
+        console.error(`❌ Error extrayendo texto del PDF ${filename} en cliente:`, pdfError);
+        console.error('Detalles del error:', {
+          message: pdfError.message,
+          stack: pdfError.stack,
+          name: pdfError.name
+        });
+        // Si falla, devolver resultado básico basado en nombre de archivo
+        return {
+          contenido: `[Error procesando PDF: ${pdfError.message || 'Error desconocido'}]`,
+          precision: 0,
+          cantidadDetectada: undefined,
+          fechaDetectada: undefined,
+          tipoDocumento: detectarTipoDocumento(filename.toLowerCase(), filename)
+        };
+      }
+    } else {
+      // No es un PDF, intentar OCR con Tesseract si es una imagen
+      console.log(`📷 Intentando OCR para imagen: ${filename}`);
+      let worker: any = null;
+      
+      try {
+        worker = await createWorker('spa', 1, {
+          logger: (m: any) => {
+            if (m.status === 'recognizing text') {
+              // Solo loggear progreso si es necesario
+            }
+          }
+        });
+        
+        const { data: { text, confidence } } = await worker.recognize(fileBuffer);
+        
+        // Procesar el texto extraído
+        const contenido = text.trim();
+        const precision = Math.round(confidence);
+        
+        // Detectar cantidad monetaria
+        const cantidadDetectada = detectarCantidad(contenido);
+        
+        // Detectar fecha
+        const fechaDetectada = detectarFecha(contenido);
+        
+        // Detectar tipo de documento
+        const tipoDocumento = detectarTipoDocumento(contenido, filename);
+        
+        return {
+          contenido,
+          precision,
+          cantidadDetectada,
+          fechaDetectada,
+          tipoDocumento
+        };
+        
+      } catch (error: any) {
+        // Si el OCR falla, devolver resultado básico
+        console.warn(`⚠️ Error en OCR para ${filename}, usando resultado básico:`, error.message);
+        
+        return {
+          contenido: `[Documento: ${filename}]`,
+          precision: 0,
+          cantidadDetectada: undefined,
+          fechaDetectada: undefined,
+          tipoDocumento: detectarTipoDocumento(filename.toLowerCase(), filename)
+        };
+      } finally {
+        if (worker) {
+          try {
+            await worker.terminate();
+          } catch (terminateError: any) {
+            console.warn('⚠️ Error terminando worker OCR:', terminateError.message);
+          }
         }
       }
-    });
-    
-    const { data: { text, confidence } } = await worker.recognize(fileBuffer);
-    
-    // Procesar el texto extraído
-    const contenido = text.trim();
-    const precision = Math.round(confidence);
-    
-    // Detectar cantidad monetaria
-    const cantidadDetectada = detectarCantidad(contenido);
-    
-    // Detectar fecha
-    const fechaDetectada = detectarFecha(contenido);
-    
-    // Detectar tipo de documento
-    const tipoDocumento = detectarTipoDocumento(contenido, filename);
-    
-    return {
-      contenido,
-      precision,
-      cantidadDetectada,
-      fechaDetectada,
-      tipoDocumento
-    };
-    
+    }
   } catch (error: any) {
-    // Si el OCR falla, devolver resultado básico
-    console.warn(`⚠️ Error en OCR para ${filename}, usando resultado básico:`, error.message);
-    
+    console.error(`❌ Error procesando documento en cliente ${filename}:`, error);
     return {
-      contenido: `[OCR no disponible: ${error.message}]`,
+      contenido: `[Error procesando: ${error.message}]`,
       precision: 0,
       cantidadDetectada: undefined,
       fechaDetectada: undefined,
       tipoDocumento: detectarTipoDocumento(filename.toLowerCase(), filename)
     };
-  } finally {
-    if (worker) {
-      try {
-        await worker.terminate();
-      } catch (terminateError: any) {
-        console.warn('⚠️ Error terminando worker OCR:', terminateError.message);
-      }
-    }
   }
 }
 
-function detectarCantidad(texto: string): number | undefined {
+export function detectarCantidad(texto: string): number | undefined {
   // Patrones para detectar cantidades monetarias
   const patrones = [
     /(?:total|importe|cantidad|precio|coste)[\s:]*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*€?/gi,
@@ -167,7 +273,7 @@ function detectarCantidad(texto: string): number | undefined {
   return undefined;
 }
 
-function detectarFecha(texto: string): string | undefined {
+export function detectarFecha(texto: string): string | undefined {
   // Patrones para detectar fechas
   const patrones = [
     /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/g,
@@ -185,7 +291,7 @@ function detectarFecha(texto: string): string | undefined {
   return undefined;
 }
 
-function detectarTipoDocumento(contenido: string, filename: string): 'factura' | 'albaran' | 'contrato' | 'presupuesto' | 'otro' {
+export function detectarTipoDocumento(contenido: string, filename: string): 'factura' | 'albaran' | 'contrato' | 'presupuesto' | 'otro' {
   const texto = (contenido + ' ' + filename).toLowerCase();
   
   // Palabras clave para cada tipo de documento

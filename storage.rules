@@ -1,0 +1,29 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Reglas para archivos de reclamaciones
+    match /reclamaciones/{userId}/{allPaths=**} {
+      // Permitir lectura y escritura solo al usuario autenticado propietario
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Reglas para archivos de estudiantes
+    match /students/{userId}/{allPaths=**} {
+      // Permitir lectura y escritura solo al usuario autenticado propietario
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Reglas para archivos generales de usuarios
+    match /users/{userId}/{allPaths=**} {
+      // Permitir lectura y escritura solo al usuario autenticado propietario
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Regla por defecto: denegar acceso a todo lo demás
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+
