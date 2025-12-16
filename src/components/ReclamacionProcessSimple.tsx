@@ -825,6 +825,13 @@ NOTA: Este documento ha sido generado mediante inteligencia artificial y debe se
       const contentType = response.headers.get('content-type');
       console.log('📄 Content-Type:', contentType);
 
+      // Detectar si la respuesta es HTML (error 404 o página de error)
+      if (contentType?.includes('text/html')) {
+        const htmlText = await response.text();
+        console.error('❌ Error: El servidor devolvió HTML en lugar de PDF:', htmlText.substring(0, 500));
+        throw new Error('El endpoint de generación de PDF no está disponible. Por favor, contacta al soporte técnico.');
+      }
+
       if (contentType?.includes('application/json')) {
         // Respuesta JSON
         const data = await response.json();
@@ -848,6 +855,16 @@ NOTA: Este documento ha sido generado mediante inteligencia artificial y debe se
         
         if (!blob || blob.size === 0) {
           throw new Error('El PDF recibido está vacío');
+        }
+        
+        // Validar que sea un PDF real verificando los primeros bytes
+        const arrayBuffer = await blob.slice(0, 4).arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const pdfHeader = String.fromCharCode(...uint8Array);
+        
+        if (pdfHeader !== '%PDF') {
+          console.error('❌ Error: El archivo recibido no es un PDF válido. Header:', pdfHeader);
+          throw new Error('El servidor devolvió un archivo que no es un PDF válido. Por favor, contacta al soporte técnico.');
         }
         
         console.log(`✅ PDF recibido: ${blob.size} bytes, tipo: ${blob.type}`);

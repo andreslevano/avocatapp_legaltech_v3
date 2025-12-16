@@ -16,6 +16,10 @@
         "function": "reclamacionCantidades"
       },
       {
+        "source": "/api/reclamacion-cantidades",
+        "function": "reclamacionCantidades"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
