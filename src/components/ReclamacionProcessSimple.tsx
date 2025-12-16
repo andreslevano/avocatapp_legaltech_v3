@@ -2,8 +2,9 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { UploadedDocument, DocumentCategory, DocumentSummary, GeneratedDocument } from '@/types';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { saveUploadedFile, savePdfForUser } from '@/lib/storage';
 import AnalisisExitoModal from './AnalisisExitoModal';
 
@@ -809,30 +810,30 @@ NOTA: Este documento ha sido generado mediante inteligencia artificial y debe se
       // Generar PDF directamente en el cliente usando jsPDF
       console.log('📄 Generando PDF directamente en el cliente...');
       const { default: jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
+      const pdfDoc = new jsPDF();
       
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
+      const pageWidth = pdfDoc.internal.pageSize.getWidth();
+      const pageHeight = pdfDoc.internal.pageSize.getHeight();
       let yPosition = 20;
       const margin = 20;
       const maxWidth = pageWidth - (margin * 2);
       
       // Función helper para agregar texto con salto de línea automático
       const addText = (text: string, fontSize: number, isBold: boolean = false, align: 'left' | 'center' | 'right' = 'left') => {
-        doc.setFontSize(fontSize);
+        pdfDoc.setFontSize(fontSize);
         if (isBold) {
-          doc.setFont('helvetica', 'bold');
+          pdfDoc.setFont('helvetica', 'bold');
         } else {
-          doc.setFont('helvetica', 'normal');
+          pdfDoc.setFont('helvetica', 'normal');
         }
         
-        const lines = doc.splitTextToSize(text, maxWidth);
+        const lines = pdfDoc.splitTextToSize(text, maxWidth);
         lines.forEach((line: string) => {
           if (yPosition > pageHeight - 20) {
-            doc.addPage();
+            pdfDoc.addPage();
             yPosition = 20;
           }
-          doc.text(line, align === 'center' ? pageWidth / 2 : margin, yPosition, { align });
+          pdfDoc.text(line, align === 'center' ? pageWidth / 2 : margin, yPosition, { align });
           yPosition += fontSize * 0.4 + 2;
         });
       };
@@ -895,8 +896,64 @@ NOTA: Este documento ha sido generado mediante inteligencia artificial y debe se
       
       // Descargar PDF
       const filename = `reclamacion-cantidades-${requestData.nombreTrabajador}-${new Date().toISOString().split('T')[0]}.pdf`;
-      doc.save(filename);
+      pdfDoc.save(filename);
       console.log(`✅ PDF generado y descargado: ${filename}`);
+
+      // Guardar purchase en Firestore para que aparezca en el historial
+      try {
+        if (db && userId && docIdToUse) {
+          // Usar docId como purchaseId (o crear uno basado en docId y reclId)
+          const purchaseId = docIdToUse || `purchase_${Date.now()}`;
+          const purchaseRef = doc(collection(db, 'purchases'), purchaseId);
+          
+          // Calcular el precio (usar un valor por defecto si no está disponible)
+          const amount = parseFloat(requestData.cantidadTotal?.replace(/[^\d,.-]/g, '').replace(',', '.') || '0') || 3.00;
+          
+          const purchaseData = {
+            id: purchaseId,
+            userId: userId,
+            customerEmail: userEmail || '',
+            documentType: 'reclamacion_cantidades' as const,
+            items: [{
+              id: docIdToUse,
+              documentId: docIdToUse,
+              documentType: 'reclamacion_cantidades',
+              name: 'Reclamación de Cantidades',
+              area: 'Derecho Laboral',
+              country: 'ES',
+              price: amount,
+              quantity: 1,
+              status: 'completed' as const,
+              generatedAt: new Date().toISOString()
+            }],
+            total: amount,
+            currency: 'EUR',
+            status: 'completed' as const,
+            source: 'manual' as const,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            paymentMethod: 'stripe',
+            documentsGenerated: 1,
+            docId: docIdToUse,
+            reclId: reclIdToUse,
+            metadata: {
+              documentId: docIdToUse,
+              reclId: reclIdToUse,
+              documentType: 'reclamacion_cantidades',
+              generatedAt: new Date().toISOString(),
+              filename: filename
+            }
+          };
+          
+          await setDoc(purchaseRef, purchaseData);
+          console.log(`✅ Purchase guardado en Firestore: ${purchaseId}`);
+        } else {
+          console.warn('⚠️ No se pudo guardar purchase: db, userId o docId no disponibles', { db: !!db, userId, docIdToUse });
+        }
+      } catch (purchaseError: any) {
+        console.error('❌ Error guardando purchase en Firestore:', purchaseError);
+        // No lanzar error, solo registrar - el PDF ya se generó correctamente
+      }
 
       // Crear documento generado para mostrar en la UI
       // NOTA: El PDF real descargado contiene los fundamentos legales completos y mejorados
