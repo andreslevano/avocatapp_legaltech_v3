@@ -815,21 +815,28 @@ NOTA: Este documento ha sido generado mediante inteligencia artificial y debe se
         body: JSON.stringify(requestData),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
-        throw new Error(`Error ${response.status}: ${errorText}`);
-      }
-
-      // Verificar el tipo de contenido
+      // Verificar el tipo de contenido ANTES de procesar la respuesta
       const contentType = response.headers.get('content-type');
       console.log('📄 Content-Type:', contentType);
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        throw new Error(`Error ${response.status}: ${errorText.substring(0, 200)}`);
+      }
+
       // Detectar si la respuesta es HTML (error 404 o página de error)
       if (contentType?.includes('text/html')) {
+        // Leer el HTML para ver qué error específico es
         const htmlText = await response.text();
-        console.error('❌ Error: El servidor devolvió HTML en lugar de PDF:', htmlText.substring(0, 500));
-        throw new Error('El endpoint de generación de PDF no está disponible. Por favor, contacta al soporte técnico.');
+        console.error('❌ Error: El servidor devolvió HTML en lugar de PDF');
+        console.error('HTML recibido (primeros 500 caracteres):', htmlText.substring(0, 500));
+        
+        // Intentar extraer mensaje de error del HTML si es posible
+        const errorMatch = htmlText.match(/<title>(.*?)<\/title>/i) || htmlText.match(/<h1>(.*?)<\/h1>/i);
+        const errorMessage = errorMatch ? errorMatch[1] : 'El endpoint de generación de PDF no está disponible';
+        
+        throw new Error(`${errorMessage}. Por favor, verifica que la Firebase Function esté configurada correctamente o contacta al soporte técnico.`);
       }
 
       if (contentType?.includes('application/json')) {
@@ -863,8 +870,18 @@ NOTA: Este documento ha sido generado mediante inteligencia artificial y debe se
         const pdfHeader = String.fromCharCode(...uint8Array);
         
         if (pdfHeader !== '%PDF') {
-          console.error('❌ Error: El archivo recibido no es un PDF válido. Header:', pdfHeader);
-          throw new Error('El servidor devolvió un archivo que no es un PDF válido. Por favor, contacta al soporte técnico.');
+          console.error('❌ Error: El archivo recibido no es un PDF válido.');
+          console.error('Header recibido:', pdfHeader);
+          console.error('Bytes recibidos:', Array.from(uint8Array).map(b => `0x${b.toString(16)}`).join(' '));
+          
+          // Si parece ser HTML, leer el contenido para diagnóstico
+          if (pdfHeader.startsWith('<') || pdfHeader.startsWith('<!')) {
+            const text = await blob.text();
+            console.error('Contenido recibido (primeros 500 caracteres):', text.substring(0, 500));
+            throw new Error('El servidor devolvió HTML en lugar de PDF. Esto indica que el endpoint no está funcionando correctamente. Por favor, verifica que la Firebase Function esté configurada para generar PDFs.');
+          }
+          
+          throw new Error(`El archivo recibido no es un PDF válido (header: "${pdfHeader}"). Por favor, contacta al soporte técnico.`);
         }
         
         console.log(`✅ PDF recibido: ${blob.size} bytes, tipo: ${blob.type}`);
