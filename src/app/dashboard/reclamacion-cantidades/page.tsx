@@ -127,7 +127,9 @@ export default function ReclamacionCantidadesDashboard() {
 
           {/* Purchase History Section */}
           <div className="mt-12">
-            <PurchaseHistoryComponent userId={user?.uid || 'demo_user'} documentType="reclamacion_cantidades" />
+            {user?.uid && (
+              <PurchaseHistoryComponent userId={user.uid} documentType="reclamacion_cantidades" />
+            )}
           </div>
         </div>
       </main>

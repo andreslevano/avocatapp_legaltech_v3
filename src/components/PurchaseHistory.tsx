@@ -144,9 +144,11 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
 
   // Función para obtener el historial desde Firestore
   const fetchPurchaseHistory = useCallback(async () => {
-    if (!userId || !db) {
+    if (!userId || userId === 'demo_user' || !db) {
+      console.warn('⚠️ userId no válido o es demo_user:', userId);
       setLoading(false);
       setPurchaseHistory([]);
+      setError(null);
       return;
     }
     

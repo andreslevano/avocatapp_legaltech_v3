@@ -153,19 +153,36 @@ export const handleWebhook = async (payload: string, signature: string) => {
               console.warn(`⚠️ Reclamación ${reclId} no existe en Firestore`);
               // Continuar con notificación pero no actualizar
             } else {
-              // 2. Guardar compra en /purchases/{purchaseId}
+              // 2. Guardar compra en /purchases/{purchaseId} con estructura correcta
               const purchaseData = {
                 id: purchaseId,
                 userId,
-                purchaseId: purchaseId,
-                type: 'document' as const,
-                amount,
-                currency: currency as 'EUR',
+                customerEmail: session.customer_email || '',
+                documentType: 'reclamacion_cantidades' as const,
+                items: [{
+                  id: docId || purchaseId,
+                  documentId: docId,
+                  documentType: 'reclamacion_cantidades',
+                  name: 'Reclamación de Cantidades',
+                  area: 'Derecho Laboral',
+                  country: 'ES',
+                  price: amount,
+                  quantity: 1,
+                  status: 'completed' as const,
+                  generatedAt: new Date().toISOString()
+                }],
+                total: amount,
+                currency: currency?.toUpperCase() || 'EUR',
                 status: 'completed' as const,
+                source: 'stripe_webhook' as const,
                 createdAt: new Date().toISOString(),
-                date: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                stripeSessionId: session.id,
+                stripePaymentIntentId: session.payment_intent as string,
                 paymentMethod: 'stripe',
-                description: 'Reclamación de Cantidades',
+                documentsGenerated: 1,
+                docId: docId,
+                // Metadata adicional para compatibilidad
                 metadata: {
                   stripePaymentIntentId: session.payment_intent as string,
                   stripeSessionId: session.id,
@@ -173,12 +190,11 @@ export const handleWebhook = async (payload: string, signature: string) => {
                   documentId: docId,
                   reclId: reclId,
                   documentType: 'reclamacion_cantidades'
-                },
-                total: amount
+                }
               };
 
               await db().collection('purchases').doc(purchaseId).set(purchaseData);
-              console.log(`💾 Compra guardada en /purchases/${purchaseId}`);
+              console.log(`💾 Compra guardada en /purchases/${purchaseId} con estructura correcta`);
 
               // 3. Actualizar /reclamaciones/{reclId}
               await reclRef.update({
