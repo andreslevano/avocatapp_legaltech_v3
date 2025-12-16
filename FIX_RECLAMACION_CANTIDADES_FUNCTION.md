@@ -165,3 +165,5 @@ export const reclamacionCantidades = functions.https.onRequest(async (req, res) 
 - Las variables de entorno deben estar configuradas (`OPENAI_API_KEY`)
 
 
+
+

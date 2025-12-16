@@ -111,3 +111,5 @@ curl -X POST https://avocatapp.com/api/stripe/create-checkout-session \
 - [Firebase Console - Functions Config](https://console.firebase.google.com/project/avocat-legaltech-v3/functions/config)
 
 
+
+

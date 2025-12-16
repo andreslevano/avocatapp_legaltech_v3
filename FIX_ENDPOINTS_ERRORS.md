@@ -132,3 +132,5 @@ Si no existen, necesitas crearlas o desplegarlas.
 **Estado**: ⚠️ Pendiente - Necesita actualizar funciones en Firebase
 
 
+
+

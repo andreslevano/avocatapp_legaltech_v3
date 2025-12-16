@@ -166,3 +166,5 @@ curl -X POST https://avocatapp.com/api/analisis-exito \
 **Estado**: ⚠️ Pendiente - Necesita crear función específica
 
 
+
+

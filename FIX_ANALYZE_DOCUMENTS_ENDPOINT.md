@@ -27,3 +27,5 @@ Necesitamos crear una Firebase Function `analyzeDocuments` que:
 **Estado**: ⚠️ Pendiente - Necesita crear función Firebase
 
 
+
+

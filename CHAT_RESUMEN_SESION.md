@@ -309,3 +309,5 @@ Estado: ✅ Push completado a origin/dev_reclamacion
 **Última actualización:** 27 de Enero 2025  
 **Estado:** ✅ Cambios commiteados y pusheados a `dev_reclamacion`
 
+
+
