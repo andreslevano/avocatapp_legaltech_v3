@@ -866,7 +866,7 @@ NOTA: Este documento ha sido generado mediante inteligencia artificial y debe se
       });
       yPosition += 3;
       
-      addText('TERCERO.- Con fecha ${requestData.fechaPapeleta} se presentó papeleta de conciliación, celebrándose el acto de conciliación el día ${requestData.fechaConciliacion}, con resultado ${requestData.resultadoConciliacion}.', 10);
+      addText(`TERCERO.- Con fecha ${requestData.fechaPapeleta} se presentó papeleta de conciliación, celebrándose el acto de conciliación el día ${requestData.fechaConciliacion}, con resultado ${requestData.resultadoConciliacion}.`, 10);
       yPosition += 5;
       
       // Fundamentos de derecho
