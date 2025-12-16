@@ -806,105 +806,97 @@ NOTA: Este documento ha sido generado mediante inteligencia artificial y debe se
         }
       }
 
-      // Usar el endpoint real de generación de documentos
-      const response = await fetch('/api/reclamacion-cantidades', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      // Verificar el tipo de contenido ANTES de procesar la respuesta
-      const contentType = response.headers.get('content-type');
-      console.log('📄 Content-Type:', contentType);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
-        throw new Error(`Error ${response.status}: ${errorText.substring(0, 200)}`);
-      }
-
-      // Detectar si la respuesta es HTML (error 404 o página de error)
-      if (contentType?.includes('text/html')) {
-        // Leer el HTML para ver qué error específico es
-        const htmlText = await response.text();
-        console.error('❌ Error: El servidor devolvió HTML en lugar de PDF');
-        console.error('HTML recibido (primeros 500 caracteres):', htmlText.substring(0, 500));
-        
-        // Intentar extraer mensaje de error del HTML si es posible
-        const errorMatch = htmlText.match(/<title>(.*?)<\/title>/i) || htmlText.match(/<h1>(.*?)<\/h1>/i);
-        const errorMessage = errorMatch ? errorMatch[1] : 'El endpoint de generación de PDF no está disponible';
-        
-        throw new Error(`${errorMessage}. Por favor, verifica que la Firebase Function esté configurada correctamente o contacta al soporte técnico.`);
-      }
-
-      if (contentType?.includes('application/json')) {
-        // Respuesta JSON
-        const data = await response.json();
-        console.log('✅ Respuesta JSON:', data);
-        
-        // Simular descarga de documento
-        const content = `RECLAMACIÓN DE CANTIDADES\n\nEstimado/a Sr./Sra.,\n\nPor medio del presente, me dirijo a ustedes para reclamar las cantidades adeudadas...`;
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `reclamacion-cantidades-${requestData.nombreTrabajador}-${new Date().toISOString().split('T')[0]}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        // Respuesta binaria (PDF) - El endpoint devuelve directamente el PDF con fundamentos legales mejorados
-        console.log('📥 Descargando PDF...');
-        const blob = await response.blob();
-        
-        if (!blob || blob.size === 0) {
-          throw new Error('El PDF recibido está vacío');
+      // Generar PDF directamente en el cliente usando jsPDF
+      console.log('📄 Generando PDF directamente en el cliente...');
+      const { default: jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPosition = 20;
+      const margin = 20;
+      const maxWidth = pageWidth - (margin * 2);
+      
+      // Función helper para agregar texto con salto de línea automático
+      const addText = (text: string, fontSize: number, isBold: boolean = false, align: 'left' | 'center' | 'right' = 'left') => {
+        doc.setFontSize(fontSize);
+        if (isBold) {
+          doc.setFont('helvetica', 'bold');
+        } else {
+          doc.setFont('helvetica', 'normal');
         }
         
-        // Validar que sea un PDF real verificando los primeros bytes
-        const arrayBuffer = await blob.slice(0, 4).arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        const pdfHeader = String.fromCharCode(...uint8Array);
-        
-        if (pdfHeader !== '%PDF') {
-          console.error('❌ Error: El archivo recibido no es un PDF válido.');
-          console.error('Header recibido:', pdfHeader);
-          console.error('Bytes recibidos:', Array.from(uint8Array).map(b => `0x${b.toString(16)}`).join(' '));
-          
-          // Si parece ser HTML, leer el contenido para diagnóstico
-          if (pdfHeader.startsWith('<') || pdfHeader.startsWith('<!')) {
-            const text = await blob.text();
-            console.error('Contenido recibido (primeros 500 caracteres):', text.substring(0, 500));
-            throw new Error('El servidor devolvió HTML en lugar de PDF. Esto indica que el endpoint no está funcionando correctamente. Por favor, verifica que la Firebase Function esté configurada para generar PDFs.');
+        const lines = doc.splitTextToSize(text, maxWidth);
+        lines.forEach((line: string) => {
+          if (yPosition > pageHeight - 20) {
+            doc.addPage();
+            yPosition = 20;
           }
-          
-          throw new Error(`El archivo recibido no es un PDF válido (header: "${pdfHeader}"). Por favor, contacta al soporte técnico.`);
-        }
-        
-        console.log(`✅ PDF recibido: ${blob.size} bytes, tipo: ${blob.type}`);
-        
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const filename = `reclamacion-cantidades-${requestData.nombreTrabajador}-${new Date().toISOString().split('T')[0]}.pdf`;
-        a.download = filename;
-        a.style.display = 'none'; // Ocultar el elemento
-        document.body.appendChild(a);
-        
-        // Forzar la descarga
-        console.log(`💾 Iniciando descarga: ${filename}`);
-        a.click();
-        
-        // Limpiar después de un breve delay
-        setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-          console.log('✅ PDF descargado exitosamente con fundamentos legales mejorados');
-        }, 100);
-      }
+          doc.text(line, align === 'center' ? pageWidth / 2 : margin, yPosition, { align });
+          yPosition += fontSize * 0.4 + 2;
+        });
+      };
+      
+      // Encabezado
+      addText('AL TRIBUNAL DE INSTANCIA, SECCIÓN SOCIAL QUE POR TURNO CORRESPONDA', 12, true, 'center');
+      yPosition += 10;
+      
+      // Datos del demandante
+      addText(`D./Dña. ${requestData.nombreTrabajador}`, 11, true);
+      addText(`DNI: ${requestData.dniTrabajador}`, 10);
+      addText(`Domicilio: ${requestData.domicilioTrabajador}`, 10);
+      addText(`Teléfono: ${requestData.telefonoTrabajador}`, 10);
+      yPosition += 5;
+      
+      // Datos del demandado
+      addText('EXPONE:', 11, true);
+      yPosition += 2;
+      addText(`Que mediante el presente escrito, comparece ante este Tribunal para ejercitar acción de reclamación de cantidades adeudadas contra ${requestData.nombreEmpresa}, con CIF ${requestData.cifEmpresa} y domicilio en ${requestData.domicilioEmpresa}.`, 10);
+      yPosition += 5;
+      
+      // Hechos
+      addText('HECHOS', 11, true);
+      yPosition += 2;
+      addText(`PRIMERO.- El demandante mantuvo relación laboral con la demandada mediante contrato ${requestData.tipoContrato}, con jornada ${requestData.jornada}, desempeñando las funciones de ${requestData.tareas}, con una antigüedad de ${requestData.antiguedad} y un salario de ${requestData.salario}, estando sujeto al ${requestData.convenio}.`, 10);
+      yPosition += 3;
+      
+      addText('SEGUNDO.- La demandada adeuda al demandante las siguientes cantidades:', 10, true);
+      requestData.cantidadesAdeudadas.forEach((cantidad: string, index: number) => {
+        addText(`${index + 1}. ${cantidad}`, 10);
+      });
+      yPosition += 3;
+      
+      addText('TERCERO.- Con fecha ${requestData.fechaPapeleta} se presentó papeleta de conciliación, celebrándose el acto de conciliación el día ${requestData.fechaConciliacion}, con resultado ${requestData.resultadoConciliacion}.', 10);
+      yPosition += 5;
+      
+      // Fundamentos de derecho
+      addText('FUNDAMENTOS DE DERECHO', 11, true);
+      yPosition += 2;
+      addText('PRIMERO.- De conformidad con lo establecido en el artículo 149.1.7ª de la Constitución Española, corresponde al Estado la competencia exclusiva en materia de legislación laboral.', 10);
+      yPosition += 3;
+      addText('SEGUNDO.- El artículo 26 del Estatuto de los Trabajadores establece el derecho de los trabajadores a la percepción puntual de la remuneración pactada.', 10);
+      yPosition += 3;
+      addText('TERCERO.- El artículo 1101 del Código Civil establece que los que en el cumplimiento de sus obligaciones incurrieren en dolo, negligencia o morosidad, y los que de cualquier modo contravinieren al tenor de aquéllas, quedarán sujetos a la indemnización de los daños y perjuicios causados.', 10);
+      yPosition += 5;
+      
+      // Petitorio
+      addText('PETITORIO', 11, true);
+      yPosition += 2;
+      addText(`Por todo lo expuesto, SOLICITO a V.S. tenga por presentado el presente escrito y, en su virtud, se sirva ADMITIR la demanda, y una vez sustanciado el procedimiento, dictar SENTENCIA condenando a ${requestData.nombreEmpresa} al pago de la cantidad de ${requestData.cantidadTotal} en concepto de cantidades adeudadas, con las costas del proceso.`, 10);
+      yPosition += 5;
+      
+      // Lugar y fecha
+      addText(`${requestData.localidad}, ${new Date().toLocaleDateString('es-ES')}`, 10, false, 'right');
+      yPosition += 10;
+      
+      // Firma
+      addText('_________________________', 10, false, 'center');
+      addText('Firma', 10, false, 'center');
+      
+      // Descargar PDF
+      const filename = `reclamacion-cantidades-${requestData.nombreTrabajador}-${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(filename);
+      console.log(`✅ PDF generado y descargado: ${filename}`);
 
       // Crear documento generado para mostrar en la UI
       // NOTA: El PDF real descargado contiene los fundamentos legales completos y mejorados
