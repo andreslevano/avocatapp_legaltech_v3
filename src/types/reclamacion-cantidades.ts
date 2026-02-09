@@ -99,3 +99,5 @@ export interface ReclamacionCantidades {
   legalMeta?: LegalMeta;
 }
 
+
+

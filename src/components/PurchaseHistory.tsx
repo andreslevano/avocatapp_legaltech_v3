@@ -164,13 +164,25 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       
       try {
         // Si hay documentType, filtrar por él
+        // Primero intentar con el índice, si falla, filtrar en el cliente
         if (documentType) {
-          purchasesQuery = query(
-            purchasesCollection,
-            where('userId', '==', userId),
-            where('documentType', '==', documentType),
-            orderBy('createdAt', 'desc')
-          );
+          try {
+            // Intentar buscar en metadata.documentType con índice
+            purchasesQuery = query(
+              purchasesCollection,
+              where('userId', '==', userId),
+              where('metadata.documentType', '==', documentType),
+              orderBy('createdAt', 'desc')
+            );
+          } catch (indexError: any) {
+            // Si falta el índice, usar solo userId y filtrar en el cliente
+            console.warn('⚠️ Índice no disponible, filtrando en cliente:', indexError);
+            purchasesQuery = query(
+              purchasesCollection,
+              where('userId', '==', userId),
+              orderBy('createdAt', 'desc')
+            );
+          }
         } else {
           purchasesQuery = query(
             purchasesCollection,
@@ -189,7 +201,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
             purchasesQuery = query(
               purchasesCollection,
               where('userId', '==', userId),
-              where('documentType', '==', documentType)
+              where('metadata.documentType', '==', documentType)
             );
           } else {
             purchasesQuery = query(
@@ -205,8 +217,17 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       
       const snapshot = await getDocs(purchasesQuery);
       
+      // Si hay documentType y la query no lo filtró (por falta de índice), filtrar en el cliente
+      let docs = snapshot.docs;
+      if (documentType) {
+        docs = docs.filter((doc) => {
+          const data = doc.data() as Purchase;
+          return data.metadata?.documentType === documentType || data.documentType === documentType;
+        });
+      }
+      
       // Convertir purchases de Firestore a PurchaseHistory
-      const formattedData: PurchaseHistory[] = snapshot.docs
+      const formattedData: PurchaseHistory[] = docs
         .map((doc) => {
           const data = doc.data() as Purchase;
           
@@ -260,19 +281,35 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
             };
           }
           
+          // Extraer docId y reclId de metadata
+          const metadata = data.metadata || {};
+          const docId = data.docId || metadata.docId || firstItem.documentId || undefined;
+          const reclId = metadata.reclId || undefined;
+          const tutelaId = metadata.tutelaId || undefined;
+          
+          // Para reclamaciones de cantidades, construir URL desde Storage si hay reclId
+          if (data.documentType === 'reclamacion_cantidades' && reclId && !files.pdfUrl) {
+            // Construir la ruta esperada en Storage
+            const storagePath = `reclamaciones_cantidades/${data.userId}/${reclId}/output/final.pdf`;
+            // Nota: Necesitaremos obtener la URL firmada desde Storage
+            // Por ahora, dejamos que el downloadDocument maneje esto
+          }
+          
           // Convertir cada purchase a PurchaseHistory
           return {
             id: data.id || doc.id,
             userId: data.userId,
-            documentTitle: firstItem.name || 'Documento legal',
-            documentType: (data.documentType || 'reclamacion_cantidades') as 'reclamacion_cantidades' | 'accion_tutela' | 'estudiantes',
+            documentTitle: firstItem.name || (data as any).description || 'Documento legal',
+            documentType: (data.documentType || metadata.documentType || 'reclamacion_cantidades') as 'reclamacion_cantidades' | 'accion_tutela' | 'estudiantes',
             purchaseDate: toDate(data.createdAt),
-            price: data.total || 0,
+            price: data.total || (data as any).amount || 0,
             currency: data.currency || 'EUR',
             status: historyStatus,
             documentCount: data.items?.length || 0,
             accuracy: 85, // Default accuracy, puede calcularse si hay datos
-            docId: data.docId || firstItem.documentId || undefined,
+            docId: docId,
+            reclId: reclId,
+            tutelaId: tutelaId,
             files: files,
             emailSent: false, // Puede agregarse si hay tracking
             paid: data.status === 'completed'
@@ -435,60 +472,106 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
         return;
       }
 
-      // Fallback: usar endpoint API si no hay URL directa
-      if (!doc.docId) {
-        alert('Error: No se encontró el ID del documento');
+      // Para reclamaciones de cantidades, obtener URL desde Firestore
+      if (doc.documentType === 'reclamacion_cantidades' && (doc as any).reclId) {
+        const reclId = (doc as any).reclId;
+        console.log('🔍 Buscando documento en Firestore:', { userId, reclId, format });
+        
+        try {
+          const { doc: firestoreDoc, getDoc } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase');
+          
+          if (!db) {
+            throw new Error('Firestore no está inicializado');
+          }
+          
+          const caseRef = firestoreDoc(db, `users/${userId}/reclamaciones_cantidades/${reclId}`);
+          const caseSnap = await getDoc(caseRef);
+          
+          console.log('📋 Documento encontrado en Firestore:', caseSnap.exists());
+          
+          if (!caseSnap.exists()) {
+            console.warn('⚠️ No se encontró el caso en Firestore:', reclId);
+            alert('No se encontró el documento en Firestore. Por favor, contacta con soporte.');
+            return;
+          }
+          
+          const caseData = caseSnap.data();
+          console.log('📄 Datos del caso:', {
+            hasStorage: !!caseData?.storage,
+            hasOutput: !!caseData?.storage?.output,
+            hasFinalPdf: !!caseData?.storage?.output?.finalPdf,
+            downloadURL: caseData?.storage?.output?.finalPdf?.downloadURL ? 'presente' : 'ausente',
+            storagePath: caseData?.storage?.output?.finalPdf?.storagePath || 'ausente'
+          });
+          
+          // Intentar obtener URL desde storage.output.finalPdf.downloadURL
+          const finalPdfUrl = caseData?.storage?.output?.finalPdf?.downloadURL;
+          
+          if (finalPdfUrl && format === 'pdf') {
+            console.log('✅ URL encontrada, descargando PDF desde Storage:', finalPdfUrl.substring(0, 100) + '...');
+            await downloadFromUrl(finalPdfUrl, `${doc.documentTitle || 'reclamacion-cantidades'}.pdf`);
+            return;
+          }
+          
+          // Si no hay URL pero hay storagePath, generar URL firmada
+          const storagePath = caseData?.storage?.output?.finalPdf?.storagePath;
+          if (storagePath && format === 'pdf') {
+            console.log('📦 Generando URL firmada desde Storage path:', storagePath);
+            try {
+              const { getStorage, ref, getDownloadURL } = await import('firebase/storage');
+              const { storage } = await import('@/lib/firebase');
+              
+              if (!storage) {
+                throw new Error('Storage no está inicializado');
+              }
+              
+              const storageRef = ref(storage, storagePath);
+              const downloadURL = await getDownloadURL(storageRef);
+              console.log('✅ URL firmada generada:', downloadURL.substring(0, 100) + '...');
+              await downloadFromUrl(downloadURL, `${doc.documentTitle || 'reclamacion-cantidades'}.pdf`);
+              return;
+            } catch (urlError: any) {
+              console.error('❌ Error generando URL firmada:', urlError);
+              alert(`Error al generar URL de descarga: ${urlError.message}`);
+              return;
+            }
+          }
+          
+          // Si no hay documento generado aún, informar al usuario
+          if (!finalPdfUrl && !storagePath) {
+            alert('El documento aún no ha sido generado. Por favor, espera unos momentos y vuelve a intentar.');
+            console.warn('⚠️ Documento no generado aún para reclId:', reclId);
+            return;
+          }
+        } catch (storageError: any) {
+          console.error('❌ Error obteniendo URL desde Firestore:', storageError);
+          alert(`Error al obtener el documento: ${storageError.message}`);
+          return;
+        }
+      }
+
+      // Para Word, informar que aún no está disponible
+      if (format === 'word') {
+        alert('La descarga en formato Word aún no está disponible. Por favor, usa el formato PDF.');
         return;
       }
 
-      const endpoint = format === 'pdf' 
-        ? `/api/documents/${doc.docId}/download?uid=${userId}`
-        : `/api/documents/${doc.docId}/word?uid=${userId}`;
-
-      console.log(`📥 Descargando ${format.toUpperCase()}: ${endpoint}`);
-
-      const response = await fetch(endpoint);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
-        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      // Fallback: para otros tipos de documentos
+      if (!doc.docId && !(doc as any).reclId && !(doc as any).tutelaId) {
+        alert('Error: No se encontró el ID del documento. Por favor, contacta con soporte.');
+        console.error('❌ No se encontró ID del documento:', {
+          docId: doc.docId,
+          reclId: (doc as any).reclId,
+          tutelaId: (doc as any).tutelaId,
+          documentType: doc.documentType
+        });
+        return;
       }
 
-      const blob = await response.blob();
-      
-      if (typeof window === 'undefined' || typeof document === 'undefined') {
-        throw new Error('Este código solo puede ejecutarse en el cliente');
-      }
-      
-      const contentDisposition = response.headers.get('content-disposition');
-      let filename = doc.documentTitle;
-      
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
-        if (filenameMatch) {
-          filename = filenameMatch[1];
-        }
-      }
-      
-      if (format === 'word' && !filename.endsWith('.docx')) {
-        filename = filename.replace(/\.pdf$/, '') + '.docx';
-      } else if (format === 'pdf' && !filename.endsWith('.pdf')) {
-        filename = filename.replace(/\.docx$/, '') + '.pdf';
-      }
-
-      const url = window.URL.createObjectURL(blob);
-      const linkElement = document.createElement('a');
-      linkElement.href = url;
-      linkElement.download = filename;
-      linkElement.style.display = 'none';
-      document.body.appendChild(linkElement);
-      linkElement.click();
-      
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(linkElement);
-        console.log(`✅ ${format.toUpperCase()} descargado: ${filename}`);
-      }, 100);
+      // Si llegamos aquí, el documento no se encontró
+      alert('No se pudo encontrar el documento. Por favor, contacta con soporte o intenta generar el documento nuevamente.');
+      console.error('❌ No se pudo descargar el documento después de todos los intentos');
     } catch (error: any) {
       console.error(`❌ Error descargando ${format}:`, error);
       alert(`Error descargando el documento: ${error.message}`);
@@ -625,7 +708,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                 Estado
               </th>
               <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
+                Documento legal
               </th>
             </tr>
           </thead>

@@ -386,3 +386,5 @@ export const generateReclamacionDocument = onDocumentUpdated(
 
 **Recomendación:** Mantén la arquitectura actual (Cloud Run) y considera Cloud Functions solo si necesitas procesamiento asíncrono o mejor escalabilidad.
 
+
+

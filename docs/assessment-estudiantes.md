@@ -470,3 +470,5 @@ El sistema de estudiantes tiene una **base sólida** con una interfaz de usuario
 
 **Tiempo Estimado de Implementación:** 2-3 semanas
 
+
+

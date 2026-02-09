@@ -85,3 +85,5 @@ Para verificar que los archivos se están guardando correctamente:
    - Verificar que el campo `plan` esté configurado como "Reclamación de Cantidades" (opcional)
    - O verificar que `documentType = "reclamacion_cantidades"` en los metadatos de los documentos
 
+
+

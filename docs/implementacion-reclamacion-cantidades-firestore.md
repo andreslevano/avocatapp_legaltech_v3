@@ -212,3 +212,5 @@ RECLAMACION_PRICE_AMOUNT=5000 (opcional, en centavos)
 INTERNAL_API_SECRET=tu-secret-interno (opcional)
 ```
 
+
+

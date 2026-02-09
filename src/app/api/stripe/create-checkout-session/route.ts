@@ -87,6 +87,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validar que hay items antes de crear la sesión
+    if (line_items.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No items provided. No se pueden crear sesiones sin items.' },
+        { status: 400 }
+      );
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: line_items,

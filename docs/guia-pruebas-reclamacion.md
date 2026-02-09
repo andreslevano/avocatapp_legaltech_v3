@@ -300,3 +300,5 @@ Después de verificar que todo funciona:
 3. **Refinar Prompt:** Ajustar prompt según resultados
 4. **Agregar Tests:** Tests automatizados para cada componente
 
+
+

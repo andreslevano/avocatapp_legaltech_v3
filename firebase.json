@@ -13,11 +13,23 @@
       },
       {
         "source": "/api/analisis-exito",
-        "function": "reclamacionCantidades"
+        "function": "analisisExito"
       },
       {
         "source": "/api/reclamacion-cantidades",
         "function": "reclamacionCantidades"
+      },
+      {
+        "source": "/api/ocr-and-analyze",
+        "function": "ocrAndAnalyze"
+      },
+      {
+        "source": "/api/stripe/webhook",
+        "function": "stripeWebhook"
+      },
+      {
+        "source": "/api/reclamaciones-cantidades/generate-final",
+        "function": "generateFinalDocument"
       },
       {
         "source": "**",
