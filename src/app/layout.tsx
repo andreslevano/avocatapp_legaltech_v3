@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import '@/styles/globals.css';
 import { I18nProvider } from '@/contexts/I18nContext';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Avocat - Plataforma LegalTech',
@@ -21,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={inter.className}>
+      <body className="font-serif antialiased">
         {/* Google tag (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=AW-16479671897"
@@ -35,8 +32,14 @@ export default function RootLayout({
             gtag('config', 'AW-16479671897');
           `}
         </Script>
+        {/* Zapier Interfaces Chatbot */}
+        <Script
+          src="https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js"
+          strategy="afterInteractive"
+          type="module"
+        />
         <I18nProvider>
-          <div className="min-h-screen bg-gray-50">
+          <div className="min-h-screen bg-app">
             {children}
           </div>
         </I18nProvider>

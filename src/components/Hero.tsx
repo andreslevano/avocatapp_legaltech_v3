@@ -16,7 +16,7 @@ export default function Hero() {
         }}
       >
         {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/60"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-text-primary/60 via-text-primary/50 to-text-primary/60"></div>
       </div>
 
       {/* Content */}
@@ -24,13 +24,13 @@ export default function Hero() {
         <div className="text-center">
           {/* Main Headline */}
           <h1 
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 drop-shadow-lg" 
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-text-on-dark mb-6 drop-shadow-lg" 
             dangerouslySetInnerHTML={{ __html: t('hero.title') }}
           >
           </h1>
           
           {/* Subtitle */}
-          <p className="text-lg md:text-xl lg:text-2xl text-white/95 mb-8 max-w-3xl mx-auto drop-shadow-md">
+          <p className="text-lg md:text-xl lg:text-2xl text-text-on-dark mb-8 max-w-3xl mx-auto drop-shadow-md">
             {t('hero.subtitle')}
           </p>
 
@@ -44,7 +44,7 @@ export default function Hero() {
       </div>
 
       {/* Additional gradient overlay at bottom for smooth transition */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-app to-transparent pointer-events-none"></div>
     </section>
   );
 }

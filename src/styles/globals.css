@@ -2,35 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  /* Premium legal-tech grayscale palette */
+  --color-app: #F2F2F2;
+  --color-sidebar: #1E1E1E;
+  --color-card: #FFFFFF;
+  --color-surface-muted: #C4C4C4;
+  --color-border: #9A9A9A;
+  --color-hover: #B8B8B8;
+  --color-text-primary: #1E1E1E;
+  --color-text-secondary: #5F5F5F;
+  --color-text-on-dark: #F2F2F2;
+  --font-eb-garamond: 'EB Garamond', Garamond, 'Libre Baskerville', 'Times New Roman', serif;
+}
 
 @layer base {
   html {
     scroll-behavior: smooth;
   }
-  
+
   body {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--font-eb-garamond);
+    background-color: var(--color-app);
+    color: var(--color-text-primary);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Typography scale */
+  h1 {
+    @apply text-h1 font-bold text-text-primary;
+  }
+  h2 {
+    @apply text-h2 font-semibold text-text-primary;
+  }
+  h3 {
+    @apply text-h3 font-semibold text-text-primary;
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-sidebar hover:bg-text-primary text-text-on-dark font-medium py-2 px-4 rounded-lg transition-colors duration-200;
   }
-  
+
   .btn-secondary {
-    @apply bg-white hover:bg-gray-50 text-primary-600 font-medium py-2 px-4 rounded-lg border border-primary-600 transition-colors duration-200;
+    @apply bg-card hover:bg-hover text-text-primary font-medium py-2 px-4 rounded-lg border border-border transition-colors duration-200;
   }
-  
+
   .card {
-    @apply bg-white rounded-xl shadow-lg border border-gray-200 p-6;
+    @apply bg-card rounded-xl shadow-lg border border-border p-6;
   }
-  
+
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-3 py-2 border border-border rounded-lg bg-card text-text-primary focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar;
   }
 }
 
-/* Hero Background Image - Already handled by Tailwind classes */
-/* The bg-cover and bg-center classes ensure responsive behavior */
+/* Zapier chatbot embed: align with grayscale (widget may use shadow DOM; override what is possible) */
+zapier-interfaces-chatbot-embed {
+  --zapier-primary: var(--color-sidebar) !important;
+}

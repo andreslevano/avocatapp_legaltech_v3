@@ -10,7 +10,7 @@
     "signup": "Comenzar"
   },
   "hero": {
-    "title": "Revolucionando<span class=\"text-primary-600 block\">la Práctica Legal</span>con IA",
+    "title": "Revolucionando <span class=\"font-semibold block\">la Práctica Legal</span> con IA",
     "subtitle": "Optimiza tu flujo de trabajo legal con análisis inteligente de documentos, resúmenes de casos e investigación legal automatizada impulsada por tecnología de IA de vanguardia.",
     "cta": "Prueba Gratuita",
     "learnMore": "Ver Demo",
@@ -51,15 +51,17 @@
     "title": "Precios Simples y Transparentes",
     "subtitle": "Elige el plan que se adapte a tu práctica. Todos los planes incluyen una prueba gratuita de 14 días sin tarjeta de crédito requerida.",
     "students": {
-      "title": "🇪🇸 Estudiantes",
-      "description": "Acceso completo para estudiantes de derecho y pasantes",
+      "title": "ESTUDIANTES",
+      "description": "",
       "price": "€3,00",
       "period": "/escrito",
-      "aiDocs": "Análisis de Documentos con IA (50 docs/mes)",
-      "basicLegalResearch": "Investigación Legal Básica",
-      "clientPortal": "Portal de Clientes (hasta 10 clientes)",
-      "emailSupport": "Soporte por Email",
-      "basicAnalytics": "Análisis Básico",
+      "feature1": "Cuentas con 8 áreas legales",
+      "feature2": "7 tipos de escrito por área",
+      "feature3": "Genera plantilla lista para completar",
+      "feature4": "Obtén un escrito de ejemplo",
+      "feature5": "Dossier académico para estudio",
+      "feature6": "Descarga y envía por email el contenido",
+      "feature7": "Historial de compra para obtener documentación anterior",
       "startNow": "Empezar ahora"
     },
     "tutela": {
@@ -213,7 +215,7 @@
   },
   "subscription": {
     "title": "Suscripción",
-    "subtitle": "Gestiona tu plan de suscripción y facturación",
+    "subtitle": "Descripción de los planes que gestionamos actualmente",
     "currentPlan": "Plan Actual",
     "lawyerPlan": "Plan Abogados",
     "fullAccess": "Acceso completo a todas las funcionalidades",

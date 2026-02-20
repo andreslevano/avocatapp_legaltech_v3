@@ -479,3 +479,4 @@ Después de configurar el webhook:
 3. Añadir índices compuestos en Firestore: `userId + documentType + createdAt`
 4. Actualizar scripts de reprocesamiento para manejar tutela
 
+

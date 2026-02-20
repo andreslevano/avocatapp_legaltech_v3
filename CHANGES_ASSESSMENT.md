@@ -191,3 +191,4 @@ Todos los cambios solicitados han sido implementados:
 - ⚠️ Probar flujo completo con Payment Link real
 - ⚠️ Verificar que cantidad se sincronice correctamente entre UI y Stripe
 
+

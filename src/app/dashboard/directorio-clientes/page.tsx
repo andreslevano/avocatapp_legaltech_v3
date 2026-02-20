@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
-import DashboardNavigation from '@/components/DashboardNavigation';
 import { useI18n } from '@/hooks/useI18n';
 
 interface Client {
@@ -204,13 +203,13 @@ export default function CustomerDirectoryPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-surface-muted/30 text-text-primary border-border';
       case 'inactive':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-surface-muted/20 text-text-secondary border-border';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-surface-muted/40 text-text-primary border-border';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-surface-muted/30 text-text-primary border-border';
     }
   };
 
@@ -254,10 +253,10 @@ export default function CustomerDirectoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Cargando...</p>
         </div>
       </div>
     );
@@ -268,99 +267,60 @@ export default function CustomerDirectoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-lg">A</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Avocat</span>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-700">
-                Bienvenido, {user.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="btn-secondary"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Dashboard Navigation */}
-      <DashboardNavigation currentPlan="Abogados" />
-
-      {/* Page Header */}
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h1 className="text-lg font-semibold text-blue-800">
-                {t('dashboard.clientDirectory.title')}
-              </h1>
-              <p className="text-sm text-blue-700">
-                {t('dashboard.clientDirectory.subtitle')}
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/dashboard"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            ← {t('dashboard.backToDashboard')}
-          </Link>
-        </div>
-      </div>
+    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 relative">
+      {/* Floating Volver button - top right */}
+      <Link
+        href="/dashboard/casos"
+        className="fixed top-24 right-8 z-50 group w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors"
+        title="Volver"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          Volver
+        </span>
+      </Link>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
+          <h1 className="text-h1 text-text-primary mb-2">{t('dashboard.clientDirectory.title')}</h1>
+          <p className="text-body text-text-secondary mb-6">{t('dashboard.clientDirectory.subtitle')}</p>
+
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <div className="text-2xl font-bold text-blue-600">
+            <div className="bg-card p-4 rounded-lg shadow-sm border border-border">
+              <div className="text-2xl font-bold text-text-primary">
                 {clients.length}
               </div>
-              <div className="text-sm text-gray-600">{t('dashboard.clientDirectory.totalClients')}</div>
+              <div className="text-sm text-text-secondary">{t('dashboard.clientDirectory.totalClients')}</div>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <div className="text-2xl font-bold text-green-600">
+            <div className="bg-card p-4 rounded-lg shadow-sm border border-border">
+              <div className="text-2xl font-bold text-text-primary">
                 {clients.filter(c => c.status === 'active').length}
               </div>
-              <div className="text-sm text-gray-600">{t('dashboard.clientDirectory.active')}</div>
+              <div className="text-sm text-text-secondary">{t('dashboard.clientDirectory.active')}</div>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <div className="text-2xl font-bold text-yellow-600">
+            <div className="bg-card p-4 rounded-lg shadow-sm border border-border">
+              <div className="text-2xl font-bold text-text-primary">
                 {clients.filter(c => c.status === 'pending').length}
               </div>
-              <div className="text-sm text-gray-600">{t('dashboard.clientDirectory.pending')}</div>
+              <div className="text-sm text-text-secondary">{t('dashboard.clientDirectory.pending')}</div>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <div className="text-2xl font-bold text-purple-600">
+            <div className="bg-card p-4 rounded-lg shadow-sm border border-border">
+              <div className="text-2xl font-bold text-text-primary">
                 {clients.reduce((acc, c) => acc + c.totalCases, 0)}
               </div>
-              <div className="text-sm text-gray-600">{t('dashboard.clientDirectory.totalCases')}</div>
+              <div className="text-sm text-text-secondary">{t('dashboard.clientDirectory.totalCases')}</div>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+          <div className="bg-card p-6 rounded-lg shadow-sm border border-border mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   {t('dashboard.clientDirectory.searchClient')}
                 </label>
                 <input
@@ -368,17 +328,17 @@ export default function CustomerDirectoryPage() {
                   placeholder={t('dashboard.clientDirectory.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   {t('dashboard.clientDirectory.status')}
                 </label>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                 >
                   <option value="all">{t('dashboard.clientDirectory.allStatuses')}</option>
                   <option value="active">{t('dashboard.clientDirectory.active')}</option>
@@ -387,13 +347,13 @@ export default function CustomerDirectoryPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   {t('dashboard.clientDirectory.city')}
                 </label>
                 <select
                   value={filterCity}
                   onChange={(e) => setFilterCity(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                 >
                   <option value="all">{t('dashboard.clientDirectory.allCities')}</option>
                   {uniqueCities.map(city => (
@@ -404,27 +364,30 @@ export default function CustomerDirectoryPage() {
             </div>
           </div>
 
-          {/* Clients List */}
-          <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Lista de Clientes ({filteredClients.length})
+          {/* Clients List - similar to case item list, expanded by default with counter */}
+          <div className="bg-card shadow-sm rounded-lg border border-border overflow-hidden">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-text-primary">
+                Lista de Clientes
               </h2>
+              <span className="text-2xl font-bold text-text-primary">
+                {clientsLoading ? '—' : filteredClients.length}
+              </span>
             </div>
             
             {clientsLoading ? (
               <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Cargando clientes...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sidebar mx-auto"></div>
+                <p className="mt-4 text-text-secondary">Cargando clientes...</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-border overflow-y-auto" style={{ maxHeight: '600px' }}>
                 {filteredClients.map((client) => (
-                  <div key={client.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div key={client.id} className="p-6 hover:bg-app transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <span className="text-lg font-medium text-gray-900">
+                          <span className="text-lg font-medium text-text-primary">
                             {client.name}
                           </span>
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(client.status)}`}>
@@ -433,7 +396,7 @@ export default function CustomerDirectoryPage() {
                           </span>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-text-secondary mb-3">
                           <div>
                             <span className="font-medium">Email:</span> {client.email}
                           </div>
@@ -448,7 +411,7 @@ export default function CustomerDirectoryPage() {
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-text-secondary mb-3">
                           <div>
                             <span className="font-medium">Tipo de Caso:</span> {client.caseType}
                           </div>
@@ -460,25 +423,25 @@ export default function CustomerDirectoryPage() {
                           </div>
                         </div>
                         
-                        <div className="text-sm text-gray-600 mb-3">
+                        <div className="text-sm text-text-secondary mb-3">
                           <span className="font-medium">Último Contacto:</span> {new Date(client.lastContact).toLocaleDateString()}
                         </div>
                         
                         {client.notes && (
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-text-secondary">
                             <span className="font-medium">Notas:</span> {client.notes}
                           </div>
                         )}
                       </div>
                       
                       <div className="ml-6 flex flex-col space-y-2">
-                        <button className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-700 transition-colors">
+                        <button className="bg-sidebar text-text-on-dark px-4 py-2 rounded-lg text-sm hover:bg-text-primary transition-colors">
                           Ver Perfil
                         </button>
-                        <button className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors">
+                        <button className="bg-sidebar text-text-on-dark px-4 py-2 rounded-lg text-sm hover:bg-text-primary transition-colors">
                           Contactar
                         </button>
-                        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                        <button className="bg-sidebar text-text-on-dark px-4 py-2 rounded-lg text-sm hover:bg-text-primary transition-colors">
                           Ver Casos
                         </button>
                       </div>

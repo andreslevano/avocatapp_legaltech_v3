@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
-import DashboardNavigation from '@/components/DashboardNavigation';
 import { useI18n } from '@/hooks/useI18n';
 
 interface OnTimeCase {
@@ -170,9 +169,9 @@ export default function OnTimeCasesPage() {
       case 'normal':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'low':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-surface-muted/30 text-text-primary border-border';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-surface-muted/30 text-text-primary border-border';
     }
   };
 
@@ -189,16 +188,16 @@ export default function OnTimeCasesPage() {
       case 'Análisis':
         return 'bg-indigo-100 text-indigo-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-surface-muted/30 text-text-primary';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -209,36 +208,7 @@ export default function OnTimeCasesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-lg">A</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Avocat</span>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-700">
-                {t('dashboard.welcome')}, {user.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="btn-secondary"
-              >
-                {t('navigation.logout')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Dashboard Navigation */}
-      <DashboardNavigation currentPlan="Abogados" />
-
+    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       {/* Page Header */}
       <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
         <div className="flex items-center justify-between">
@@ -271,53 +241,53 @@ export default function OnTimeCasesPage() {
         <div className="px-4 py-6 sm:px-0">
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-card p-4 rounded-lg shadow-sm border border-border">
               <div className="text-2xl font-bold text-green-600">
                 {onTimeCases.length}
               </div>
-              <div className="text-sm text-gray-600">{t('dashboard.onTimeCases.totalOnTime')}</div>
+              <div className="text-sm text-text-secondary">{t('dashboard.onTimeCases.totalOnTime')}</div>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-card p-4 rounded-lg shadow-sm border border-border">
               <div className="text-2xl font-bold text-blue-600">
                 {onTimeCases.filter(c => c.priority === 'medium').length}
               </div>
-              <div className="text-sm text-gray-600">{t('dashboard.onTimeCases.mediumPriority')}</div>
+              <div className="text-sm text-text-secondary">{t('dashboard.onTimeCases.mediumPriority')}</div>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <div className="text-2xl font-bold text-gray-600">
+            <div className="bg-card p-4 rounded-lg shadow-sm border border-border">
+              <div className="text-2xl font-bold text-text-secondary">
                 {onTimeCases.filter(c => c.priority === 'normal').length}
               </div>
-              <div className="text-sm text-gray-600">{t('dashboard.onTimeCases.normalPriority')}</div>
+              <div className="text-sm text-text-secondary">{t('dashboard.onTimeCases.normalPriority')}</div>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-card p-4 rounded-lg shadow-sm border border-border">
               <div className="text-2xl font-bold text-purple-600">
                 {Math.round(onTimeCases.reduce((acc, c) => acc + c.progress, 0) / onTimeCases.length)}%
               </div>
-              <div className="text-sm text-gray-600">{t('dashboard.onTimeCases.averageProgress')}</div>
+              <div className="text-sm text-text-secondary">{t('dashboard.onTimeCases.averageProgress')}</div>
             </div>
           </div>
 
           {/* Cases List */}
-          <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className="bg-card shadow-sm rounded-lg border border-border">
+            <div className="px-6 py-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-text-primary">
                 Lista de Casos a Tiempo
               </h2>
             </div>
             
             {casesLoading ? (
               <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Cargando casos a tiempo...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sidebar mx-auto"></div>
+                <p className="mt-4 text-text-secondary">Cargando casos a tiempo...</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
                 {onTimeCases.map((caseItem) => (
-                  <div key={caseItem.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div key={caseItem.id} className="p-6 hover:bg-app transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <span className="text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-text-primary">
                             {caseItem.caseTitle}
                           </span>
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(caseItem.priority)}`}>
@@ -328,7 +298,7 @@ export default function OnTimeCasesPage() {
                           </span>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-text-secondary mb-3">
                           <div>
                             <span className="font-medium">Cliente:</span> {caseItem.clientName}
                           </div>
@@ -343,7 +313,7 @@ export default function OnTimeCasesPage() {
                           </div>
                         </div>
                         
-                        <div className="mb-3 text-sm text-gray-600">
+                        <div className="mb-3 text-sm text-text-secondary">
                           <span className="font-medium">Descripción:</span> {caseItem.description}
                         </div>
 
@@ -360,7 +330,7 @@ export default function OnTimeCasesPage() {
                         <div className="text-2xl font-bold text-green-600">
                           {caseItem.daysRemaining}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-text-secondary">
                           {caseItem.daysRemaining === 1 ? 'día restante' : 'días restantes'}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
@@ -368,7 +338,7 @@ export default function OnTimeCasesPage() {
                         </div>
                         <button 
                           onClick={() => router.push('/dashboard/analisis-caso')}
-                          className="mt-3 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-700 transition-colors"
+                          className="mt-3 bg-sidebar text-white px-4 py-2 rounded-lg text-sm hover:bg-text-primary transition-colors"
                         >
                           Ver Detalles
                         </button>

@@ -16,12 +16,15 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "uploaded_files",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "source", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
 }
-
-
-
-
-

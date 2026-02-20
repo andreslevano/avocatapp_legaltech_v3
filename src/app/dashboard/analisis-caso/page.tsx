@@ -5,9 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
-import DashboardNavigation from '@/components/DashboardNavigation';
 import WinProbabilityIndicator from '@/components/WinProbabilityIndicator';
-import UserMenu from '@/components/UserMenu';
 import { useI18n } from '@/hooks/useI18n';
 
 interface CaseData {
@@ -410,30 +408,31 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'text-red-600 bg-red-100';
-      case 'medium': return 'text-yellow-600 bg-yellow-100';
-      case 'low': return 'text-green-600 bg-green-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'high': return 'text-text-primary bg-surface-muted/40 border-border';
+      case 'medium': return 'text-text-primary bg-surface-muted/30 border-border';
+      case 'low': return 'text-text-secondary bg-surface-muted/20 border-border';
+      default: return 'text-text-secondary bg-surface-muted/30 border-border';
     }
   };
 
   const getAlertIcon = (type: string) => {
+    const iconClass = 'w-5 h-5 text-text-primary';
     switch (type) {
       case 'deadline':
         return (
-          <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+          <svg className={iconClass} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
           </svg>
         );
       case 'warning':
         return (
-          <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+          <svg className={iconClass} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
         );
       case 'alert':
         return (
-          <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+          <svg className={iconClass} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
           </svg>
         );
@@ -444,10 +443,10 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Cargando...</p>
         </div>
       </div>
     );
@@ -458,25 +457,105 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-lg">A</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Avocat</span>
+    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 relative">
+      {/* Floating Action Buttons - top right, always visible when scrolling */}
+      <div className="fixed top-24 right-8 z-50 flex flex-col gap-2">
+        <Link
+          href="/dashboard/casos"
+          className="group relative w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors"
+          title="Volver"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Volver
+          </span>
+        </Link>
+        <button
+          onClick={handleSaveCase}
+          disabled={isSaving}
+          className="group relative w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Guardar"
+        >
+          {isSaving ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-text-on-dark border-t-transparent" />
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+            </svg>
+          )}
+          <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Guardar
+          </span>
+        </button>
+        <button
+          onClick={handleGenerateDocuments}
+          className="group relative w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors"
+          title="Generar Escritos"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Generar Escritos
+          </span>
+        </button>
+        <button
+          onClick={handleViewRepository}
+          className="group relative w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors"
+          title="Ver Repositorio"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Ver Repositorio
+          </span>
+        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
+            className="group relative w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors"
+            title="Descargar Análisis"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              Descargar Análisis
+            </span>
+          </button>
+          {showDownloadDropdown && (
+            <div className="absolute bottom-full mb-2 right-0 bg-card border border-border rounded-lg shadow-lg py-2 min-w-[180px]">
+              <button
+                onClick={() => {
+                  downloadAnalysis('pdf');
+                  setShowDownloadDropdown(false);
+                }}
+                className="w-full flex items-center px-4 py-2 text-sm text-text-secondary hover:bg-surface-muted/30 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-3 text-text-primary" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                </svg>
+                Descargar PDF
+              </button>
+              <button
+                onClick={() => {
+                  downloadAnalysis('docx');
+                  setShowDownloadDropdown(false);
+                }}
+                className="w-full flex items-center px-4 py-2 text-sm text-text-secondary hover:bg-surface-muted/30 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-3 text-text-primary" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                </svg>
+                Descargar Word
+              </button>
             </div>
-            
-            <UserMenu user={user} currentPlan="Abogados" />
-          </div>
+          )}
         </div>
-      </header>
-
-      {/* Dashboard Navigation */}
-      <DashboardNavigation currentPlan="Abogados" />
+      </div>
 
       {/* Win Probability Indicator */}
       {winProbability && (
@@ -493,15 +572,15 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
         <div className="px-4 py-6 sm:px-0">
           {/* Case Header */}
           {caseData && (
-            <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
+            <div className="bg-card shadow-sm rounded-lg border border-border p-4 sm:p-6 mb-6 sm:mb-8">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{caseData.title}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-text-primary break-words">{caseData.title}</h1>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getPriorityColor(caseData.priority)}`}>
+                  <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getPriorityColor(caseData.priority)}`}>
                     {caseData.priority === 'high' ? 'Alta Prioridad' : 
                      caseData.priority === 'medium' ? 'Media Prioridad' : 'Baja Prioridad'}
                   </span>
-                  <span className="px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
+                  <span className="px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-surface-muted/30 text-text-primary border border-border">
                     {caseData.type}
                   </span>
                 </div>
@@ -509,40 +588,40 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">{t('dashboard.caseAnalysis.client')}</h3>
-                  <p className="text-base sm:text-lg font-semibold text-gray-900 break-words">{caseData.clientName}</p>
-                  <p className="text-sm text-gray-600 break-all">{caseData.clientEmail}</p>
-                  <p className="text-sm text-gray-600">{caseData.clientPhone}</p>
+                  <h3 className="text-sm font-medium text-text-secondary mb-2">{t('dashboard.caseAnalysis.client')}</h3>
+                  <p className="text-base sm:text-lg font-semibold text-text-primary break-words">{caseData.clientName}</p>
+                  <p className="text-sm text-text-secondary break-all">{caseData.clientEmail}</p>
+                  <p className="text-sm text-text-secondary">{caseData.clientPhone}</p>
                 </div>
                 
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">{t('dashboard.caseAnalysis.assignedLawyer')}</h3>
-                  <p className="text-base sm:text-lg font-semibold text-gray-900 break-words">{caseData.assignedLawyer}</p>
-                  <p className="text-sm text-gray-600">Fecha Límite: {new Date(caseData.deadline).toLocaleDateString('es-ES')}</p>
+                  <h3 className="text-sm font-medium text-text-secondary mb-2">{t('dashboard.caseAnalysis.assignedLawyer')}</h3>
+                  <p className="text-base sm:text-lg font-semibold text-text-primary break-words">{caseData.assignedLawyer}</p>
+                  <p className="text-sm text-text-secondary">Fecha Límite: {new Date(caseData.deadline).toLocaleDateString('es-ES')}</p>
                 </div>
                 
                 <div className="sm:col-span-2 lg:col-span-1">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">{t('dashboard.caseAnalysis.caseInfo')}</h3>
-                  <p className="text-sm text-gray-600">ID: {caseData.id}</p>
-                  <p className="text-sm text-gray-600">Creado: {new Date(caseData.createdAt).toLocaleDateString('es-ES')}</p>
+                  <h3 className="text-sm font-medium text-text-secondary mb-2">{t('dashboard.caseAnalysis.caseInfo')}</h3>
+                  <p className="text-sm text-text-secondary">ID: {caseData.id}</p>
+                  <p className="text-sm text-text-secondary">Creado: {new Date(caseData.createdAt).toLocaleDateString('es-ES')}</p>
                 </div>
               </div>
               
               {/* Selected Legal Area and Procedure */}
               {(caseData.selectedAreaLegal || caseData.selectedProcedimiento) && (
-                <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Selección Actual</h3>
+                <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-surface-muted/20 border border-border rounded-lg">
+                  <h3 className="text-sm font-medium text-text-secondary mb-3">Selección Actual</h3>
                   <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
                     {caseData.selectedAreaLegal && (
                       <div>
-                        <span className="text-sm font-medium text-gray-600">Área Legal: </span>
-                        <span className="text-sm text-blue-600 font-semibold break-words">{caseData.selectedAreaLegal}</span>
+                        <span className="text-sm font-medium text-text-secondary">Área Legal: </span>
+                        <span className="text-sm text-text-primary font-semibold break-words">{caseData.selectedAreaLegal}</span>
                       </div>
                     )}
                     {caseData.selectedProcedimiento && (
                       <div>
-                        <span className="text-sm font-medium text-gray-600">Procedimiento: </span>
-                        <span className="text-sm text-green-600 font-semibold break-words">{caseData.selectedProcedimiento}</span>
+                        <span className="text-sm font-medium text-text-secondary">Procedimiento: </span>
+                        <span className="text-sm text-text-primary font-semibold break-words">{caseData.selectedProcedimiento}</span>
                       </div>
                     )}
                   </div>
@@ -550,19 +629,19 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
               )}
               
               <div className="mt-4 sm:mt-6">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Descripción</h3>
-                <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{caseData.description}</p>
+                <h3 className="text-sm font-medium text-text-secondary mb-2">Descripción</h3>
+                <p className="text-sm sm:text-base text-text-secondary leading-relaxed">{caseData.description}</p>
               </div>
             </div>
           )}
 
           {/* Analysis Loading State */}
           {isAnalyzing && (
-            <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-8 mb-8">
+            <div className="bg-card shadow-sm rounded-lg border border-border p-8 mb-8">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Analizando Documentos</h3>
-                <p className="text-gray-600">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto mb-4"></div>
+                <h3 className="text-lg font-semibold text-text-primary mb-2">Analizando Documentos</h3>
+                <p className="text-text-secondary">
                   Nuestra IA está procesando los documentos y generando el análisis legal...
                 </p>
               </div>
@@ -573,43 +652,43 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
           {!isAnalyzing && (
             <div className="space-y-8">
               {/* 1. Extracted Data */}
-              <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">1. Datos Extraídos de Documentos</h2>
+              <div className="bg-card shadow-sm rounded-lg border border-border p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-text-primary mb-4 sm:mb-6">1. Datos Extraídos de Documentos</h2>
                 
                 <div className="space-y-4">
                   {extractedData.map((doc, index) => {
                     const isExpanded = expandedDocuments.has(index);
                     return (
-                      <div key={index} className="border border-gray-200 rounded-lg">
+                      <div key={index} className="border border-border rounded-lg">
                         {/* Document Header - Always Visible */}
                         <div 
-                          className="flex items-center justify-between p-3 sm:p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                          className="flex items-center justify-between p-3 sm:p-4 cursor-pointer hover:bg-app transition-colors"
                           onClick={() => toggleDocumentExpansion(index)}
                         >
                           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                             <div className="flex-shrink-0">
                               {isExpanded ? (
-                                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                 </svg>
                               ) : (
-                                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate">{doc.documentName}</h3>
-                              <p className="text-xs sm:text-sm text-gray-500">
+                              <h3 className="text-base sm:text-lg font-medium text-text-primary truncate">{doc.documentName}</h3>
+                              <p className="text-xs sm:text-sm text-text-secondary">
                                 {doc.keyData.length} campos extraídos
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
-                            <span className="px-2 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
+                            <span className="px-2 py-1 rounded-full text-xs sm:text-sm font-medium bg-surface-muted/30 text-text-primary border border-border">
                               {doc.documentType}
                             </span>
-                            <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline">
+                            <span className="text-xs sm:text-sm text-text-secondary hidden sm:inline">
                               {isExpanded ? 'Ocultar' : 'Ver'}
                             </span>
                           </div>
@@ -617,57 +696,49 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
                         
                         {/* Document Content - Collapsible */}
                         {isExpanded && (
-                          <div className="border-t border-gray-200 p-3 sm:p-4 bg-gray-50">
+                          <div className="border-t border-border p-3 sm:p-4 bg-app">
                             {/* Mobile Card Layout */}
                             <div className="block sm:hidden space-y-3">
                               {doc.keyData.map((data, dataIndex) => (
-                                <div key={dataIndex} className="bg-white rounded-lg p-3 border border-gray-200">
+                                <div key={dataIndex} className="bg-card rounded-lg p-3 border border-border">
                                   <div className="flex justify-between items-start mb-2">
-                                    <h4 className="text-sm font-medium text-gray-900 break-words">{data.field}</h4>
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${
-                                      data.confidence >= 90 ? 'bg-green-100 text-green-800' :
-                                      data.confidence >= 75 ? 'bg-yellow-100 text-yellow-800' :
-                                      'bg-red-100 text-red-800'
-                                    }`}>
+                                    <h4 className="text-sm font-medium text-text-primary break-words">{data.field}</h4>
+                                    <span className="px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 bg-surface-muted/30 text-text-primary border border-border">
                                       {data.confidence}%
                                     </span>
                                   </div>
-                                  <p className="text-sm text-gray-600 break-words">{data.value}</p>
+                                  <p className="text-sm text-text-secondary break-words">{data.value}</p>
                                 </div>
                               ))}
                             </div>
                             
                             {/* Desktop Table Layout */}
                             <div className="hidden sm:block overflow-x-auto">
-                              <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-white">
+                              <table className="min-w-full divide-y divide-border">
+                                <thead className="bg-card">
                                   <tr>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                                       Campo
                                     </th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                                       Valor
                                     </th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                                       Confianza
                                     </th>
                                   </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-card divide-y divide-border">
                                   {doc.keyData.map((data, dataIndex) => (
                                     <tr key={dataIndex}>
-                                      <td className="px-4 lg:px-6 py-4 text-sm font-medium text-gray-900 break-words">
+                                      <td className="px-4 lg:px-6 py-4 text-sm font-medium text-text-primary break-words">
                                         {data.field}
                                       </td>
-                                      <td className="px-4 lg:px-6 py-4 text-sm text-gray-900 break-words">
+                                      <td className="px-4 lg:px-6 py-4 text-sm text-text-primary break-words">
                                         {data.value}
                                       </td>
-                                      <td className="px-4 lg:px-6 py-4 text-sm text-gray-900">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                          data.confidence >= 90 ? 'bg-green-100 text-green-800' :
-                                          data.confidence >= 75 ? 'bg-yellow-100 text-yellow-800' :
-                                          'bg-red-100 text-red-800'
-                                        }`}>
+                                      <td className="px-4 lg:px-6 py-4 text-sm text-text-primary">
+                                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-muted/30 text-text-primary border border-border">
                                           {data.confidence}%
                                         </span>
                                       </td>
@@ -677,9 +748,9 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
                               </table>
                             </div>
                             
-                            <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
-                              <h4 className="text-sm font-medium text-gray-700 mb-1">Resumen del Documento:</h4>
-                              <p className="text-sm text-gray-600 leading-relaxed">{doc.summary}</p>
+                            <div className="mt-4 p-3 bg-card rounded-lg border border-border">
+                              <h4 className="text-sm font-medium text-text-secondary mb-1">Resumen del Documento:</h4>
+                              <p className="text-sm text-text-secondary leading-relaxed">{doc.summary}</p>
                             </div>
                           </div>
                         )}
@@ -692,21 +763,21 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
               {/* 2. Side by Side: Legal Suggestions and Alerts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                 {/* Legal Suggestions */}
-                <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4 sm:p-6">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">2. Sugerencias de Área Legal y Procedimiento</h2>
+                <div className="bg-card shadow-sm rounded-lg border border-border p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-text-primary mb-4 sm:mb-6">2. Sugerencias de Área Legal y Procedimiento</h2>
                   
                   {/* Manual Selection */}
-                  <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Selección Manual</h3>
+                  <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-app rounded-lg">
+                    <h3 className="text-base sm:text-lg font-medium text-text-primary mb-3 sm:mb-4">Selección Manual</h3>
                     <div className="space-y-3 sm:space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-text-secondary mb-2">
                           Área Legal
                         </label>
                         <select
                           value={manualAreaLegal}
                           onChange={(e) => setManualAreaLegal(e.target.value)}
-                          className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 text-sm sm:text-base border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                         >
                           <option value="">Seleccionar área legal</option>
                           {legalAreas.map((area) => (
@@ -715,13 +786,13 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-text-secondary mb-2">
                           Procedimiento
                         </label>
                         <select
                           value={manualProcedimiento}
                           onChange={(e) => setManualProcedimiento(e.target.value)}
-                          className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 text-sm sm:text-base border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                         >
                           <option value="">Seleccionar procedimiento</option>
                           {legalProcedures.map((procedure) => (
@@ -734,10 +805,10 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
 
                   {/* AI Suggestions */}
                   <div className="space-y-3 sm:space-y-4">
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Sugerencias de IA</h3>
+                    <h3 className="text-base sm:text-lg font-medium text-text-primary mb-3 sm:mb-4">Sugerencias de IA</h3>
                     {legalSuggestions.map((suggestion) => (
                       <div key={suggestion.id} className={`border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow ${
-                        suggestion.selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                        suggestion.selected ? 'border-sidebar bg-surface-muted/20' : 'border-border'
                       }`}>
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-start flex-1 min-w-0">
@@ -746,18 +817,18 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
                               name="ai-suggestion"
                               checked={suggestion.selected || false}
                               onChange={() => handleSuggestionSelect(suggestion.id)}
-                              className="mr-2 sm:mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 mt-0.5 flex-shrink-0"
+                              className="mr-2 sm:mr-3 h-4 w-4 text-sidebar focus:ring-sidebar border-border mt-0.5 flex-shrink-0"
                             />
                             <div className="min-w-0 flex-1">
-                              <h3 className="text-base sm:text-lg font-medium text-gray-900 break-words">{suggestion.area}</h3>
+                              <h3 className="text-base sm:text-lg font-medium text-text-primary break-words">{suggestion.area}</h3>
                             </div>
                           </div>
-                          <span className="px-2 py-1 rounded-full text-xs sm:text-sm font-medium bg-green-100 text-green-800 flex-shrink-0 ml-2">
+                          <span className="px-2 py-1 rounded-full text-xs sm:text-sm font-medium bg-surface-muted/30 text-text-primary border border-border flex-shrink-0 ml-2">
                             {suggestion.confidence}%
                           </span>
                         </div>
-                        <h4 className="text-sm sm:text-md font-semibold text-blue-600 mb-2 ml-6 sm:ml-7 break-words">{suggestion.procedure}</h4>
-                        <p className="text-sm sm:text-base text-gray-600 ml-6 sm:ml-7 leading-relaxed break-words">{suggestion.description}</p>
+                        <h4 className="text-sm sm:text-md font-semibold text-text-primary mb-2 ml-6 sm:ml-7 break-words">{suggestion.procedure}</h4>
+                        <p className="text-sm sm:text-base text-text-secondary ml-6 sm:ml-7 leading-relaxed break-words">{suggestion.description}</p>
                       </div>
                     ))}
                   </div>
@@ -765,35 +836,31 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
                 </div>
 
                 {/* Alerts and Warnings */}
-                <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4 sm:p-6">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">3. Alertas, Advertencias y Plazos Legales</h2>
+                <div className="bg-card shadow-sm rounded-lg border border-border p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-text-primary mb-4 sm:mb-6">3. Alertas, Advertencias y Plazos Legales</h2>
                 
                   <div className="space-y-3 sm:space-y-4">
                     {alerts.map((alert) => (
-                      <div key={alert.id} className={`border-l-4 ${
-                        alert.type === 'deadline' ? 'border-red-400 bg-red-50' :
-                        alert.type === 'warning' ? 'border-yellow-400 bg-yellow-50' :
-                        'border-blue-400 bg-blue-50'
-                      } p-3 sm:p-4 rounded-r-lg`}>
+                      <div key={alert.id} className="border-l-4 border-sidebar bg-surface-muted/20 p-3 sm:p-4 rounded-r-lg">
                         <div className="flex items-start">
                           <div className="flex-shrink-0 mr-2 sm:mr-3">
                             {getAlertIcon(alert.type)}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-1 sm:space-y-0">
-                              <h3 className="text-base sm:text-lg font-medium text-gray-900 break-words">{alert.title}</h3>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(alert.priority)} self-start sm:self-auto`}>
+                              <h3 className="text-base sm:text-lg font-medium text-text-primary break-words">{alert.title}</h3>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(alert.priority)} self-start sm:self-auto`}>
                                 {alert.priority === 'high' ? 'Alta' : 
                                  alert.priority === 'medium' ? 'Media' : 'Baja'}
                               </span>
                             </div>
-                            <p className="text-sm sm:text-base text-gray-700 mb-2 leading-relaxed break-words">{alert.description}</p>
+                            <p className="text-sm sm:text-base text-text-secondary mb-2 leading-relaxed break-words">{alert.description}</p>
                             {alert.dueDate && (
-                              <p className="text-xs sm:text-sm text-gray-600">
+                              <p className="text-xs sm:text-sm text-text-secondary">
                                 <strong>Fecha límite:</strong> {new Date(alert.dueDate).toLocaleDateString('es-ES')}
                               </p>
                             )}
-                            <p className="text-xs sm:text-sm text-gray-500 mt-2 break-words">
+                            <p className="text-xs sm:text-sm text-text-secondary mt-2 break-words">
                               <strong>Referencia legal:</strong> {alert.lawReference}
                             </p>
                           </div>
@@ -805,16 +872,16 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
               </div>
 
               {/* 4. Executive Summary */}
-              <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">4. Resumen Ejecutivo Extendido</h2>
+              <div className="bg-card shadow-sm rounded-lg border border-border p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-text-primary mb-4 sm:mb-6">4. Resumen Ejecutivo Extendido</h2>
                 
                 {/* Professional Legal Document Format */}
-                <div className="bg-white border-2 border-gray-300 shadow-lg">
+                <div className="bg-card border-2 border-border shadow-lg">
                   {/* Document Header */}
-                  <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white p-6 sm:p-8">
+                  <div className="bg-sidebar text-text-on-dark p-6 sm:p-8">
                     <div className="text-center">
                       <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">ANÁLISIS LEGAL EJECUTIVO</h1>
-                      <div className="border-t border-blue-300 pt-3">
+                      <div className="border-t border-border pt-3">
                         <p className="text-sm sm:text-base opacity-90">ESTUDIO JURÍDICO PROFESIONAL</p>
                         <p className="text-xs sm:text-sm opacity-75 mt-1">Análisis Integral de Caso</p>
                       </div>
@@ -824,28 +891,28 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
                   {/* Document Body */}
                   <div className="p-6 sm:p-8">
                     {/* Case Information Header */}
-                    <div className="mb-8 border-b-2 border-gray-200 pb-6">
+                    <div className="mb-8 border-b-2 border-border pb-6">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">Información del Caso</h3>
+                          <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2">Información del Caso</h3>
                           <div className="space-y-2">
-                            <p className="text-sm"><span className="font-medium text-gray-700">Cliente:</span> {caseData?.clientName || 'N/A'}</p>
-                            <p className="text-sm"><span className="font-medium text-gray-700">Fecha de Análisis:</span> {new Date().toLocaleDateString('es-ES', { 
+                            <p className="text-sm"><span className="font-medium text-text-secondary">Cliente:</span> {caseData?.clientName || 'N/A'}</p>
+                            <p className="text-sm"><span className="font-medium text-text-secondary">Fecha de Análisis:</span> {new Date().toLocaleDateString('es-ES', { 
                               year: 'numeric', 
                               month: 'long', 
                               day: 'numeric' 
                             })}</p>
-                            <p className="text-sm"><span className="font-medium text-gray-700">Número de Documentos:</span> {extractedData.length}</p>
+                            <p className="text-sm"><span className="font-medium text-text-secondary">Número de Documentos:</span> {extractedData.length}</p>
                           </div>
                         </div>
                         <div>
-                          <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">Clasificación Legal</h3>
+                          <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2">Clasificación Legal</h3>
                           <div className="space-y-2">
                             {caseData?.selectedAreaLegal && (
-                              <p className="text-sm"><span className="font-medium text-gray-700">Área Legal:</span> <span className="text-blue-600 font-semibold">{caseData.selectedAreaLegal}</span></p>
+                              <p className="text-sm"><span className="font-medium text-text-secondary">Área Legal:</span> <span className="text-text-primary font-semibold">{caseData.selectedAreaLegal}</span></p>
                             )}
                             {caseData?.selectedProcedimiento && (
-                              <p className="text-sm"><span className="font-medium text-gray-700">Procedimiento:</span> <span className="text-green-600 font-semibold">{caseData.selectedProcedimiento}</span></p>
+                              <p className="text-sm"><span className="font-medium text-text-secondary">Procedimiento:</span> <span className="text-text-primary font-semibold">{caseData.selectedProcedimiento}</span></p>
                             )}
                           </div>
                         </div>
@@ -854,10 +921,10 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
 
                     {/* Executive Summary Content */}
                     <div className="prose prose-sm sm:prose max-w-none">
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 border-l-4 border-blue-600 pl-4">RESUMEN EJECUTIVO</h2>
+                      <h2 className="text-lg sm:text-xl font-bold text-text-primary mb-4 border-l-4 border-sidebar pl-4">RESUMEN EJECUTIVO</h2>
                       
-                      <div className="bg-gray-50 border-l-4 border-blue-500 p-4 sm:p-6 mb-6">
-                        <div className="text-sm sm:text-base text-gray-800 leading-relaxed">
+                      <div className="bg-app border-l-4 border-sidebar p-4 sm:p-6 mb-6">
+                        <div className="text-sm sm:text-base text-text-primary leading-relaxed">
                           {executiveSummary.split('\n').map((paragraph, index) => (
                             paragraph.trim() ? (
                               <p key={index} className="mb-4 last:mb-0 text-justify">
@@ -870,19 +937,19 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
 
                       {/* Key Findings Section */}
                       <div className="mt-8">
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 border-l-4 border-green-600 pl-4">HALLAZGOS PRINCIPALES</h3>
+                        <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-4 border-l-4 border-sidebar pl-4">HALLAZGOS PRINCIPALES</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <h4 className="font-semibold text-green-800 mb-2">Fortalezas del Caso</h4>
-                            <ul className="text-sm text-green-700 space-y-1">
+                          <div className="bg-surface-muted/20 border border-border rounded-lg p-4">
+                            <h4 className="font-semibold text-text-primary mb-2">Fortalezas del Caso</h4>
+                            <ul className="text-sm text-text-secondary space-y-1">
                               <li>• Documentación completa y bien estructurada</li>
                               <li>• Evidencia sólida respaldando las pretensiones</li>
                               <li>• Cumplimiento de plazos procesales</li>
                             </ul>
                           </div>
-                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                            <h4 className="font-semibold text-yellow-800 mb-2">Consideraciones Importantes</h4>
-                            <ul className="text-sm text-yellow-700 space-y-1">
+                          <div className="bg-surface-muted/20 border border-border rounded-lg p-4">
+                            <h4 className="font-semibold text-text-primary mb-2">Consideraciones Importantes</h4>
+                            <ul className="text-sm text-text-secondary space-y-1">
                               <li>• Revisar jurisprudencia reciente aplicable</li>
                               <li>• Evaluar estrategias de negociación</li>
                               <li>• Considerar alternativas de solución</li>
@@ -893,20 +960,20 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
 
                       {/* Recommendations Section */}
                       <div className="mt-8">
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 border-l-4 border-purple-600 pl-4">RECOMENDACIONES ESTRATÉGICAS</h3>
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 sm:p-6">
+                        <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-4 border-l-4 border-sidebar pl-4">RECOMENDACIONES ESTRATÉGICAS</h3>
+                        <div className="bg-surface-muted/20 border border-border rounded-lg p-4 sm:p-6">
                           <div className="space-y-3">
                             <div className="flex items-start space-x-3">
-                              <div className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
-                              <p className="text-sm sm:text-base text-purple-800">Proceder con la estrategia legal recomendada basada en el análisis de documentos</p>
+                              <div className="flex-shrink-0 w-6 h-6 bg-sidebar text-text-on-dark rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                              <p className="text-sm sm:text-base text-text-primary">Proceder con la estrategia legal recomendada basada en el análisis de documentos</p>
                             </div>
                             <div className="flex items-start space-x-3">
-                              <div className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
-                              <p className="text-sm sm:text-base text-purple-800">Mantener comunicación constante con el cliente sobre el desarrollo del caso</p>
+                              <div className="flex-shrink-0 w-6 h-6 bg-sidebar text-text-on-dark rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                              <p className="text-sm sm:text-base text-text-primary">Mantener comunicación constante con el cliente sobre el desarrollo del caso</p>
                             </div>
                             <div className="flex items-start space-x-3">
-                              <div className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
-                              <p className="text-sm sm:text-base text-purple-800">Evaluar oportunidades de solución alternativa antes del proceso judicial</p>
+                              <div className="flex-shrink-0 w-6 h-6 bg-sidebar text-text-on-dark rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                              <p className="text-sm sm:text-base text-text-primary">Evaluar oportunidades de solución alternativa antes del proceso judicial</p>
                             </div>
                           </div>
                         </div>
@@ -915,8 +982,8 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
                   </div>
 
                   {/* Document Footer */}
-                  <div className="bg-gray-100 border-t-2 border-gray-300 p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-center text-xs sm:text-sm text-gray-600">
+                  <div className="bg-surface-muted/30 border-t-2 border-border p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-center text-xs sm:text-sm text-text-secondary">
                       <div>
                         <p className="font-semibold">Estudio Jurídico Profesional</p>
                         <p>Análisis generado por sistema de inteligencia artificial</p>
@@ -934,112 +1001,6 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
             </div>
           )}
 
-          {/* Bottom Toolbar */}
-          <div className="bg-white shadow-sm border-t border-gray-200 sticky bottom-0 z-10 mt-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-center py-4">
-                <div className="flex items-center space-x-2 sm:space-x-4">
-                  <button
-                    onClick={handleSaveCase}
-                    disabled={isSaving}
-                    className="flex items-center px-4 sm:px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium"
-                  >
-                    {isSaving ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        <span>Guardando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                        </svg>
-                        <span>Guardar</span>
-                      </>
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={handleGenerateDocuments}
-                    className="flex items-center px-4 sm:px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base font-medium"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Generar Escritos</span>
-                  </button>
-                  
-                  <button
-                    onClick={handleViewRepository}
-                    className="flex items-center px-4 sm:px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base font-medium"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    <span>Ver Repositorio</span>
-                  </button>
-
-                  {/* Download Analysis Dropdown */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
-                      className="flex items-center px-4 sm:px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm sm:text-base font-medium"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span>Descargar Análisis</span>
-                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    
-                    {showDownloadDropdown && (
-                      <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[200px]">
-                        <button
-                          onClick={() => {
-                            downloadAnalysis('pdf');
-                            setShowDownloadDropdown(false);
-                          }}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                        >
-                          <svg className="w-4 h-4 mr-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                          </svg>
-                          Descargar PDF
-                        </button>
-                        <button
-                          onClick={() => {
-                            downloadAnalysis('docx');
-                            setShowDownloadDropdown(false);
-                          }}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                        >
-                          <svg className="w-4 h-4 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                          </svg>
-                          Descargar Word
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Back Button */}
-          <div className="mt-8 flex justify-start">
-            <Link
-              href="/dashboard"
-              className="flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Volver al Dashboard
-            </Link>
-          </div>
         </div>
       </main>
     </div>
@@ -1049,10 +1010,10 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
 export default function CaseAnalysisPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando análisis del caso...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Cargando análisis del caso...</p>
         </div>
       </div>
     }>

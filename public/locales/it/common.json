@@ -13,7 +13,7 @@
     "signup": "Inizia"
   },
   "hero": {
-    "title": "Rivoluzionando<span class=\"text-primary-600 block\">la Pratica Legale</span>con l'IA",
+    "title": "Rivoluzionando <span class=\"font-semibold block\">la Pratica Legale</span> con l'IA",
     "subtitle": "Ottimizza il tuo flusso di lavoro legale con analisi intelligente dei documenti, riassunti dei casi e ricerca legale automatizzata alimentata da tecnologia IA all'avanguardia.",
     "cta": "Prova Gratuita",
     "learnMore": "Visualizza Demo",
@@ -204,7 +204,7 @@
   },
   "subscription": {
     "title": "Abbonamento",
-    "subtitle": "Gestisci il tuo piano di abbonamento e fatturazione",
+    "subtitle": "Descrizione dei piani che gestiamo attualmente",
     "currentPlan": "Piano Attuale",
     "lawyerPlan": "Piano Avvocati",
     "fullAccess": "Accesso completo a tutte le funzionalità",

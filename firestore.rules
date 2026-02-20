@@ -14,6 +14,23 @@ service cloud.firestore {
       allow read: if request.auth != null;
     }
     
+    // users/{userId}/extraccion_datos_batches: only owner can read/write
+    match /users/{userId}/extraccion_datos_batches/{batchId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // users/{userId}/extraccion_datos_results: only owner can read/write
+    match /users/{userId}/extraccion_datos_results/{fileId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // uploaded_files: users can read/write their own (userId field)
+    match /uploaded_files/{fileId} {
+      allow read, write: if request.auth != null
+        && (resource == null || resource.data.userId == request.auth.uid)
+        && (request.resource == null || request.resource.data.userId == request.auth.uid);
+    }
+
     // Allow read/write only for authenticated users by default.
     match /{document=**} {
       allow read, write: if request.auth != null;

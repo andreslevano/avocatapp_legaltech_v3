@@ -383,20 +383,20 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-surface-muted/30 text-text-primary';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-surface-muted/20 text-text-secondary';
       case 'failed':
-        return 'bg-red-100 text-red-800';
+        return 'bg-surface-muted/30 text-text-primary';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-surface-muted/30 text-text-primary';
     }
   };
 
   const getAccuracyColor = (accuracy: number) => {
-    if (accuracy >= 80) return 'text-green-600';
-    if (accuracy >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (accuracy >= 80) return 'text-text-primary';
+    if (accuracy >= 60) return 'text-text-secondary';
+    return 'text-text-secondary';
   };
 
   // Función para descargar desde URL directa (para materiales descargables)
@@ -584,83 +584,83 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
   }, []);
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+    <div className="bg-card rounded-lg shadow-lg p-4 sm:p-6">
       <div className="mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-xl sm:text-2xl font-bold text-text-primary mb-2">
           Historial de Compras
         </h2>
-        <p className="text-sm sm:text-base text-gray-600">
+        <p className="text-sm sm:text-base text-text-secondary">
           Gestiona y descarga tus documentos generados anteriormente
         </p>
       </div>
 
       {/* Desktop Table View */}
       <div className="hidden lg:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-border text-sm">
+          <thead className="bg-app">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                 Documento
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                 Fecha
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                 Documentos
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                 Precisión
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                 Precio
               </th>
               {documentType === 'reclamacion_cantidades' && (
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Cantidad Reclamada
                 </th>
               )}
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                 Estado
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                 Acciones
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-card divide-y divide-border">
             {filteredPurchaseHistory.map((purchase) => (
-              <tr key={purchase.id} className="hover:bg-gray-50">
+              <tr key={purchase.id} className="hover:bg-app">
                 <td className="px-4 py-3 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-8 w-8">
                       <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
                         purchase.documentType === 'accion_tutela' 
-                          ? 'bg-red-100' 
-                          : 'bg-orange-100'
+                          ? 'bg-surface-muted/30' 
+                          : 'bg-surface-muted/30'
                       }`}>
                         <svg className={`h-5 w-5 ${
                           purchase.documentType === 'accion_tutela' 
-                            ? 'text-red-600' 
-                            : 'text-orange-600'
+                            ? 'text-text-primary' 
+                            : 'text-text-primary'
                         }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
                     </div>
                     <div className="ml-3">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-text-primary">
                         {purchase.documentTitle}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-text-secondary">
                         {purchase.documentType}
                       </div>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-text-primary">
                   {purchase.purchaseDate.toLocaleDateString('es-ES')}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-text-primary">
                   {purchase.documentCount} archivos
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
@@ -668,11 +668,11 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                     {purchase.accuracy}%
                   </span>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-text-primary">
                   {purchase.price} {purchase.currency}
                 </td>
                 {documentType === 'reclamacion_cantidades' && (
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-primary">
                     {purchase.amountClaimed ? `€${purchase.amountClaimed.toFixed(2)}` : 'N/A'}
                   </td>
                 )}
@@ -688,7 +688,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                       <>
                         <button
                           onClick={() => viewPdf(purchase)}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
+                          className="text-text-primary hover:text-text-secondary p-1 rounded-md hover:bg-surface-muted/30 transition-colors"
                           title="Ver PDF"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -698,7 +698,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                         </button>
                         <button
                           onClick={() => downloadDocument(purchase, 'pdf')}
-                          className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors"
+                          className="text-text-primary hover:text-text-secondary p-1 rounded-md hover:bg-surface-muted/30 transition-colors"
                           title="Descargar PDF"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -707,7 +707,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                         </button>
                         <button
                           onClick={() => downloadDocument(purchase, 'word')}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
+                          className="text-text-primary hover:text-text-secondary p-1 rounded-md hover:bg-surface-muted/30 transition-colors"
                           title="Descargar Word"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -716,7 +716,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                         </button>
                         <button
                           onClick={() => downloadInvoice(purchase)}
-                          className="text-green-600 hover:text-green-900 p-1 rounded-md hover:bg-green-50 transition-colors"
+                          className="text-text-primary hover:text-text-secondary p-1 rounded-md hover:bg-surface-muted/30 transition-colors"
                           title="Descargar Factura"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -725,7 +725,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                         </button>
                       </>
                     ) : (
-                      <span className="text-xs text-gray-400 italic" title="Pago pendiente - Las acciones estarán disponibles después del pago">
+                      <span className="text-xs text-text-secondary italic" title="Pago pendiente - Las acciones estarán disponibles después del pago">
                         Pago pendiente
                       </span>
                     )}
@@ -740,30 +740,30 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4">
         {filteredPurchaseHistory.map((purchase) => (
-          <div key={purchase.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+          <div key={purchase.id} className="bg-card border border-border rounded-lg p-4 shadow-sm">
             {/* Header with icon and title */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center flex-1 min-w-0">
                 <div className="flex-shrink-0 h-10 w-10">
                   <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
                     purchase.documentType === 'accion_tutela' 
-                      ? 'bg-red-100' 
-                      : 'bg-orange-100'
+                      ? 'bg-surface-muted/30' 
+                      : 'bg-surface-muted/30'
                   }`}>
                     <svg className={`h-6 w-6 ${
                       purchase.documentType === 'accion_tutela' 
-                        ? 'text-red-600' 
-                        : 'text-orange-600'
+                        ? 'text-text-primary' 
+                        : 'text-text-primary'
                     }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-3 flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-gray-900 truncate">
+                  <h3 className="text-sm font-medium text-text-primary truncate">
                     {purchase.documentTitle}
                   </h3>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-text-secondary mt-1">
                     {purchase.documentType}
                   </p>
                 </div>
@@ -777,33 +777,33 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
             {/* Details Grid */}
             <div className={`grid gap-3 mb-4 ${documentType === 'reclamacion_cantidades' ? 'grid-cols-2' : 'grid-cols-2'}`}>
               <div>
-                <p className="text-xs text-gray-500">Fecha</p>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-xs text-text-secondary">Fecha</p>
+                <p className="text-sm font-medium text-text-primary">
                   {purchase.purchaseDate.toLocaleDateString('es-ES')}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Precio</p>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-xs text-text-secondary">Precio</p>
+                <p className="text-sm font-medium text-text-primary">
                   {purchase.price} {purchase.currency}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Documentos</p>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-xs text-text-secondary">Documentos</p>
+                <p className="text-sm font-medium text-text-primary">
                   {purchase.documentCount} archivos
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Precisión</p>
+                <p className="text-xs text-text-secondary">Precisión</p>
                 <p className={`text-sm font-medium ${getAccuracyColor(purchase.accuracy)}`}>
                   {purchase.accuracy}%
                 </p>
               </div>
               {documentType === 'reclamacion_cantidades' && (
                 <div className="col-span-2">
-                  <p className="text-xs text-gray-500">Cantidad Reclamada</p>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-xs text-text-secondary">Cantidad Reclamada</p>
+                  <p className="text-sm font-medium text-text-primary">
                     {purchase.amountClaimed ? `€${purchase.amountClaimed.toFixed(2)}` : 'N/A'}
                   </p>
                 </div>
@@ -816,7 +816,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <button
                     onClick={() => viewPdf(purchase)}
-                    className="bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                    className="btn-secondary px-3 py-2 text-sm flex items-center justify-center space-x-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -826,7 +826,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                   </button>
                   <button
                     onClick={() => downloadDocument(purchase, 'pdf')}
-                    className="bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                    className="btn-secondary px-3 py-2 text-sm flex items-center justify-center space-x-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -836,10 +836,10 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                 </div>
 
                 {/* Materiales descargables - Sección expandible */}
-                <div className="border-t border-gray-200 pt-3 mt-3">
+                <div className="border-t border-border pt-3 mt-3">
                   <button
                     onClick={() => toggleExpand(purchase.id)}
-                    className="w-full flex items-center justify-between text-sm font-medium text-gray-700 hover:text-gray-900 mb-2"
+                    className="w-full flex items-center justify-between text-sm font-medium text-text-secondary hover:text-text-primary mb-2"
                   >
                     <span className="flex items-center">
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -858,77 +858,77 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                   </button>
 
                   {expandedPurchases.has(purchase.id) && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
+                    <div className="bg-surface-muted/20 border border-border rounded-lg p-4 space-y-2">
                       {purchase.documentType === 'estudiantes' ? (
                         <>
                           {purchase.files.templateDocx && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.templateDocx!, `${purchase.documentTitle}_Plantilla.docx`)}
-                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-secondary transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 mr-2 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 Plantilla (Word)
                               </span>
-                              <span className="text-xs text-gray-500">.docx</span>
+                              <span className="text-xs text-text-secondary">.docx</span>
                             </button>
                           )}
                           {purchase.files.templatePdf && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.templatePdf!, `${purchase.documentTitle}_Plantilla.pdf`)}
-                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-secondary transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 mr-2 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                 </svg>
                                 Plantilla (PDF)
                               </span>
-                              <span className="text-xs text-gray-500">.pdf</span>
+                              <span className="text-xs text-text-secondary">.pdf</span>
                             </button>
                           )}
                           {purchase.files.sampleDocx && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.sampleDocx!, `${purchase.documentTitle}_Ejemplo.docx`)}
-                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-secondary transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 mr-2 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 Ejemplo (Word)
                               </span>
-                              <span className="text-xs text-gray-500">.docx</span>
+                              <span className="text-xs text-text-secondary">.docx</span>
                             </button>
                           )}
                           {purchase.files.samplePdf && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.samplePdf!, `${purchase.documentTitle}_Ejemplo.pdf`)}
-                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-secondary transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 mr-2 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                 </svg>
                                 Ejemplo (PDF)
                               </span>
-                              <span className="text-xs text-gray-500">.pdf</span>
+                              <span className="text-xs text-text-secondary">.pdf</span>
                             </button>
                           )}
                           {purchase.files.studyMaterialPdf && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.studyMaterialPdf!, `${purchase.documentTitle}_Dossier.pdf`)}
-                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-secondary transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 mr-2 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                 </svg>
                                 Dossier académico (PDF)
                               </span>
-                              <span className="text-xs text-gray-500">.pdf, ≥ 3 páginas</span>
+                              <span className="text-xs text-text-secondary">.pdf, ≥ 3 páginas</span>
                             </button>
                           )}
                         </>
@@ -937,29 +937,29 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                           {purchase.files.tutelaDocx && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.tutelaDocx!, `${purchase.documentTitle}.docx`)}
-                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-secondary transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 mr-2 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 Acción de Tutela (Word)
                               </span>
-                              <span className="text-xs text-gray-500">.docx</span>
+                              <span className="text-xs text-text-secondary">.docx</span>
                             </button>
                           )}
                           {purchase.files.tutelaPdf && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.tutelaPdf!, `${purchase.documentTitle}.pdf`)}
-                              className="w-full text-left px-3 py-2 bg-white hover:bg-green-100 rounded-md text-sm text-gray-700 transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-secondary transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 mr-2 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                 </svg>
                                 Acción de Tutela (PDF)
                               </span>
-                              <span className="text-xs text-gray-500">.pdf</span>
+                              <span className="text-xs text-text-secondary">.pdf</span>
                             </button>
                           )}
                         </>
@@ -968,12 +968,12 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                   )}
 
                   {/* Footer actions */}
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 text-xs text-gray-600">
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border text-xs text-text-secondary">
                     <span>Total: {purchase.price} {purchase.currency} • {purchase.documentCount} documento{purchase.documentCount !== 1 ? 's' : ''}</span>
                     <div className="flex space-x-3">
                       <button
                         onClick={() => downloadInvoice(purchase)}
-                        className="text-green-600 hover:text-green-700 font-medium"
+                        className="text-text-primary hover:text-text-secondary font-medium"
                       >
                         Descargar Factura
                       </button>
@@ -982,8 +982,8 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                 </div>
               </>
             ) : (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-center">
-                <p className="text-xs text-yellow-800">
+              <div className="bg-surface-muted/20 border border-border rounded-md p-3 text-center">
+                <p className="text-xs text-text-primary">
                   <strong>Pago pendiente</strong> - Las acciones estarán disponibles después del pago
                 </p>
               </div>
@@ -995,15 +995,15 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       {/* PDF Viewer Modal */}
       {showPdfViewer && selectedDocument && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
+          <div className="bg-card rounded-lg w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 truncate pr-4">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border">
+              <h3 className="text-lg sm:text-xl font-semibold text-text-primary truncate pr-4">
                 {selectedDocument.documentTitle}
               </h3>
               <button
                 onClick={() => setShowPdfViewer(false)}
-                className="text-gray-400 hover:text-gray-600 p-2 rounded-md hover:bg-gray-100 transition-colors flex-shrink-0"
+                className="text-text-secondary hover:text-text-secondary p-2 rounded-md hover:bg-surface-muted/30 transition-colors flex-shrink-0"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1015,9 +1015,9 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               {/* Documentos subidos */}
               {selectedDocument.uploadedDocuments && selectedDocument.uploadedDocuments.length > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <h4 className="text-sm font-semibold text-blue-900 mb-2">📄 Documentos subidos ({selectedDocument.uploadedDocuments.length}):</h4>
-                  <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
+                <div className="bg-surface-muted/20 border border-border rounded-lg p-4 mb-4">
+                  <h4 className="text-sm font-semibold text-text-primary mb-2">📄 Documentos subidos ({selectedDocument.uploadedDocuments.length}):</h4>
+                  <ul className="list-disc list-inside text-sm text-text-secondary space-y-1">
                     {selectedDocument.uploadedDocuments.map((docName, index) => (
                       <li key={index}>{docName}</li>
                     ))}
@@ -1027,45 +1027,45 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
               
               {/* Contenido del documento */}
               {selectedDocument.documentContent ? (
-                <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4">
-                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">📋 Contenido del documento:</h4>
+                <div className="bg-card rounded-lg border border-border p-4 sm:p-6 mb-4">
+                  <h4 className="text-base sm:text-lg font-semibold text-text-primary mb-4">📋 Contenido del documento:</h4>
                   <div className="prose prose-sm max-w-none">
-                    <pre className="whitespace-pre-wrap text-xs sm:text-sm text-gray-700 font-mono bg-gray-50 p-4 rounded border overflow-x-auto">
+                    <pre className="whitespace-pre-wrap text-xs sm:text-sm text-text-secondary font-mono bg-app p-4 rounded border overflow-x-auto">
                       {selectedDocument.documentContent}
                     </pre>
                   </div>
                 </div>
               ) : (
-                <div className="bg-gray-100 rounded-lg p-4 sm:p-8 text-center mb-4">
-                  <svg className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-surface-muted/30 rounded-lg p-4 sm:p-8 text-center mb-4">
+                  <svg className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-text-secondary mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Vista Previa del PDF</h4>
-                  <p className="text-sm sm:text-base text-gray-600 mb-4">
+                  <h4 className="text-base sm:text-lg font-medium text-text-primary mb-2">Vista Previa del PDF</h4>
+                  <p className="text-sm sm:text-base text-text-secondary mb-4">
                     {selectedDocument.documentTitle}
                   </p>
                 </div>
               )}
               
               {/* Document Details - Mobile Optimized */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm text-gray-500 mb-6">
-                <div className="bg-white rounded-md p-3">
-                  <p className="font-medium text-gray-700">Fecha de compra</p>
-                  <p className="text-gray-900">{selectedDocument.purchaseDate.toLocaleDateString('es-ES')}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm text-text-secondary mb-6">
+                <div className="bg-card rounded-md p-3">
+                  <p className="font-medium text-text-secondary">Fecha de compra</p>
+                  <p className="text-text-primary">{selectedDocument.purchaseDate.toLocaleDateString('es-ES')}</p>
                 </div>
-                <div className="bg-white rounded-md p-3">
-                  <p className="font-medium text-gray-700">Documentos procesados</p>
-                  <p className="text-gray-900">{selectedDocument.documentCount}</p>
+                <div className="bg-card rounded-md p-3">
+                  <p className="font-medium text-text-secondary">Documentos procesados</p>
+                  <p className="text-text-primary">{selectedDocument.documentCount}</p>
                 </div>
-                <div className="bg-white rounded-md p-3">
-                  <p className="font-medium text-gray-700">Precisión</p>
+                <div className="bg-card rounded-md p-3">
+                  <p className="font-medium text-text-secondary">Precisión</p>
                   <p className={`font-medium ${getAccuracyColor(selectedDocument.accuracy)}`}>
                     {selectedDocument.accuracy}%
                   </p>
                 </div>
-                <div className="bg-white rounded-md p-3">
-                  <p className="font-medium text-gray-700">Precio</p>
-                  <p className="text-gray-900">{selectedDocument.price} {selectedDocument.currency}</p>
+                <div className="bg-card rounded-md p-3">
+                  <p className="font-medium text-text-secondary">Precio</p>
+                  <p className="text-text-primary">{selectedDocument.price} {selectedDocument.currency}</p>
                 </div>
               </div>
               
@@ -1073,7 +1073,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <button
                   onClick={() => downloadDocument(selectedDocument, 'pdf')}
-                  className="bg-orange-600 text-white hover:bg-orange-700 px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                  className="btn-primary px-4 py-3 text-sm flex items-center justify-center space-x-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1082,7 +1082,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                 </button>
                 <button
                   onClick={() => downloadDocument(selectedDocument, 'word')}
-                  className="bg-gray-600 text-white hover:bg-gray-700 px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                  className="btn-secondary px-4 py-3 text-sm flex items-center justify-center space-x-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1091,7 +1091,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                 </button>
                 <button
                   onClick={() => downloadInvoice(selectedDocument)}
-                  className="bg-green-600 text-white hover:bg-green-700 px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                  className="btn-primary px-4 py-3 text-sm flex items-center justify-center space-x-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1106,28 +1106,28 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
 
       {/* Totals Section */}
       {filteredPurchaseHistory.length > 0 && (
-        <div className="mt-8 bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen Total</h3>
+        <div className="mt-8 bg-app rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-text-primary mb-4">Resumen Total</h3>
           <div className={`grid gap-6 ${documentType === 'reclamacion_cantidades' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-            <div className="bg-white rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-500 mb-2">Total de Precios</h4>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="bg-card rounded-lg p-4">
+              <h4 className="text-sm font-medium text-text-secondary mb-2">Total de Precios</h4>
+              <p className="text-2xl font-bold text-text-primary">
                 €{filteredPurchaseHistory.reduce((total, purchase) => total + purchase.price, 0).toFixed(2)}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-text-secondary mt-1">
                 {filteredPurchaseHistory.length} documento{filteredPurchaseHistory.length !== 1 ? 's' : ''}
               </p>
             </div>
             {documentType === 'reclamacion_cantidades' && (
-              <div className="bg-white rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Total Reclamado</h4>
-                <p className="text-2xl font-bold text-green-600">
+              <div className="bg-card rounded-lg p-4">
+                <h4 className="text-sm font-medium text-text-secondary mb-2">Total Reclamado</h4>
+                <p className="text-2xl font-bold text-text-primary">
                   €{filteredPurchaseHistory
                     .filter(purchase => purchase.amountClaimed)
                     .reduce((total, purchase) => total + (purchase.amountClaimed || 0), 0)
                     .toFixed(2)}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-text-secondary mt-1">
                   {filteredPurchaseHistory.filter(purchase => purchase.amountClaimed).length} reclamación{filteredPurchaseHistory.filter(purchase => purchase.amountClaimed).length !== 1 ? 'es' : ''}
                 </p>
               </div>
@@ -1139,25 +1139,25 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       {/* Loading State */}
       {loading && (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-sm text-gray-600">Cargando historial...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-sm text-text-secondary">Cargando historial...</p>
         </div>
       )}
 
       {/* Empty State - Mostrar cuando no hay documentos (NO es un error) */}
       {!loading && !error && filteredPurchaseHistory.length === 0 && (
         <div className="text-center py-12">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="mx-auto h-12 w-12 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <h3 className="mt-4 text-lg font-medium text-gray-900">
+          <h3 className="mt-4 text-lg font-medium text-text-primary">
             {documentType === 'accion_tutela' 
               ? 'No hay acciones de tutela generadas'
               : documentType === 'reclamacion_cantidades'
               ? 'No hay reclamaciones de cantidades generadas'
               : 'No hay documentos en tu historial'}
           </h3>
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-text-secondary">
             {documentType === 'accion_tutela'
               ? 'Genera tu primera acción de tutela para verla aquí'
               : documentType === 'reclamacion_cantidades'
@@ -1170,11 +1170,11 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       {/* Error State - Solo mostrar errores REALES (problemas de red, permisos, etc.) */}
       {error && !loading && (
         <div className="text-center py-12">
-          <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="mx-auto h-12 w-12 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Error al cargar historial</h3>
-          <p className="mt-1 text-sm text-gray-500">{error}</p>
+          <h3 className="mt-2 text-sm font-medium text-text-primary">Error al cargar historial</h3>
+          <p className="mt-1 text-sm text-text-secondary">{error}</p>
         </div>
       )}
     </div>

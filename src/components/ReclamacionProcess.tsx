@@ -48,7 +48,7 @@ const DOCUMENT_CATEGORIES: DocumentCategory[] = [
     name: 'Otros',
     description: 'Otros documentos relevantes',
     required: false,
-    color: 'bg-gray-100 text-gray-800'
+    color: 'bg-surface-muted/30 text-text-primary'
   }
 ];
 
@@ -390,12 +390,12 @@ Sin otro particular, reciba un cordial saludo.
   }, []);
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="bg-card rounded-lg shadow-lg p-6">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-text-primary mb-2">
           Proceso de Reclamación de Cantidades
         </h2>
-        <p className="text-gray-600">
+        <p className="text-text-secondary">
           Sigue estos pasos para generar tu reclamación de cantidades
         </p>
       </div>
@@ -408,7 +408,7 @@ Sin otro particular, reciba un cordial saludo.
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                 currentStep >= step 
                   ? 'bg-orange-600 text-white' 
-                  : 'bg-gray-200 text-gray-600'
+                  : 'bg-gray-200 text-text-secondary'
               }`}>
                 {step}
               </div>
@@ -420,7 +420,7 @@ Sin otro particular, reciba un cordial saludo.
             </div>
           ))}
         </div>
-        <div className="flex justify-between mt-2 text-xs text-gray-500">
+        <div className="flex justify-between mt-2 text-xs text-text-secondary">
           <span>Subir y Analizar</span>
           <span>Pago</span>
           <span>Descargar</span>
@@ -430,10 +430,10 @@ Sin otro particular, reciba un cordial saludo.
       {/* Step 1: Document Upload and Analysis */}
       {currentStep === 1 && (
         <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-900">Paso 1: Subir y Analizar Documentos PDF</h3>
+          <h3 className="text-lg font-semibold text-text-primary">Paso 1: Subir y Analizar Documentos PDF</h3>
           
           <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-400 transition-colors cursor-pointer"
+            className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-orange-400 transition-colors cursor-pointer"
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
             onClick={() => fileInputRef.current?.click()}
@@ -441,10 +441,10 @@ Sin otro particular, reciba un cordial saludo.
             <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
               <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-text-secondary">
               Arrastra archivos PDF aquí o haz clic para seleccionar
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-text-secondary mt-1">
               Solo se permiten archivos PDF
             </p>
           </div>
@@ -460,19 +460,19 @@ Sin otro particular, reciba un cordial saludo.
 
           {uploadedDocuments.length > 0 && (
             <div className="space-y-6">
-              <h4 className="font-medium text-gray-900">Documentos subidos ({uploadedDocuments.length})</h4>
+              <h4 className="font-medium text-text-primary">Documentos subidos ({uploadedDocuments.length})</h4>
               
               {/* Document List with Categories */}
               <div className="space-y-3">
                 {uploadedDocuments.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={doc.id} className="flex items-center justify-between p-3 bg-app rounded-lg">
                     <div className="flex items-center">
                       <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                       </svg>
                       <div>
-                        <span className="text-sm font-medium text-gray-900">{doc.name}</span>
-                        <span className="text-xs text-gray-500 ml-2">
+                        <span className="text-sm font-medium text-text-primary">{doc.name}</span>
+                        <span className="text-xs text-text-secondary ml-2">
                           ({(doc.size / 1024 / 1024).toFixed(2)} MB)
                         </span>
                         {doc.category && (
@@ -550,7 +550,7 @@ Sin otro particular, reciba un cordial saludo.
       {currentStep === 2 && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Paso 2: Procesar Pago</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Paso 2: Procesar Pago</h3>
             <button
               onClick={() => setCurrentStep(1)}
               className="text-sm text-orange-600 hover:text-orange-700"
@@ -559,18 +559,18 @@ Sin otro particular, reciba un cordial saludo.
             </button>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h4 className="font-semibold text-gray-900 mb-4">Resumen de la Reclamación</h4>
+          <div className="bg-app rounded-lg p-6">
+            <h4 className="font-semibold text-text-primary mb-4">Resumen de la Reclamación</h4>
             
             {documentSummary && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Total documentos:</span>
+                    <span className="text-text-secondary">Total documentos:</span>
                     <span className="ml-2 font-medium">{documentSummary.totalDocuments}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Análisis completo:</span>
+                    <span className="text-text-secondary">Análisis completo:</span>
                     <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
                       documentSummary.analysisComplete 
                         ? 'bg-green-100 text-green-800' 
@@ -582,14 +582,14 @@ Sin otro particular, reciba un cordial saludo.
                 </div>
 
                 <div className="border-t pt-4">
-                  <h5 className="font-medium text-gray-700 mb-2">Documentos por categoría:</h5>
+                  <h5 className="font-medium text-text-secondary mb-2">Documentos por categoría:</h5>
                   <div className="space-y-1">
                     {Object.entries(documentSummary.categorizedDocuments).map(([categoryId, docs]) => {
                       const category = DOCUMENT_CATEGORIES.find(c => c.id === categoryId);
                       if (docs.length === 0) return null;
                       return (
                         <div key={categoryId} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">{category?.name}</span>
+                          <span className="text-text-secondary">{category?.name}</span>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${category?.color}`}>
                             {docs.length} documento(s)
                           </span>
@@ -609,7 +609,7 @@ Sin otro particular, reciba un cordial saludo.
             </p>
             
             <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-semibold text-gray-900">Precio:</span>
+              <span className="text-lg font-semibold text-text-primary">Precio:</span>
               <span className="text-2xl font-bold text-orange-600">€10.00</span>
             </div>
 
@@ -632,7 +632,7 @@ Sin otro particular, reciba un cordial saludo.
       {currentStep === 3 && generatedDocument && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Paso 3: Descargar Documento</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Paso 3: Descargar Documento</h3>
             <button
               onClick={resetProcess}
               className="text-sm text-orange-600 hover:text-orange-700"
@@ -710,9 +710,9 @@ Sin otro particular, reciba un cordial saludo.
             )}
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h5 className="font-medium text-gray-700 mb-2">Próximos Pasos:</h5>
-            <ul className="text-sm text-gray-600 space-y-1">
+          <div className="bg-app rounded-lg p-4">
+            <h5 className="font-medium text-text-secondary mb-2">Próximos Pasos:</h5>
+            <ul className="text-sm text-text-secondary space-y-1">
               <li>• Revisa el documento generado</li>
               <li>• Personaliza el contenido según tus necesidades</li>
               <li>• Envía la reclamación por correo certificado</li>
@@ -726,13 +726,13 @@ Sin otro particular, reciba un cordial saludo.
       {/* Processing State */}
       {isProcessing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+          <div className="bg-card rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-text-primary mb-2">
                 Generando Reclamación
               </h3>
-              <p className="text-gray-600">
+              <p className="text-text-secondary">
                 Estamos analizando tus documentos y generando tu reclamación de cantidades...
               </p>
             </div>

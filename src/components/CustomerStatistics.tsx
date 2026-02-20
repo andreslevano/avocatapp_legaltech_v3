@@ -96,39 +96,39 @@ export default function CustomerStatistics() {
   const StatCard = ({ title, value, subtitle, color, icon, percentage, onClick }: StatCardProps) => {
     const colorClasses = {
       blue: {
-        bg: 'bg-gradient-to-br from-blue-50 to-blue-100',
-        border: 'border-blue-200',
-        text: 'text-blue-600',
-        iconBg: 'bg-blue-100',
-        progress: 'bg-blue-500'
+        bg: 'bg-surface-muted/20',
+        border: 'border-border',
+        text: 'text-text-primary',
+        iconBg: 'bg-surface-muted/50',
+        progress: 'bg-sidebar'
       },
       red: {
-        bg: 'bg-gradient-to-br from-red-50 to-red-100',
-        border: 'border-red-200',
-        text: 'text-red-600',
-        iconBg: 'bg-red-100',
-        progress: 'bg-red-500'
+        bg: 'bg-surface-muted/25',
+        border: 'border-border',
+        text: 'text-text-primary',
+        iconBg: 'bg-surface-muted/60',
+        progress: 'bg-text-primary'
       },
       green: {
-        bg: 'bg-gradient-to-br from-green-50 to-green-100',
-        border: 'border-green-200',
-        text: 'text-green-600',
-        iconBg: 'bg-green-100',
-        progress: 'bg-green-500'
+        bg: 'bg-surface-muted/15',
+        border: 'border-border',
+        text: 'text-text-primary',
+        iconBg: 'bg-surface-muted/40',
+        progress: 'bg-text-secondary'
       },
       orange: {
-        bg: 'bg-gradient-to-br from-orange-50 to-orange-100',
-        border: 'border-orange-200',
-        text: 'text-orange-600',
-        iconBg: 'bg-orange-100',
-        progress: 'bg-orange-500'
+        bg: 'bg-surface-muted/30',
+        border: 'border-border',
+        text: 'text-text-primary',
+        iconBg: 'bg-surface-muted/55',
+        progress: 'bg-hover'
       },
       purple: {
-        bg: 'bg-gradient-to-br from-purple-50 to-purple-100',
-        border: 'border-purple-200',
-        text: 'text-purple-600',
-        iconBg: 'bg-purple-100',
-        progress: 'bg-purple-500'
+        bg: 'bg-surface-muted/22',
+        border: 'border-border',
+        text: 'text-text-primary',
+        iconBg: 'bg-surface-muted/45',
+        progress: 'bg-border'
       }
     };
 
@@ -136,11 +136,11 @@ export default function CustomerStatistics() {
 
     return (
       <div 
-        className={`${colors.bg} ${colors.border} border-2 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 ${onClick ? 'cursor-pointer' : ''}`}
+        className={`${colors.bg} ${colors.border} border rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 ${onClick ? 'cursor-pointer' : ''}`}
         onClick={onClick}
       >
         <div className="flex items-center justify-between mb-4">
-          <div className={`w-12 h-12 ${colors.iconBg} rounded-xl flex items-center justify-center`}>
+          <div className={`w-12 h-12 ${colors.iconBg} rounded-xl flex items-center justify-center text-text-primary`}>
             {icon}
           </div>
           {percentage && (
@@ -148,34 +148,34 @@ export default function CustomerStatistics() {
               <div className={`text-sm font-medium ${colors.text} mb-1`}>
                 {percentage.toFixed(1)}%
               </div>
-              <div className="text-xs text-gray-500">activos</div>
+              <div className="text-xs text-text-secondary">activos</div>
             </div>
           )}
         </div>
         
         <div className="mb-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">{title}</h3>
-          <div className="text-3xl font-bold text-gray-900 mb-1">
+          <h3 className="text-sm font-medium text-text-secondary mb-2">{title}</h3>
+          <div className="text-3xl font-bold text-text-primary mb-1">
             {loading ? (
-              <div className="animate-pulse bg-gray-200 h-8 w-20 rounded"></div>
+              <div className="animate-pulse bg-surface-muted h-8 w-20 rounded"></div>
             ) : (
               value
             )}
           </div>
-          <p className="text-sm text-gray-600">{subtitle}</p>
+          <p className="text-sm text-text-secondary">{subtitle}</p>
         </div>
 
         {percentage && (
           <>
             {/* Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div className="w-full bg-surface-muted/50 rounded-full h-2 mb-2">
               <div 
                 className={`${colors.progress} h-2 rounded-full transition-all duration-1000 ease-out`}
                 style={{ width: loading ? '0%' : `${percentage}%` }}
               ></div>
             </div>
             
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-text-secondary">
               Progreso del total de clientes
             </div>
           </>
@@ -192,10 +192,10 @@ export default function CustomerStatistics() {
     <div className="mb-8">
       {/* Section Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-text-primary mb-2">
           Estadísticas de Clientes
         </h2>
-        <p className="text-gray-600">
+        <p className="text-text-secondary">
           Análisis detallado de la base de clientes y distribución geográfica
         </p>
       </div>
@@ -208,7 +208,7 @@ export default function CustomerStatistics() {
           subtitle="En la base de datos"
           color="blue"
           icon={
-            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM7 10a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
             </svg>
           }
@@ -221,7 +221,7 @@ export default function CustomerStatistics() {
           subtitle="Con casos en curso"
           color="green"
           icon={
-            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           }
@@ -234,7 +234,7 @@ export default function CustomerStatistics() {
           subtitle="Este mes"
           color="purple"
           icon={
-            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           }
@@ -246,7 +246,7 @@ export default function CustomerStatistics() {
           subtitle="Por cliente"
           color="orange"
           icon={
-            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           }
@@ -256,10 +256,10 @@ export default function CustomerStatistics() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* City Distribution Chart */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Distribución por Ciudad</h3>
-            <p className="text-sm text-gray-600">Clientes por ubicación geográfica en España</p>
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Distribución por Ciudad</h3>
+            <p className="text-sm text-text-secondary">Clientes por ubicación geográfica en España</p>
           </div>
 
           {/* Desktop/Tablet Map View */}
@@ -274,18 +274,18 @@ export default function CustomerStatistics() {
                 <div key={city.city} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className={`w-4 h-4 rounded-full ${
-                      index === 0 ? 'bg-blue-500' :
-                      index === 1 ? 'bg-green-500' :
-                      index === 2 ? 'bg-orange-500' :
-                      index === 3 ? 'bg-purple-500' : 'bg-gray-500'
+                      index === 0 ? 'bg-text-primary' :
+                      index === 1 ? 'bg-text-secondary' :
+                      index === 2 ? 'bg-border' :
+                      index === 3 ? 'bg-hover' : 'bg-surface-muted'
                     }`}></div>
-                    <span className="text-sm font-medium text-gray-700">{city.city}</span>
+                    <span className="text-sm font-medium text-text-secondary">{city.city}</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className="text-sm font-bold text-gray-900">
+                    <div className="text-sm font-bold text-text-primary">
                       {loading ? '...' : city.count}
                     </div>
-                    <div className="text-sm text-gray-500 w-12 text-right">
+                    <div className="text-sm text-text-secondary w-12 text-right">
                       {loading ? '...' : `${city.percentage.toFixed(1)}%`}
                     </div>
                   </div>
@@ -297,19 +297,19 @@ export default function CustomerStatistics() {
             <div className="mt-6 space-y-2">
               {stats.clientsByCity.map((city, index) => (
                 <div key={`bar-${city.city}`} className="flex items-center space-x-3">
-                  <div className="w-16 text-xs text-gray-600 text-right">{city.city}</div>
-                  <div className="flex-1 bg-gray-200 rounded-full h-3">
+                  <div className="w-16 text-xs text-text-secondary text-right">{city.city}</div>
+                  <div className="flex-1 bg-surface-muted/50 rounded-full h-3">
                     <div 
                       className={`h-3 rounded-full transition-all duration-1000 ease-out ${
-                        index === 0 ? 'bg-blue-500' :
-                        index === 1 ? 'bg-green-500' :
-                        index === 2 ? 'bg-orange-500' :
-                        index === 3 ? 'bg-purple-500' : 'bg-gray-500'
+                        index === 0 ? 'bg-text-primary' :
+                        index === 1 ? 'bg-text-secondary' :
+                        index === 2 ? 'bg-border' :
+                        index === 3 ? 'bg-hover' : 'bg-surface-muted'
                       }`}
                       style={{ width: loading ? '0%' : `${city.percentage}%` }}
                     ></div>
                   </div>
-                  <div className="w-8 text-xs text-gray-500 text-right">
+                  <div className="w-8 text-xs text-text-secondary text-right">
                     {loading ? '...' : city.count}
                   </div>
                 </div>
@@ -319,10 +319,10 @@ export default function CustomerStatistics() {
         </div>
 
         {/* Procedure Type Chart */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Tipos de Procedimiento</h3>
-            <p className="text-sm text-gray-600">Distribución por área legal</p>
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Tipos de Procedimiento</h3>
+            <p className="text-sm text-text-secondary">Distribución por área legal</p>
           </div>
 
           <div className="space-y-4">
@@ -330,18 +330,18 @@ export default function CustomerStatistics() {
               <div key={procedure.procedure} className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className={`w-4 h-4 rounded-full ${
-                    index === 0 ? 'bg-red-500' :
-                    index === 1 ? 'bg-blue-500' :
-                    index === 2 ? 'bg-green-500' :
-                    index === 3 ? 'bg-orange-500' : 'bg-purple-500'
+                    index === 0 ? 'bg-text-primary' :
+                    index === 1 ? 'bg-text-secondary' :
+                    index === 2 ? 'bg-border' :
+                    index === 3 ? 'bg-hover' : 'bg-surface-muted'
                   }`}></div>
-                  <span className="text-sm font-medium text-gray-700">{procedure.procedure}</span>
+                  <span className="text-sm font-medium text-text-secondary">{procedure.procedure}</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="text-sm font-bold text-gray-900">
+                  <div className="text-sm font-bold text-text-primary">
                     {loading ? '...' : procedure.count}
                   </div>
-                  <div className="text-sm text-gray-500 w-12 text-right">
+                  <div className="text-sm text-text-secondary w-12 text-right">
                     {loading ? '...' : `${procedure.percentage.toFixed(1)}%`}
                   </div>
                 </div>
@@ -359,13 +359,13 @@ export default function CustomerStatistics() {
                   cy="50"
                   r="40"
                   fill="none"
-                  stroke="#e5e7eb"
+                  stroke="#E8E8E8"
                   strokeWidth="8"
                 />
                 
-                {/* Procedure Segments */}
+                {/* Procedure Segments - site palette */}
                 {stats.clientsByProcedure.map((procedure, index) => {
-                  const colors = ['#ef4444', '#3b82f6', '#10b981', '#f97316', '#8b5cf6'];
+                  const colors = ['#1E1E1E', '#5F5F5F', '#9A9A9A', '#B8B8B8', '#C4C4C4'];
                   const startAngle = stats.clientsByProcedure.slice(0, index).reduce((acc, p) => acc + p.percentage, 0);
                   const endAngle = startAngle + procedure.percentage;
                   
@@ -389,41 +389,17 @@ export default function CustomerStatistics() {
               {/* Center Text */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-xl font-bold text-gray-900">
-                    {loading ? (
-                      <div className="animate-pulse bg-gray-200 h-6 w-12 rounded mx-auto"></div>
-                    ) : (
-                      stats.totalClients
-                    )}
+                  <div className="text-xl font-bold text-text-primary">
+              {loading ? (
+                <div className="animate-pulse bg-surface-muted h-6 w-12 rounded mx-auto"></div>
+              ) : (
+                stats.totalClients
+              )}
                   </div>
-                  <div className="text-xs text-gray-500">Clientes</div>
+                  <div className="text-xs text-text-secondary">Clientes</div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Summary Stats */}
-      <div className="mt-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-          <div>
-            <div className="text-2xl font-bold text-blue-600">
-              {loading ? '...' : calculatePercentage(stats.activeClients, stats.totalClients).toFixed(1)}%
-            </div>
-            <div className="text-sm text-gray-600">Clientes Activos</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-green-600">
-              {loading ? '...' : stats.newClientsThisMonth}
-            </div>
-            <div className="text-sm text-gray-600">Nuevos Este Mes</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-purple-600">
-              {loading ? '...' : stats.averageCasesPerClient}
-            </div>
-            <div className="text-sm text-gray-600">Casos por Cliente</div>
           </div>
         </div>
       </div>

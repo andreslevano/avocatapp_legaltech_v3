@@ -1,6 +1,13 @@
 import { createWorker } from 'tesseract.js';
 import { DocumentoOCR, DocumentoOCRSchema } from './validate-reclamacion';
-import pdfParse from 'pdf-parse';
+
+// Helper function to parse PDF (same approach as pdf-ocr.ts)
+async function parsePDF(buffer: Buffer): Promise<any> {
+  // Importación dinámica para evitar problemas con SSR
+  // @ts-ignore - pdf-parse module resolution
+  const pdfParse = (await import('pdf-parse')).default;
+  return pdfParse(buffer);
+}
 
 export interface OCRResult {
   contenido: string;
@@ -24,7 +31,7 @@ export async function analyzeDocumentOCR(fileBuffer: Buffer, filename: string): 
         console.log(`📄 Extrayendo texto de PDF: ${filename}`);
         
         try {
-          const pdfData = await pdfParse(fileBuffer);
+          const pdfData = await parsePDF(fileBuffer);
           const contenido = pdfData.text.trim();
           const numPages = pdfData.numpages;
           

@@ -13,11 +13,13 @@ export default function Pricing() {
       period: t('pricing.students.period'),
       description: t('pricing.students.description'),
       features: [
-        t('pricing.students.aiDocs'),
-        t('pricing.students.basicLegalResearch'),
-        t('pricing.students.clientPortal'),
-        t('pricing.students.emailSupport'),
-        t('pricing.students.basicAnalytics'),
+        t('pricing.students.feature1'),
+        t('pricing.students.feature2'),
+        t('pricing.students.feature3'),
+        t('pricing.students.feature4'),
+        t('pricing.students.feature5'),
+        t('pricing.students.feature6'),
+        t('pricing.students.feature7'),
       ],
       popular: false,
       cta: t('pricing.students.startNow'),
@@ -25,18 +27,17 @@ export default function Pricing() {
       isFixedPrice: true,
     },
     {
-      name: 'Autoservicio',
-      price: '10,00',
-      period: 'escrito',
-      description: 'Genera documentos legales profesionales de forma automática con IA',
+      name: 'AUTOSERVICIO',
+      price: '50',
+      period: 'mes',
+      description: '',
       features: [
-        'Reclamación de Cantidades (España)',
-        'Acción de Tutela (Colombia)',
-        'Análisis inteligente de documentos con IA',
-        'Generación automática de demandas',
-        'OCR para extracción de texto',
-        'Documentos listos para presentar',
-        'Soporte para múltiples tipos de reclamaciones',
+        'Generación de escritos',
+        'Análisis de documentos',
+        'Extracción de datos',
+        'Revisión y extracción de datos de email',
+        'Tu propio repositorio de documentos',
+        '100 créditos por mes',
       ],
       popular: false,
       cta: 'Empezar ahora',
@@ -44,102 +45,87 @@ export default function Pricing() {
       isFixedPrice: true,
     },
     {
-      name: '🌍 Abogados',
-      price: null,
-      period: null,
-      description: 'Solución completa para bufetes de abogados establecidos',
+      name: 'ABOGADOS',
+      price: '75',
+      period: 'mes',
+      description: '',
       features: [
-        'Análisis de Documentos con IA Ilimitado',
-        'Investigación Legal Premium',
-        'Clientes Ilimitados',
-        'Soporte Telefónico 24/7',
-        'Integraciones Personalizadas',
-        'Seguridad Avanzada',
-        'Gerente de Cuenta Dedicado',
-        'Capacitación Personalizada',
-        'API Personalizada',
-        'Soporte Dedicado 24/7',
+        'Dashboard y métricas',
+        'Gestión de casos (crear, analizar, urgentes, vencidos)',
+        'Directorio de clientes',
+        'Repositorio de documentos',
+        'Generación de escritos (Reclamación, Tutela, Otros)',
+        'Análisis de documentos con IA',
+        'Extracción de datos',
       ],
       popular: true,
       cta: 'Empezar ahora',
       href: '/signup?plan=abogados',
-      isBeta: true,
+      isBeta: false,
     },
   ];
 
 
   return (
-    <section id="precios" className="py-20 bg-gray-50">
+    <section id="precios" className="py-20 bg-app">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-                      <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Precios Simples y Transparentes
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Elige el plan que se adapte a tu práctica.
-            </p>
+          <h2 className="text-h1 font-bold text-text-primary mb-4">
+            Precios Simples y Transparentes
+          </h2>
+          <p className="text-xl text-text-secondary max-w-3xl mx-auto">
+            Elige el plan que se adapte a tu práctica.
+          </p>
         </div>
 
-
-
-
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch">
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`card relative ${
+              className={`card relative flex flex-col h-full ${
                 plan.popular
-                  ? 'ring-2 ring-primary-500 shadow-xl scale-105'
+                  ? 'ring-2 ring-sidebar shadow-xl scale-105'
                   : 'hover:shadow-xl'
               } transition-all duration-300`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-primary-600 text-white px-4 py-1 rounded-full text-sm font-medium">
+                  <span className="bg-sidebar text-text-on-dark px-4 py-1 rounded-full text-small font-medium">
                     Más Popular
                   </span>
                 </div>
               )}
 
-                              <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-gray-600 mb-4">{plan.description}</p>
-                  
-                  <div className="mb-2">
-                    {plan.isBeta ? (
-                      <div className="text-center">
-                        <div className="inline-block bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-lg font-semibold text-lg mb-2">
-                          🚀 Versión Beta Gratuita
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2">
-                          Acceso completo sin costo durante la fase beta
-                        </p>
-                      </div>
-                    ) : plan.name === t('pricing.students.title') || plan.name === '🇪🇸 Estudiantes' ? (
-                      <>
-                        <span className="text-4xl font-bold text-gray-900">€{plan.price}</span>
-                        <span className="text-gray-600">/{plan.period}</span>
-                      </>
-                    ) : plan.name === 'Autoservicio' ? (
-                      <>
-                        <span className="text-4xl font-bold text-gray-900">€{plan.price}</span>
-                        <span className="text-gray-600">/{plan.period}</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-4xl font-bold text-gray-900">€{plan.price}</span>
-                        <span className="text-gray-600">/{plan.period}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+              <div className="text-center mb-8">
+                <h3 className="text-h2 font-bold text-text-primary mb-2">{plan.name}</h3>
+                {plan.description && <p className="text-body text-text-secondary mb-4">{plan.description}</p>}
 
-              <ul className="space-y-3 mb-8">
+                <div className="mb-2">
+                  {plan.name === t('pricing.students.title') ? (
+                    <>
+                      <span className="text-4xl font-bold text-text-primary">€{plan.price}</span>
+                      <span className="text-text-secondary">/{plan.period}</span>
+                    </>
+                  ) : plan.name === 'AUTOSERVICIO' ? (
+                    <>
+                      <span className="text-4xl font-bold text-text-primary">€{plan.price}</span>
+                      <span className="text-text-secondary">/{plan.period}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-bold text-text-primary">€{plan.price}</span>
+                      <span className="text-text-secondary">/{plan.period}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <ul className="space-y-3 mb-8 flex-1 min-h-0">
                 {plan.features.map((feature, featureIndex) => (
                   <li key={featureIndex} className="flex items-start">
                     <svg
-                      className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0"
+                      className="w-5 h-5 text-text-primary mr-3 mt-0.5 flex-shrink-0"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -149,14 +135,14 @@ export default function Pricing() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span className="text-gray-700">{feature}</span>
+                    <span className="text-body text-text-primary">{feature}</span>
                   </li>
                 ))}
               </ul>
 
               <Link
                 href={plan.href}
-                className={`block w-full text-center py-3 px-4 rounded-lg font-medium transition-colors ${
+                className={`block w-full text-center py-3 px-4 rounded-lg font-medium transition-colors mt-auto ${
                   plan.popular
                     ? 'btn-primary'
                     : 'btn-secondary'
@@ -170,12 +156,12 @@ export default function Pricing() {
 
         {/* Additional Info */}
         <div className="mt-16 text-center">
-          <div className="bg-white rounded-2xl p-8 max-w-4xl mx-auto shadow-sm border border-gray-200">
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+          <div className="bg-card rounded-2xl p-8 max-w-4xl mx-auto shadow-sm border border-border">
+            <h3 className="text-h2 font-semibold text-text-primary mb-4">
               ¿Necesitas un Plan Personalizado?
             </h3>
-            <p className="text-gray-600 mb-6">
-              Ofrecemos precios personalizados para bufetes con requisitos específicos. 
+            <p className="text-body text-text-secondary mb-6">
+              Ofrecemos precios personalizados para bufetes con requisitos específicos.
               Contacta a nuestro equipo de ventas para discutir tus necesidades.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

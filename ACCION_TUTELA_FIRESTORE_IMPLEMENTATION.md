@@ -309,3 +309,4 @@ body: JSON.stringify({
 - Asegurar que el webhook de Stripe maneja correctamente el `documentType`
 - Documentar el nuevo campo en FIRESTORE_MODEL.md
 
+

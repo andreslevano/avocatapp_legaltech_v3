@@ -90,7 +90,7 @@ export default function GestionAbogadosPage() {
           {/* Content */}
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100/90 text-blue-800 mb-4">
+              <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-[var(--color-app)] text-text-primary border border-border mb-4">
                 Beta
               </span>
               <h1 className="text-5xl font-bold text-white mb-6 drop-shadow-lg">
@@ -103,31 +103,31 @@ export default function GestionAbogadosPage() {
 
             {/* Hero Illustration */}
             <div className="max-w-4xl mx-auto">
-              <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-8 border border-gray-200">
+              <div className="bg-card/95 backdrop-blur-sm rounded-xl shadow-2xl p-8 border border-border">
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-blue-50 rounded-lg p-6 text-center">
-                    <div className="text-3xl font-bold text-blue-600 mb-2">100+</div>
-                    <div className="text-sm text-gray-600">Casos Gestionados</div>
+                  <div className="bg-[var(--color-app)] rounded-lg p-6 text-center border border-border">
+                    <div className="text-3xl font-bold text-text-primary mb-2">100+</div>
+                    <div className="text-sm text-text-primary font-medium">Casos Gestionados</div>
                   </div>
-                  <div className="bg-purple-50 rounded-lg p-6 text-center">
-                    <div className="text-3xl font-bold text-purple-600 mb-2">50+</div>
-                    <div className="text-sm text-gray-600">Clientes Activos</div>
+                  <div className="bg-[var(--color-app)] rounded-lg p-6 text-center border border-border">
+                    <div className="text-3xl font-bold text-text-primary mb-2">50+</div>
+                    <div className="text-sm text-text-primary font-medium">Clientes Activos</div>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-6 text-center">
-                    <div className="text-3xl font-bold text-green-600 mb-2">80%</div>
-                    <div className="text-sm text-gray-600">Tiempo Ahorrado</div>
+                  <div className="bg-[var(--color-app)] rounded-lg p-6 text-center border border-border">
+                    <div className="text-3xl font-bold text-text-primary mb-2">80%</div>
+                    <div className="text-sm text-text-primary font-medium">Tiempo Ahorrado</div>
                   </div>
                 </div>
-                <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="mt-6 pt-6 border-t border-border">
                   <div className="flex items-center justify-center space-x-4">
-                    <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-sidebar rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-text-on-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
                     <div className="text-left">
-                      <div className="font-semibold text-gray-900">Dashboard Intuitivo</div>
-                      <div className="text-sm text-gray-600">Todo lo que necesitas en un solo lugar</div>
+                      <div className="font-semibold text-text-primary">Dashboard Intuitivo</div>
+                      <div className="text-sm text-text-primary">Todo lo que necesitas en un solo lugar</div>
                     </div>
                   </div>
                 </div>
@@ -140,13 +140,13 @@ export default function GestionAbogadosPage() {
         </section>
 
         {/* Features Section */}
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-card">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              <h2 className="text-4xl font-bold text-text-primary mb-4">
                 Funcionalidades Completas
               </h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              <p className="text-xl text-text-primary max-w-2xl mx-auto">
                 Herramientas profesionales diseñadas para abogados que buscan optimizar su trabajo diario.
               </p>
             </div>
@@ -155,13 +155,13 @@ export default function GestionAbogadosPage() {
               {features.map((feature, index) => (
                 <div
                   key={index}
-                  className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition-shadow border border-gray-200"
+                  className="bg-[var(--color-app)] rounded-xl p-6 hover:shadow-lg transition-shadow border border-border"
                 >
-                  <div className="text-primary-600 mb-4">{feature.icon}</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  <div className="text-sidebar mb-4">{feature.icon}</div>
+                  <h3 className="text-xl font-semibold text-text-primary mb-3">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <p className="text-text-primary">{feature.description}</p>
                 </div>
               ))}
             </div>
@@ -169,13 +169,13 @@ export default function GestionAbogadosPage() {
         </section>
 
         {/* How It Works Section */}
-        <section className="py-20 bg-gray-50">
+        <section className="py-20 bg-[var(--color-app)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              <h2 className="text-4xl font-bold text-text-primary mb-4">
                 Cómo Funciona
               </h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              <p className="text-xl text-text-primary max-w-2xl mx-auto">
                 Proceso simple y eficiente para gestionar tus casos legales.
               </p>
             </div>
@@ -188,11 +188,11 @@ export default function GestionAbogadosPage() {
                 { step: '4', title: 'Analiza y Optimiza', description: 'Obtén insights y mejora tu práctica' },
               ].map((item, index) => (
                 <div key={index} className="text-center">
-                  <div className="w-16 h-16 bg-primary-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+                  <div className="w-16 h-16 bg-sidebar text-text-on-dark rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
                     {item.step}
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-gray-600">{item.description}</p>
+                  <h3 className="text-lg font-semibold text-text-primary mb-2">{item.title}</h3>
+                  <p className="text-text-primary">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -200,24 +200,24 @@ export default function GestionAbogadosPage() {
         </section>
 
         {/* Benefits Section */}
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-card">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                <h2 className="text-4xl font-bold text-text-primary mb-4">
                   Beneficios Clave
                 </h2>
               </div>
 
               <div className="space-y-4">
                 {benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-start space-x-4 bg-gray-50 rounded-lg p-4">
+                  <div key={index} className="flex items-start space-x-4 bg-[var(--color-app)] rounded-lg p-4 border border-border">
                     <div className="flex-shrink-0">
-                      <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 text-sidebar" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <p className="text-lg text-gray-700">{benefit}</p>
+                    <p className="text-lg text-text-primary">{benefit}</p>
                   </div>
                 ))}
               </div>
@@ -226,7 +226,7 @@ export default function GestionAbogadosPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-primary-600 to-purple-600">
+        <section className="py-20 bg-gradient-to-r from-[var(--color-sidebar)] to-[#3d3d3d]">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl font-bold text-white mb-6">
               ¿Listo para Optimizar tu Práctica Legal?
@@ -236,14 +236,14 @@ export default function GestionAbogadosPage() {
             </p>
             <Link
               href="/signup"
-              className="inline-flex items-center px-8 py-4 bg-white text-primary-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors shadow-lg text-lg"
+              className="inline-flex items-center px-8 py-4 bg-card text-text-primary font-semibold rounded-lg hover:bg-[var(--color-app)] transition-colors shadow-lg text-lg"
             >
               Comenzar Ahora
               <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
-            <p className="mt-4 text-white/80 text-sm">
+            <p className="mt-4 text-white/90 text-sm">
               Prueba gratuita disponible • Sin tarjeta de crédito requerida
             </p>
           </div>

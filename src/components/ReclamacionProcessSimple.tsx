@@ -5,6 +5,7 @@ import { UploadedDocument, DocumentCategory, DocumentSummary, GeneratedDocument 
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 import { saveUploadedFile, savePdfForUser } from '@/lib/storage';
+import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 
 interface ReclamacionProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -18,42 +19,42 @@ const DOCUMENT_CATEGORIES: DocumentCategory[] = [
     name: 'Contrato',
     description: 'Contrato o acuerdo comercial',
     required: true,
-    color: 'bg-blue-100 text-blue-800'
+    color: 'bg-surface-muted/30 text-text-primary'
   },
   {
     id: 'invoice',
     name: 'Factura',
     description: 'Facturas pendientes de pago',
     required: true,
-    color: 'bg-green-100 text-green-800'
+    color: 'bg-surface-muted/30 text-text-primary'
   },
   {
     id: 'correspondence',
     name: 'Correspondencia',
     description: 'Emails, cartas, comunicaciones',
     required: false,
-    color: 'bg-yellow-100 text-yellow-800'
+    color: 'bg-surface-muted/20 text-text-secondary'
   },
   {
     id: 'evidence',
     name: 'Pruebas',
     description: 'Documentos que prueban la deuda',
     required: true,
-    color: 'bg-red-100 text-red-800'
+    color: 'bg-surface-muted/30 text-text-primary'
   },
   {
     id: 'identity',
     name: 'Identificación',
     description: 'DNI, NIE o documentos de identidad',
     required: true,
-    color: 'bg-purple-100 text-purple-800'
+    color: 'bg-surface-muted/30 text-text-primary'
   },
   {
     id: 'other',
     name: 'Otros',
     description: 'Otros documentos relevantes',
     required: false,
-    color: 'bg-gray-100 text-gray-800'
+    color: 'bg-surface-muted/30 text-text-primary'
   }
 ];
 
@@ -66,13 +67,12 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
   const [isPaymentComplete, setIsPaymentComplete] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [showAnalisisModal, setShowAnalisisModal] = useState(false);
-  const [analisisExito, setAnalisisExito] = useState<any>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [caseDescription, setCaseDescription] = useState('');
   const [paymentDocId, setPaymentDocId] = useState<string | null>(null);
   const [paymentReclId, setPaymentReclId] = useState<string | null>(null);
   const [currentReclId, setCurrentReclId] = useState<string | null>(null);
   const [uploadedFilesInfo, setUploadedFilesInfo] = useState<Array<{ fileName: string; storagePath: string; downloadUrl?: string }>>([]);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Obtener usuario autenticado
@@ -146,7 +146,8 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
             user.uid,
             file,
             category.id,
-            'reclamacion_cantidades' // Tipo de documento para determinar carpeta
+            'reclamacion_cantidades',
+            { userType: 'autoservicio', documentType: 'reclamacion-cantidades' }
           );
 
           newDocuments.push({
@@ -234,60 +235,6 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
     setCurrentStep(2);
   };
 
-  const analizarExito = async () => {
-    if (uploadedDocuments.length === 0) {
-      alert('Primero sube algunos documentos para analizar');
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setShowAnalisisModal(true);
-
-    try {
-      console.log('🔍 Iniciando análisis de éxito...');
-      
-      // Preparar datos OCR simulados basados en documentos subidos
-      const datosOCR = {
-        documentos: uploadedDocuments.map(doc => ({
-          nombre: doc.name,
-          tipo: doc.category?.name || 'Documento',
-          contenido: `Contenido extraído de ${doc.name}`,
-          fecha: doc.uploadDate.toISOString(),
-          relevancia: doc.category?.required ? 'Alta' : 'Media'
-        })),
-        resumen: [], // TODO: Add recommendations to DocumentSummary interface
-        completitud: 0 // TODO: Add completenessScore to DocumentSummary interface
-      };
-
-      const response = await fetch('/api/analisis-exito', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          datosOCR,
-          tipoDocumento: 'Reclamación de Cantidades',
-          userId: 'demo_user'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error en el análisis de éxito');
-      }
-
-      const result = await response.json();
-      setAnalisisExito(result.data.analisis);
-      
-      console.log('✅ Análisis de éxito completado:', result.data.analisis.analisis?.porcentajeExito + '%');
-
-    } catch (error) {
-      console.error('❌ Error en análisis de éxito:', error);
-      alert('Error analizando la probabilidad de éxito. Intenta de nuevo.');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
   // Calculate accuracy percentage based on required documents
   const calculateAccuracy = () => {
     if (!documentSummary) return 0;
@@ -306,26 +253,26 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
     if (accuracy >= 80) {
       return {
         level: 'Alta',
-        color: 'text-green-600',
-        bgColor: 'bg-green-50',
-        borderColor: 'border-green-200',
-        iconColor: 'text-green-600'
+        color: 'text-text-primary',
+        bgColor: 'bg-surface-muted/20',
+        borderColor: 'border-border',
+        iconColor: 'text-text-primary'
       };
     } else if (accuracy >= 60) {
       return {
         level: 'Media',
-        color: 'text-yellow-600',
-        bgColor: 'bg-yellow-50',
-        borderColor: 'border-yellow-200',
-        iconColor: 'text-yellow-600'
+        color: 'text-text-secondary',
+        bgColor: 'bg-surface-muted/20',
+        borderColor: 'border-border',
+        iconColor: 'text-text-secondary'
       };
     } else {
       return {
         level: 'Baja',
-        color: 'text-red-600',
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200',
-        iconColor: 'text-red-600'
+        color: 'text-text-secondary',
+        bgColor: 'bg-surface-muted/30',
+        borderColor: 'border-border',
+        iconColor: 'text-text-secondary'
       };
     }
   };
@@ -375,20 +322,21 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
         }
       }
       
-      // Crear sesión de checkout en Stripe
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      // Crear sesión de checkout en Stripe (formato unificado como estudiantes/tutela)
+      const endpoint = getCheckoutSessionEndpoint();
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           documentType: 'reclamacion_cantidades',
-          docId: docId,
-          reclId: reclId,
+          caseId: reclId, // Usar reclId como caseId para consistencia
+          uid: userId || 'demo_user',
           userId: userId || 'demo_user',
           customerEmail: userEmail || 'user@example.com',
-          successUrl: `${window.location.origin}/dashboard/reclamacion-cantidades?payment=success&docId=${docId}&reclId=${reclId}`,
-          cancelUrl: `${window.location.origin}/dashboard/reclamacion-cantidades?payment=cancelled`
+          successUrl: `${window.location.origin}/dashboard/autoservicio/reclamacion-cantidades?payment=success&caseId=${reclId}`,
+          cancelUrl: `${window.location.origin}/dashboard/autoservicio/reclamacion-cantidades?payment=cancelled&caseId=${reclId}`
         }),
       });
 
@@ -592,6 +540,7 @@ NOTA: Este documento ha sido generado mediante inteligencia artificial y debe se
           totalAmount: documentSummary.totalAmount,
           precision: documentSummary.precision
         } : null,
+        caseDescription: caseDescription || undefined,
         // Usar docId y reclId de la URL si existen
         docId: docIdToUse,
         reclId: reclIdToUse
@@ -729,7 +678,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       // Mostrar error al usuario
       alert(`Error generando documento: ${error.message}`);
     }
-  }, [documentSummary, uploadedDocuments, userId, paymentDocId, paymentReclId, onComplete]);
+  }, [documentSummary, uploadedDocuments, userId, paymentDocId, paymentReclId, caseDescription, onComplete]);
 
   // Detectar cuando se regresa de Stripe con pago exitoso
   useEffect(() => {
@@ -737,31 +686,34 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
     
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
-    const docId = urlParams.get('docId');
-    const reclId = urlParams.get('reclId');
+    const caseId = urlParams.get('caseId'); // Usar caseId (consistente con webhook)
+    const docId = urlParams.get('docId'); // Mantener para backward compatibility
+    const reclId = urlParams.get('reclId'); // Mantener para backward compatibility
+    
+    // Usar caseId si está disponible, sino usar reclId o docId
+    const finalCaseId = caseId || reclId || docId;
     
     if (paymentStatus === 'success' && !isPaymentComplete) {
-      console.log('✅ Pago completado, generando documento...', { docId, reclId });
+      console.log('✅ Pago completado, documento será generado automáticamente por webhook...', { caseId: finalCaseId });
       setIsPaymentComplete(true);
-      // Guardar docId y reclId del pago para usarlos al generar el documento
+      
+      // Guardar IDs del pago
+      if (finalCaseId) {
+        setPaymentReclId(finalCaseId);
+        setCurrentReclId(finalCaseId);
+      }
       if (docId) setPaymentDocId(docId);
-      if (reclId) setPaymentReclId(reclId);
       
       // Disparar evento de pago completado para actualizar el historial
       window.dispatchEvent(new CustomEvent('payment-completed', {
-        detail: { docId, reclId }
+        detail: { caseId: finalCaseId, docId, reclId: finalCaseId }
       }));
       console.log('💳 Evento payment-completed disparado');
       
-      // Generar documento después del pago (pasar docId y reclId)
-      // IMPORTANTE: Ejecutar siempre, incluso si no hay documentSummary
-      // El documento se generará con datos por defecto si no hay documentos analizados
-      if (docId && reclId) {
-        generateDocument(docId, reclId);
-      } else {
-        console.error('❌ docId o reclId faltantes en la URL');
-        setError('Error: No se encontraron los IDs del documento en la URL. Por favor, contacta con soporte.');
-      }
+      // Nota: El documento se genera automáticamente por el webhook de Stripe
+      // No necesitamos llamar a generateDocument aquí
+      // El usuario puede ver el documento en el historial de compras
+      
       // Limpiar URL
       window.history.replaceState({}, '', window.location.pathname);
     } else if (paymentStatus === 'cancelled') {
@@ -769,7 +721,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       alert('El pago fue cancelado. Puedes intentarlo de nuevo cuando estés listo.');
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [isPaymentComplete, generateDocument]); // Incluir generateDocument en las dependencias
+  }, [isPaymentComplete]); // Remover generateDocument de dependencias ya que no se llama
 
   const sendEmailWithAttachments = async (document: GeneratedDocument) => {
     try {
@@ -875,7 +827,8 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             {
               fileName: `${generatedDocument.title.replace(/\s+/g, '_')}.pdf`,
               contentType: 'application/pdf',
-              documentType: 'reclamacion_cantidades'
+              documentType: 'reclamacion_cantidades',
+              storageContext: { userType: 'autoservicio', documentType: 'reclamacion-cantidades' },
             }
           );
           console.log('✅ PDF guardado en Storage:', storageResult.storagePath);
@@ -939,17 +892,18 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
     setUploadedDocuments([]);
     setDocumentSummary(null);
     setGeneratedDocument(null);
+    setCaseDescription('');
     setIsProcessing(false);
     setIsPaymentComplete(false);
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="bg-card rounded-lg shadow-lg p-6">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-text-primary mb-2">
           Proceso de Reclamación de Cantidades
         </h2>
-        <p className="text-gray-600">
+        <p className="text-text-secondary">
           Sigue estos pasos para generar tu reclamación de cantidades
         </p>
       </div>
@@ -961,20 +915,20 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             <div key={step} className="flex items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                 currentStep >= step 
-                  ? 'bg-orange-600 text-white' 
-                  : 'bg-gray-200 text-gray-600'
+                  ? 'bg-sidebar text-text-on-dark' 
+                  : 'bg-gray-200 text-text-secondary'
               }`}>
                 {step}
               </div>
               {step < 3 && (
                 <div className={`w-16 h-1 mx-2 ${
-                  currentStep > step ? 'bg-orange-600' : 'bg-gray-200'
+                  currentStep > step ? 'bg-sidebar' : 'bg-surface-muted'
                 }`} />
               )}
             </div>
           ))}
         </div>
-        <div className="flex justify-between mt-2 text-xs text-gray-500">
+        <div className="flex justify-between mt-2 text-xs text-text-secondary">
           <span>Subir y Analizar</span>
           <span>Pago</span>
           <span>Descargar</span>
@@ -984,10 +938,10 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       {/* Step 1: Document Upload and Analysis */}
       {currentStep === 1 && (
         <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-900">Paso 1: Subir y Analizar Documentos PDF</h3>
+          <h3 className="text-lg font-semibold text-text-primary">Paso 1: Subir y Analizar Documentos PDF</h3>
           
           <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-400 transition-colors cursor-pointer"
+            className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-sidebar transition-colors cursor-pointer"
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
             onClick={() => fileInputRef.current?.click()}
@@ -995,15 +949,15 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
               <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-text-secondary">
               {isUploading ? 'Subiendo archivos a Firebase Storage...' : 'Arrastra archivos PDF aquí o haz clic para seleccionar'}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-text-secondary mt-1">
               Solo se permiten archivos PDF
             </p>
             {isUploading && (
               <div className="mt-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sidebar mx-auto"></div>
               </div>
             )}
           </div>
@@ -1019,19 +973,19 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
 
           {uploadedDocuments.length > 0 && (
             <div className="space-y-6">
-              <h4 className="font-medium text-gray-900">Documentos subidos ({uploadedDocuments.length})</h4>
+              <h4 className="font-medium text-text-primary">Documentos subidos ({uploadedDocuments.length})</h4>
               
               {/* Document List with Categories */}
               <div className="space-y-3">
                 {uploadedDocuments.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={doc.id} className="flex items-center justify-between p-3 bg-app rounded-lg">
                     <div className="flex items-center">
-                      <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-text-secondary mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                       </svg>
                       <div>
-                        <span className="text-sm font-medium text-gray-900">{doc.name}</span>
-                        <span className="text-xs text-gray-500 ml-2">
+                        <span className="text-sm font-medium text-text-primary">{doc.name}</span>
+                        <span className="text-xs text-text-secondary ml-2">
                           ({(doc.size / 1024 / 1024).toFixed(2)} MB)
                         </span>
                         {doc.category && (
@@ -1044,13 +998,13 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                     <div className="flex space-x-2">
                       <button
                         onClick={() => window.open(doc.previewUrl, '_blank')}
-                        className="text-blue-600 hover:text-blue-700 text-sm"
+                        className="text-text-primary hover:text-text-secondary text-sm"
                       >
                         Ver
                       </button>
                       <button
                         onClick={() => removeDocument(doc.id)}
-                        className="text-red-600 hover:text-red-700 text-sm"
+                        className="text-text-primary hover:text-text-secondary text-sm"
                       >
                         Eliminar
                       </button>
@@ -1061,19 +1015,19 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
 
               {/* Analysis Summary */}
               {documentSummary && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h5 className="font-medium text-blue-800 mb-3">Análisis de Documentos</h5>
+                <div className="bg-surface-muted/20 border border-border rounded-lg p-4">
+                  <h5 className="font-medium text-text-primary mb-3">Análisis de Documentos</h5>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-blue-700">Total documentos:</span>
+                      <span className="text-text-secondary">Total documentos:</span>
                       <span className="ml-2 font-medium">{documentSummary.totalDocuments}</span>
                     </div>
                     <div>
-                      <span className="text-blue-700">Análisis completo:</span>
+                      <span className="text-text-secondary">Análisis completo:</span>
                       <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
                         documentSummary.analysisComplete 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-surface-muted/30 text-text-primary' 
+                          : 'bg-surface-muted/30 text-text-primary'
                       }`}>
                         {documentSummary.analysisComplete ? 'Sí' : 'No'}
                       </span>
@@ -1081,9 +1035,9 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   </div>
                   
                   {documentSummary.missingRequired.length > 0 && (
-                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
-                      <p className="text-sm text-red-700 font-medium">Documentos requeridos faltantes:</p>
-                      <ul className="text-sm text-red-600 mt-1">
+                    <div className="mt-3 p-3 bg-surface-muted/30 border border-border rounded">
+                      <p className="text-sm text-text-primary font-medium">Documentos requeridos faltantes:</p>
+                      <ul className="text-sm text-text-secondary mt-1">
                         {documentSummary.missingRequired.map((category) => (
                           <li key={category}>• {category}</li>
                         ))}
@@ -1092,6 +1046,20 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   )}
                 </div>
               )}
+
+              <div className="space-y-3">
+                <label htmlFor="case-description" className="block text-sm font-medium text-text-primary">
+                  Descripción del caso
+                </label>
+                <textarea
+                  id="case-description"
+                  value={caseDescription}
+                  onChange={(e) => setCaseDescription(e.target.value)}
+                  placeholder="Describe brevemente tu caso: contexto, cantidades reclamadas, fechas relevantes, etc."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-app text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-transparent resize-y"
+                />
+              </div>
               
               <div className="space-y-3">
                 <button
@@ -1100,17 +1068,6 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Analizar Documentos y Continuar
-                </button>
-                
-                <button
-                  onClick={analizarExito}
-                  disabled={uploadedDocuments.length === 0}
-                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <span>Analizar Probabilidad de Éxito</span>
                 </button>
               </div>
             </div>
@@ -1122,27 +1079,27 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       {currentStep === 2 && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Paso 2: Procesar Pago</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Paso 2: Procesar Pago</h3>
             <button
               onClick={() => setCurrentStep(1)}
-              className="text-sm text-orange-600 hover:text-orange-700"
+              className="text-sm text-text-primary hover:text-text-secondary"
             >
               ← Volver al Paso 1
             </button>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h4 className="font-semibold text-gray-900 mb-4">Resumen de la Reclamación</h4>
+          <div className="bg-app rounded-lg p-6">
+            <h4 className="font-semibold text-text-primary mb-4">Resumen de la Reclamación</h4>
             
             {documentSummary && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Total documentos:</span>
+                    <span className="text-text-secondary">Total documentos:</span>
                     <span className="ml-2 font-medium">{documentSummary.totalDocuments}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Documentos requeridos:</span>
+                    <span className="text-text-secondary">Documentos requeridos:</span>
                     <span className="ml-2 font-medium">
                       {DOCUMENT_CATEGORIES.filter(cat => cat.required).length - documentSummary.missingRequired.length}/
                       {DOCUMENT_CATEGORIES.filter(cat => cat.required).length}
@@ -1179,8 +1136,8 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                     <div 
                       className={`h-2 rounded-full transition-all duration-300 ${
-                        getAccuracyInfo().level === 'Alta' ? 'bg-green-500' :
-                        getAccuracyInfo().level === 'Media' ? 'bg-yellow-500' : 'bg-red-500'
+                        getAccuracyInfo().level === 'Alta' ? 'bg-sidebar' :
+                        getAccuracyInfo().level === 'Media' ? 'bg-surface-muted' : 'bg-surface-muted'
                       }`}
                       style={{ width: `${calculateAccuracy()}%` }}
                     ></div>
@@ -1193,12 +1150,12 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   </p>
                   
                   {documentSummary.missingRequired.length > 0 && (
-                    <div className="mt-3 p-3 bg-white border border-gray-200 rounded">
-                      <p className="text-sm text-gray-700 font-medium mb-1">Documentos requeridos faltantes:</p>
-                      <ul className="text-sm text-gray-600">
+                    <div className="mt-3 p-3 bg-card border border-border rounded">
+                      <p className="text-sm text-text-secondary font-medium mb-1">Documentos requeridos faltantes:</p>
+                      <ul className="text-sm text-text-secondary">
                         {documentSummary.missingRequired.map((category) => (
                           <li key={category} className="flex items-center">
-                            <svg className="w-3 h-3 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-3 h-3 text-text-secondary mr-2" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                             </svg>
                             {category}
@@ -1210,14 +1167,14 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                 </div>
 
                 <div className="border-t pt-4">
-                  <h5 className="font-medium text-gray-700 mb-2">Documentos por categoría:</h5>
+                  <h5 className="font-medium text-text-secondary mb-2">Documentos por categoría:</h5>
                   <div className="space-y-1">
                     {Object.entries(documentSummary.categorizedDocuments).map(([categoryId, docs]) => {
                       const category = DOCUMENT_CATEGORIES.find(c => c.id === categoryId);
                       if (docs.length === 0) return null;
                       return (
                         <div key={categoryId} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">{category?.name}</span>
+                          <span className="text-text-secondary">{category?.name}</span>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${category?.color}`}>
                             {docs.length} documento(s)
                           </span>
@@ -1230,15 +1187,15 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             )}
           </div>
 
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-            <h4 className="font-semibold text-orange-800 mb-2">Generación de Reclamación de Cantidades</h4>
-            <p className="text-orange-700 text-sm mb-4">
+          <div className="bg-surface-muted/20 border border-border rounded-lg p-6">
+            <h4 className="font-semibold text-text-primary mb-2">Generación de Reclamación de Cantidades</h4>
+            <p className="text-text-secondary text-sm mb-4">
               Para generar tu reclamación de cantidades personalizada, necesitamos procesar un pago único.
             </p>
             
             <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-semibold text-gray-900">Precio:</span>
-              <span className="text-2xl font-bold text-orange-600">€10.00</span>
+              <span className="text-lg font-semibold text-text-primary">Precio:</span>
+              <span className="text-2xl font-bold text-text-primary">€10.00</span>
             </div>
 
             <button
@@ -1249,19 +1206,19 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
               {isProcessing ? 'Procesando Pago...' : 'Procesar Pago'}
             </button>
             
-            <p className="text-xs text-orange-600 mt-2 text-center">
+            <p className="text-xs text-text-secondary mt-2 text-center">
               Pago simulado para demostración
             </p>
             
             {documentSummary && documentSummary.missingRequired.length > 0 && (
-              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="mt-3 p-3 bg-surface-muted/20 border border-border rounded-lg">
                 <div className="flex items-start">
-                  <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-text-primary mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div>
-                    <p className="text-sm text-blue-800 font-medium">Puedes proceder con el pago</p>
-                    <p className="text-xs text-blue-600 mt-1">
+                    <p className="text-sm text-text-primary font-medium">Puedes proceder con el pago</p>
+                    <p className="text-xs text-text-secondary mt-1">
                       Aunque falten algunos documentos requeridos, puedes continuar. 
                       El resultado se generará con la información disponible y podrás completarlo manualmente.
                     </p>
@@ -1277,43 +1234,43 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       {currentStep === 3 && generatedDocument && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Paso 3: Descargar Documento</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Paso 3: Descargar Documento</h3>
             <button
               onClick={resetProcess}
-              className="text-sm text-orange-600 hover:text-orange-700"
+              className="text-sm text-text-primary hover:text-text-secondary"
             >
               Crear Nueva Reclamación
             </button>
           </div>
 
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+          <div className="bg-surface-muted/20 border border-border rounded-lg p-6">
             <div className="flex items-center mb-4">
-              <svg className="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h4 className="font-semibold text-green-800">¡Reclamación Generada Exitosamente!</h4>
+              <h4 className="font-semibold text-text-primary">¡Reclamación Generada Exitosamente!</h4>
             </div>
-            <p className="text-green-700 mb-4">
+            <p className="text-text-secondary mb-4">
               Tu reclamación de cantidades ha sido generada y está lista para su uso.
             </p>
-            <div className="text-sm text-green-600">
+            <div className="text-sm text-text-primary">
               <p><strong>Título:</strong> {generatedDocument.title}</p>
               <p><strong>Generado:</strong> {generatedDocument.generatedAt.toLocaleString('es-ES')}</p>
             </div>
           </div>
 
           {/* Email Notification */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="bg-surface-muted/20 border border-border rounded-lg p-6">
             <div className="flex items-center mb-3">
-              <svg className="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              <h4 className="font-semibold text-blue-800">Email Enviado Automáticamente</h4>
+              <h4 className="font-semibold text-text-primary">Email Enviado Automáticamente</h4>
             </div>
-            <p className="text-blue-700 mb-3">
+            <p className="text-text-secondary mb-3">
               Hemos enviado un email a tu dirección con los siguientes archivos adjuntos:
             </p>
-            <ul className="text-sm text-blue-600 space-y-1">
+            <ul className="text-sm text-text-secondary space-y-1">
               <li className="flex items-center">
                 <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
@@ -1327,7 +1284,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                 <strong>Documento en PDF (.pdf):</strong> Para impresión y envío oficial
               </li>
             </ul>
-            <p className="text-xs text-blue-500 mt-3">
+            <p className="text-xs text-text-secondary mt-3">
               Revisa tu bandeja de entrada y carpeta de spam si no recibes el email en unos minutos.
             </p>
           </div>
@@ -1417,12 +1374,12 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             </div>
             
             {!isPaymentComplete && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="bg-surface-muted/20 border border-border rounded-lg p-4">
                 <div className="flex items-center">
-                  <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-text-secondary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
-                  <p className="text-sm text-yellow-700">
+                  <p className="text-sm text-text-secondary">
                     Los botones se habilitarán una vez que se complete el pago.
                   </p>
                 </div>
@@ -1430,9 +1387,9 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             )}
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h5 className="font-medium text-gray-700 mb-2">Próximos Pasos:</h5>
-            <ul className="text-sm text-gray-600 space-y-1">
+          <div className="bg-app rounded-lg p-4">
+            <h5 className="font-medium text-text-secondary mb-2">Próximos Pasos:</h5>
+            <ul className="text-sm text-text-secondary space-y-1">
               <li>• Revisa el documento generado</li>
               <li>• Personaliza el contenido según tus necesidades</li>
               <li>• Envía la reclamación por correo certificado</li>
@@ -1445,13 +1402,13 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       {/* Processing State */}
       {isProcessing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+          <div className="bg-card rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-text-primary mb-2">
                 {currentStep === 2 ? 'Procesando Pago' : 'Generando Reclamación'}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-text-secondary">
                 {currentStep === 2 
                   ? 'Procesando tu pago...' 
                   : 'Estamos analizando tus documentos y generando tu reclamación de cantidades...'
@@ -1462,13 +1419,6 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
         </div>
       )}
 
-      {/* Modal de Análisis de Éxito */}
-      <AnalisisExitoModal
-        isOpen={showAnalisisModal}
-        onClose={() => setShowAnalisisModal(false)}
-        analisis={analisisExito}
-        loading={isAnalyzing}
-      />
     </div>
   );
 }

@@ -32,22 +32,30 @@ export default function MaterialEstudiantesPage() {
     {
       title: 'Template DOCX',
       description: 'Plantilla editable en Word lista para personalizar',
-      icon: '📄',
+      icon: (className?: string) => (
+        <svg className={className ?? 'w-12 h-12'} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+      ),
     },
     {
       title: 'Template PDF',
       description: 'Versión PDF de la plantilla para referencia',
-      icon: '📑',
+      icon: (className?: string) => (
+        <svg className={className ?? 'w-12 h-12'} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+      ),
     },
     {
       title: 'Ejemplo Completo',
       description: 'Documento de ejemplo completamente desarrollado',
-      icon: '📋',
+      icon: (className?: string) => (
+        <svg className={className ?? 'w-12 h-12'} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+      ),
     },
     {
       title: 'Material de Estudio',
       description: 'Guía y explicaciones sobre el documento',
-      icon: '📚',
+      icon: (className?: string) => (
+        <svg className={className ?? 'w-12 h-12'} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+      ),
     },
   ];
 
@@ -89,33 +97,37 @@ export default function MaterialEstudiantesPage() {
 
             {/* Hero Illustration */}
             <div className="max-w-4xl mx-auto">
-              <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-8 border border-gray-200">
+              <div className="bg-card/95 backdrop-blur-sm rounded-xl shadow-2xl p-8 border border-border">
                 <div className="grid grid-cols-2 gap-6 mb-6">
-                  <div className="bg-green-50 rounded-lg p-6">
-                    <div className="text-4xl mb-3">📚</div>
-                    <div className="text-2xl font-bold text-green-600 mb-2">50+</div>
-                    <div className="text-sm text-gray-600">Documentos Disponibles</div>
+                  <div className="bg-[var(--color-app)] rounded-lg p-6 border border-border">
+                    <div className="w-10 h-10 mb-3 flex items-center justify-center text-sidebar">
+                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                    </div>
+                    <div className="text-2xl font-bold text-text-primary mb-2">50+</div>
+                    <div className="text-sm text-text-primary font-medium">Documentos Disponibles</div>
                   </div>
-                  <div className="bg-blue-50 rounded-lg p-6">
-                    <div className="text-4xl mb-3">⚖️</div>
-                    <div className="text-2xl font-bold text-blue-600 mb-2">10+</div>
-                    <div className="text-sm text-gray-600">Áreas Legales</div>
+                  <div className="bg-[var(--color-app)] rounded-lg p-6 border border-border">
+                    <div className="w-10 h-10 mb-3 flex items-center justify-center text-sidebar">
+                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
+                    </div>
+                    <div className="text-2xl font-bold text-text-primary mb-2">10+</div>
+                    <div className="text-sm text-text-primary font-medium">Áreas Legales</div>
                   </div>
                 </div>
-                <div className="border-t border-gray-200 pt-6">
+                <div className="border-t border-border pt-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold">
+                      <div className="w-10 h-10 bg-sidebar rounded-lg flex items-center justify-center text-text-on-dark font-bold">
                         €
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">Precio Accesible</div>
-                        <div className="text-sm text-gray-600">Desde €3 por documento</div>
+                        <div className="font-semibold text-text-primary">Precio Accesible</div>
+                        <div className="text-sm text-text-primary">Desde €3 por documento</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold text-gray-900">4 Archivos</div>
-                      <div className="text-sm text-gray-600">Por cada documento</div>
+                      <div className="font-semibold text-text-primary">4 Archivos</div>
+                      <div className="text-sm text-text-primary">Por cada documento</div>
                     </div>
                   </div>
                 </div>
@@ -128,13 +140,13 @@ export default function MaterialEstudiantesPage() {
         </section>
 
         {/* Legal Areas Section */}
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-card">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              <h2 className="text-4xl font-bold text-text-primary mb-4">
                 Áreas Legales Disponibles
               </h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              <p className="text-xl text-text-primary max-w-2xl mx-auto">
                 Explora nuestra amplia colección de documentos organizados por área legal.
               </p>
             </div>
@@ -143,15 +155,15 @@ export default function MaterialEstudiantesPage() {
               {legalAreas.map((area, index) => (
                 <div
                   key={index}
-                  className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+                  className="bg-[var(--color-app)] rounded-xl p-6 border border-border hover:shadow-lg transition-shadow"
                 >
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                  <h3 className="text-xl font-semibold text-text-primary mb-4">
                     {area.name}
                   </h3>
                   <ul className="space-y-2">
                     {area.documents.map((doc, docIndex) => (
-                      <li key={docIndex} className="flex items-center space-x-2 text-gray-600">
-                        <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <li key={docIndex} className="flex items-center space-x-2 text-text-primary">
+                        <svg className="w-5 h-5 text-sidebar flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span>{doc}</span>
@@ -165,13 +177,13 @@ export default function MaterialEstudiantesPage() {
         </section>
 
         {/* Package Contents Section */}
-        <section className="py-20 bg-gray-50">
+        <section className="py-20 bg-[var(--color-app)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              <h2 className="text-4xl font-bold text-text-primary mb-4">
                 ¿Qué Incluye Cada Paquete?
               </h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              <p className="text-xl text-text-primary max-w-2xl mx-auto">
                 Cada documento incluye un paquete completo con todo lo que necesitas para estudiar y practicar.
               </p>
             </div>
@@ -180,13 +192,15 @@ export default function MaterialEstudiantesPage() {
               {packageContents.map((item, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-xl p-6 text-center border border-gray-200 hover:shadow-lg transition-shadow"
+                  className="bg-card rounded-xl p-6 text-center border border-border hover:shadow-lg transition-shadow"
                 >
-                  <div className="text-5xl mb-4">{item.icon}</div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <div className="flex justify-center mb-4 text-sidebar">
+                    {item.icon()}
+                  </div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-2">
                     {item.title}
                   </h3>
-                  <p className="text-gray-600 text-sm">{item.description}</p>
+                  <p className="text-text-primary text-sm">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -194,10 +208,10 @@ export default function MaterialEstudiantesPage() {
         </section>
 
         {/* How It Works Section */}
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-card">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              <h2 className="text-4xl font-bold text-text-primary mb-4">
                 Proceso Simple
               </h2>
             </div>
@@ -210,11 +224,11 @@ export default function MaterialEstudiantesPage() {
                   { step: '3', title: 'Descarga Inmediata', description: 'Accede instantáneamente a todos los archivos del paquete' },
                 ].map((item, index) => (
                   <div key={index} className="text-center">
-                    <div className="w-16 h-16 bg-primary-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+                    <div className="w-16 h-16 bg-sidebar text-text-on-dark rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
                       {item.step}
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
-                    <p className="text-gray-600">{item.description}</p>
+                    <h3 className="text-lg font-semibold text-text-primary mb-2">{item.title}</h3>
+                    <p className="text-text-primary">{item.description}</p>
                   </div>
                 ))}
               </div>
@@ -223,24 +237,24 @@ export default function MaterialEstudiantesPage() {
         </section>
 
         {/* Benefits Section */}
-        <section className="py-20 bg-gray-50">
+        <section className="py-20 bg-[var(--color-app)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                <h2 className="text-4xl font-bold text-text-primary mb-4">
                   Por Qué Elegir Nuestro Material
                 </h2>
               </div>
 
               <div className="space-y-4">
                 {benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-start space-x-4 bg-white rounded-lg p-4 shadow-sm">
+                  <div key={index} className="flex items-start space-x-4 bg-card rounded-lg p-4 shadow-sm border border-border">
                     <div className="flex-shrink-0">
-                      <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 text-sidebar" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <p className="text-lg text-gray-700">{benefit}</p>
+                    <p className="text-lg text-text-primary">{benefit}</p>
                   </div>
                 ))}
               </div>
@@ -248,8 +262,8 @@ export default function MaterialEstudiantesPage() {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-green-600 to-blue-600">
+        {/* CTA Section - palette gradient (no green/blue) */}
+        <section className="py-20 bg-gradient-to-r from-[var(--color-sidebar)] to-[#3d3d3d]">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl font-bold text-white mb-6">
               Comienza a Estudiar con Material Profesional
@@ -259,14 +273,14 @@ export default function MaterialEstudiantesPage() {
             </p>
             <Link
               href="/signup"
-              className="inline-flex items-center px-8 py-4 bg-white text-green-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors shadow-lg text-lg"
+              className="inline-flex items-center px-8 py-4 bg-card text-text-primary font-semibold rounded-lg hover:bg-[var(--color-app)] transition-colors shadow-lg text-lg"
             >
               Explorar Material
               <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
-            <p className="mt-4 text-white/80 text-sm">
+            <p className="mt-4 text-white/90 text-sm">
               Más de 50 documentos disponibles • Precios desde €3
             </p>
           </div>

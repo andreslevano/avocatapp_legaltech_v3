@@ -6,6 +6,7 @@
 export async function extractTextFromPDF(fileBuffer: Buffer | Uint8Array): Promise<string> {
   try {
     // Importación dinámica para evitar problemas con SSR
+    // @ts-ignore - pdf-parse module resolution
     const pdfParse = (await import('pdf-parse')).default;
     
     // Convertir Uint8Array a Buffer si es necesario
@@ -39,7 +40,7 @@ export function extractInvoiceInfo(pdfText: string): {
   let debtorName: string | undefined;
   
   // Extraer cantidades (euros)
-  const amountRegex = /(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*€)|€\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)|(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*EUR/gi;
+  const amountRegex = /(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*€|€\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)|(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*EUR/gi;
   const amountMatches = pdfText.match(amountRegex);
   if (amountMatches) {
     amountMatches.forEach(match => {

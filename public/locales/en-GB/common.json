@@ -13,7 +13,7 @@
     "signup": "Get Started"
   },
   "hero": {
-    "title": "Revolutionising<span class=\"text-primary-600 block\">Legal Practice</span>with AI",
+    "title": "Revolutionising <span class=\"font-semibold block\">Legal Practice</span> with AI",
     "subtitle": "Optimise your legal workflow with intelligent document analysis, case summaries, and automated legal research powered by cutting-edge AI technology.",
     "cta": "Free Trial",
     "learnMore": "View Demo",
@@ -54,15 +54,17 @@
     "title": "Simple and Transparent Pricing",
     "subtitle": "Choose the plan that fits your practice. All plans include a 14-day free trial with no credit card required.",
     "students": {
-      "title": "🇪🇸 Students",
-      "description": "Full access for law students and trainees",
+      "title": "STUDENTS",
+      "description": "",
       "price": "€3.00",
       "period": "/document",
-      "aiDocs": "AI Document Analysis (50 docs/month)",
-      "basicLegalResearch": "Basic Legal Research",
-      "clientPortal": "Client Portal (up to 10 clients)",
-      "emailSupport": "Email Support",
-      "basicAnalytics": "Basic Analytics",
+      "feature1": "8 legal areas",
+      "feature2": "7 document types per area",
+      "feature3": "Generate ready-to-complete template",
+      "feature4": "Get a sample document",
+      "feature5": "Academic dossier for study",
+      "feature6": "Download and send content by email",
+      "feature7": "Purchase history to retrieve previous documentation",
       "startNow": "Start Now"
     },
     "tutela": {
@@ -204,7 +206,7 @@
   },
   "subscription": {
     "title": "Subscription",
-    "subtitle": "Manage your subscription plan and billing",
+    "subtitle": "Description of the plans we currently manage",
     "currentPlan": "Current Plan",
     "lawyerPlan": "Solicitors Plan",
     "fullAccess": "Full access to all features",

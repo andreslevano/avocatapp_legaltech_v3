@@ -14,11 +14,13 @@ Los archivos no se estaban guardando en Firebase Storage porque:
 Se creó una librería con funciones para:
 
 - **`savePdfForUser()`**: Guarda PDFs generados en Storage
-  - Ruta: `users/{userId}/documents/{documentId}/{fileName}`
+  - Ruta: `{uid}/{userType}/{documentType}/documents/{documentId}/{fileName}`
+  - Acepta `storageContext: { userType, documentType }` o usa `documentType` legacy para resolver
   - Retorna: `storagePath`, `downloadURL`, `bucket`, `size`
 
 - **`saveUploadedFile()`**: Guarda archivos subidos por el usuario (para OCR)
-  - Ruta: `users/{userId}/ocr/{fileId}_{fileName}`
+  - Ruta: `{uid}/{userType}/{documentType}/ocr/{fileId}_{originalName}`
+  - Acepta `storageContext` opcional; usa `documentType` legacy si no se proporciona
   - También guarda metadatos en Firestore (`uploaded_files` collection)
   - Retorna: `storagePath`, `downloadURL`, `fileId`
 
@@ -40,33 +42,29 @@ Endpoint para procesar eventos de Stripe:
 - **`payment_intent.succeeded`**: Registra pago exitoso
 - **`payment_intent.payment_failed`**: Registra pago fallido
 
-### 3. Estructura de Almacenamiento
+### 3. Estructura de Almacenamiento (UID-first hierarchy)
+
+**Nueva jerarquía**: `{uid}/{userType}/{documentType}/{documents|ocr}/...`
+
+- **userType**: `abogado` | `estudiante` | `autoservicio` (según menú lateral)
+- **documentType**: según opciones del menú (dashboard, casos, clientes, reclamacion-cantidades, accion-tutela, etc.)
 
 ```
-Firebase Storage:
-├── students/                    ← Para usuarios con plan "Estudiantes"
-│   ├── {userId}/
-│   │   ├── documents/
-│   │   │   └── {documentId}/
-│   │   │       └── document_{documentId}.pdf  (PDFs generados por IA)
-│   │   └── ocr/
-│   │       └── {fileId}_{fileName}  (PDFs adjuntos subidos)
-│
-├── reclamaciones/              ← Para documentos de "Reclamación de Cantidades"
-│   ├── {userId}/
-│   │   ├── documents/
-│   │   │   └── {documentId}/
-│   │   │       └── document_{documentId}.pdf  (PDFs generados por IA)
-│   │   └── ocr/
-│   │       └── {fileId}_{fileName}  (PDFs adjuntos subidos)
-│
-└── users/                       ← Para otros usuarios (por defecto)
-    ├── {userId}/
-    │   ├── documents/
-    │   │   └── {documentId}/
-    │   │       └── document_{documentId}.pdf  (PDFs generados)
-    │   └── ocr/
-    │       └── {fileId}_{fileName}  (Archivos subidos para OCR)
+Firebase Storage (nueva estructura):
+├── {uid}/                           ← UID del usuario (primer nivel)
+│   ├── abogado/
+│   │   ├── dashboard/documents/...   (Dashboard)
+│   │   ├── casos/documents/...      (Casos)
+│   │   └── clientes/documents/...    (Clientes)
+│   ├── estudiante/
+│   │   └── documentos/documents/... (Material estudio, plantillas)
+│   └── autoservicio/
+│       ├── generacion-escritos/documents/...
+│       ├── accion-tutela/documents/... y ocr/...
+│       ├── reclamacion-cantidades/documents/... y ocr/...
+│       ├── analisis-documentos/ocr/...
+│       ├── extraccion-datos/ocr/...
+│       └── revision-email/ocr/...
 │
 Firestore:
 ├── purchases/
@@ -77,10 +75,13 @@ Firestore:
     └── {userId}  (Estadísticas del usuario, incluye campo "plan")
 ```
 
-**Nota importante**: El sistema detecta automáticamente la carpeta correcta según:
-1. **Tipo de documento** (prioridad): Si `documentType = "reclamacion_cantidades"` → `reclamaciones/`
-2. **Plan del usuario**: Si `plan = "Estudiantes"` → `students/`, si `plan = "Reclamación de Cantidades"` → `reclamaciones/`
-3. **Por defecto**: `users/` para otros casos
+**Resolución de contexto**: El sistema usa `resolveStorageContext()` en `src/lib/storage-paths.ts`:
+1. **storageContext explícito** (prioridad): Si se pasa `{ userType, documentType }` se usa directamente
+2. **documentType legacy**: `reclamacion_cantidades` → autoservicio/reclamacion-cantidades, `accion_tutela` → autoservicio/accion-tutela, etc.
+3. **Plan del usuario**: `Estudiantes` → estudiante/documentos, `Reclamación de Cantidades` → autoservicio/reclamacion-cantidades
+4. **Por defecto**: abogado/dashboard
+
+**Compatibilidad**: Las reglas de Storage permiten tanto la nueva estructura UID-first como las rutas legacy (students/, reclamaciones/, users/, repositorio/) para archivos existentes.
 
 ## Integración Pendiente
 

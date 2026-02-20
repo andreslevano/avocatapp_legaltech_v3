@@ -98,3 +98,4 @@
 - ✅ **Functions**: Desplegadas y actualizadas
 - ⚠️ **Firestore Index**: Pendiente de crear (se puede hacer automáticamente o manualmente)
 
+

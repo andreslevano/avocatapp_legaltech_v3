@@ -71,10 +71,10 @@ export default function StripeReclamacionTestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-app py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-card shadow rounded-lg p-6">
+          <h1 className="text-2xl font-bold text-text-primary mb-6">
             🧪 Prueba de Stripe - Reclamación de Cantidades
           </h1>
 
@@ -90,7 +90,7 @@ export default function StripeReclamacionTestPage() {
           {/* Formulario */}
           <div className="space-y-4 mb-6">
             <div>
-              <label htmlFor="docId" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="docId" className="block text-sm font-medium text-text-secondary mb-1">
                 docId
               </label>
               <input
@@ -98,13 +98,13 @@ export default function StripeReclamacionTestPage() {
                 id="docId"
                 value={docId}
                 onChange={(e) => setDocId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                 placeholder="DOC_TEST_001"
               />
             </div>
 
             <div>
-              <label htmlFor="reclId" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="reclId" className="block text-sm font-medium text-text-secondary mb-1">
                 reclId
               </label>
               <input
@@ -112,13 +112,13 @@ export default function StripeReclamacionTestPage() {
                 id="reclId"
                 value={reclId}
                 onChange={(e) => setReclId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                 placeholder="RECL_TEST_001"
               />
             </div>
 
             <div>
-              <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="userId" className="block text-sm font-medium text-text-secondary mb-1">
                 userId (solo desarrollo)
               </label>
               <input
@@ -126,16 +126,16 @@ export default function StripeReclamacionTestPage() {
                 id="userId"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                 placeholder="USER_TEST_001"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-text-secondary">
                 Solo se usa en desarrollo. En producción se obtiene del token de autenticación.
               </p>
             </div>
 
             <div>
-              <label htmlFor="customerEmail" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="customerEmail" className="block text-sm font-medium text-text-secondary mb-1">
                 customerEmail
               </label>
               <input
@@ -143,7 +143,7 @@ export default function StripeReclamacionTestPage() {
                 id="customerEmail"
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                 placeholder="test@example.com"
               />
             </div>
@@ -191,9 +191,9 @@ export default function StripeReclamacionTestPage() {
           )}
 
           {/* Información adicional */}
-          <div className="mt-8 p-4 bg-gray-50 rounded-md">
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">📋 Instrucciones para probar:</h2>
-            <ol className="text-xs text-gray-700 space-y-1 list-decimal list-inside">
+          <div className="mt-8 p-4 bg-app rounded-md">
+            <h2 className="text-sm font-semibold text-text-primary mb-2">📋 Instrucciones para probar:</h2>
+            <ol className="text-xs text-text-secondary space-y-1 list-decimal list-inside">
               <li>Completa los campos (o usa los valores por defecto)</li>
               <li>Haz clic en el botón para crear la sesión de checkout</li>
               <li>Serás redirigido a Stripe Checkout (modo TEST)</li>

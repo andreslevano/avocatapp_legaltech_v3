@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { UploadedDocument, DocumentCategory, DocumentSummary, GeneratedDocument } from '@/types';
 import AnalisisExitoModal from './AnalisisExitoModal';
+import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 
 interface TutelaProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -51,7 +52,7 @@ const DOCUMENT_CATEGORIES: DocumentCategory[] = [
     name: 'Otros',
     description: 'Otros documentos relevantes',
     required: false,
-    color: 'bg-gray-100 text-gray-800'
+    color: 'bg-surface-muted/30 text-text-primary'
   }
 ];
 
@@ -534,7 +535,8 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
       // ⭐ NUEVO: Usar Checkout Session (como estudiantes) para redirección automática
       // Crear checkout session con metadata completa
       // Nota: Para COP, Stripe espera el valor mínimo (1), así que 50,000 COP = 50000
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      const endpoint = getCheckoutSessionEndpoint();
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -553,19 +555,31 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
           formData: formData,
           customerEmail: userEmail,
           userId: userId,
-          successUrl: `${window.location.origin}/dashboard/accion-tutela?payment=success`,
-          cancelUrl: `${window.location.origin}/dashboard/accion-tutela?payment=cancelled`
+          successUrl: `${window.location.origin}/dashboard/autoservicio/accion-tutela?payment=success`,
+          cancelUrl: `${window.location.origin}/dashboard/autoservicio/accion-tutela?payment=cancelled`
         })
       });
 
       if (response.ok) {
-        const { url } = await response.json();
-        console.log('🔄 Redirigiendo a Stripe Checkout Session...');
-        window.location.href = url;
+        const data = await response.json();
+        if (data.url) {
+          console.log('🔄 Redirigiendo a Stripe Checkout Session...');
+          window.location.href = data.url;
+        } else {
+          throw new Error('No se recibió URL de checkout de Stripe');
+        }
       } else {
-        const errorText = await response.text();
-        console.error('❌ Error creando checkout session:', errorText);
-        alert('Error al procesar el pago. Por favor, intenta de nuevo.');
+        let errorMessage = 'Error al procesar el pago. Por favor, intenta de nuevo.';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.details || errorMessage;
+          console.error('❌ Error creando checkout session:', errorData);
+        } catch (parseError) {
+          const errorText = await response.text();
+          console.error('❌ Error creando checkout session (texto):', errorText);
+          errorMessage = errorText || errorMessage;
+        }
+        alert(errorMessage);
         setIsProcessing(false);
       }
       
@@ -739,12 +753,12 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="bg-card rounded-lg shadow-lg p-6">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-text-primary mb-2">
           Proceso de Acción de Tutela
         </h2>
-        <p className="text-gray-600">
+        <p className="text-text-secondary">
           Sigue estos pasos para generar tu acción de tutela
         </p>
       </div>
@@ -757,7 +771,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                 currentStep >= step 
                   ? 'bg-red-600 text-white' 
-                  : 'bg-gray-200 text-gray-600'
+                  : 'bg-gray-200 text-text-secondary'
               }`}>
                 {step}
               </div>
@@ -769,7 +783,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             </div>
           ))}
         </div>
-        <div className="flex justify-between mt-2 text-xs text-gray-500">
+        <div className="flex justify-between mt-2 text-xs text-text-secondary">
           <span>Subir y Analizar</span>
           <span>Pago</span>
           <span>Descargar</span>
@@ -779,7 +793,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       {/* Step 1: Document Upload and Form */}
       {currentStep === 1 && (
         <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-900">Paso 1: Subir y Analizar Documentos PDF (Opcional)</h3>
+          <h3 className="text-lg font-semibold text-text-primary">Paso 1: Subir y Analizar Documentos PDF (Opcional)</h3>
           
           {/* PDF Upload Section */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
@@ -827,7 +841,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   accept=".pdf"
                   multiple
                   onChange={handleOcrFileSelect}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="block w-full text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
                 {selectedFiles && selectedFiles.length > 0 && (
                   <div className="flex space-x-2 mt-2">
@@ -842,7 +856,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                     <button
                       type="button"
                       onClick={() => setSelectedFiles(null)}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                      className="px-4 py-2 border border-border text-text-secondary rounded-md hover:bg-app"
                     >
                       Cancelar
                     </button>
@@ -852,10 +866,10 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                 {ocrFiles.length > 0 && (
                   <div className="mt-4 space-y-2">
                     {ocrFiles.map((file) => (
-                      <div key={file.id} className="flex items-center justify-between bg-white p-3 rounded border">
+                      <div key={file.id} className="flex items-center justify-between bg-card p-3 rounded border">
                         <div className="flex-1">
                           <p className="font-medium text-sm">{file.originalName}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-text-secondary">
                             {file.pages} página(s) • Confianza: {(file.confidence * 100).toFixed(1)}%
                           </p>
                         </div>
@@ -882,7 +896,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                         className={`px-4 py-2 rounded-md ${
                           useOcrData 
                             ? 'bg-green-100 text-green-800 border border-green-300' 
-                            : 'bg-gray-100 text-gray-800 border border-gray-300'
+                            : 'bg-surface-muted/30 text-text-primary border border-border'
                         }`}
                       >
                         {useOcrData ? '✓ Usando datos OCR' : 'Usar datos OCR'}
@@ -897,7 +911,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   <h5 className="font-medium text-blue-900 mb-2">Archivos subidos ({uploadedDocuments.length})</h5>
                   <div className="space-y-2">
                     {uploadedDocuments.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between bg-white p-3 rounded border">
+                      <div key={doc.id} className="flex items-center justify-between bg-card p-3 rounded border">
                         <div className="flex items-center">
                           <span className="text-sm font-medium">{doc.name}</span>
                           {doc.category && (
@@ -924,7 +938,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
           {/* Form Fields */}
           <div className="space-y-6">
             <div>
-              <label htmlFor="vulnerador" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="vulnerador" className="block text-sm font-medium text-text-secondary mb-2">
                 Nombre de persona o entidad que vulnera el derecho *
               </label>
               <input
@@ -932,14 +946,14 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                 id="vulnerador"
                 value={formData.vulnerador}
                 onChange={(e) => setFormData(prev => ({ ...prev, vulnerador: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Ej: Alcaldía de Bogotá, Empresa XYZ, etc."
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="hechos" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="hechos" className="block text-sm font-medium text-text-secondary mb-2">
                 Relato detallado de los hechos *
               </label>
               <textarea
@@ -947,21 +961,21 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                 value={formData.hechos}
                 onChange={(e) => setFormData(prev => ({ ...prev, hechos: e.target.value }))}
                 rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Describe detalladamente qué sucedió, cuándo, dónde y cómo se vulneró el derecho..."
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="derecho" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="derecho" className="block text-sm font-medium text-text-secondary mb-2">
                 ¿Qué derecho piensa que ha sido vulnerado? *
               </label>
               <select
                 id="derecho"
                 value={formData.derecho}
                 onChange={(e) => setFormData(prev => ({ ...prev, derecho: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 required
               >
                 <option value="">Seleccione un derecho</option>
@@ -974,7 +988,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             </div>
 
             <div>
-              <label htmlFor="peticiones" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="peticiones" className="block text-sm font-medium text-text-secondary mb-2">
                 ¿Qué se solicita? (órdenes concretas) *
               </label>
               <textarea
@@ -982,7 +996,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                 value={formData.peticiones}
                 onChange={(e) => setFormData(prev => ({ ...prev, peticiones: e.target.value }))}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Especifique claramente qué órdenes solicita al juez..."
                 required
               />
@@ -996,14 +1010,14 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   onChange={(e) => setFormData(prev => ({ ...prev, medidasProvisionales: e.target.checked }))}
                   className="mr-2"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-text-secondary">
                   Solicitar medidas provisionales
                 </span>
               </label>
             </div>
 
             <div>
-              <label htmlFor="ciudad" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="ciudad" className="block text-sm font-medium text-text-secondary mb-2">
                 Ciudad
               </label>
               <input
@@ -1011,7 +1025,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                 id="ciudad"
                 value={formData.ciudad}
                 onChange={(e) => setFormData(prev => ({ ...prev, ciudad: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Bogotá"
               />
             </div>
@@ -1034,7 +1048,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       {currentStep === 2 && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Paso 2: Procesar Pago</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Paso 2: Procesar Pago</h3>
             <button
               onClick={() => setCurrentStep(1)}
               className="text-sm text-red-600 hover:text-red-700"
@@ -1043,18 +1057,18 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             </button>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h4 className="font-semibold text-gray-900 mb-4">Resumen de la Acción de Tutela</h4>
+          <div className="bg-app rounded-lg p-6">
+            <h4 className="font-semibold text-text-primary mb-4">Resumen de la Acción de Tutela</h4>
             
             {documentSummary && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Total documentos:</span>
+                    <span className="text-text-secondary">Total documentos:</span>
                     <span className="ml-2 font-medium">{documentSummary.totalDocuments}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Documentos requeridos:</span>
+                    <span className="text-text-secondary">Documentos requeridos:</span>
                     <span className="ml-2 font-medium">
                       {DOCUMENT_CATEGORIES.filter(cat => cat.required).length - documentSummary.missingRequired.length}/
                       {DOCUMENT_CATEGORIES.filter(cat => cat.required).length}
@@ -1099,7 +1113,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             
             {/* ⭐ NUEVO: Selector de cantidad */}
             <div className="mb-4">
-              <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="quantity" className="block text-sm font-medium text-text-secondary mb-2">
                 Cantidad de documentos
               </label>
               <div className="flex items-center space-x-3">
@@ -1121,7 +1135,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                     const val = parseInt(e.target.value) || 1;
                     setQuantity(Math.max(1, Math.min(99, val)));
                   }}
-                  className="w-20 text-center px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-20 text-center px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
                 <button
                   type="button"
@@ -1131,17 +1145,17 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                 >
                   +
                 </button>
-                <span className="text-sm text-gray-600">(máx. 99)</span>
+                <span className="text-sm text-text-secondary">(máx. 99)</span>
               </div>
             </div>
             
             <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-semibold text-gray-900">Precio unitario:</span>
+              <span className="text-lg font-semibold text-text-primary">Precio unitario:</span>
               <span className="text-xl font-bold text-red-600">50.000 COP</span>
             </div>
             
             <div className="flex items-center justify-between mb-4 pb-4 border-b border-red-200">
-              <span className="text-lg font-semibold text-gray-900">Total ({quantity} documento{quantity !== 1 ? 's' : ''}):</span>
+              <span className="text-lg font-semibold text-text-primary">Total ({quantity} documento{quantity !== 1 ? 's' : ''}):</span>
               <span className="text-2xl font-bold text-red-600">
                 {(50000 * quantity).toLocaleString('es-CO')} COP
               </span>
@@ -1162,7 +1176,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       {currentStep === 3 && generatedDocument && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Paso 3: Descargar Documento</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Paso 3: Descargar Documento</h3>
             <button
               onClick={resetProcess}
               className="text-sm text-red-600 hover:text-red-700"
@@ -1268,9 +1282,9 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h5 className="font-medium text-gray-700 mb-2">Próximos Pasos:</h5>
-            <ul className="text-sm text-gray-600 space-y-1">
+          <div className="bg-app rounded-lg p-4">
+            <h5 className="font-medium text-text-secondary mb-2">Próximos Pasos:</h5>
+            <ul className="text-sm text-text-secondary space-y-1">
               <li>• Revisa el documento generado</li>
               <li>• Personaliza el contenido según tus necesidades</li>
               <li>• Presenta la acción de tutela ante el juez competente</li>
@@ -1283,13 +1297,13 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       {/* Processing State */}
       {isProcessing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+          <div className="bg-card rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-text-primary mb-2">
                 {currentStep === 2 ? 'Procesando Pago' : 'Generando Acción de Tutela'}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-text-secondary">
                 {currentStep === 2 
                   ? 'Procesando tu pago...' 
                   : 'Estamos analizando tus documentos y generando tu acción de tutela...'

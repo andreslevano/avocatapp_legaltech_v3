@@ -1,0 +1,40 @@
+rules_version = '2';
+
+// Firebase Cloud Storage Security Rules
+// Hierarchy: {uid}/{userType}/{documentType}/documents|ocr/...
+// User types: abogado | estudiante | autoservicio
+// Document types follow sidebar menu (dashboard, casos, clientes, reclamacion-cantidades, etc.)
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // NEW: UID-first hierarchy - {uid}/{userType}/{documentType}/...
+    match /{userId}/{userType}/{documentType}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // LEGACY: Backward compatibility for existing files
+    match /repositorio/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /students/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /reclamaciones/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /reclamaciones_cantidades/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /accion-tutela/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

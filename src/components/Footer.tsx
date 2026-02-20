@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useI18n } from '@/hooks/useI18n';
 
 export default function Footer() {
@@ -58,19 +59,23 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-sidebar text-text-on-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
           {/* Company Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-lg">A</span>
-              </div>
+              <Image
+                src="/images/avocat-logo-white-v1.png"
+                alt="Avocat logo"
+                width={32}
+                height={32}
+                className="h-8 w-8 mr-3"
+              />
               <span className="text-xl font-bold">Avocat</span>
             </div>
-            <p className="text-gray-400 mb-4 max-w-md">
+            <p className="text-text-on-dark/80 mb-4 max-w-md text-body">
               {t('footer.description')}
             </p>
             <div className="flex space-x-4">
@@ -80,7 +85,7 @@ export default function Footer() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-text-on-dark/80 hover:text-text-on-dark transition-colors"
                   aria-label={social.name}
                 >
                   {social.icon}
@@ -91,7 +96,7 @@ export default function Footer() {
 
           {/* Product Links */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
+            <h3 className="text-small font-semibold text-text-on-dark/90 uppercase tracking-wider mb-4">
               Producto
             </h3>
             <ul className="space-y-2">
@@ -99,7 +104,7 @@ export default function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-text-on-dark/80 hover:text-text-on-dark transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -110,7 +115,7 @@ export default function Footer() {
 
           {/* Company Links */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
+            <h3 className="text-small font-semibold text-text-on-dark/90 uppercase tracking-wider mb-4">
               Empresa
             </h3>
             <ul className="space-y-2">
@@ -118,7 +123,7 @@ export default function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-text-on-dark/80 hover:text-text-on-dark transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -129,7 +134,7 @@ export default function Footer() {
 
           {/* Support Links */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
+            <h3 className="text-small font-semibold text-text-on-dark/90 uppercase tracking-wider mb-4">
               Soporte
             </h3>
             <ul className="space-y-2">
@@ -137,7 +142,7 @@ export default function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-text-on-dark/80 hover:text-text-on-dark transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -148,9 +153,9 @@ export default function Footer() {
         </div>
 
         {/* Bottom Footer */}
-        <div className="border-t border-gray-800 pt-8">
+        <div className="border-t border-border/50 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="text-gray-400 text-sm mb-4 md:mb-0">
+            <div className="text-text-on-dark/80 text-small mb-4 md:mb-0">
               © {currentYear} Avocat LegalTech. Todos los derechos reservados.
             </div>
             <div className="flex space-x-6">
@@ -158,7 +163,7 @@ export default function Footer() {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="text-gray-400 hover:text-white text-sm transition-colors"
+                  className="text-text-on-dark/80 hover:text-text-on-dark text-small transition-colors"
                 >
                   {link.name}
                 </Link>

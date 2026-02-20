@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
-import DashboardNavigation from '@/components/DashboardNavigation';
-import UserMenu from '@/components/UserMenu';
 
 // Países soportados
 const PAISES = [
@@ -158,10 +156,10 @@ export default function AuditoriaLegal() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Cargando...</p>
         </div>
       </div>
     );
@@ -172,53 +170,33 @@ export default function AuditoriaLegal() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-lg">A</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Auditoría Legal</span>
-            </div>
-            
-            <UserMenu user={user} currentPlan="Auditoría" />
-          </div>
-        </div>
-      </header>
-
-      {/* Dashboard Navigation */}
-      <DashboardNavigation currentPlan="Auditoría" />
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main>
         <div className="px-4 py-6 sm:px-0">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">
+          <h1 className="text-3xl font-bold text-text-primary mb-8">
             Auditoría Legal de Documentos
           </h1>
 
           {/* Formulario de Auditoría */}
-          <div className="bg-white overflow-hidden shadow rounded-lg mb-8">
+          <div className="bg-card overflow-hidden shadow rounded-lg mb-8">
             <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
                 Configuración de la Auditoría
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Perfil del Cliente */}
                 <div className="space-y-4">
-                  <h4 className="text-md font-medium text-gray-700">Perfil del Cliente</h4>
+                  <h4 className="text-md font-medium text-text-secondary">Perfil del Cliente</h4>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       País
                     </label>
                     <select
                       value={formData.perfilCliente.paisISO}
                       onChange={(e) => handlePaisChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                     >
                       {PAISES.map((pais) => (
                         <option key={pais.codigo} value={pais.codigo}>
@@ -229,7 +207,7 @@ export default function AuditoriaLegal() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       Región/Estado
                     </label>
                     <input
@@ -240,12 +218,12 @@ export default function AuditoriaLegal() {
                         perfilCliente: { ...prev.perfilCliente, region: e.target.value }
                       }))}
                       placeholder="Madrid, CDMX, Buenos Aires..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       Rol en el Proceso
                     </label>
                     <select
@@ -254,7 +232,7 @@ export default function AuditoriaLegal() {
                         ...prev,
                         perfilCliente: { ...prev.perfilCliente, rol: e.target.value }
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                     >
                       <option value="demandante">Demandante</option>
                       <option value="demandado">Demandado</option>
@@ -267,16 +245,16 @@ export default function AuditoriaLegal() {
 
                 {/* Contexto Procesal */}
                 <div className="space-y-4">
-                  <h4 className="text-md font-medium text-gray-700">Contexto Procesal</h4>
+                  <h4 className="text-md font-medium text-text-secondary">Contexto Procesal</h4>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       Área Legal
                     </label>
                     <select
                       value={formData.contextoProcesal.areaLegal}
                       onChange={(e) => handleAreaLegalChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                     >
                       {AREAS_LEGALES.map((area) => (
                         <option key={area.codigo} value={area.codigo}>
@@ -287,7 +265,7 @@ export default function AuditoriaLegal() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       Procedimiento
                     </label>
                     <select
@@ -296,7 +274,7 @@ export default function AuditoriaLegal() {
                         ...prev,
                         contextoProcesal: { ...prev.contextoProcesal, procedimiento: e.target.value }
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                     >
                       {PROCEDIMIENTOS[formData.contextoProcesal.areaLegal as keyof typeof PROCEDIMIENTOS]?.map((proc) => (
                         <option key={proc} value={proc}>
@@ -307,7 +285,7 @@ export default function AuditoriaLegal() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       Cuantía
                     </label>
                     <input
@@ -318,7 +296,7 @@ export default function AuditoriaLegal() {
                         contextoProcesal: { ...prev.contextoProcesal, cuantia: e.target.value }
                       }))}
                       placeholder={`Ej: 1.500 ${formData.perfilCliente.moneda}`}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                     />
                   </div>
                 </div>
@@ -326,7 +304,7 @@ export default function AuditoriaLegal() {
 
               {/* Texto Base */}
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Texto Base del Documento
                 </label>
                 <textarea
@@ -337,7 +315,7 @@ export default function AuditoriaLegal() {
                   }))}
                   rows={8}
                   placeholder="Pega aquí el borrador original del documento legal..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                 />
               </div>
 
@@ -348,7 +326,7 @@ export default function AuditoriaLegal() {
                   disabled={isAuditing || !formData.textoBase.trim()}
                   className={`w-full px-4 py-2 rounded-md transition-colors font-medium ${
                     isAuditing || !formData.textoBase.trim()
-                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      ? 'bg-surface-muted text-white cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
@@ -369,14 +347,14 @@ export default function AuditoriaLegal() {
           {resultadoAuditoria && (
             <div className="space-y-6">
               {/* Reporte de Auditoría */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-card overflow-hidden shadow rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
                     📊 Reporte de Auditoría
                   </h3>
                   <ul className="space-y-2">
                     {resultadoAuditoria.reporteAuditoria.map((item: string, index: number) => (
-                      <li key={index} className="text-sm text-gray-700">
+                      <li key={index} className="text-sm text-text-secondary">
                         {item}
                       </li>
                     ))}
@@ -385,13 +363,13 @@ export default function AuditoriaLegal() {
               </div>
 
               {/* Escrito Final */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-card overflow-hidden shadow rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
                     📄 Escrito Final
                   </h3>
                   <div className="prose max-w-none">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-700 bg-gray-50 p-4 rounded-md">
+                    <pre className="whitespace-pre-wrap text-sm text-text-secondary bg-app p-4 rounded-md">
                       {resultadoAuditoria.escritoFinal}
                     </pre>
                   </div>
@@ -399,14 +377,14 @@ export default function AuditoriaLegal() {
               </div>
 
               {/* Checklist Previa */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-card overflow-hidden shadow rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
                     ✅ Checklist Previa
                   </h3>
                   <ul className="space-y-2">
                     {resultadoAuditoria.checklistPrevia.map((item: string, index: number) => (
-                      <li key={index} className="text-sm text-gray-700">
+                      <li key={index} className="text-sm text-text-secondary">
                         {item}
                       </li>
                     ))}
@@ -416,25 +394,25 @@ export default function AuditoriaLegal() {
 
               {/* Variantes de Procedimiento */}
               {resultadoAuditoria.variantesProcedimiento && (
-                <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="bg-card overflow-hidden shadow rounded-lg">
                   <div className="px-4 py-5 sm:p-6">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
                       🔄 Variantes de Procedimiento
                     </h3>
                     <div className="space-y-4">
                       {Object.entries(resultadoAuditoria.variantesProcedimiento).map(([procedimiento, detalles]: [string, any]) => (
-                        <div key={procedimiento} className="border border-gray-200 rounded-md p-4">
-                          <h4 className="font-medium text-gray-900 mb-2">
+                        <div key={procedimiento} className="border border-border rounded-md p-4">
+                          <h4 className="font-medium text-text-primary mb-2">
                             {procedimiento.toUpperCase()}
                           </h4>
-                          <ul className="text-sm text-gray-700 space-y-1">
+                          <ul className="text-sm text-text-secondary space-y-1">
                             {detalles.cambios?.map((cambio: string, index: number) => (
                               <li key={index}>• {cambio}</li>
                             ))}
                           </ul>
                           {detalles.normas && (
                             <div className="mt-2">
-                              <p className="text-xs text-gray-500">Normas: {detalles.normas.join(', ')}</p>
+                              <p className="text-xs text-text-secondary">Normas: {detalles.normas.join(', ')}</p>
                             </div>
                           )}
                         </div>
@@ -446,12 +424,12 @@ export default function AuditoriaLegal() {
 
               {/* Campos Variables */}
               {resultadoAuditoria.camposVariables && (
-                <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="bg-card overflow-hidden shadow rounded-lg">
                   <div className="px-4 py-5 sm:p-6">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
                       📝 Campos Variables
                     </h3>
-                    <pre className="text-sm text-gray-700 bg-gray-50 p-4 rounded-md overflow-x-auto">
+                    <pre className="text-sm text-text-secondary bg-app p-4 rounded-md overflow-x-auto">
                       {JSON.stringify(resultadoAuditoria.camposVariables, null, 2)}
                     </pre>
                   </div>

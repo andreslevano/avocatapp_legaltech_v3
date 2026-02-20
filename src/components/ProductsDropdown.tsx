@@ -85,7 +85,7 @@ export default function ProductsDropdown() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={() => setIsOpen(true)}
-        className="text-gray-600 hover:text-primary-600 transition-colors flex items-center space-x-1"
+        className="text-text-on-dark hover:text-text-on-dark transition-colors flex items-center space-x-1"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
@@ -102,30 +102,30 @@ export default function ProductsDropdown() {
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+          className="absolute top-full left-0 mt-2 w-80 bg-card rounded-lg shadow-lg border border-border py-2 z-50"
           onMouseLeave={() => setIsOpen(false)}
         >
           {products.map((product, index) => (
             <Link
               key={index}
               href={product.href}
-              className="block px-4 py-3 hover:bg-gray-50 transition-colors"
+              className="block px-4 py-3 hover:bg-hover/30 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 mt-0.5 text-primary-600">
+                <div className="flex-shrink-0 mt-0.5 text-text-primary">
                   {product.icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2">
-                    <p className="text-sm font-medium text-gray-900">{product.name}</p>
+                    <p className="text-body font-medium text-text-primary">{product.name}</p>
                     {product.badge && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-small font-medium bg-surface-muted text-text-primary">
                         {product.badge}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">{product.description}</p>
+                  <p className="text-small text-text-secondary mt-1">{product.description}</p>
                 </div>
               </div>
             </Link>

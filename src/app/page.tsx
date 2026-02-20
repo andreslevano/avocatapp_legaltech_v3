@@ -6,6 +6,7 @@ import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import Pricing from '@/components/Pricing';
 import Footer from '@/components/Footer';
+import ZapierChatbot from '@/components/ZapierChatbot';
 import { trackSessionStart } from '@/lib/gtag';
 
 export default function Home() {
@@ -21,6 +22,9 @@ export default function Home() {
       <Features />
       <Pricing />
       <Footer />
+      
+      {/* Zapier Chatbot */}
+      <ZapierChatbot />
     </main>
   );
 }

@@ -10,7 +10,7 @@
     "signup": "Aan de Slag"
   },
   "hero": {
-    "title": "Revolutie in<span class=\"text-primary-600 block\">de Juridische Praktijk</span>met AI",
+    "title": "Revolutie in <span class=\"font-semibold block\">de Juridische Praktijk</span> met AI",
     "subtitle": "Optimaliseer uw juridische workflow met intelligente documentanalyse, zaakssamenvattingen en geautomatiseerd juridisch onderzoek aangedreven door geavanceerde AI-technologie.",
     "cta": "Gratis Proefperiode",
     "learnMore": "Bekijk Demo",
@@ -213,7 +213,7 @@
   },
   "subscription": {
     "title": "Abonnement",
-    "subtitle": "Beheer uw abonnementsplan en facturering",
+    "subtitle": "Beschrijving van de plannen die we momenteel beheren",
     "currentPlan": "Huidig Plan",
     "lawyerPlan": "Advocaten Plan",
     "fullAccess": "Volledige toegang tot alle functionaliteiten",

@@ -1,236 +1,103 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, User, Auth } from 'firebase/auth';
-import Link from 'next/link';
-import UserMenu from '@/components/UserMenu';
+import { useDashboardAuth } from '@/contexts/DashboardAuthContext';
 import { useI18n } from '@/hooks/useI18n';
 
-export default function Subscription() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
-  const router = useRouter();
+const PLANS = [
+  { id: 'students', key: 'students' as const },
+  { id: 'reclamacion', key: 'reclamacion' as const },
+  { id: 'tutela', key: 'tutela' as const },
+  { id: 'lawyers', key: 'lawyers' as const },
+] as const;
+
+export default function SubscriptionPage() {
+  const user = useDashboardAuth();
   const { t } = useI18n();
 
-  useEffect(() => {
-    if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
-      setIsFirebaseReady(true);
-      const unsubscribe = onAuthStateChanged(auth as Auth, (user) => {
-        if (user) {
-          setUser(user);
-        } else {
-          router.push('/login');
-        }
-        setLoading(false);
-      });
+  const handleCancelPlan = () => {
+    // TODO: implement cancel plan flow
+  };
 
-      return () => unsubscribe();
-    } else {
-      setLoading(false);
-      router.push('/login');
-    }
-  }, [router]);
+  const handleUpgrade = () => {
+    // TODO: implement upgrade flow
+  };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user || !isFirebaseReady) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-sm">A</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Avocat LegalTech</span>
-            </Link>
+    <div className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8 relative">
+      <div className="px-4 py-6 sm:px-0">
+        <h1 className="text-h1 text-text-primary mb-2">{t('subscription.title')}</h1>
+        <p className="text-body text-text-secondary mb-8">{t('subscription.subtitle')}</p>
 
-            <UserMenu user={user} currentPlan="Abogados" />
-          </div>
+        {/* Plans description cards */}
+        <div className="space-y-4">
+          {PLANS.map(({ id, key }) => (
+            <div
+              key={id}
+              className="bg-card overflow-hidden shadow rounded-lg border border-border"
+            >
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-surface-muted/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-text-primary font-bold text-lg">
+                      {key === 'students' && 'E'}
+                      {key === 'reclamacion' && 'R'}
+                      {key === 'tutela' && 'T'}
+                      {key === 'lawyers' && 'A'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-h3 text-text-primary">
+                      {t(`pricing.${key}.title`)}
+                    </h3>
+                    <p className="text-text-secondary mt-1">
+                      {t(`pricing.${key}.description`)}
+                    </p>
+                    <p className="text-sm text-text-secondary mt-2 font-medium">
+                      {t(`pricing.${key}.price`)} {t(`pricing.${key}.period`)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Page Header */}
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t('subscription.title')}</h1>
-            <p className="mt-2 text-gray-600">{t('subscription.subtitle')}</p>
-          </div>
-
-          {/* Current Plan Card */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">{t('subscription.currentPlan')}</h2>
-            </div>
-            <div className="px-6 py-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">👨‍💼</span>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">{t('subscription.lawyerPlan')}</h3>
-                    <p className="text-gray-600">{t('subscription.fullAccess')}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-bold text-blue-600">€29.99</p>
-                  <p className="text-sm text-gray-500">{t('subscription.perMonth')}</p>
-                </div>
-              </div>
-              <div className="mt-6 flex space-x-4">
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  {t('subscription.updatePlan')}
-                </button>
-                <button className="px-4 py-2 border border-red-300 text-red-700 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                  {t('subscription.cancelSubscription')}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Available Plans */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">{t('subscription.availablePlans')}</h2>
-            </div>
-            <div className="px-6 py-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {/* Estudiantes Plan */}
-                <div className="border border-gray-200 rounded-lg p-6 hover:border-green-300 transition-colors">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <span className="text-white font-bold text-lg">🎓</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900">Estudiantes</h3>
-                    <p className="text-2xl font-bold text-green-600 mt-2">€9.99</p>
-                    <p className="text-sm text-gray-500">por mes</p>
-                    <ul className="mt-4 text-sm text-gray-600 space-y-2">
-                      <li>• Documentos básicos</li>
-                      <li>• Plantillas legales</li>
-                      <li>• Soporte por email</li>
-                    </ul>
-                    <button className="w-full mt-4 px-4 py-2 border border-green-300 text-green-700 rounded-md hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                      Cambiar Plan
-                    </button>
-                  </div>
-                </div>
-
-                {/* Reclamación Plan */}
-                <div className="border border-gray-200 rounded-lg p-6 hover:border-orange-300 transition-colors">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <span className="text-white font-bold text-lg">💰</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900">Reclamación</h3>
-                    <p className="text-2xl font-bold text-orange-600 mt-2">€19.99</p>
-                    <p className="text-sm text-gray-500">por mes</p>
-                    <ul className="mt-4 text-sm text-gray-600 space-y-2">
-                      <li>• Herramientas de reclamación</li>
-                      <li>• Cálculo automático</li>
-                      <li>• Plantillas especializadas</li>
-                    </ul>
-                    <button className="w-full mt-4 px-4 py-2 border border-orange-300 text-orange-700 rounded-md hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
-                      Cambiar Plan
-                    </button>
-                  </div>
-                </div>
-
-                {/* Acción de Tutela Plan */}
-                <div className="border border-gray-200 rounded-lg p-6 hover:border-red-300 transition-colors">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <span className="text-white font-bold text-lg">⚖️</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900">Acción de Tutela</h3>
-                    <p className="text-2xl font-bold text-red-600 mt-2">€24.99</p>
-                    <p className="text-sm text-gray-500">por mes</p>
-                    <ul className="mt-4 text-sm text-gray-600 space-y-2">
-                      <li>• Gestión de tutelas</li>
-                      <li>• Formularios automáticos</li>
-                      <li>• Seguimiento de casos</li>
-                    </ul>
-                    <button className="w-full mt-4 px-4 py-2 border border-red-300 text-red-700 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                      Cambiar Plan
-                    </button>
-                  </div>
-                </div>
-
-                {/* Abogados Plan (Current) */}
-                <div className="border-2 border-blue-500 rounded-lg p-6 bg-blue-50">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <span className="text-white font-bold text-lg">👨‍💼</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900">Abogados</h3>
-                    <p className="text-2xl font-bold text-blue-600 mt-2">€29.99</p>
-                    <p className="text-sm text-gray-500">por mes</p>
-                    <ul className="mt-4 text-sm text-gray-600 space-y-2">
-                      <li>• Acceso completo</li>
-                      <li>• Todas las funcionalidades</li>
-                      <li>• Soporte prioritario</li>
-                    </ul>
-                    <button className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-md cursor-not-allowed opacity-50">
-                      Plan Actual
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Billing Information */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Información de Facturación</h2>
-            </div>
-            <div className="px-6 py-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Método de Pago</h3>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                      <span className="text-blue-600 font-bold">💳</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">•••• •••• •••• 1234</p>
-                      <p className="text-sm text-gray-500">Expira 12/25</p>
-                    </div>
-                  </div>
-                  <button className="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium">
-                    Actualizar método de pago
-                  </button>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Próxima Facturación</h3>
-                  <p className="text-gray-600">€29.99 se cobrará el 15 de enero de 2024</p>
-                  <button className="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium">
-                    Ver historial de facturación
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Floating circle buttons */}
+      <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-3">
+        <div className="relative group">
+          <button
+            onClick={handleCancelPlan}
+            title={t('subscription.cancelSubscription')}
+            className="w-14 h-14 rounded-full bg-surface-muted/30 border border-border text-text-primary shadow-lg flex items-center justify-center hover:bg-surface-muted/50 transition-all"
+            aria-label={t('subscription.cancelSubscription')}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-sidebar text-text-on-dark text-sm font-medium rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            {t('subscription.cancelSubscription')}
+          </span>
         </div>
-      </main>
+        <div className="relative group">
+          <button
+            onClick={handleUpgrade}
+            title={t('subscription.updatePlan')}
+            className="w-14 h-14 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-all"
+            aria-label={t('subscription.updatePlan')}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+          </button>
+          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-sidebar text-text-on-dark text-sm font-medium rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            {t('subscription.updatePlan')}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

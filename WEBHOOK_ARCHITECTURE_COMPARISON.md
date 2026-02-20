@@ -314,3 +314,4 @@ Considera migrar SOLO si:
 
 **Mejora sugerida**: Organizar el código con funciones separadas por tipo, pero mantener 1 webhook.
 
+

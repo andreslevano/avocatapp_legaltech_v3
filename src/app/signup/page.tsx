@@ -38,9 +38,9 @@ export default function SignUp() {
       case 'Estudiantes':
         return '/dashboard/estudiantes';
       case 'Reclamación de Cantidades':
-        return '/dashboard/reclamacion-cantidades';
+        return '/dashboard/autoservicio/reclamacion-cantidades';
       case 'Acción de Tutela':
-        return '/dashboard/accion-tutela';
+        return '/dashboard/autoservicio/accion-tutela';
       case 'Abogados':
       default:
         return '/dashboard';
@@ -270,23 +270,23 @@ export default function SignUp() {
 
   if (!isFirebaseReady) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
-          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-16 h-16 bg-surface-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-text-primary mb-4">
             Configuración Requerida
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-text-secondary mb-6">
             Para usar la funcionalidad de registro, necesitas configurar Firebase. 
-            Por favor, crea un archivo <code className="bg-gray-100 px-2 py-1 rounded">.env.local</code> con tus credenciales de Firebase.
+            Por favor, crea un archivo <code className="bg-surface-muted/30 px-2 py-1 rounded">.env.local</code> con tus credenciales de Firebase.
           </p>
-          <div className="bg-gray-100 p-4 rounded-lg text-left text-sm">
+          <div className="bg-surface-muted/30 p-4 rounded-lg text-left text-sm">
             <p className="font-semibold mb-2">Variables requeridas:</p>
-            <ul className="space-y-1 text-gray-700">
+            <ul className="space-y-1 text-text-secondary">
               <li>• NEXT_PUBLIC_FIREBASE_API_KEY</li>
               <li>• NEXT_PUBLIC_FIREBASE_PROJECT_ID</li>
               <li>• NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</li>
@@ -308,28 +308,28 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-app flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">A</span>
+          <div className="w-12 h-12 bg-sidebar rounded-lg flex items-center justify-center">
+            <span className="text-text-on-dark font-bold text-xl">A</span>
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
           {t('auth.signup.title')}
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-text-secondary">
           {t('auth.signup.subtitle')}
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-card py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-border">
 
           <form className="space-y-6" onSubmit={handleEmailSignUp}>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="firstName" className="block text-sm font-medium text-text-secondary">
                   {t('auth.signup.firstName')}
                 </label>
                 <input
@@ -345,7 +345,7 @@ export default function SignUp() {
               </div>
 
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="lastName" className="block text-sm font-medium text-text-secondary">
                   {t('auth.signup.lastName')}
                 </label>
                 <input
@@ -362,7 +362,7 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-text-secondary">
                 Email
               </label>
               <input
@@ -379,7 +379,7 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="country" className="block text-sm font-medium text-text-secondary">
                 País *
               </label>
               <select
@@ -401,7 +401,7 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label htmlFor="plan" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="plan" className="block text-sm font-medium text-text-secondary">
                 Plan *
               </label>
               <select
@@ -437,7 +437,7 @@ export default function SignUp() {
 
             {formData.plan === 'Abogados' && (
               <div>
-                <label htmlFor="firm" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="firm" className="block text-sm font-medium text-text-secondary">
                   Bufete (opcional)
                 </label>
                 <input
@@ -453,7 +453,7 @@ export default function SignUp() {
             )}
 
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="phone" className="block text-sm font-medium text-text-secondary">
                 Teléfono (opcional)
               </label>
               <input
@@ -468,7 +468,7 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-text-secondary">
                 Contraseña
               </label>
               <input
@@ -485,7 +485,7 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-secondary">
                 Confirmar Contraseña
               </label>
               <input
@@ -501,14 +501,14 @@ export default function SignUp() {
               />
             </div>
           {error && (
-            <div className="rounded-md bg-red-50 p-4 mb-4">
-              <div className="text-sm text-red-700">{error}</div>
+            <div className="rounded-md bg-surface-muted/30 p-4 mb-4 border border-border">
+              <div className="text-sm text-text-primary">{error}</div>
             </div>
           )}
 
           {success && (
-            <div className="rounded-md bg-green-50 p-4 mb-4">
-              <div className="text-sm text-green-700">{success}</div>
+            <div className="rounded-md bg-surface-muted/20 p-4 mb-4 border border-border">
+              <div className="text-sm text-text-primary">{success}</div>
             </div>
           )}
 
@@ -524,22 +524,22 @@ export default function SignUp() {
         </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-text-secondary">
               ¿Ya tienes una cuenta?{' '}
-              <Link href="/login" className="font-medium text-primary-600 hover:text-primary-500">
+              <Link href="/login" className="font-medium text-text-primary hover:text-text-secondary">
                 Inicia sesión
               </Link>
             </p>
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-text-secondary">
               Al crear una cuenta, aceptas nuestros{' '}
-              <Link href="/terminos" className="text-primary-600 hover:text-primary-500">
+              <Link href="/terminos" className="text-text-primary hover:text-text-secondary">
                 Términos de Servicio
               </Link>{' '}
               y{' '}
-              <Link href="/privacidad" className="text-primary-600 hover:text-primary-500">
+              <Link href="/privacidad" className="text-text-primary hover:text-text-secondary">
                 Política de Privacidad
               </Link>
             </p>

@@ -6,8 +6,6 @@ import { User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import DashboardNavigation from '@/components/DashboardNavigation';
-import UserMenu from '@/components/UserMenu';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface User {
@@ -291,10 +289,10 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando Administrador...</p>
+          <p className="mt-4 text-text-secondary">Cargando Administrador...</p>
         </div>
       </div>
     );
@@ -310,13 +308,13 @@ export default function AdminDashboard() {
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-red-600 text-2xl">🚫</span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h2>
-          <p className="text-gray-600 mb-4">No tienes permisos para acceder a esta sección.</p>
+          <h2 className="text-2xl font-bold text-text-primary mb-2">Acceso Denegado</h2>
+          <p className="text-text-secondary mb-4">No tienes permisos para acceder a esta sección.</p>
           <button
             onClick={() => router.push('/dashboard')}
             className="btn-primary"
@@ -330,33 +328,11 @@ export default function AdminDashboard() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-white font-bold text-lg">A</span>
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">Administrador</h1>
-              </div>
-              <div className="flex items-center space-x-4">
-                <UserMenu user={user} onSignOut={handleSignOut} />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex">
-            {/* Sidebar Navigation */}
-            <div className="w-64 flex-shrink-0">
-              <DashboardNavigation currentPlan="administrador" user={user} />
-            </div>
-
-            {/* Main Content */}
-            <div className="flex-1 ml-8">
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-text-primary">Administrador</h1>
+        </div>
+        <div>
               {error && (
                 <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
                   <div className="flex">
@@ -389,16 +365,16 @@ export default function AdminDashboard() {
               )}
 
               {/* User Management */}
-              <div className="bg-white shadow rounded-lg">
+              <div className="bg-card shadow rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
                     Gestión de Usuarios
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* User List */}
                     <div>
-                      <h4 className="text-md font-medium text-gray-900 mb-3">Usuarios</h4>
+                      <h4 className="text-md font-medium text-text-primary mb-3">Usuarios</h4>
                       <div className="space-y-2">
                         {users.map((user) => (
                           <div
@@ -406,16 +382,16 @@ export default function AdminDashboard() {
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                               selectedUser === user.uid
                                 ? 'border-purple-500 bg-purple-50'
-                                : 'border-gray-200 hover:border-gray-300'
+                                : 'border-border hover:border-border'
                             }`}
                             onClick={() => setSelectedUser(user.uid)}
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-sm font-medium text-gray-900">
+                                <p className="text-sm font-medium text-text-primary">
                                   {user.displayName}
                                 </p>
-                                <p className="text-sm text-gray-500">{user.email}</p>
+                                <p className="text-sm text-text-secondary">{user.email}</p>
                               </div>
                               <div className="flex items-center space-x-2">
                                 {user.isAdmin && (
@@ -441,7 +417,7 @@ export default function AdminDashboard() {
 
                     {/* User Actions */}
                     <div>
-                      <h4 className="text-md font-medium text-gray-900 mb-3">Acciones</h4>
+                      <h4 className="text-md font-medium text-text-primary mb-3">Acciones</h4>
                       <div className="space-y-3">
                         <button
                           onClick={generateEmail}
@@ -471,30 +447,30 @@ export default function AdminDashboard() {
 
                   {/* User Summary */}
                   {userSummary && (
-                    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                      <h4 className="text-md font-medium text-gray-900 mb-3">
+                    <div className="mt-6 p-4 bg-app rounded-lg">
+                      <h4 className="text-md font-medium text-text-primary mb-3">
                         Resumen del Usuario
                       </h4>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                          <p className="text-sm text-gray-500">Email</p>
-                          <p className="text-sm font-medium text-gray-900">{userSummary.email}</p>
+                          <p className="text-sm text-text-secondary">Email</p>
+                          <p className="text-sm font-medium text-text-primary">{userSummary.email}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-500">Estado</p>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm text-text-secondary">Estado</p>
+                          <p className="text-sm font-medium text-text-primary">
                             {userSummary.isActive ? 'Activo' : 'Inactivo'}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-500">Creado</p>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm text-text-secondary">Creado</p>
+                          <p className="text-sm font-medium text-text-primary">
                             {new Date(userSummary.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-500">Último Login</p>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm text-text-secondary">Último Login</p>
+                          <p className="text-sm font-medium text-text-primary">
                             {new Date(userSummary.lastLoginAt).toLocaleDateString()}
                           </p>
                         </div>
@@ -503,8 +479,6 @@ export default function AdminDashboard() {
                   )}
                 </div>
               </div>
-            </div>
-          </div>
         </div>
       </div>
     </ErrorBoundary>

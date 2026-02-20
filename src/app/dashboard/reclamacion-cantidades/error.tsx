@@ -14,8 +14,8 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
+    <div className="min-h-screen bg-app flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-card rounded-lg shadow-lg p-6">
         <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
           <svg
             className="w-6 h-6 text-red-600"
@@ -31,10 +31,10 @@ export default function Error({
             />
           </svg>
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 text-center mb-2">
+        <h2 className="text-xl font-semibold text-text-primary text-center mb-2">
           Algo salió mal
         </h2>
-        <p className="text-gray-600 text-center mb-6">
+        <p className="text-text-secondary text-center mb-6">
           {error.message || 'Ocurrió un error inesperado'}
         </p>
         <div className="flex gap-3">
@@ -46,7 +46,7 @@ export default function Error({
           </button>
           <button
             onClick={() => window.location.href = '/dashboard'}
-            className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
+            className="flex-1 bg-gray-200 text-text-primary px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
           >
             Volver al Dashboard
           </button>

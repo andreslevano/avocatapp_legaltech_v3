@@ -66,61 +66,43 @@ export default function IndicatorCards() {
   }, []);
 
   const IndicatorCard = ({ title, value, subtitle, icon, color, trend, source }: IndicatorCardProps) => {
-    const colorClasses = {
-      blue: 'bg-blue-50 border-blue-200 text-blue-600',
-      green: 'bg-green-50 border-green-200 text-green-600',
-      orange: 'bg-orange-50 border-orange-200 text-orange-600',
-      red: 'bg-red-50 border-red-200 text-red-600',
-      purple: 'bg-purple-50 border-purple-200 text-purple-600'
-    };
-
-    const iconBgClasses = {
-      blue: 'bg-blue-100',
-      green: 'bg-green-100',
-      orange: 'bg-orange-100',
-      red: 'bg-red-100',
-      purple: 'bg-purple-100'
-    };
-
     return (
-      <div className={`bg-white rounded-lg border-2 ${colorClasses[color]} p-4 shadow-sm hover:shadow-md transition-shadow duration-200`}>
+      <div className="bg-card rounded-lg border-2 border-border text-text-primary p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-2">
-              <div className={`w-8 h-8 rounded-lg ${iconBgClasses[color]} flex items-center justify-center`}>
+              <div className="w-8 h-8 rounded-lg bg-surface-muted/50 flex items-center justify-center text-text-secondary">
                 {icon}
               </div>
               <div className="flex items-center space-x-1">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <span className="text-small font-medium text-text-secondary uppercase tracking-wide">
                   {title}
                 </span>
                 <span className={`text-xs px-2 py-1 rounded-full ${
                   source === 'avocat' 
-                    ? 'bg-blue-100 text-blue-600' 
-                    : 'bg-green-100 text-green-600'
+                    ? 'bg-surface-muted text-text-primary' 
+                    : 'bg-hover/50 text-text-primary'
                 }`}>
                   {source === 'avocat' ? 'Avocat' : 'Web'}
                 </span>
               </div>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">
+            <div className="text-h2 font-bold text-text-primary mb-1">
               {loading && source === 'web' ? (
-                <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
+                <div className="animate-pulse bg-surface-muted h-8 w-16 rounded"></div>
               ) : (
                 value
               )}
             </div>
             {subtitle && (
-              <p className="text-sm text-gray-600">{subtitle}</p>
+              <p className="text-body text-text-secondary">{subtitle}</p>
             )}
             {trend && (
               <div className="flex items-center mt-2">
-                <span className={`text-xs font-medium ${
-                  trend.isPositive ? 'text-green-600' : 'text-red-600'
-                }`}>
+                <span className="text-small font-medium text-text-primary">
                   {trend.isPositive ? '+' : ''}{trend.value}%
                 </span>
-                <span className="text-xs text-gray-500 ml-1">vs mes anterior</span>
+                <span className="text-small text-text-secondary ml-1">vs mes anterior</span>
               </div>
             )}
           </div>
@@ -158,33 +140,6 @@ export default function IndicatorCards() {
         color="green"
         trend={{ value: 8, isPositive: true }}
         source="avocat"
-      />
-
-      {/* Web Data Cards */}
-      <IndicatorCard
-        title="Casos Nacionales Activos"
-        value={webData.activeCases.toLocaleString()}
-        subtitle="En el sistema judicial"
-        icon={
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-          </svg>
-        }
-        color="orange"
-        source="web"
-      />
-
-      <IndicatorCard
-        title="Nuevos Casos Hoy"
-        value={webData.newCasesToday}
-        subtitle="Registrados en el país"
-        icon={
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-        }
-        color="red"
-        source="web"
       />
 
       <IndicatorCard

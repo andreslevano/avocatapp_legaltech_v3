@@ -20,7 +20,8 @@ echo "Deploy version: $VERSION"
 echo "Note: run this script outside restricted sandboxes (Cursor required_permissions=['all']) so npm can access ~/.nvm."
 
 echo "Clearing frontend caches..."
-rm -rf .next node_modules/.cache out
+# Keep .next for incremental build stability (avoids _error.js.nft.json ENOENT)
+rm -rf node_modules/.cache out
 
 if [ -d "functions" ]; then
   echo "Clearing backend caches..."
@@ -31,25 +32,32 @@ echo "Installing root dependencies..."
 npm install
 
 # Temporarily move API routes to avoid build conflicts with static export
-# API routes are handled by Firebase Cloud Functions
-# Use .disabled extension so Next.js won't process it
 if [ -d "src/app/api" ]; then
   echo "Temporarily moving API routes for build..."
+  rm -rf src/app/api.disabled
   mv src/app/api src/app/api.disabled
   API_MOVED=true
 else
   API_MOVED=false
 fi
-
 echo "Building Next.js application with static export..."
-# Clean out directory before build
-rm -rf out
-# Build Next.js with static export
+rm -rf .next out
 npm run build
 # Verify out directory was created
 if [ ! -d "out" ]; then
   echo "Error: 'out' directory was not created. Build may have failed."
   exit 1
+fi
+# Fix: Next.js export puts app HTML in .next/server/app/ but not in out/ - copy all HTML files
+if [ -d ".next/server/app" ]; then
+  echo "Copying app HTML files to out/..."
+  find .next/server/app -name "*.html" -type f | while read -r htmlfile; do
+    relpath="${htmlfile#.next/server/app/}"
+    outpath="out/${relpath}"
+    mkdir -p "$(dirname "$outpath")"
+    cp "$htmlfile" "$outpath"
+  done
+  echo "Copied $(find .next/server/app -name '*.html' -type f | wc -l | tr -d ' ') HTML files to out/"
 fi
 echo "Build completed. Output directory: out/"
 

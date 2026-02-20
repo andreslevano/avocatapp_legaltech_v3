@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
-import DashboardNavigation from '@/components/DashboardNavigation';
-import UserMenu from '@/components/UserMenu';
 import { useI18n } from '@/hooks/useI18n';
 
 interface CaseFormData {
@@ -212,10 +210,10 @@ export default function CreateCasePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Cargando...</p>
         </div>
       </div>
     );
@@ -226,64 +224,54 @@ export default function CreateCasePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-lg">A</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Avocat</span>
-            </div>
-            
-            <UserMenu user={user} currentPlan="Abogados" />
-          </div>
-        </div>
-      </header>
-
-      {/* Dashboard Navigation */}
-      <DashboardNavigation currentPlan="Abogados" />
-
-      {/* Page Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-400 p-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h1 className="text-lg font-semibold text-blue-800">
-                {t('dashboard.createCase.title')}
-              </h1>
-              <p className="text-sm text-blue-700">
-                {t('dashboard.createCase.subtitle')}
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/dashboard"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            ← {t('dashboard.backToDashboard')}
-          </Link>
-        </div>
+    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 relative">
+      {/* Floating Action Buttons - top right, always visible when scrolling */}
+      <div className="fixed top-24 right-8 z-50 flex flex-col gap-2">
+        <Link
+          href="/dashboard/casos"
+          className="group relative w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors"
+          title="Volver"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Volver
+          </span>
+        </Link>
+        <button
+          type="submit"
+          form="create-case-form"
+          disabled={submitting}
+          className="group relative w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Crear Caso"
+        >
+          {submitting ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-text-on-dark border-t-transparent" />
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          )}
+          <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Crear Caso
+          </span>
+        </button>
       </div>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <h1 className="text-h1 text-text-primary mb-2">{t('dashboard.createCase.title')}</h1>
+          <p className="text-body text-text-secondary mb-6">{t('dashboard.createCase.subtitle')}</p>
+          <form id="create-case-form" onSubmit={handleSubmit} className="space-y-8">
             {/* Case Information */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">{t('dashboard.createCase.caseInfo')}</h2>
+            <div className="bg-card shadow-sm rounded-lg border border-border p-6">
+              <h2 className="text-lg font-semibold text-text-primary mb-6">{t('dashboard.createCase.caseInfo')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Título del Caso *
                   </label>
                   <input
@@ -292,13 +280,13 @@ export default function CreateCasePage() {
                     value={formData.caseTitle}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                     placeholder="Ej: Contrato de Arrendamiento Comercial"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Tipo de Caso *
                   </label>
                   <select
@@ -306,7 +294,7 @@ export default function CreateCasePage() {
                     value={formData.caseType}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                   >
                     <option value="">Seleccionar tipo</option>
                     {caseTypes.map(type => (
@@ -316,7 +304,7 @@ export default function CreateCasePage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Prioridad *
                   </label>
                   <select
@@ -324,7 +312,7 @@ export default function CreateCasePage() {
                     value={formData.priority}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                   >
                     {priorities.map(priority => (
                       <option key={priority.value} value={priority.value}>
@@ -335,7 +323,7 @@ export default function CreateCasePage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Fecha Límite
                   </label>
                   <input
@@ -343,13 +331,13 @@ export default function CreateCasePage() {
                     name="deadline"
                     value={formData.deadline}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                   />
                 </div>
               </div>
               
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Descripción del Caso *
                 </label>
                 <textarea
@@ -358,19 +346,19 @@ export default function CreateCasePage() {
                   onChange={handleInputChange}
                   required
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                   placeholder="Describa los detalles del caso, situación legal, objetivos, etc."
                 />
               </div>
             </div>
 
             {/* Client Information */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Información del Cliente</h2>
+            <div className="bg-card shadow-sm rounded-lg border border-border p-6">
+              <h2 className="text-lg font-semibold text-text-primary mb-6">Información del Cliente</h2>
               
               {/* Client Selection */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Seleccionar Cliente *
                 </label>
                 <div className="flex space-x-4">
@@ -383,7 +371,7 @@ export default function CreateCasePage() {
                       onChange={(e) => handleClientSelectionChange(e as any)}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Cliente Existente</span>
+                    <span className="text-sm text-text-secondary">Cliente Existente</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -394,14 +382,14 @@ export default function CreateCasePage() {
                       onChange={(e) => handleClientSelectionChange(e as any)}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Nuevo Cliente</span>
+                    <span className="text-sm text-text-secondary">Nuevo Cliente</span>
                   </label>
                 </div>
               </div>
 
               {formData.clientSelection === 'existing' && (
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Seleccionar Cliente Existente *
                   </label>
                   <select
@@ -409,7 +397,7 @@ export default function CreateCasePage() {
                     value={formData.selectedClientId}
                     onChange={handleExistingClientChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                   >
                     <option value="">Seleccionar cliente</option>
                     {customers.map(customer => (
@@ -423,7 +411,7 @@ export default function CreateCasePage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Nombre del Cliente *
                   </label>
                   <input
@@ -433,13 +421,13 @@ export default function CreateCasePage() {
                     onChange={handleInputChange}
                     required
                     disabled={formData.clientSelection === 'existing'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar disabled:bg-surface-muted/30 disabled:cursor-not-allowed"
                     placeholder="Nombre completo del cliente"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Email del Cliente *
                   </label>
                   <input
@@ -449,13 +437,13 @@ export default function CreateCasePage() {
                     onChange={handleInputChange}
                     required
                     disabled={formData.clientSelection === 'existing'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar disabled:bg-surface-muted/30 disabled:cursor-not-allowed"
                     placeholder="cliente@email.com"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Teléfono del Cliente
                   </label>
                   <input
@@ -464,13 +452,13 @@ export default function CreateCasePage() {
                     value={formData.clientPhone}
                     onChange={handleInputChange}
                     disabled={formData.clientSelection === 'existing'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar disabled:bg-surface-muted/30 disabled:cursor-not-allowed"
                     placeholder="+34 600 123 456"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Abogado Asignado *
                   </label>
                   <select
@@ -478,7 +466,7 @@ export default function CreateCasePage() {
                     value={formData.assignedLawyer}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar"
                   >
                     <option value="">Seleccionar abogado</option>
                     {lawyers.map(lawyer => (
@@ -490,13 +478,13 @@ export default function CreateCasePage() {
             </div>
 
             {/* Documents */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Documentos</h2>
+            <div className="bg-card shadow-sm rounded-lg border border-border p-6">
+              <h2 className="text-lg font-semibold text-text-primary mb-6">Documentos</h2>
               
               <div className="space-y-6">
                 {/* File Upload Area */}
                 <div
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                  className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
                   onClick={() => document.getElementById('file-upload')?.click()}
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
@@ -504,10 +492,10 @@ export default function CreateCasePage() {
                   <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  <p className="mt-2 text-sm text-gray-600">
+                  <p className="mt-2 text-sm text-text-secondary">
                     Arrastra archivos PDF aquí o haz clic para seleccionar
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-text-secondary mt-1">
                     Solo se permiten archivos PDF
                   </p>
                 </div>
@@ -524,18 +512,18 @@ export default function CreateCasePage() {
                 {/* Uploaded Documents List */}
                 {formData.documents.length > 0 && (
                   <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900">Documentos subidos ({formData.documents.length})</h4>
+                    <h4 className="font-medium text-text-primary">Documentos subidos ({formData.documents.length})</h4>
                     
                     <div className="space-y-3">
                       {formData.documents.map((doc, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div key={index} className="flex items-center justify-between p-3 bg-app rounded-lg">
                           <div className="flex items-center">
                             <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                             </svg>
                             <div>
-                              <span className="text-sm font-medium text-gray-900">{doc.name}</span>
-                              <span className="text-xs text-gray-500 ml-2">
+                              <span className="text-sm font-medium text-text-primary">{doc.name}</span>
+                              <span className="text-xs text-text-secondary ml-2">
                                 ({(doc.size / 1024 / 1024).toFixed(2)} MB)
                               </span>
                             </div>
@@ -554,34 +542,6 @@ export default function CreateCasePage() {
               </div>
             </div>
 
-            {/* Submit Button */}
-            <div className="flex justify-end space-x-4">
-              <Link
-                href="/dashboard"
-                className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </Link>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {submitting ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Creando Caso...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                    <span>Crear Caso</span>
-                  </div>
-                )}
-              </button>
-            </div>
           </form>
         </div>
       </main>

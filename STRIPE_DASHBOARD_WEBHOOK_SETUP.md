@@ -320,3 +320,4 @@ Si después de seguir estos pasos el webhook no funciona:
 3. **Verifica el secret** coincide exactamente
 4. **Prueba con Stripe CLI** localmente para aislar el problema
 
+

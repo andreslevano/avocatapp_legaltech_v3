@@ -19,26 +19,15 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['pino', 'pdfkit', 'tesseract.js']
   },
-  // Exclude api.backup and api.disabled from page collection
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-  // Configuración webpack para PDFKit y Tesseract.js
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Configurar PDFKit para que funcione en el servidor
       config.resolve = config.resolve || {};
-      config.resolve.alias = {
-        ...config.resolve.alias,
-      };
-      
-      // Asegurar que los archivos de fuente se incluyan
+      config.resolve.alias = { ...config.resolve.alias };
       config.externals = config.externals || [];
       if (Array.isArray(config.externals)) {
-        config.externals.push({
-          canvas: 'canvas',
-        });
+        config.externals.push({ canvas: 'canvas' });
       }
-      
-      // Ignore api.backup and api.disabled directories
       config.module = config.module || {};
       config.module.rules = config.module.rules || [];
       config.module.rules.push({
@@ -47,7 +36,7 @@ const nextConfig = {
       });
     }
     return config;
-  }
+  },
 }
 
 module.exports = nextConfig

@@ -15,9 +15,8 @@ import {
   where
 } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
-import DashboardNavigation from '@/components/DashboardNavigation';
-import UserMenu from '@/components/UserMenu';
 import type { Purchase } from '@/types/purchase';
+import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 // import { getFirestore, collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 // Data structure for legal areas and document types with pricing
@@ -239,7 +238,9 @@ function EstudiantesDashboardContent() {
       // Debug logs removed for production
 
       // Create checkout session with multiple line items
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      // Use the correct endpoint (Cloud Function in production, API route in development)
+      const endpoint = getCheckoutSessionEndpoint();
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -261,15 +262,30 @@ function EstudiantesDashboardContent() {
       });
 
       if (response.ok) {
-        const { url } = await response.json();
-        window.location.href = url;
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          console.error('No URL in response:', data);
+          alert('Error al procesar el pago. No se recibió la URL de pago.');
+        }
       } else {
-        console.error('Error creating checkout session');
-        alert('Error al procesar el pago. Inténtalo de nuevo.');
+        const errorText = await response.text();
+        let errorMessage = 'Error al procesar el pago. Inténtalo de nuevo.';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          // If response is not JSON, use default message
+          console.error('Error response:', errorText);
+        }
+        console.error('Error creating checkout session:', response.status, errorMessage);
+        alert(errorMessage);
       }
     } catch (e) {
       console.error('Error preparing Stripe checkout:', e);
-      alert('Error al procesar el pago. Inténtalo de nuevo.');
+      const errorMessage = e instanceof Error ? e.message : 'Error desconocido';
+      alert(`Error al procesar el pago: ${errorMessage}. Inténtalo de nuevo.`);
     }
   };
 
@@ -876,6 +892,7 @@ function EstudiantesDashboardContent() {
       const documentsGenerated = purchaseData.documentsGenerated ?? 0;
       const documentsFailed = purchaseData.documentsFailed ?? 0;
       const totalItems = purchaseData.items?.length || 0;
+      const purchaseStatus = purchaseData.status;
       
       // Also check item statuses as a fallback
       const items = purchaseData.items || [];
@@ -884,21 +901,45 @@ function EstudiantesDashboardContent() {
       const hasPackageFiles = items.some((item: any) => item.packageFiles && Object.keys(item.packageFiles).length > 0);
       
       // Documents are ready if:
-      // 1. documentsGenerated > 0 (webhook updated the counter), OR
-      // 2. All items have status 'completed' or 'failed', OR
+      // 1. Purchase status is 'completed' AND documentsGenerated > 0 (webhook finished), OR
+      // 2. All items have status 'completed' or 'failed' (if items exist), OR
       // 3. Items have packageFiles (documents were generated)
-      const allItemsProcessed = (completedItems + failedItems) === totalItems && totalItems > 0;
-      const documentsReady = documentsGenerated > 0 || allItemsProcessed || hasPackageFiles;
+      const allItemsProcessed = totalItems > 0 && (completedItems + failedItems) === totalItems;
       
-      // Show progress if we have partial completion
-      if (documentsGenerated > 0 && documentsGenerated < totalItems) {
+      // If purchase status is completed and documentsGenerated > 0, consider it done
+      // This handles cases where items array might be missing but documents were generated
+      const documentsReady = 
+        (purchaseStatus === 'completed' && documentsGenerated > 0) ||
+        allItemsProcessed ||
+        hasPackageFiles;
+      
+      // Debug logging (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Polling check:', {
+          purchaseId: currentPurchaseId,
+          status: purchaseStatus,
+          documentsGenerated,
+          totalItems,
+          completedItems,
+          failedItems,
+          hasPackageFiles,
+          documentsReady
+        });
+      }
+      
+      // Show progress if we have partial completion (only if items exist)
+      if (totalItems > 0 && documentsGenerated > 0 && documentsGenerated < totalItems) {
         // Keep showing processing but with progress info
         setProcessingStatus('processing');
       }
       
       if (documentsReady) {
         // Determine final status
-        const finalStatus = (documentsGenerated > 0 || completedItems > 0 || hasPackageFiles) ? 'completed' : 'failed';
+        // If purchase status is completed and documentsGenerated > 0, it's successful
+        // even if items array is missing (webhook may have had issues but documents were generated)
+        const finalStatus = (purchaseStatus === 'completed' && documentsGenerated > 0) || 
+                           (documentsGenerated > 0 || completedItems > 0 || hasPackageFiles) 
+                           ? 'completed' : 'failed';
         
         // Update status immediately
         setProcessingStatus(finalStatus);
@@ -920,6 +961,20 @@ function EstudiantesDashboardContent() {
         }
         
         return true; // Polling complete
+      }
+      
+      // If purchase status is completed but documentsGenerated is 0, it might be an error
+      // But wait a bit more in case webhook is still processing
+      if (purchaseStatus === 'completed' && documentsGenerated === 0 && pollingAttempts > 50) {
+        // After 50 attempts (2.5 minutes), if still no documents, mark as failed
+        console.warn('Purchase completed but no documents generated after 50 polling attempts');
+        setProcessingStatus('failed');
+        setPurchaseReloadToken(prev => prev + 1);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        return true;
       }
       
       // Increment attempts counter
@@ -1045,16 +1100,45 @@ function EstudiantesDashboardContent() {
         const pendingPurchases = allSnapshot.docs.filter(doc => {
           const data = doc.data();
           const status = data.status;
+          
+          // Skip completed, failed, or cancelled purchases
+          // If status is 'completed' and documentsGenerated > 0, it's done
+          if (status === 'completed') {
+            const documentsGenerated = data.documentsGenerated ?? 0;
+            // If completed and has documents, skip it
+            if (documentsGenerated > 0) {
+              return false;
+            }
+            // If completed but no documents, might be an error - check if recent
+          } else if (status === 'failed' || status === 'cancelled') {
+            return false;
+          }
+          
+          // For pending/processing purchases, check if they're recent (within last hour)
+          // This prevents showing messages for old stuck purchases
+          const createdAt = parseFirestoreDate(data.createdAt);
+          const now = new Date();
+          const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+          
+          // Only show for purchases created in the last hour
+          if (hoursSinceCreation > 1) {
+            return false;
+          }
+          
           const documentsGenerated = data.documentsGenerated ?? 0;
           const totalItems = data.items?.length || 0;
           const items = data.items || [];
           const hasPackageFiles = items.some((item: any) => item.packageFiles && Object.keys(item.packageFiles).length > 0);
           
           // Consider pending if:
-          // 1. Status is pending/processing, OR
-          // 2. Documents are not yet complete (documentsGenerated < totalItems and no packageFiles)
-          return (status === 'pending' || status === 'processing' || 
-                  (documentsGenerated < totalItems && !hasPackageFiles && totalItems > 0));
+          // 1. Status is pending/processing AND documents aren't complete, OR
+          // 2. Status is completed but documentsGenerated is 0 (error case)
+          const isPendingStatus = (status === 'pending' || status === 'processing');
+          const documentsIncomplete = totalItems > 0 
+            ? (documentsGenerated < totalItems && !hasPackageFiles)
+            : (documentsGenerated === 0);
+          
+          return (isPendingStatus || (status === 'completed' && documentsGenerated === 0)) && documentsIncomplete;
         });
         
         if (pendingPurchases.length > 0) {
@@ -1077,8 +1161,12 @@ function EstudiantesDashboardContent() {
           const items = purchaseData.items || [];
           const hasPackageFiles = items.some((item: any) => item.packageFiles && Object.keys(item.packageFiles).length > 0);
           
-          // Only start polling if documents are not yet complete
-          if (documentsGenerated < totalItems && !hasPackageFiles) {
+          // Only start polling if documents are not yet complete and status is pending/processing
+          const status = purchaseData.status;
+          if ((status === 'pending' || status === 'processing') && 
+              documentsGenerated < totalItems && 
+              !hasPackageFiles && 
+              totalItems > 0) {
             console.log('Found pending purchase, starting polling:', purchaseId);
             startPolling(purchaseId);
           }
@@ -1121,10 +1209,10 @@ function EstudiantesDashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Cargando...</p>
         </div>
       </div>
     );
@@ -1135,26 +1223,7 @@ function EstudiantesDashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-lg">E</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Avocat - Estudiantes</span>
-            </div>
-            
-            <UserMenu user={user} currentPlan="Estudiantes" />
-          </div>
-        </div>
-      </header>
-
-      {/* Dashboard Navigation */}
-      <DashboardNavigation currentPlan="Estudiantes" user={user} />
-
+    <div className="min-h-screen bg-app">
       {/* Payment Success & Processing Status Banner */}
       {showPaymentSuccess && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
@@ -1255,36 +1324,16 @@ function EstudiantesDashboardContent() {
         </div>
       )}
 
-      {/* Dashboard Identification Banner */}
-      <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-green-700">
-              <strong>Dashboard de Estudiantes</strong> - Plataforma de aprendizaje legal para estudiantes de derecho
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">
-            Panel de Estudiante
-          </h1>
-
           {/* Welcome Card */}
-          <div className="bg-white overflow-hidden shadow rounded-lg mb-8">
+          <div className="bg-card overflow-hidden shadow rounded-lg mb-8">
             <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
+              <h3 className="text-lg leading-6 font-medium text-text-primary mb-2">
                 ¡Bienvenido a Avocat para Estudiantes!
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-text-secondary">
                 Tu plataforma de aprendizaje legal con herramientas de IA para complementar tus estudios jurídicos.
               </p>
             </div>
@@ -1292,15 +1341,15 @@ function EstudiantesDashboardContent() {
 
 
           {/* Legal Document Selection Area */}
-          <div className="bg-white overflow-hidden shadow rounded-lg mb-8">
+          <div className="bg-card overflow-hidden shadow rounded-lg mb-8">
             <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
                 Selección de Documento Legal
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Legal Area Selection */}
                 <div>
-                  <label htmlFor="legal-area" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="legal-area" className="block text-sm font-medium text-text-secondary mb-2">
                     Área Legal
                   </label>
                   <select
@@ -1310,7 +1359,7 @@ function EstudiantesDashboardContent() {
                       setSelectedLegalArea(e.target.value);
                       setSelectedDocumentType(''); // Reset document type when area changes
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     <option value="">Selecciona un área legal</option>
                     {Object.keys(legalAreas).map((area) => (
@@ -1323,7 +1372,7 @@ function EstudiantesDashboardContent() {
 
                 {/* Document Type Selection */}
                 <div>
-                  <label htmlFor="document-type" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="document-type" className="block text-sm font-medium text-text-secondary mb-2">
                     Tipo de Escrito
                   </label>
                   <select
@@ -1333,7 +1382,7 @@ function EstudiantesDashboardContent() {
                       setSelectedDocumentType(e.target.value);
                     }}
                     disabled={!selectedLegalArea}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-surface-muted/30 disabled:cursor-not-allowed"
                   >
                     <option value="">
                       {selectedLegalArea ? 'Selecciona un tipo de escrito' : 'Primero selecciona un área legal'}
@@ -1348,16 +1397,16 @@ function EstudiantesDashboardContent() {
 
               {/* Country Information */}
                 <div className="md:col-span-2">
-                  <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="country" className="block text-sm font-medium text-text-secondary mb-2">
                     País / Jurisdicción
                   </label>
                 <div
                   id="country"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-700"
+                  className="w-full px-3 py-2 border border-border rounded-md shadow-sm bg-app text-text-secondary"
                 >
                   {selectedCountry}
                 </div>
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-2 text-xs text-text-secondary">
                   Actualmente generamos automáticamente los materiales adaptados a la legislación española.
                 </p>
                 </div>
@@ -1401,7 +1450,7 @@ function EstudiantesDashboardContent() {
                 >
                   🛒 Agregar al Carrito
                 </button>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-text-secondary">
                   Los materiales se generarán automáticamente y se añadirán a tu biblioteca una vez completado el pago.
                 </p>
               </div>
@@ -1410,7 +1459,7 @@ function EstudiantesDashboardContent() {
               {/* Shopping Cart */}
               {cart.length > 0 && (
                 <div className="mt-8 border-t pt-6">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <h4 className="text-lg font-medium text-text-primary mb-4 flex items-center">
                     🛒 Carrito de Compras
                     <span className="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                       {cart.reduce((total, item) => total + item.quantity, 0)} items
@@ -1419,10 +1468,10 @@ function EstudiantesDashboardContent() {
                   
                   <div className="space-y-3">
                     {cart.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={item.id} className="flex items-center justify-between p-3 bg-app rounded-lg">
                         <div className="flex-1">
-                          <h5 className="text-sm font-medium text-gray-900">{item.name}</h5>
-                          <p className="text-xs text-gray-500">{item.area}</p>
+                          <h5 className="text-sm font-medium text-text-primary">{item.name}</h5>
+                          <p className="text-xs text-text-secondary">{item.area}</p>
                           <p className="text-sm text-green-600 font-medium">€{item.price.toFixed(2)}</p>
                         </div>
                         
@@ -1443,7 +1492,7 @@ function EstudiantesDashboardContent() {
                             -
                           </button>
                           
-                          <span className="w-12 text-center text-sm font-medium text-gray-900">
+                          <span className="w-12 text-center text-sm font-medium text-text-primary">
                             {item.quantity}
                           </span>
                           
@@ -1464,7 +1513,7 @@ function EstudiantesDashboardContent() {
                             onClick={() => {
                               setCart(cart.filter(cartItem => cartItem.id !== item.id));
                             }}
-                            className="w-8 h-8 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+                            className="w-8 h-8 bg-surface-muted/30 text-text-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
                           >
                             🗑️
                           </button>
@@ -1476,13 +1525,13 @@ function EstudiantesDashboardContent() {
                   {/* Cart Summary */}
                   <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-700">Subtotal:</span>
-                      <span className="text-sm text-gray-900">
+                      <span className="text-sm font-medium text-text-secondary">Subtotal:</span>
+                      <span className="text-sm text-text-primary">
                         €{cart.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center mb-4">
-                      <span className="text-sm font-medium text-gray-700">Total:</span>
+                      <span className="text-sm font-medium text-text-secondary">Total:</span>
                       <span className="text-lg font-bold text-green-600">
                         €{cart.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)}
                       </span>
@@ -1491,7 +1540,7 @@ function EstudiantesDashboardContent() {
                     <div className="flex space-x-3">
                       <button
                         onClick={() => setCart([])}
-                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm font-medium"
+                        className="flex-1 px-4 py-2 bg-surface-muted/30 text-text-secondary rounded-md hover:bg-gray-200 transition-colors text-sm font-medium"
                       >
                         🗑️ Vaciar Carrito
                       </button>
@@ -1509,17 +1558,19 @@ function EstudiantesDashboardContent() {
           </div>
 
           {/* Purchase History Section */}
-          <div className="bg-white overflow-hidden shadow rounded-lg mb-8">
+          <div className="bg-card overflow-hidden shadow rounded-lg mb-8">
             <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
-                <span>📋 Historial de Compras</span>
-                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full self-start sm:ml-2">
-                  {purchaseHistory.length} compras
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-text-primary">
+                  Historial de Compras
+                </h3>
+                <span className="text-2xl font-bold text-text-primary">
+                  {purchaseLoading ? '—' : purchaseHistory.length}
                 </span>
-              </h3>
+              </div>
               
               {purchaseLoading ? (
-                <div className="py-10 flex flex-col items-center justify-center text-center text-gray-500">
+                <div className="py-10 flex flex-col items-center justify-center text-center text-text-secondary">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
                   <p>Cargando historial de compras...</p>
                 </div>
@@ -1536,33 +1587,29 @@ function EstudiantesDashboardContent() {
                 </div>
               ) : purchaseHistory.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-surface-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">No hay compras anteriores</h4>
-                  <p className="text-gray-500">Tus compras de documentos legales aparecerán aquí.</p>
+                  <h4 className="text-lg font-medium text-text-primary mb-2">No hay compras anteriores</h4>
+                  <p className="text-text-secondary">Tus compras de documentos legales aparecerán aquí.</p>
                 </div>
               ) : (
-                <div className="space-y-4 sm:space-y-6">
+                <div
+                  className="space-y-4 sm:space-y-6 overflow-y-auto pr-1"
+                  style={{ maxHeight: '900px' }}
+                >
                   {purchaseHistory.map((purchase) => (
-                    <div key={purchase.id} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                    <div key={purchase.id} className="border border-border rounded-lg p-3 sm:p-4">
                       {/* Purchase Header */}
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
                         <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </div>
-                          </div>
                           <div className="min-w-0 flex-1">
-                            <h4 className="text-sm font-medium text-gray-900 truncate">
+                            <h4 className="text-sm font-medium text-text-primary truncate">
                               Compra #{purchase.id}
                             </h4>
-                            <p className="text-xs sm:text-sm text-gray-500">
+                            <p className="text-xs sm:text-sm text-text-secondary">
                               {toDate(purchase.createdAt).toLocaleDateString('es-ES', {
                                 year: 'numeric',
                                 month: 'short',
@@ -1573,68 +1620,62 @@ function EstudiantesDashboardContent() {
                         </div>
                         <div className="flex items-center justify-between sm:flex-col sm:items-end sm:space-y-1">
                           <div className="flex items-center space-x-2">
-                            <span className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-xs font-medium ${
-                              purchase.status === 'completed' 
-                                ? 'bg-green-100 text-green-800' 
-                                : purchase.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}>
+                            <span className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-xs font-medium border bg-surface-muted/30 text-text-primary border-border`}>
                               <span className="hidden sm:inline">
-                                {purchase.status === 'completed' ? '✅ Completada' : 
-                                 purchase.status === 'pending' ? '⏳ Pendiente' : '❌ Cancelada'}
+                                {purchase.status === 'completed' ? 'Completada' : 
+                                 purchase.status === 'pending' ? 'Pendiente' : 'Cancelada'}
                               </span>
                               <span className="sm:hidden">
-                                {purchase.status === 'completed' ? '✅' : 
-                                 purchase.status === 'pending' ? '⏳' : '❌'}
+                                {purchase.status === 'completed' ? 'Completada' : 
+                                 purchase.status === 'pending' ? 'Pendiente' : 'Cancelada'}
                               </span>
                             </span>
                           </div>
-                          <p className="text-base sm:text-lg font-bold text-green-600">
+                          <p className="text-base sm:text-lg font-bold text-text-primary">
                             {formatCurrency(purchase.total, purchase.currency)}
                           </p>
                         </div>
                       </div>
 
                       {/* Purchase Items */}
-                      <div className="border-t border-gray-100 pt-4">
-                        <h5 className="text-sm font-medium text-gray-700 mb-3">Documentos adquiridos:</h5>
+                      <div className="border-t border-border pt-4">
+                        <h5 className="text-sm font-medium text-text-secondary mb-3">Documentos adquiridos:</h5>
                         {purchase.items.length === 0 ? (
-                          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-md text-sm">
+                          <div className="bg-surface-muted/20 border border-border text-text-secondary px-4 py-3 rounded-md text-sm">
                             Esta compra no tiene documentos asociados todavía.
                           </div>
                         ) : (
                           <div className="space-y-2">
                             {purchase.items.map((item) => (
-                            <details key={item.id} className="bg-gray-50 rounded-md group">
+                            <details key={item.id} className="bg-app rounded-md group">
                               <summary className="list-none p-3 cursor-pointer">
                                 <div className="flex items-center">
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                    <p className="text-sm font-medium text-text-primary truncate">
                                       {(item.area || 'Área no especificada')} — {item.name}
                                     </p>
                                   </div>
                                   <div className="ml-4 flex items-center space-x-4 text-xs sm:text-sm">
-                                    <span className="text-gray-500">
+                                    <span className="text-text-secondary">
                                       <span className="hidden sm:inline">Cantidad: </span>
                                       <span className="sm:hidden">Qty: </span>
                                       <span className="font-medium">{item.quantity}</span>
                                     </span>
-                                    <span className="text-gray-500">
+                                    <span className="text-text-secondary">
                                       <span className="hidden sm:inline">Precio: </span>
                                       {formatCurrency(item.price, purchase.currency)}
                                     </span>
-                                    <span className="font-medium text-gray-900">
+                                    <span className="font-medium text-text-primary">
                                       {formatCurrency(item.price * item.quantity, purchase.currency)}
                                     </span>
-                                    <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <svg className="w-4 h-4 text-text-secondary transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
                                   </div>
                                 </div>
                               </summary>
                               <div className="px-3 pb-3">
-                                <div className="border-t border-gray-100 pt-3">
+                                <div className="border-t border-border pt-3">
                                   <div className="flex flex-col sm:flex-row sm:justify-end sm:space-x-3 space-y-2 sm:space-y-0">
                                     <button
                                       onClick={() => handleViewDocument(item as any)}
@@ -1648,8 +1689,8 @@ function EstudiantesDashboardContent() {
                                       }
                                       className={`text-sm font-medium px-3 py-2 rounded-md transition-colors ${
                                         documentActionLoadingId === item.id
-                                          ? 'bg-blue-100 text-blue-500 cursor-not-allowed'
-                                          : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                          ? 'bg-surface-muted/30 text-text-secondary cursor-not-allowed'
+                                          : 'bg-surface-muted/20 text-text-primary hover:bg-surface-muted/30 border border-border'
                                       }`}
                                     >
                                       {documentActionLoadingId === item.id ? 'Abriendo...' : 'Ver documento'}
@@ -1666,8 +1707,8 @@ function EstudiantesDashboardContent() {
                                       }
                                       className={`text-sm font-medium px-3 py-2 rounded-md transition-colors ${
                                         documentActionLoadingId === item.id
-                                          ? 'bg-green-100 text-green-500 cursor-not-allowed'
-                                          : 'bg-green-50 text-green-700 hover:bg-green-100'
+                                          ? 'bg-surface-muted/30 text-text-secondary cursor-not-allowed'
+                                          : 'bg-sidebar text-text-on-dark hover:bg-text-primary border border-sidebar'
                                       }`}
                                     >
                                       {documentActionLoadingId === item.id ? 'Descargando...' : 'Descargar'}
@@ -1675,8 +1716,8 @@ function EstudiantesDashboardContent() {
                                   </div>
 
                                   {item.packageFiles && (
-                                    <div className="mt-3 border border-green-100 bg-green-50 rounded-md p-3">
-                                      <p className="text-xs font-medium text-green-700 mb-2">
+                                    <div className="mt-3 border border-border bg-surface-muted/20 rounded-md p-3">
+                                      <p className="text-xs font-medium text-text-secondary mb-2">
                                         Materiales descargables
                                       </p>
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
@@ -1685,10 +1726,10 @@ function EstudiantesDashboardContent() {
                                             href={item.packageFiles.templateDocx.downloadUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
+                                            className="inline-flex items-center justify-between px-3 py-2 bg-card border border-border rounded-md text-text-primary hover:bg-surface-muted/20 transition-colors"
                                           >
                                             Plantilla (Word)
-                                            <span className="text-[10px] text-green-500 ml-2">.docx</span>
+                                            <span className="text-[10px] text-text-secondary ml-2">.docx</span>
                                           </a>
                                         )}
                                         {item.packageFiles.templatePdf?.downloadUrl && (
@@ -1696,10 +1737,10 @@ function EstudiantesDashboardContent() {
                                             href={item.packageFiles.templatePdf.downloadUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
+                                            className="inline-flex items-center justify-between px-3 py-2 bg-card border border-border rounded-md text-text-primary hover:bg-surface-muted/20 transition-colors"
                                           >
                                             Plantilla (PDF)
-                                            <span className="text-[10px] text-green-500 ml-2">.pdf</span>
+                                            <span className="text-[10px] text-text-secondary ml-2">.pdf</span>
                                           </a>
                                         )}
                                         {item.packageFiles.sampleDocx?.downloadUrl && (
@@ -1707,10 +1748,10 @@ function EstudiantesDashboardContent() {
                                             href={item.packageFiles.sampleDocx.downloadUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
+                                            className="inline-flex items-center justify-between px-3 py-2 bg-card border border-border rounded-md text-text-primary hover:bg-surface-muted/20 transition-colors"
                                           >
                                             Ejemplo (Word)
-                                            <span className="text-[10px] text-green-500 ml-2">.docx</span>
+                                            <span className="text-[10px] text-text-secondary ml-2">.docx</span>
                                           </a>
                                         )}
                                         {item.packageFiles.samplePdf?.downloadUrl && (
@@ -1718,10 +1759,10 @@ function EstudiantesDashboardContent() {
                                             href={item.packageFiles.samplePdf.downloadUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors"
+                                            className="inline-flex items-center justify-between px-3 py-2 bg-card border border-border rounded-md text-text-primary hover:bg-surface-muted/20 transition-colors"
                                           >
                                             Ejemplo (PDF)
-                                            <span className="text-[10px] text-green-500 ml-2">.pdf</span>
+                                            <span className="text-[10px] text-text-secondary ml-2">.pdf</span>
                                           </a>
                                         )}
                                         {item.packageFiles.studyMaterialPdf?.downloadUrl && (
@@ -1729,10 +1770,10 @@ function EstudiantesDashboardContent() {
                                             href={item.packageFiles.studyMaterialPdf.downloadUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center justify-between px-3 py-2 bg-white border border-green-200 rounded-md text-green-700 hover:bg-green-100 transition-colors sm:col-span-2"
+                                            className="inline-flex items-center justify-between px-3 py-2 bg-card border border-border rounded-md text-text-primary hover:bg-surface-muted/20 transition-colors sm:col-span-2"
                                           >
                                             Dossier académico (PDF)
-                                            <span className="text-[10px] text-green-500 ml-2">≥ 3 páginas</span>
+                                            <span className="text-[10px] text-text-secondary ml-2">≥ 3 páginas</span>
                                           </a>
                                         )}
                                       </div>
@@ -1747,26 +1788,26 @@ function EstudiantesDashboardContent() {
                       </div>
 
                       {/* Purchase Actions */}
-                      <div className="border-t border-gray-100 pt-4 mt-4">
+                      <div className="border-t border-border pt-4 mt-4">
                         <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-gray-500 space-y-1 sm:space-y-0">
-                            <span>Total: <span className="font-medium text-gray-900">{formatCurrency(purchase.total, purchase.currency)}</span></span>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-text-secondary space-y-1 sm:space-y-0">
+                            <span>Total: <span className="font-medium text-text-primary">{formatCurrency(purchase.total, purchase.currency)}</span></span>
                             <span className="hidden sm:inline">•</span>
                             <span>{purchase.items.length} documento{purchase.items.length !== 1 ? 's' : ''}</span>
                           </div>
                           <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                             <button 
                               onClick={() => downloadInvoice(purchase)}
-                              className="w-full sm:w-auto text-sm text-green-600 hover:text-green-800 font-medium bg-green-50 hover:bg-green-100 px-3 py-2 rounded-md transition-colors text-center"
+                              className="w-full sm:w-auto text-sm font-medium bg-sidebar text-text-on-dark hover:bg-text-primary px-3 py-2 rounded-md transition-colors text-center"
                             >
-                              📄 Descargar Factura
+                              Descargar Factura
                             </button>
                             <div className="flex space-x-2">
-                              <button className="flex-1 sm:flex-none text-sm text-blue-600 hover:text-blue-800 font-medium px-3 py-2 rounded-md hover:bg-blue-50 transition-colors text-center">
-                                📄 Ver Docs
+                              <button className="flex-1 sm:flex-none text-sm text-text-primary font-medium px-3 py-2 rounded-md bg-surface-muted/20 hover:bg-surface-muted/30 border border-border transition-colors text-center">
+                                Ver Docs
                               </button>
-                              <button className="flex-1 sm:flex-none text-sm text-gray-600 hover:text-gray-800 font-medium px-3 py-2 rounded-md hover:bg-gray-50 transition-colors text-center">
-                                📧 Email
+                              <button className="flex-1 sm:flex-none text-sm text-text-secondary hover:text-text-primary font-medium px-3 py-2 rounded-md hover:bg-app transition-colors text-center">
+                                Email
                               </button>
                             </div>
                           </div>
@@ -1779,22 +1820,22 @@ function EstudiantesDashboardContent() {
 
               {/* Purchase Summary */}
               {purchaseHistory.length > 0 && (
-                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="text-sm font-medium text-blue-800 mb-3">Resumen de Compras</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-sm">
+                <div className="mt-6 p-5 bg-surface-muted/20 border border-border rounded-lg">
+                  <h4 className="text-lg font-semibold text-text-primary mb-4">Resumen de Compras</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 text-base">
                     <div className="flex justify-between sm:block">
-                      <span className="text-blue-700">Total de compras:</span>
-                      <span className="ml-0 sm:ml-2 font-medium text-blue-900">{purchaseSummary.count}</span>
+                      <span className="text-text-secondary">Total de compras:</span>
+                      <span className="ml-0 sm:ml-2 font-semibold text-text-primary text-lg">{purchaseSummary.count}</span>
                     </div>
                     <div className="flex justify-between sm:block">
-                      <span className="text-blue-700">Total gastado:</span>
-                      <span className="ml-0 sm:ml-2 font-medium text-blue-900">
+                      <span className="text-text-secondary">Total gastado:</span>
+                      <span className="ml-0 sm:ml-2 font-semibold text-text-primary text-lg">
                         {formatCurrency(purchaseSummary.totalSpent, purchaseSummary.currency)}
                       </span>
                     </div>
                     <div className="flex justify-between sm:block sm:col-span-2 lg:col-span-1">
-                      <span className="text-blue-700">Documentos adquiridos:</span>
-                      <span className="ml-0 sm:ml-2 font-medium text-blue-900">
+                      <span className="text-text-secondary">Documentos adquiridos:</span>
+                      <span className="ml-0 sm:ml-2 font-semibold text-text-primary text-lg">
                         {purchaseSummary.totalDocuments}
                       </span>
                     </div>
@@ -1813,10 +1854,10 @@ function EstudiantesDashboardContent() {
 export default function EstudiantesDashboard() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Cargando...</p>
         </div>
       </div>
     }>

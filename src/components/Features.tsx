@@ -13,8 +13,8 @@ export default function Features() {
       ),
       title: t('features.documentAnalysis.title'),
       description: t('features.documentAnalysis.description'),
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-text-primary',
+      bgColor: 'bg-surface-muted/50',
     },
     {
       icon: (
@@ -24,8 +24,8 @@ export default function Features() {
       ),
       title: t('features.legalResearch.title'),
       description: t('features.legalResearch.description'),
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: 'text-text-primary',
+      bgColor: 'bg-surface-muted/50',
     },
     {
       icon: (
@@ -35,8 +35,8 @@ export default function Features() {
       ),
       title: t('features.caseSummaries.title'),
       description: t('features.caseSummaries.description'),
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-text-primary',
+      bgColor: 'bg-surface-muted/50',
     },
     {
       icon: (
@@ -46,8 +46,8 @@ export default function Features() {
       ),
       title: t('features.clientManagement.title'),
       description: t('features.clientManagement.description'),
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: 'text-text-primary',
+      bgColor: 'bg-surface-muted/50',
     },
     {
       icon: (
@@ -57,8 +57,8 @@ export default function Features() {
       ),
       title: t('features.analytics.title'),
       description: t('features.analytics.description'),
-      color: 'text-red-600',
-      bgColor: 'bg-red-100',
+      color: 'text-text-primary',
+      bgColor: 'bg-surface-muted/50',
     },
     {
       icon: (
@@ -68,19 +68,19 @@ export default function Features() {
       ),
       title: t('features.security.title'),
       description: t('features.security.description'),
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-100',
+      color: 'text-text-primary',
+      bgColor: 'bg-surface-muted/50',
     },
   ];
 
   return (
-    <section id="caracteristicas" className="py-20 bg-white">
+    <section id="caracteristicas" className="py-20 bg-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-h1 font-bold text-text-primary mb-4">
             {t('features.title')}
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-text-secondary max-w-3xl mx-auto">
             {t('features.subtitle')}
           </p>
         </div>
@@ -93,10 +93,10 @@ export default function Features() {
                   {feature.icon}
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+              <h3 className="text-h3 text-text-primary mb-3">
                 {feature.title}
               </h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-body text-text-secondary leading-relaxed">
                 {feature.description}
               </p>
             </div>
@@ -105,26 +105,26 @@ export default function Features() {
 
         {/* Additional Info */}
         <div className="mt-16 text-center">
-          <div className="bg-gray-50 rounded-2xl p-8 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+          <div className="bg-app rounded-2xl p-8 max-w-4xl mx-auto border border-border">
+            <h3 className="text-h2 font-semibold text-text-primary mb-4">
               Construido para Profesionales Legales
             </h3>
-            <p className="text-gray-600 mb-6">
-              Nuestra plataforma está diseñada por abogados, para abogados. Cada función está diseñada 
+            <p className="text-body text-text-secondary mb-6">
+              Nuestra plataforma está diseñada por abogados, para abogados. Cada función está diseñada
               con la comprensión de flujos de trabajo legales reales y desafíos.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-small">
               <div>
-                <div className="font-semibold text-primary-600 mb-2">99.9% Tiempo Activo</div>
-                <div className="text-gray-500">Servicio confiable en el que puedes contar</div>
+                <div className="font-semibold text-text-primary mb-2">99.9% Tiempo Activo</div>
+                <div className="text-text-secondary">Servicio confiable en el que puedes contar</div>
               </div>
               <div>
-                <div className="font-semibold text-primary-600 mb-2">Soporte 24/7</div>
-                <div className="text-gray-500">Ayuda experta cuando la necesites</div>
+                <div className="font-semibold text-text-primary mb-2">Soporte 24/7</div>
+                <div className="text-text-secondary">Ayuda experta cuando la necesites</div>
               </div>
               <div>
-                <div className="font-semibold text-primary-600 mb-2">Cumple GDPR</div>
-                <div className="text-gray-500">Construido con la privacidad en mente</div>
+                <div className="font-semibold text-text-primary mb-2">Cumple GDPR</div>
+                <div className="text-text-secondary">Construido con la privacidad en mente</div>
               </div>
             </div>
           </div>

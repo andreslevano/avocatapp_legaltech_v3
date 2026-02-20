@@ -114,37 +114,37 @@ export default function Login() {
 
   if (!isFirebaseReady) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">{t('common.loading')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-app flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">A</span>
+          <div className="w-12 h-12 bg-sidebar rounded-lg flex items-center justify-center">
+            <span className="text-text-on-dark font-bold text-xl">A</span>
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
           {t('auth.login.title')}
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-text-secondary">
           {t('auth.login.subtitle')}
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-card py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-border">
 
           <form className="space-y-6" onSubmit={handleEmailLogin}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-text-secondary">
                 {t('auth.login.email')}
               </label>
               <input
@@ -161,7 +161,7 @@ export default function Login() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-text-secondary">
                 {t('auth.login.password')}
               </label>
               <input
@@ -178,37 +178,37 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="text-sm text-red-700">{error}</div>
+              <div className="rounded-md bg-surface-muted/30 p-4 border border-border">
+                <div className="text-sm text-text-primary">{error}</div>
               </div>
             )}
 
             {passwordResetMessage && (
-              <div className="rounded-md bg-green-50 p-4">
+              <div className="rounded-md bg-surface-muted/20 p-4 border border-border">
                 <div className="flex">
                   <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <div className="text-sm text-green-700">{passwordResetMessage}</div>
+                    <div className="text-sm text-text-primary">{passwordResetMessage}</div>
                   </div>
                 </div>
               </div>
             )}
 
             {reactivationMessage && (
-              <div className="rounded-md bg-green-50 p-4">
+              <div className="rounded-md bg-surface-muted/20 p-4 border border-border">
                 <div className="flex">
                   <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <div className="text-sm text-green-700">{reactivationMessage}</div>
-                    <div className="text-xs text-green-600 mt-1">Redirigiendo al dashboard...</div>
+                    <div className="text-sm text-text-primary">{reactivationMessage}</div>
+                    <div className="text-xs text-text-secondary mt-1">Redirigiendo al dashboard...</div>
                   </div>
                 </div>
               </div>
@@ -225,15 +225,15 @@ export default function Login() {
             </div>
 
             <div className="text-center">
-              <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-500">
+              <Link href="/forgot-password" className="text-sm text-text-primary hover:text-text-secondary">
                 {t('auth.login.forgotPassword')}
               </Link>
             </div>
 
             <div className="text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-text-secondary">
                 {t('auth.login.noAccount')}{' '}
-                <Link href="/signup" className="font-medium text-primary-600 hover:text-primary-500">
+                <Link href="/signup" className="font-medium text-text-primary hover:text-text-secondary">
                   {t('auth.login.signupLink')}
                 </Link>
               </p>

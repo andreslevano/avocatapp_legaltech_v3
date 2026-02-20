@@ -128,10 +128,10 @@ function ResetPasswordContent() {
 
   if (!isFirebaseReady || isVerifying) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verificando enlace...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Verificando enlace...</p>
         </div>
       </div>
     );
@@ -139,25 +139,25 @@ function ResetPasswordContent() {
 
   if (error && !actionCode) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-app flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <div className="rounded-md bg-red-50 p-4 mb-4">
+          <div className="bg-card py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-border">
+            <div className="rounded-md bg-surface-muted/30 p-4 mb-4 border border-border">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <div className="text-sm text-red-700">{error}</div>
+                  <div className="text-sm text-text-primary">{error}</div>
                 </div>
               </div>
             </div>
             <div className="text-center">
               <Link
                 href="/forgot-password"
-                className="text-sm text-primary-600 hover:text-primary-500"
+                className="text-sm text-text-primary hover:text-text-secondary"
               >
                 Solicitar nuevo enlace de restablecimiento
               </Link>
@@ -169,37 +169,37 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-app flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">A</span>
+          <div className="w-12 h-12 bg-sidebar rounded-lg flex items-center justify-center">
+            <span className="text-text-on-dark font-bold text-xl">A</span>
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
           Restablecer Contraseña
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-text-secondary">
           Ingresa tu nueva contraseña
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-card py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-border">
           {success ? (
             <div className="space-y-6">
-              <div className="rounded-md bg-green-50 p-4">
+              <div className="rounded-md bg-surface-muted/20 p-4 border border-border">
                 <div className="flex">
                   <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-green-800">
+                    <h3 className="text-sm font-medium text-text-primary">
                       Contraseña restablecida exitosamente
                     </h3>
-                    <div className="mt-2 text-sm text-green-700">
+                    <div className="mt-2 text-sm text-text-secondary">
                       <p>Tu contraseña ha sido restablecida correctamente.</p>
                       <p className="mt-2">Redirigiendo al inicio de sesión...</p>
                     </div>
@@ -210,7 +210,7 @@ function ResetPasswordContent() {
           ) : (
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="password" className="block text-sm font-medium text-text-secondary">
                   Nueva Contraseña
                 </label>
                 <input
@@ -228,7 +228,7 @@ function ResetPasswordContent() {
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-secondary">
                   Confirmar Contraseña
                 </label>
                 <input
@@ -246,15 +246,15 @@ function ResetPasswordContent() {
               </div>
 
               {error && (
-                <div className="rounded-md bg-red-50 p-4">
+                <div className="rounded-md bg-surface-muted/30 p-4 border border-border">
                   <div className="flex">
                     <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div className="ml-3">
-                      <div className="text-sm text-red-700">{error}</div>
+                      <div className="text-sm text-text-primary">{error}</div>
                     </div>
                   </div>
                 </div>
@@ -273,7 +273,7 @@ function ResetPasswordContent() {
               <div className="text-center">
                 <Link
                   href="/login"
-                  className="text-sm text-primary-600 hover:text-primary-500"
+                  className="text-sm text-text-primary hover:text-text-secondary"
                 >
                   Volver al inicio de sesión
                 </Link>
@@ -289,10 +289,10 @@ function ResetPasswordContent() {
 export default function ResetPassword() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Cargando...</p>
         </div>
       </div>
     }>

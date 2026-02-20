@@ -132,14 +132,14 @@ export default function TutelaHistoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-app">
         <DashboardNavigation currentPlan="basic" />
         <div className="py-8">
           <div className="max-w-6xl mx-auto px-4">
-            <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="bg-card rounded-lg shadow-lg p-8">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Cargando historial...</p>
+                <p className="mt-4 text-text-secondary">Cargando historial...</p>
               </div>
             </div>
           </div>
@@ -149,16 +149,16 @@ export default function TutelaHistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-app">
       <DashboardNavigation currentPlan="basic" />
       <div className="py-8">
         <div className="max-w-6xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-card rounded-lg shadow-lg p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-text-primary mb-2">
               Historial de Acciones de Tutela
             </h1>
-            <p className="text-gray-600">
+            <p className="text-text-secondary">
               Lista de todas las acciones de tutela generadas
             </p>
           </div>
@@ -172,14 +172,14 @@ export default function TutelaHistoryPage() {
           {items.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 text-6xl mb-4">📄</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-text-primary mb-2">
                 No hay tutelas generadas
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-text-secondary mb-6">
                 Genera tu primera acción de tutela para verla aquí
               </p>
               <button
-                onClick={() => router.push('/dashboard/accion-tutela')}
+                onClick={() => router.push('/dashboard/autoservicio/accion-tutela')}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Generar Tutela
@@ -188,35 +188,35 @@ export default function TutelaHistoryPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-app">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Fecha
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Derecho
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Ciudad
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Estado
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-card divide-y divide-gray-200">
                   {items.map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <tr key={index} className="hover:bg-app">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                         {formatDate(item.fechaISO)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                         {getDerechoLabel(item.derecho)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                         {item.ciudad}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -251,12 +251,12 @@ export default function TutelaHistoryPage() {
           <div className="mt-8 flex justify-between">
             <button
               onClick={() => router.push('/dashboard')}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className="px-6 py-2 border border-border rounded-md text-text-secondary hover:bg-app"
             >
               Volver al Dashboard
             </button>
             <button
-              onClick={() => router.push('/dashboard/accion-tutela')}
+              onClick={() => router.push('/dashboard/autoservicio/accion-tutela')}
               className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               Nueva Tutela
@@ -269,15 +269,15 @@ export default function TutelaHistoryPage() {
       {/* Modal de Análisis con IA */}
       {showAnalysisModal && analysisResult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-card rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-border">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-xl font-semibold text-text-primary">
                   🤖 Análisis con IA - GPT-5
                 </h3>
                 <button
                   onClick={() => setShowAnalysisModal(false)}
-                  className="text-gray-400 hover:text-gray-600 text-xl"
+                  className="text-gray-400 hover:text-text-secondary text-xl"
                 >
                   ✕
                 </button>
@@ -288,16 +288,16 @@ export default function TutelaHistoryPage() {
               <div className="space-y-6">
                 {/* Resumen */}
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-3">📋 Resumen</h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-gray-700">{analysisResult.summary}</p>
+                  <h4 className="text-lg font-semibold text-text-primary mb-3">📋 Resumen</h4>
+                  <div className="bg-app p-4 rounded-lg">
+                    <p className="text-text-secondary">{analysisResult.summary}</p>
                   </div>
                 </div>
 
                 {/* Riesgos */}
                 {analysisResult.risks && analysisResult.risks.length > 0 && (
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-3">⚠️ Riesgos Identificados</h4>
+                    <h4 className="text-lg font-semibold text-text-primary mb-3">⚠️ Riesgos Identificados</h4>
                     <div className="bg-red-50 p-4 rounded-lg">
                       <ul className="space-y-2">
                         {analysisResult.risks.map((risk: string, index: number) => (
@@ -311,7 +311,7 @@ export default function TutelaHistoryPage() {
                 {/* Recomendaciones */}
                 {analysisResult.recommendations && analysisResult.recommendations.length > 0 && (
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-3">💡 Recomendaciones</h4>
+                    <h4 className="text-lg font-semibold text-text-primary mb-3">💡 Recomendaciones</h4>
                     <div className="bg-green-50 p-4 rounded-lg">
                       <ul className="space-y-2">
                         {analysisResult.recommendations.map((rec: string, index: number) => (
@@ -324,16 +324,16 @@ export default function TutelaHistoryPage() {
 
                 {/* Análisis Completo */}
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-3">📄 Análisis Completo</h4>
+                  <h4 className="text-lg font-semibold text-text-primary mb-3">📄 Análisis Completo</h4>
                   <div className="bg-blue-50 p-4 rounded-lg">
-                    <p className="text-gray-700 whitespace-pre-wrap">{analysisResult.content}</p>
+                    <p className="text-text-secondary whitespace-pre-wrap">{analysisResult.content}</p>
                   </div>
                 </div>
 
                 {/* Metadata */}
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <h4 className="text-sm font-semibold text-gray-600 mb-2">Información del Análisis</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                <div className="bg-surface-muted/30 p-4 rounded-lg">
+                  <h4 className="text-sm font-semibold text-text-secondary mb-2">Información del Análisis</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-text-secondary">
                     <div>
                       <span className="font-medium">Modelo:</span> {analysisResult.metadata?.model || 'GPT-5'}
                     </div>
@@ -351,7 +351,7 @@ export default function TutelaHistoryPage() {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex justify-end">
+            <div className="p-6 border-t border-border flex justify-end">
               <button
                 onClick={() => setShowAnalysisModal(false)}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"

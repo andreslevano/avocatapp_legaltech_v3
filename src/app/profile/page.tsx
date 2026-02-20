@@ -1,45 +1,118 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
-import Link from 'next/link';
-import UserMenu from '@/components/UserMenu';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useI18n } from '@/hooks/useI18n';
+
+interface ProfileData {
+  displayName?: string;
+  phone?: string;
+  legalSpecialty?: string;
+}
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [profile, setProfile] = useState<ProfileData>({});
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
   const { t } = useI18n();
 
   useEffect(() => {
     if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
       setIsFirebaseReady(true);
-      const unsubscribe = onAuthStateChanged(auth as Auth, (user) => {
-        if (user) {
-          setUser(user);
+      const unsubscribe = onAuthStateChanged(auth as Auth, (u) => {
+        if (u) {
+          setUser(u);
         } else {
           router.push('/login');
         }
         setLoading(false);
       });
-
       return () => unsubscribe();
     } else {
       setLoading(false);
-      router.push('/login');
     }
   }, [router]);
 
+  const loadProfile = useCallback(async (uid: string, authUser?: User | null) => {
+    if (!db) return;
+    try {
+      const snap = await getDoc(doc(db, 'users', uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        setProfile({
+          displayName: data.displayName ?? data.profile?.displayName ?? authUser?.displayName ?? '',
+          phone: data.phone ?? data.profile?.phone ?? '',
+          legalSpecialty: data.legalSpecialty ?? data.profile?.legalSpecialty ?? '',
+        });
+      } else {
+        setProfile({
+          displayName: authUser?.displayName ?? '',
+          phone: '',
+          legalSpecialty: '',
+        });
+      }
+    } catch (err) {
+      console.error('Error loading profile:', err);
+      setProfile({
+        displayName: authUser?.displayName ?? '',
+        phone: '',
+        legalSpecialty: '',
+      });
+    } finally {
+      setProfileLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user?.uid && db) {
+      setProfileLoading(true);
+      loadProfile(user.uid, user);
+    } else if (!user) {
+      setProfileLoading(false);
+    }
+  }, [user?.uid, user, db, loadProfile]);
+
+  const handleSave = async () => {
+    if (!user?.uid || !db) return;
+    setSaving(true);
+    try {
+      await setDoc(
+        doc(db, 'users', user.uid),
+        {
+          displayName: profile.displayName,
+          email: user.email,
+          profile: {
+            phone: profile.phone,
+            legalSpecialty: profile.legalSpecialty,
+          },
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.error('Error saving profile:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (user?.uid) loadProfile(user.uid, user);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Cargando...</p>
         </div>
       </div>
     );
@@ -50,153 +123,141 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-sm">A</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Avocat LegalTech</span>
-            </Link>
+    <div className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8 relative">
+      <div className="px-4 py-6 sm:px-0">
+        <h1 className="text-h1 text-text-primary mb-2">{t('profile.title')}</h1>
+        <p className="text-body text-text-secondary mb-8">{t('profile.subtitle')}</p>
 
-            <UserMenu user={user} currentPlan="Abogados" />
+        {/* Personal Information Card */}
+        <div className="bg-card overflow-hidden shadow rounded-lg border border-border mb-8">
+          <div className="px-4 py-5 sm:p-6">
+            <h2 className="text-h2 text-text-primary mb-4">{t('profile.personalInfo')}</h2>
+            <div className="flex items-center space-x-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-surface-muted/30 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-text-primary font-bold text-2xl">
+                  {(profile.displayName || user.email || 'A').charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-text-primary">
+                  {profile.displayName || user.displayName || t('profile.user')}
+                </h3>
+                <p className="text-text-secondary">{user.email}</p>
+                <p className="text-sm text-text-secondary mt-1">
+                  {t('profile.memberSince')}{' '}
+                  {new Date(user.metadata.creationTime || '').toLocaleDateString('es-ES')}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Page Header */}
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t('profile.title')}</h1>
-            <p className="mt-2 text-gray-600">{t('profile.subtitle')}</p>
-          </div>
-
-          {/* Profile Information Card */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">{t('profile.personalInfo')}</h2>
-            </div>
-            <div className="px-6 py-6">
-              <div className="flex items-center space-x-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-2xl">
-                    {user.email?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {user.displayName || t('profile.user')}
-                  </h3>
-                  <p className="text-gray-600">{user.email}</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {t('profile.memberSince')} {new Date(user.metadata.creationTime || '').toLocaleDateString('es-ES')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Settings Card */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">{t('profile.accountSettings')}</h2>
-            </div>
-            <div className="px-6 py-6 space-y-6">
+        {/* Account Settings Card */}
+        <div className="bg-card overflow-hidden shadow rounded-lg border border-border">
+          <div className="px-4 py-5 sm:p-6">
+            <h2 className="text-h2 text-text-primary mb-4">{t('profile.accountSettings')}</h2>
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   {t('profile.fullName')}
                 </label>
                 <input
                   type="text"
-                  defaultValue={user.displayName || ''}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={profile.displayName ?? ''}
+                  onChange={(e) => setProfile((p) => ({ ...p, displayName: e.target.value }))}
+                  className="input-field"
                   placeholder={t('profile.enterFullName')}
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   {t('profile.email')}
                 </label>
                 <input
                   type="email"
                   value={user.email || ''}
                   disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                  className="input-field bg-surface-muted/20 cursor-not-allowed"
                 />
-                <p className="mt-1 text-sm text-gray-500">{t('profile.emailCannotChange')}</p>
+                <p className="mt-1 text-sm text-text-secondary">{t('profile.emailCannotChange')}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   {t('profile.phone')}
                 </label>
                 <input
                   type="tel"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={profile.phone ?? ''}
+                  onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
+                  className="input-field"
                   placeholder={t('profile.enterPhone')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   {t('profile.legalSpecialty')}
                 </label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                  <option>Derecho Civil</option>
-                  <option>Derecho Penal</option>
-                  <option>Derecho Laboral</option>
-                  <option>Derecho Comercial</option>
-                  <option>Derecho de Familia</option>
-                  <option>Derecho Administrativo</option>
-                  <option>Otra</option>
+                <select
+                  value={profile.legalSpecialty ?? ''}
+                  onChange={(e) => setProfile((p) => ({ ...p, legalSpecialty: e.target.value }))}
+                  className="input-field"
+                >
+                  <option value="">Selecciona especialidad</option>
+                  <option value="Derecho Civil">Derecho Civil</option>
+                  <option value="Derecho Penal">Derecho Penal</option>
+                  <option value="Derecho Laboral">Derecho Laboral</option>
+                  <option value="Derecho Comercial">Derecho Comercial</option>
+                  <option value="Derecho de Familia">Derecho de Familia</option>
+                  <option value="Derecho Administrativo">Derecho Administrativo</option>
+                  <option value="Otra">Otra</option>
                 </select>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Subscription Information Card */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">{t('profile.subscriptionInfo')}</h2>
-            </div>
-            <div className="px-6 py-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{t('profile.lawyerPlan')}</h3>
-                  <p className="text-gray-600">{t('profile.fullAccess')}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-blue-600">€29.99/mes</p>
-                  <p className="text-sm text-gray-500">{t('profile.autoRenewal')}</p>
-                </div>
-              </div>
-              <div className="mt-6">
-                <Link
-                  href="/subscription"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  {t('profile.manageSubscription')}
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end space-x-4">
-            <button className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        {/* Floating circle buttons */}
+        <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-3">
+          <div className="relative group">
+            <button
+              onClick={handleCancel}
+              title={t('profile.cancel')}
+              className="w-14 h-14 rounded-full bg-surface-muted/30 border border-border text-text-primary shadow-lg flex items-center justify-center hover:bg-surface-muted/50 transition-all"
+              aria-label={t('profile.cancel')}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-sidebar text-text-on-dark text-sm font-medium rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
               {t('profile.cancel')}
+            </span>
+          </div>
+          <div className="relative group">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              title={t('profile.saveChanges')}
+              className="w-14 h-14 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={t('profile.saveChanges')}
+            >
+              {saving ? (
+                <div className="w-6 h-6 border-2 border-text-on-dark/30 border-t-text-on-dark rounded-full animate-spin" />
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
             </button>
-            <button className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-sidebar text-text-on-dark text-sm font-medium rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
               {t('profile.saveChanges')}
-            </button>
+            </span>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
