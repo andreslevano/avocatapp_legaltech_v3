@@ -18,7 +18,7 @@ import {
 } from '@/lib/storage';
 import { buildOcrPath } from '@/lib/storage-paths';
 import { getExtraccionDatosExtractEndpoint } from '@/lib/api-endpoints';
-import { extractTextFromPdfWithOcr } from '@/lib/ocr-pdf-client';
+import { extractTextFromPdfWithOcr, extractTextFromPdfWithOcrPerPage, extractTextFromPdfWithOcrForPageIndices, extractTextFromImageWithOcr } from '@/lib/ocr-pdf-client';
 
 const ACCEPTED_TYPES = [
   'application/pdf',
@@ -28,9 +28,17 @@ const ACCEPTED_TYPES = [
   'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
 ];
 
-const ACCEPTED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx'];
+const ACCEPTED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.webp'];
+
+function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints ?? 0) > 2;
+}
 
 interface UploadedFile {
   id: string;
@@ -100,8 +108,10 @@ function exportExcelEstandar(XLSX: any, wb: any, docs: ExtractedDocument[]): voi
   });
 }
 
-/** Map target column -> possible AI field keys (case-insensitive match) */
+/** Map target column -> possible AI field keys (case-insensitive match). Estructura Asesoría Pozuelo order. */
 const COL_TO_KEYS: Record<string, string[]> = {
+  'CIF PROVEEDORES': ['cif proveedores', 'cif emisor', 'cif/nif emisor', 'cif', 'nif', 'vat number', 'tax id', 'identificación fiscal', 'tax identification'],
+  'CIF CLIENTES': ['cif clientes', 'cif receptor', 'cif/nif receptor', 'cif cliente', 'nif cliente'],
   'Nº FACTURA': ['invoice number', 'numero factura', 'invoice_number', 'nº factura', 'invoice no', 'factura'],
   'FECHA': ['date', 'fecha', 'date of issue', 'fecha emision', 'fecha factura', 'invoice date'],
   'TOTAL': ['total', 'total amount', 'amount', 'importe total', 'amount due', 'total due'],
@@ -169,7 +179,7 @@ function exportExcelAsesoriaPozuelo(
   const emitidas = docs.filter((d) => invoiceDirection[d.fileId] === 'emitida');
 
   const toRowProveedores = (doc: ExtractedDocument): Record<string, string> => {
-    const cif = getMappedValue(doc.fields, 'CIF');
+    const cif = getMappedValue(doc.fields, 'CIF PROVEEDORES') || getMappedValue(doc.fields, 'CIF');
     const pais = inferPaisFromCif(cif, doc.country || '');
     return {
       'EMISOR': '',
@@ -195,7 +205,7 @@ function exportExcelAsesoriaPozuelo(
   };
 
   const toRowClientes = (doc: ExtractedDocument): Record<string, string> => {
-    const cif = getMappedValue(doc.fields, 'CIF');
+    const cif = getMappedValue(doc.fields, 'CIF CLIENTES') || getMappedValue(doc.fields, 'CIF');
     const pais = inferPaisFromCif(cif, doc.country || '');
     return {
       'EMISOR': '',
@@ -315,9 +325,10 @@ export default function ExtraccionDatosPage() {
   const [invoiceDirection, setInvoiceDirection] = useState<Record<string, 'recibida' | 'emitida'>>({});
   const [isExporting, setIsExporting] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
-  const [splitByPage, setSplitByPage] = useState(false);
+  const [splitByPage, setSplitByPage] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Load unprocessed documents and extracted data on mount
   useEffect(() => {
@@ -585,14 +596,24 @@ export default function ExtraccionDatosPage() {
     [uploadFiles]
   );
 
+  const ensureUniqueImageName = useCallback((f: File): File => {
+    const lower = f.name.toLowerCase();
+    const isGeneric = /^image\.(jpg|jpeg|png|webp)$/.test(lower) || /^img_\d+\.(jpg|jpeg|png)$/.test(lower);
+    if (!isGeneric) return f;
+    const ts = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
+    const ext = f.name.split('.').pop()?.toLowerCase() || 'jpg';
+    return new File([f], `foto_${ts}.${ext}`, { type: f.type });
+  }, []);
+
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      const items = Array.from(e.dataTransfer.files).filter(isFileAccepted);
+      const raw = Array.from(e.dataTransfer.files).filter(isFileAccepted);
+      const items = raw.map((f) => ensureUniqueImageName(f));
       if (items.length === 0) return;
       addFiles(items);
     },
-    [addFiles]
+    [addFiles, ensureUniqueImageName]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -602,17 +623,30 @@ export default function ExtraccionDatosPage() {
 
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const items = Array.from(e.target.files || []).filter(isFileAccepted);
+      const raw = Array.from(e.target.files || []).filter(isFileAccepted);
+      const items = raw.map((f) => ensureUniqueImageName(f));
       if (items.length === 0) return;
       addFiles(items);
       e.target.value = '';
     },
-    [addFiles]
+    [addFiles, ensureUniqueImageName]
+  );
+
+  const handleCameraCapture = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = Array.from(e.target.files || []).filter(isFileAccepted);
+      const items = raw.map((f) => ensureUniqueImageName(f));
+      if (items.length > 0) addFiles(items);
+      e.target.value = '';
+    },
+    [addFiles, ensureUniqueImageName]
   );
 
   const removeFile = (id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
+
+  const getBaseFileId = (fileId: string) => fileId.replace(/_p\d+(_i\d+)?$/, '');
 
   const handleRemoveSelected = async () => {
     const toRemovePending = processableItems.filter((p) => selectedIds.has(p.fileId));
@@ -624,10 +658,18 @@ export default function ExtraccionDatosPage() {
       setStoredFiles((prev) => prev.filter((f) => f.fileId !== item.fileId));
       setFiles((prev) => prev.filter((f) => f.fileId !== item.fileId));
     }
+    const remainingAfterDelete = extractedData.filter((d) => !selectedExtractedIds.has(d.fileId));
     for (const doc of toRemoveExtracted) {
-      const isSplitItem = doc.fileId.includes('_p');
-      const storagePath = isSplitItem ? undefined : (doc.storagePath ?? (await getUploadedFileStoragePath(doc.fileId)));
-      await deleteExtractedDataAndFile(user.uid, doc.fileId, storagePath ?? undefined).catch(() => {});
+      const baseFileId = getBaseFileId(doc.fileId);
+      const othersWithSameBase = remainingAfterDelete.filter((d) => getBaseFileId(d.fileId) === baseFileId);
+      const isLastForBase = othersWithSameBase.length === 0;
+      let storagePathToDelete: string | undefined;
+      let baseFileIdForUploaded: string | undefined;
+      if (isLastForBase) {
+        storagePathToDelete = doc.storagePath ?? (await getUploadedFileStoragePath(baseFileId));
+        baseFileIdForUploaded = baseFileId;
+      }
+      await deleteExtractedDataAndFile(user.uid, doc.fileId, storagePathToDelete, baseFileIdForUploaded).catch(() => {});
       setExtractedData((prev) => prev.filter((d) => d.fileId !== doc.fileId));
     }
     setSelectedIds(new Set());
@@ -648,6 +690,7 @@ export default function ExtraccionDatosPage() {
 
       const downloadURL = item.downloadURL ?? storedFiles.find((f) => f.fileId === item.fileId)?.downloadURL;
       const isPdf = item.fileName.toLowerCase().endsWith('.pdf');
+      const isImage = /\.(jpg|jpeg|png|webp)$/i.test(item.fileName);
       const useSplitByPage = isPdf && splitByPage;
 
       let extractPayload: Record<string, unknown> = {
@@ -658,6 +701,31 @@ export default function ExtraccionDatosPage() {
         multiInvoicePerPage: useSplitByPage,
       };
 
+      if (isImage) {
+        setOcrProgress(0);
+        let imgFile: File | null = item.file ?? null;
+        if (!imgFile && downloadURL) {
+          try {
+            const fetchRes = await fetch(downloadURL);
+            const blob = await fetchRes.blob();
+            imgFile = new File([blob], item.fileName, { type: blob.type || 'image/jpeg' });
+          } catch {
+            imgFile = null;
+          }
+        }
+        if (imgFile) {
+          try {
+            const ocrText = await extractTextFromImageWithOcr(imgFile, (p) => setOcrProgress(p.percent));
+            if (ocrText.trim().length > 20) {
+              extractPayload = { preExtractedText: ocrText, fileName: item.fileName, splitByPage: false, excelStructure, multiInvoicePerPage: false };
+            }
+          } catch (ocrErr) {
+            console.warn('OCR for image failed:', ocrErr);
+          }
+        }
+        setOcrProgress(null);
+      }
+
       let data: {
         country?: string;
         documentType?: string;
@@ -666,27 +734,75 @@ export default function ExtraccionDatosPage() {
         fields?: { key: string; value: string }[];
         split?: boolean;
         items?: Array<{ country: string; documentType: string; emisor: string; receptor: string; fields: { key: string; value: string }[]; pageIndex?: number; subIndex?: number }>;
+        totalPages?: number;
+        batchComplete?: boolean;
+        nextPageOffset?: number | null;
       } | null = null;
 
+      const allItems: Array<{ country: string; documentType: string; emisor: string; receptor: string; fields: { key: string; value: string }[]; pageIndex?: number; subIndex?: number }> = [];
+      let nextOffset: number | null = useSplitByPage ? 0 : null;
+      let backendPageTexts: string[] | undefined;
+
       try {
-        const res = await fetch(getExtraccionDatosExtractEndpoint(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(extractPayload),
-        });
-        if (res.ok) data = await res.json();
+        while (true) {
+          const payload = nextOffset !== null ? { ...extractPayload, pageOffset: nextOffset, pageLimit: 25 } : extractPayload;
+          const res = await fetch(getExtraccionDatosExtractEndpoint(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) break;
+          const batch = await res.json();
+          if (batch.pageTexts && Array.isArray(batch.pageTexts)) {
+            backendPageTexts = batch.pageTexts;
+          }
+          if (batch.split && Array.isArray(batch.items)) {
+            allItems.push(...batch.items);
+            if (batch.batchComplete || batch.nextPageOffset == null) {
+              data = { ...batch, items: allItems };
+              break;
+            }
+            nextOffset = batch.nextPageOffset;
+            setAnalysisProgress(Math.round(((i + 0.5) / total) * 100));
+          } else {
+            data = batch;
+            break;
+          }
+        }
       } catch (err) {
         console.error('Error extrayendo con IA:', err);
       }
 
-      const needsOcrRetry =
-        data &&
-        (data.fields?.length ?? 0) === 0 &&
-        !data.split &&
-        (data.documentType === 'Otro' || !data.emisor || data.emisor === '-' || !data.receptor || data.receptor === '-') &&
-        isPdf;
+      const totalPages = data?.totalPages ?? 0;
+      const pagesNeedingOcr: number[] = [];
+      if (data && isPdf && useSplitByPage && totalPages > 0) {
+        if (backendPageTexts && backendPageTexts.length >= totalPages) {
+          for (let idx = 0; idx < totalPages; idx++) {
+            const t = backendPageTexts[idx] ?? '';
+            if (!t.trim() || t.trim().length < 20) pagesNeedingOcr.push(idx + 1);
+          }
+        } else {
+          const pagesWithData = new Set<number>();
+          for (const it of data.items ?? []) {
+            const p = it.pageIndex ?? 0;
+            if (p && (it.fields?.length ?? 0) > 0) pagesWithData.add(p);
+          }
+          for (let p = 1; p <= totalPages; p++) {
+            if (!pagesWithData.has(p)) pagesNeedingOcr.push(p);
+          }
+        }
+      }
 
-      if (needsOcrRetry) {
+      const hasNoUsefulData =
+        data &&
+        isPdf &&
+        (
+          ((data.fields?.length ?? 0) === 0 && !data.split && (data.documentType === 'Otro' || !data.emisor || data.emisor === '-' || !data.receptor || data.receptor === '-')) ||
+          (data.split && Array.isArray(data.items) && data.items.every((it) => (it.fields?.length ?? 0) === 0))
+        );
+
+      const runOcrFallback = pagesNeedingOcr.length > 0 || hasNoUsefulData;
+      if (runOcrFallback) {
         setOcrProgress(0);
         let pdfFile: File | null = item.file ?? null;
         if (!pdfFile && downloadURL) {
@@ -700,15 +816,55 @@ export default function ExtraccionDatosPage() {
         }
         if (pdfFile) {
           try {
-            const ocrText = await extractTextFromPdfWithOcr(pdfFile, (p) => setOcrProgress(p.percent));
-            if (ocrText.trim().length > 50) {
-              extractPayload = { preExtractedText: ocrText, fileName: item.fileName, splitByPage: useSplitByPage, excelStructure, multiInvoicePerPage: useSplitByPage };
-              const res2 = await fetch(getExtraccionDatosExtractEndpoint(), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(extractPayload),
-              });
-              if (res2.ok) data = await res2.json();
+            if (useSplitByPage) {
+              let mergedPageTexts: string[];
+              if (pagesNeedingOcr.length > 0 && backendPageTexts && backendPageTexts.length >= totalPages) {
+                const ocrResults = await extractTextFromPdfWithOcrForPageIndices(pdfFile, pagesNeedingOcr, (p) => setOcrProgress(p.percent));
+                mergedPageTexts = backendPageTexts.map((t, idx) => {
+                  const pageNum = idx + 1;
+                  if (t.trim().length >= 20) return t;
+                  return ocrResults.get(pageNum) ?? t;
+                });
+              } else {
+                const pageTexts = await extractTextFromPdfWithOcrPerPage(pdfFile, (p) => setOcrProgress(p.percent));
+                mergedPageTexts = pageTexts;
+              }
+              if (mergedPageTexts.some((t) => t.trim().length > 50)) {
+                extractPayload = { preExtractedTextPerPage: mergedPageTexts, fileName: item.fileName, splitByPage: true, excelStructure, multiInvoicePerPage: true };
+                const allItems2: typeof allItems = [];
+                let nextOff: number | null = 0;
+                while (true) {
+                  const res2 = await fetch(getExtraccionDatosExtractEndpoint(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...extractPayload, pageOffset: nextOff, pageLimit: 25 }),
+                  });
+                  if (!res2.ok) break;
+                  const b = await res2.json();
+                  if (b.split && Array.isArray(b.items)) {
+                    allItems2.push(...b.items);
+                    if (b.batchComplete || b.nextPageOffset == null) {
+                      data = { ...b, items: allItems2, totalPages: mergedPageTexts.length };
+                      break;
+                    }
+                    nextOff = b.nextPageOffset;
+                  } else {
+                    data = b;
+                    break;
+                  }
+                }
+              }
+            } else {
+              const ocrText = await extractTextFromPdfWithOcr(pdfFile, (p) => setOcrProgress(p.percent));
+              if (ocrText.trim().length > 50) {
+                extractPayload = { preExtractedText: ocrText, fileName: item.fileName, splitByPage: false, excelStructure, multiInvoicePerPage: false };
+                const res2 = await fetch(getExtraccionDatosExtractEndpoint(), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(extractPayload),
+                });
+                if (res2.ok) data = await res2.json();
+              }
             }
           } catch (ocrErr) {
             console.warn('OCR fallback failed:', ocrErr);
@@ -785,6 +941,9 @@ export default function ExtraccionDatosPage() {
     setCurrentProcessingFile(null);
     setOcrProgress(null);
     setIsAnalyzing(false);
+    listExtraccionDatosUnprocessed(user.uid)
+      .then((list) => setStoredFiles(list))
+      .catch(() => {});
   };
 
   const canStartAnalysis =
@@ -830,27 +989,52 @@ export default function ExtraccionDatosPage() {
             <div
               onDrop={handleDrop}
               onDragOver={handleDragOver}
-              onClick={() => inputRef.current?.click()}
+              onClick={(e) => { if (!(e.target as HTMLElement).closest('[data-camera-trigger]')) inputRef.current?.click(); }}
               className="border-2 border-dashed border-border rounded-lg p-12 text-center cursor-pointer hover:bg-surface-muted/10 hover:border-hover transition-colors"
             >
               <input
                 ref={inputRef}
                 type="file"
                 multiple
-                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,image/*"
                 onChange={handleFileSelect}
                 className="hidden"
               />
-              <div className="w-16 h-16 bg-surface-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleCameraCapture}
+                className="hidden"
+              />
+              <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
+                <div className="w-16 h-16 bg-surface-muted/30 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                {isMobileDevice() && (
+                  <button
+                    type="button"
+                    data-camera-trigger
+                    onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-sidebar/10 hover:bg-sidebar/20 text-sidebar font-medium transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 13v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7" />
+                    </svg>
+                    Tomar foto
+                  </button>
+                )}
               </div>
               <p className="text-text-primary font-medium mb-1">
                 Arrastra archivos aquí o haz clic para seleccionar
               </p>
               <p className="text-sm text-text-secondary">
-                PDF, Word (.doc, .docx), PowerPoint (.ppt, .pptx), Excel (.xls, .xlsx)
+                PDF, Word, PowerPoint, Excel, imágenes (.jpg, .png)
               </p>
             </div>
 
@@ -1098,7 +1282,14 @@ export default function ExtraccionDatosPage() {
         {(extractedData.length > 0 || isLoadingExtracted) && !isAnalyzing && (
           <div className="bg-card overflow-hidden shadow rounded-lg border border-border">
             <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-h2 text-text-primary mb-4">1. Datos Extraídos de Documentos</h2>
+              <h2 className="text-h2 text-text-primary mb-4">
+                1. Datos Extraídos de Documentos
+                {extractedData.length > 0 && (
+                  <span className="ml-2 text-base font-normal text-text-secondary">
+                    ({extractedData.length} documento{extractedData.length !== 1 ? 's' : ''}, {extractedData.reduce((sum, d) => sum + (d.fields?.length ?? 0), 0)} campos)
+                  </span>
+                )}
+              </h2>
 
               {extractedData.length > 0 && (
                 <div className="mb-4 space-y-3">
@@ -1278,7 +1469,8 @@ export default function ExtraccionDatosPage() {
                 {viewedDocId && (() => {
                   const doc = extractedDataFiltered.find((d) => d.id === viewedDocId);
                   if (!doc) return null;
-                  const isPdf = doc.fileName.toLowerCase().endsWith('.pdf');
+                  const baseName = doc.fileName.replace(/\s*\(página\s+\d+\)(\s*\(factura\s+\d+\))?\s*$/i, '').trim();
+                  const isPdf = baseName.toLowerCase().endsWith('.pdf');
                   return (
                     <div className="fixed inset-0 z-50 lg:relative lg:inset-auto flex flex-col bg-card lg:bg-surface-muted/10 rounded-none lg:rounded-lg border-0 lg:border border-border overflow-hidden lg:flex-1 lg:min-w-[300px] lg:max-w-[50%] shadow-xl lg:shadow-none">
                       <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
@@ -1300,7 +1492,7 @@ export default function ExtraccionDatosPage() {
                           </div>
                         ) : viewedDocUrl ? (
                           <>
-                            <div className="flex-1 min-h-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900">
+                            <div className="flex-1 min-h-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
                               {isPdf ? (
                                 <iframe
                                   src={`${viewedDocUrl}#toolbar=1`}
@@ -1308,10 +1500,11 @@ export default function ExtraccionDatosPage() {
                                   className="w-full h-full min-h-[300px] lg:min-h-[400px] border-0"
                                 />
                               ) : (
-                                <iframe
+                                <img
                                   src={viewedDocUrl}
-                                  title={doc.fileName}
-                                  className="w-full h-full min-h-[300px] lg:min-h-[400px] border-0"
+                                  alt={doc.fileName}
+                                  className="max-w-full max-h-full w-auto h-auto object-contain"
+                                  style={{ maxHeight: 'min(70vh, 600px)' }}
                                 />
                               )}
                             </div>

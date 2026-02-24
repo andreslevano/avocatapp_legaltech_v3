@@ -21,9 +21,14 @@ const nextConfig = {
   },
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   webpack: (config, { isServer }) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      // Ensure jspdf/fast-png deps resolve for client bundle
+      pako: require.resolve('pako'),
+      iobuffer: require.resolve('iobuffer'),
+    };
     if (isServer) {
-      config.resolve = config.resolve || {};
-      config.resolve.alias = { ...config.resolve.alias };
       config.externals = config.externals || [];
       if (Array.isArray(config.externals)) {
         config.externals.push({ canvas: 'canvas' });

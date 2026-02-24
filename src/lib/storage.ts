@@ -444,12 +444,14 @@ export async function deleteExtraccionFile(storagePath: string, fileId: string):
 }
 
 /**
- * Elimina un documento extraído (resultado de IA) y su archivo original de Storage y Firestore.
+ * Elimina un documento extraído (resultado de IA) y opcionalmente su archivo original de Storage y Firestore.
+ * Para items split (fileId contiene _p), uploaded_files usa baseFileId; pasar baseFileId cuando se elimina el último.
  */
 export async function deleteExtractedDataAndFile(
   userId: string,
   fileId: string,
-  storagePath?: string
+  storagePath?: string,
+  baseFileIdForUploaded?: string
 ): Promise<void> {
   if (storagePath?.trim()) {
     try {
@@ -463,8 +465,11 @@ export async function deleteExtractedDataAndFile(
   }
   try {
     if (db && typeof db === 'object' && Object.keys(db).length > 0) {
-      const fileRef = doc(collection(db as any, 'uploaded_files'), fileId);
-      await deleteDoc(fileRef);
+      const uploadedFileId = baseFileIdForUploaded ?? (fileId.includes('_p') ? undefined : fileId);
+      if (uploadedFileId) {
+        const fileRef = doc(collection(db as any, 'uploaded_files'), uploadedFileId);
+        await deleteDoc(fileRef);
+      }
       const userRef = doc(collection(db as any, 'users'), userId);
       const resultRef = doc(collection(userRef, 'extraccion_datos_results'), fileId);
       await deleteDoc(resultRef);

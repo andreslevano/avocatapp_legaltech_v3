@@ -91,6 +91,25 @@ function mapDocumentToResult(document: { entities?: DocEntity[] } | null | undef
   };
 }
 
+/** Map standard keys to Pozuelo structure columns */
+const TO_POZUELO_KEY: Record<string, string> = {
+  "Nº Factura": "Nº FACTURA",
+  "Fecha factura": "FECHA",
+  "Total": "TOTAL",
+  "CIF/NIF emisor": "CIF",
+  "Total IVA": "CUOTA 21%IVA",
+  "Moneda": "MONEDA",
+  "Base imponible": "BASE 21%IVA",
+};
+
+function mapToPozueloFields(result: DocumentAIExtractionResult): DocumentAIExtractionResult {
+  const mapped = result.fields.map((f) => ({
+    key: TO_POZUELO_KEY[f.key] || f.key,
+    value: f.value,
+  }));
+  return { ...result, fields: mapped };
+}
+
 /**
  * Process a PDF buffer with Document AI Invoice Parser.
  * Returns null if processor is not configured or processing fails.
@@ -98,7 +117,8 @@ function mapDocumentToResult(document: { entities?: DocEntity[] } | null | undef
 export async function processInvoiceWithDocumentAI(
   buffer: Buffer,
   _fileName?: string,
-  mimeType: string = "application/pdf"
+  mimeType: string = "application/pdf",
+  excelStructure?: string
 ): Promise<DocumentAIExtractionResult | null> {
   const processorId = process.env.DOCUMENT_AI_PROCESSOR_ID || process.env.DOCUMENT_AI_INVOICE_PROCESSOR_ID;
   const location = process.env.DOCUMENT_AI_LOCATION || "us";
@@ -122,7 +142,11 @@ export async function processInvoiceWithDocumentAI(
     });
 
     const doc = result.document;
-    return mapDocumentToResult(doc);
+    const mapped = mapDocumentToResult(doc);
+    if (mapped && excelStructure === "asesoria-pozuelo") {
+      return mapToPozueloFields(mapped);
+    }
+    return mapped;
   } catch {
     return null;
   }
