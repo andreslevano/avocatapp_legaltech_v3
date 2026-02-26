@@ -72,9 +72,13 @@ function hasRealValue(value: string): boolean {
 
 function getExtractionFlag(doc: ExtractedDocument): ExtractionFlag {
   if (!doc.fields?.length) return 'black';
-  const withValue = doc.fields.filter((f) => hasRealValue(f.value)).length;
-  if (withValue === 0) return 'black';
-  if (withValue === doc.fields.length) return 'white';
+  const keyNorm = (k: string) => k.toUpperCase().trim();
+  const requiredFields = doc.fields.filter((f) => !OPTIONAL_FIELD_KEYS.has(keyNorm(f.key)));
+  const optionalOnly = requiredFields.length === 0;
+  const requiredWithValue = requiredFields.filter((f) => hasRealValue(f.value)).length;
+  if (optionalOnly) return doc.fields.some((f) => hasRealValue(f.value)) ? 'white' : 'black';
+  if (requiredWithValue === 0) return 'black';
+  if (requiredWithValue === requiredFields.length) return 'white';
   return 'gray';
 }
 
@@ -99,7 +103,9 @@ function sanitizeSheetName(name: string): string {
 function exportExcelEstandar(XLSX: any, wb: any, docs: ExtractedDocument[]): void {
   const groups = new Map<string, ExtractedDocument[]>();
   for (const doc of docs) {
-    const key = `${doc.country || 'Desconocido'}|||${doc.documentType || 'Otro'}`;
+    const country = normalizeCountryDisplay(getDisplayCountry(doc)) || 'DESCONOCIDO';
+    const docType = normalizeDocumentTypeDisplay(doc.documentType) || 'OTRO';
+    const key = `${country}|||${docType}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(doc);
   }
@@ -108,11 +114,13 @@ function exportExcelEstandar(XLSX: any, wb: any, docs: ExtractedDocument[]): voi
     const sheetName = sanitizeSheetName(`${country} - ${docType}`);
     const rows: Record<string, string>[] = [];
     groupDocs.forEach((doc) => {
+      const rowCountry = normalizeCountryDisplay(getDisplayCountry(doc)) || 'DESCONOCIDO';
+      const rowType = normalizeDocumentTypeDisplay(doc.documentType) || 'OTRO';
       doc.fields.forEach((f) => {
         rows.push({
           Documento: doc.fileName,
-          País: doc.country,
-          Tipo: doc.documentType,
+          País: rowCountry,
+          Tipo: rowType,
           Emisor: doc.emisor,
           Receptor: doc.receptor,
           Campo: f.key,
@@ -122,8 +130,8 @@ function exportExcelEstandar(XLSX: any, wb: any, docs: ExtractedDocument[]): voi
       if (doc.fields.length === 0) {
         rows.push({
           Documento: doc.fileName,
-          País: doc.country,
-          Tipo: doc.documentType,
+          País: rowCountry,
+          Tipo: rowType,
           Emisor: doc.emisor,
           Receptor: doc.receptor,
           Campo: '',
@@ -173,16 +181,68 @@ function getMappedValue(fields: { key: string; value: string }[], targetCol: str
   return f?.value ?? '';
 }
 
-/** Infer PAIS from CIF/NIF: Spanish IDs (A-H,J,P,Q,R,S,U,V,N,W + 8 digits, DNI, NIE X/Y/Z) = España; else use country */
+/** Infer PAIS from CIF/NIF: Spanish NIF (A-H,J,P,Q,R,S,U,V,N,W + 7 digits + letter), DNI (8 digits + letter), NIE (X/Y/Z + 7 + letter), K/L/M = España; else Extranjero */
 function inferPaisFromCif(cif: string, fallbackCountry: string): string {
   if (!cif || !cif.trim()) return fallbackCountry || '';
   const t = cif.trim().toUpperCase();
-  const spanishFirst = /^[A-HJ-NPR-SUVW]\d{7}[A-Z0-9]$/;
+  const spanishNif = /^[A-HJ-NPR-SUVW]\d{7}[A-Z0-9]$/;
   const dni = /^\d{8}[A-Z]$/;
   const nie = /^[XYZ]\d{7}[A-Z]$/;
-  if (spanishFirst.test(t) || dni.test(t) || nie.test(t) || /^[KLM]\d/.test(t)) return 'España';
-  return fallbackCountry || 'Extranjero';
+  const nifEspecial = /^[KLM]\d/;
+  if (spanishNif.test(t) || dni.test(t) || nie.test(t) || nifEspecial.test(t)) return 'ESPAÑA';
+  return fallbackCountry || 'EXTRANJERO';
 }
+
+/** Get display country for a doc: prefer PAIS PROVEEDOR from fields, else infer from CIF PROVEEDORES, else doc.country */
+function getDisplayCountry(doc: ExtractedDocument): string {
+  const paisProveedor = getMappedValue(doc.fields, 'PAIS PROVEEDOR');
+  if (paisProveedor && hasRealValue(paisProveedor)) return paisProveedor;
+  const cif = getMappedValue(doc.fields, 'CIF PROVEEDORES') || getMappedValue(doc.fields, 'CIF');
+  if (cif && cif.trim()) return inferPaisFromCif(cif, doc.country || '');
+  return doc.country || '';
+}
+
+/** Canonical country display: one label per country, uppercase. Maps common variants to single form. */
+const COUNTRY_CANONICAL: Record<string, string> = {
+  es: 'ESPAÑA', esp: 'ESPAÑA', españa: 'ESPAÑA', spain: 'ESPAÑA', espana: 'ESPAÑA',
+  'reino unido': 'REINO UNIDO', 'united kingdom': 'REINO UNIDO', uk: 'REINO UNIDO',
+  alemania: 'ALEMANIA', germany: 'ALEMANIA', de: 'ALEMANIA',
+  francia: 'FRANCIA', france: 'FRANCIA', fr: 'FRANCIA',
+  italia: 'ITALIA', italy: 'ITALIA', it: 'ITALIA',
+  portugal: 'PORTUGAL', pt: 'PORTUGAL',
+  brasil: 'BRASIL', brazil: 'BRASIL', br: 'BRASIL',
+  méxico: 'MÉXICO', mexico: 'MÉXICO', mx: 'MÉXICO',
+  colombia: 'COLOMBIA', co: 'COLOMBIA',
+  argentina: 'ARGENTINA', ar: 'ARGENTINA',
+  china: 'CHINA', cn: 'CHINA',
+  lituania: 'LITUANIA', lithuania: 'LITUANIA', lt: 'LITUANIA',
+  extranjero: 'EXTRANJERO', foreign: 'EXTRANJERO',
+  desconocido: 'DESCONOCIDO', unknown: 'DESCONOCIDO',
+};
+function normalizeCountryDisplay(raw: string): string {
+  if (!raw || !raw.trim()) return '';
+  const key = raw.trim().toLowerCase().normalize('NFD').replace(/\u0303/g, ''); // ñ as n for lookup
+  const withN = key.replace(/ñ/g, 'n');
+  return COUNTRY_CANONICAL[withN] ?? COUNTRY_CANONICAL[key] ?? raw.trim().toUpperCase();
+}
+
+/** Canonical document type: one label per type, uppercase */
+const DOC_TYPE_CANONICAL: Record<string, string> = {
+  factura: 'FACTURA', invoice: 'FACTURA', facture: 'FACTURA',
+  recibo: 'RECIBO', receipt: 'RECIBO',
+  otro: 'OTRO', other: 'OTRO',
+};
+function normalizeDocumentTypeDisplay(raw: string): string {
+  if (!raw || !raw.trim()) return '';
+  const key = raw.trim().toLowerCase();
+  return DOC_TYPE_CANONICAL[key] ?? raw.trim().toUpperCase();
+}
+
+/** Fields that may be absent on the invoice (not all invoices have all IVA rates, IRPF, or explicit country). Empty = still Completo. */
+const OPTIONAL_FIELD_KEYS = new Set([
+  'BASE 0%IVA', 'CUOTA 0%IVA', 'BASE 4%IVA', 'CUOTA 4%IVA', 'BASE 10%IVA', 'CUOTA 10%IVA',
+  '%JE IRPF', 'CUOTA IRPF', 'PAIS PROVEEDOR', 'PAIS CLIENTE',
+]);
 
 const BCE_LINK = 'https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html';
 
@@ -473,15 +533,15 @@ export default function ExtraccionDatosPage() {
       list = list.filter(
         (d) =>
           d.fileName.toLowerCase().includes(q) ||
-          d.documentType.toLowerCase().includes(q) ||
-          d.country.toLowerCase().includes(q) ||
+          normalizeDocumentTypeDisplay(d.documentType).toLowerCase().includes(q) ||
+          normalizeCountryDisplay(getDisplayCountry(d)).toLowerCase().includes(q) ||
           d.emisor.toLowerCase().includes(q) ||
           d.receptor.toLowerCase().includes(q) ||
           d.fields.some((f) => f.key.toLowerCase().includes(q) || f.value.toLowerCase().includes(q))
       );
     }
-    if (filterCountry) list = list.filter((d) => d.country === filterCountry);
-    if (filterType) list = list.filter((d) => d.documentType === filterType);
+    if (filterCountry) list = list.filter((d) => normalizeCountryDisplay(getDisplayCountry(d)) === filterCountry);
+    if (filterType) list = list.filter((d) => normalizeDocumentTypeDisplay(d.documentType) === filterType);
     if (filterEmisor) list = list.filter((d) => d.emisor.toLowerCase().includes(filterEmisor.toLowerCase()));
     if (filterReceptor) list = list.filter((d) => d.receptor.toLowerCase().includes(filterReceptor.toLowerCase()));
     if (filterExtractionFlag) {
@@ -491,8 +551,16 @@ export default function ExtraccionDatosPage() {
   }, [extractedData, searchExtracted, filterCountry, filterType, filterEmisor, filterReceptor, filterExtractionFlag]);
 
   const filterOptions = useMemo(() => {
-    const countries = [...new Set(extractedData.map((d) => d.country).filter(Boolean))].sort();
-    const types = [...new Set(extractedData.map((d) => d.documentType).filter(Boolean))].sort();
+    const countries = [...new Set(
+      extractedData
+        .map((d) => normalizeCountryDisplay(getDisplayCountry(d)))
+        .filter(Boolean)
+    )].sort();
+    const types = [...new Set(
+      extractedData
+        .map((d) => normalizeDocumentTypeDisplay(d.documentType))
+        .filter(Boolean)
+    )].sort();
     return { countries, types };
   }, [extractedData]);
 
@@ -1445,9 +1513,9 @@ export default function ExtraccionDatosPage() {
                       title="Filtrar por completitud de extracción"
                     >
                       <option value="">Todas las extracciones</option>
-                      <option value="white">Completa (blanco)</option>
-                      <option value="gray">Parcial (gris)</option>
-                      <option value="black">Sin datos (negro)</option>
+                      <option value="white">Completo</option>
+                      <option value="gray">Parcial</option>
+                      <option value="black">Sin datos</option>
                     </select>
                   </div>
                 </div>
@@ -1572,10 +1640,10 @@ export default function ExtraccionDatosPage() {
                               </select>
                             )}
                             <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200">
-                              {doc.country || '-'}
+                              {normalizeCountryDisplay(getDisplayCountry(doc)) || '-'}
                             </span>
                             <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-muted/30 text-text-primary border border-border">
-                              {doc.documentType}
+                              {normalizeDocumentTypeDisplay(doc.documentType)}
                             </span>
                             <span className="text-xs text-text-secondary hidden sm:inline">Emisor: {doc.emisor || '-'}</span>
                             <span className="text-xs text-text-secondary hidden sm:inline">Receptor: {doc.receptor || '-'}</span>
