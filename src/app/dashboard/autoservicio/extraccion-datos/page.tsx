@@ -55,6 +55,34 @@ interface UploadedFile {
 
 type ExtractedDocument = ExtractedDataDoc & { id: string };
 
+type ExtractionFlag = 'white' | 'gray' | 'black';
+
+/** Treat symbol-only or placeholder values as empty (not real data) */
+function isSymbolOrPlaceholder(value: string): boolean {
+  if (!value || !value.trim()) return true;
+  const t = value.trim();
+  if (/^[\-–—\.\s]+$/.test(t)) return true;
+  if (/^(n\/a|n\.a\.|na|none|no data|sin datos|n\.d\.|nd)$/i.test(t)) return true;
+  return false;
+}
+
+function hasRealValue(value: string): boolean {
+  return !isSymbolOrPlaceholder(value ?? '');
+}
+
+function getExtractionFlag(doc: ExtractedDocument): ExtractionFlag {
+  if (!doc.fields?.length) return 'black';
+  const withValue = doc.fields.filter((f) => hasRealValue(f.value)).length;
+  if (withValue === 0) return 'black';
+  if (withValue === doc.fields.length) return 'white';
+  return 'gray';
+}
+
+/** Normalize display/save: symbol-only becomes empty */
+function normalizeValue(value: string): string {
+  return isSymbolOrPlaceholder(value) ? '' : (value ?? '').trim();
+}
+
 function isFileAccepted(file: File): boolean {
   const ext = '.' + file.name.split('.').pop()?.toLowerCase();
   return ACCEPTED_EXTENSIONS.includes(ext) || ACCEPTED_TYPES.includes(file.type);
@@ -127,6 +155,8 @@ const COL_TO_KEYS: Record<string, string[]> = {
   '%JE IRPF': ['%je irpf', 'irpf', 'retención irpf', 'irpf %'],
   'CUOTA IRPF': ['cuota irpf', 'retención', 'irpf amount'],
   'MONEDA': ['currency', 'moneda', 'tipo moneda', 'tipo de cambio'],
+  'PAIS PROVEEDOR': ['pais proveedor', 'país proveedor', 'country of supplier', 'país emisor', 'country'],
+  'PAIS CLIENTE': ['pais cliente', 'país cliente', 'country of customer', 'país receptor', 'country of buyer'],
 };
 
 function getMappedValue(fields: { key: string; value: string }[], targetCol: string): string {
@@ -180,7 +210,7 @@ function exportExcelAsesoriaPozuelo(
 
   const toRowProveedores = (doc: ExtractedDocument): Record<string, string> => {
     const cif = getMappedValue(doc.fields, 'CIF PROVEEDORES') || getMappedValue(doc.fields, 'CIF');
-    const pais = inferPaisFromCif(cif, doc.country || '');
+    const paisProveedor = getMappedValue(doc.fields, 'PAIS PROVEEDOR') || inferPaisFromCif(cif, doc.country || '');
     return {
       'EMISOR': '',
       'CIF PROVEEDORES': cif,
@@ -199,14 +229,14 @@ function exportExcelAsesoriaPozuelo(
       'CUOTA IRPF': getMappedValue(doc.fields, 'CUOTA IRPF'),
       'MONEDA': getMappedValue(doc.fields, 'MONEDA') || 'EUR',
       'link conversion BCE': BCE_LINK,
-      'PAIS PROVEEDOR': pais,
+      'PAIS PROVEEDOR': paisProveedor,
       'LINK A FACTURA': docUrls[doc.fileId] || '',
     };
   };
 
   const toRowClientes = (doc: ExtractedDocument): Record<string, string> => {
     const cif = getMappedValue(doc.fields, 'CIF CLIENTES') || getMappedValue(doc.fields, 'CIF');
-    const pais = inferPaisFromCif(cif, doc.country || '');
+    const paisCliente = getMappedValue(doc.fields, 'PAIS CLIENTE') || inferPaisFromCif(cif, doc.country || '');
     return {
       'EMISOR': '',
       'CIF CLIENTES': cif,
@@ -225,7 +255,7 @@ function exportExcelAsesoriaPozuelo(
       'CUOTA IRPF': getMappedValue(doc.fields, 'CUOTA IRPF'),
       'MONEDA': getMappedValue(doc.fields, 'MONEDA') || 'EUR',
       'conversion euros s/fecha fact': BCE_LINK,
-      'PAIS CLIENTE': pais,
+      'PAIS CLIENTE': paisCliente,
       'LINK A FACTURA': docUrls[doc.fileId] || '',
     };
   };
@@ -321,6 +351,9 @@ export default function ExtraccionDatosPage() {
   const [filterType, setFilterType] = useState('');
   const [filterEmisor, setFilterEmisor] = useState('');
   const [filterReceptor, setFilterReceptor] = useState('');
+  const [filterExtractionFlag, setFilterExtractionFlag] = useState<ExtractionFlag | ''>('');
+  const [editedFields, setEditedFields] = useState<Record<string, { key: string; value: string }[]>>({});
+  const [savingDocId, setSavingDocId] = useState<string | null>(null);
   const [excelStructure, setExcelStructure] = useState<ExcelStructureType>('estandar');
   const [invoiceDirection, setInvoiceDirection] = useState<Record<string, 'recibida' | 'emitida'>>({});
   const [isExporting, setIsExporting] = useState(false);
@@ -349,7 +382,13 @@ export default function ExtraccionDatosPage() {
     listExtractedData(user.uid)
       .then((list) => {
         if (!cancelled) {
-          setExtractedData(list.map((d) => ({ ...d, id: d.fileId })));
+          setExtractedData(
+            list.map((d) => ({
+              ...d,
+              id: d.fileId,
+              fields: (d.fields ?? []).map((f) => ({ ...f, value: normalizeValue(f.value) })),
+            }))
+          );
         }
       })
       .catch(() => {})
@@ -445,8 +484,11 @@ export default function ExtraccionDatosPage() {
     if (filterType) list = list.filter((d) => d.documentType === filterType);
     if (filterEmisor) list = list.filter((d) => d.emisor.toLowerCase().includes(filterEmisor.toLowerCase()));
     if (filterReceptor) list = list.filter((d) => d.receptor.toLowerCase().includes(filterReceptor.toLowerCase()));
+    if (filterExtractionFlag) {
+      list = list.filter((d) => getExtractionFlag(d) === filterExtractionFlag);
+    }
     return list;
-  }, [extractedData, searchExtracted, filterCountry, filterType, filterEmisor, filterReceptor]);
+  }, [extractedData, searchExtracted, filterCountry, filterType, filterEmisor, filterReceptor, filterExtractionFlag]);
 
   const filterOptions = useMemo(() => {
     const countries = [...new Set(extractedData.map((d) => d.country).filter(Boolean))].sort();
@@ -485,6 +527,58 @@ export default function ExtraccionDatosPage() {
       setSelectedExtractedIds(new Set());
     } else {
       setSelectedExtractedIds(new Set(extractedDataFiltered.map((d) => d.fileId)));
+    }
+  };
+
+  const getFieldsForDoc = (doc: ExtractedDocument) =>
+    editedFields[doc.fileId] ?? doc.fields;
+
+  const setFieldValue = (docId: string, fieldIndex: number, value: string) => {
+    setEditedFields((prev) => {
+      const doc = extractedData.find((d) => d.fileId === docId);
+      if (!doc) return prev;
+      const base = prev[docId] ?? doc.fields;
+      const next = base.map((f, i) => (i === fieldIndex ? { ...f, value } : f));
+      return { ...prev, [docId]: next };
+    });
+  };
+
+  const hasEdits = (docId: string) => {
+    const edited = editedFields[docId];
+    if (!edited) return false;
+    const orig = extractedData.find((d) => d.fileId === docId)?.fields ?? [];
+    if (edited.length !== orig.length) return true;
+    return edited.some((f, i) => f.value !== (orig[i]?.value ?? ''));
+  };
+
+  const handleSaveDoc = async (doc: ExtractedDocument) => {
+    if (!user?.uid || !hasEdits(doc.fileId)) return;
+    const fields = editedFields[doc.fileId];
+    if (!fields) return;
+    const normalizedFields = fields.map((f) => ({ ...f, value: normalizeValue(f.value) }));
+    setSavingDocId(doc.fileId);
+    try {
+      await saveExtractedData(user.uid, doc.fileId, {
+        fileName: doc.fileName,
+        country: doc.country,
+        documentType: doc.documentType,
+        emisor: doc.emisor,
+        receptor: doc.receptor,
+        fields: normalizedFields,
+        storagePath: doc.storagePath,
+      });
+      setExtractedData((prev) =>
+        prev.map((d) =>
+          d.fileId === doc.fileId ? { ...d, fields: normalizedFields } : d
+        )
+      );
+      setEditedFields((prev) => {
+        const next = { ...prev };
+        delete next[doc.fileId];
+        return next;
+      });
+    } finally {
+      setSavingDocId(null);
     }
   };
 
@@ -883,6 +977,9 @@ export default function ExtraccionDatosPage() {
         fields: { key: string; value: string }[];
       }> = [];
 
+      const normalizeFields = (fields: { key: string; value: string }[]) =>
+        (fields ?? []).slice(0, 25).map((f) => ({ ...f, value: normalizeValue(f.value) }));
+
       if (data?.split && Array.isArray(data.items) && data.items.length > 0) {
         for (const it of data.items) {
           const subId = it.subIndex ? `${item.fileId}_p${it.pageIndex ?? 0}_i${it.subIndex}` : `${item.fileId}_p${it.pageIndex ?? 0}`;
@@ -894,7 +991,7 @@ export default function ExtraccionDatosPage() {
             documentType: it.documentType ?? 'Otro',
             emisor: it.emisor ?? '-',
             receptor: it.receptor ?? '-',
-            fields: (it.fields ?? []).slice(0, 25),
+            fields: normalizeFields(it.fields ?? []),
           });
         }
       } else if (data) {
@@ -905,7 +1002,7 @@ export default function ExtraccionDatosPage() {
           documentType: data.documentType ?? 'Otro',
           emisor: data.emisor ?? '-',
           receptor: data.receptor ?? '-',
-          fields: (data.fields ?? []).slice(0, 25),
+          fields: normalizeFields(data.fields ?? []),
         });
       }
 
@@ -1283,10 +1380,16 @@ export default function ExtraccionDatosPage() {
           <div className="bg-card overflow-hidden shadow rounded-lg border border-border">
             <div className="px-4 py-5 sm:p-6">
               <h2 className="text-h2 text-text-primary mb-4">
-                1. Datos Extraídos de Documentos
+                Datos Extraídos de Documentos
                 {extractedData.length > 0 && (
                   <span className="ml-2 text-base font-normal text-text-secondary">
-                    ({extractedData.length} documento{extractedData.length !== 1 ? 's' : ''}, {extractedData.reduce((sum, d) => sum + (d.fields?.length ?? 0), 0)} campos)
+                    ({extractedData.length} documento{extractedData.length !== 1 ? 's' : ''}
+                    {(() => {
+                      const completos = extractedData.filter((d) => getExtractionFlag(d) === 'white').length;
+                      const parcial = extractedData.filter((d) => getExtractionFlag(d) === 'gray').length;
+                      const sinDatos = extractedData.filter((d) => getExtractionFlag(d) === 'black').length;
+                      return ` · ${completos} completos · ${parcial} parcial · ${sinDatos} sin datos`;
+                    })()})
                   </span>
                 )}
               </h2>
@@ -1335,6 +1438,17 @@ export default function ExtraccionDatosPage() {
                       onChange={(e) => setFilterReceptor(e.target.value)}
                       className="min-w-[120px] rounded-lg border border-border bg-surface-muted/10 px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary focus:border-sidebar focus:outline-none"
                     />
+                    <select
+                      value={filterExtractionFlag}
+                      onChange={(e) => setFilterExtractionFlag(e.target.value as ExtractionFlag | '')}
+                      className="rounded-lg border border-border bg-surface-muted/10 px-3 py-1.5 text-sm text-text-primary focus:border-sidebar focus:outline-none"
+                      title="Filtrar por completitud de extracción"
+                    >
+                      <option value="">Todas las extracciones</option>
+                      <option value="white">Completa (blanco)</option>
+                      <option value="gray">Parcial (gris)</option>
+                      <option value="black">Sin datos (negro)</option>
+                    </select>
                   </div>
                 </div>
               )}
@@ -1390,6 +1504,34 @@ export default function ExtraccionDatosPage() {
                               className="rounded border-border text-sidebar focus:ring-sidebar"
                             />
                           </label>
+                          <span
+                            className="shrink-0 inline-flex"
+                            title={
+                              getExtractionFlag(doc) === 'white'
+                                ? 'Extracción completa'
+                                : getExtractionFlag(doc) === 'gray'
+                                  ? 'Extracción parcial'
+                                  : 'Sin datos extraídos'
+                            }
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              viewBox="0 0 24 24"
+                              fill={
+                                getExtractionFlag(doc) === 'white'
+                                  ? '#ffffff'
+                                  : getExtractionFlag(doc) === 'gray'
+                                    ? '#9ca3af'
+                                    : '#1f2937'
+                              }
+                              stroke="#000000"
+                              strokeWidth="1"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" />
+                            </svg>
+                          </span>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1451,13 +1593,42 @@ export default function ExtraccionDatosPage() {
                         {expandedId === doc.id && (
                           <div className="border-t border-border px-4 py-4 bg-surface-muted/5">
                             <div className="space-y-2">
-                              {doc.fields.map((field, i) => (
-                                <div key={i} className="flex justify-between gap-4 text-sm py-2 border-b border-border/50 last:border-0">
+                              {getFieldsForDoc(doc).map((field, i) => (
+                                <div key={i} className="flex justify-between gap-4 items-center text-sm py-2 border-b border-border/50 last:border-0">
                                   <span className="text-text-secondary font-medium shrink-0">{field.key}:</span>
-                                  <span className="text-text-primary text-right break-words">{field.value}</span>
+                                  <input
+                                    type="text"
+                                    value={isSymbolOrPlaceholder(field.value) ? '' : field.value}
+                                    onChange={(e) => setFieldValue(doc.fileId, i, e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex-1 min-w-0 max-w-[70%] rounded border border-border bg-surface-muted/10 px-2 py-1 text-text-primary text-right focus:border-sidebar focus:outline-none focus:ring-1 focus:ring-sidebar"
+                                  />
                                 </div>
                               ))}
                             </div>
+                            {hasEdits(doc.fileId) && (
+                              <div className="mt-3 pt-3 border-t border-border">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSaveDoc(doc);
+                                  }}
+                                  disabled={savingDocId === doc.fileId}
+                                  className="p-2 rounded-lg bg-sidebar text-white hover:bg-sidebar/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  aria-label="Guardar cambios"
+                                  title="Guardar cambios"
+                                >
+                                  {savingDocId === doc.fileId ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                  ) : (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

@@ -51,8 +51,9 @@ export async function POST(request: NextRequest) {
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      // Phase A: Try Document AI Invoice Parser first for single PDFs (no split)
-      if (isPdf && !splitByPage) {
+      // Phase A: Try Document AI first for single PDFs (no split), except Asesoría Pozuelo
+      // which needs full IVA breakdown (4%, 10%, 21%) — use OpenAI only for that structure
+      if (isPdf && !splitByPage && excelStructure !== 'asesoria-pozuelo') {
         const docAiResult = await processInvoiceWithDocumentAI(buffer, fileName, 'application/pdf', excelStructure);
         if (docAiResult && docAiResult.fields.length >= 3) {
           return NextResponse.json(docAiResult);

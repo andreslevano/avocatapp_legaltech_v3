@@ -221,18 +221,24 @@ export async function extractDocumentDataWithAI(
 ): Promise<ExtractedDocumentResult> {
   const usePozuelo = options?.excelStructure === 'asesoria-pozuelo';
   const systemPrompt = usePozuelo
-    ? `Eres un asistente experto en extracción de datos de facturas/recibos para asesoría fiscal.
-Analiza el texto y devuelve UNICAMENTE un JSON válido con esta estructura (sin markdown):
+    ? `Eres un asistente experto en extracción de datos de facturas/recibos para asesoría fiscal (Estructura Asesoría Pozuelo).
+
+Debes BUSCAR y extraer SIEMPRE estos conceptos (aunque la etiqueta del documento no sea exacta): Emisor, CIF PROVEEDORES, CIF CLIENTES, Nº FACTURA, FECHA, TOTAL, BASE 0%IVA, CUOTA 0%IVA, BASE 4%IVA, CUOTA 4%IVA, BASE 10%IVA, CUOTA 10%IVA, BASE 21%IVA, CUOTA 21%IVA, %JE IRPF, CUOTA IRPF, PAIS PROVEEDOR, PAIS CLIENTE, MONEDA. Asigna cada valor al campo que tenga sentido: no exijas que la etiqueta coincida literalmente (ej.: "Mercancia" con "10,00%" → BASE 10%IVA y CUOTA 10%IVA; "Total Imp." junto a 21% → CUOTA 21%IVA).
+
+Si el documento tiene desglose de IVA por tipo (varias líneas con distintos %, ej. 4%, 10%, 21%), asigna CADA línea a su BASE X%IVA y CUOTA X%IVA correspondiente. No concentres todo en 21%.
+
+Devuelve UNICAMENTE un JSON válido (sin markdown):
 {
   "country": "país (España, Brasil, etc.)",
   "documentType": "Factura o Recibo",
   "emisor": "nombre del emisor",
   "receptor": "nombre del receptor",
   "fields": [
+    {"key": "CIF PROVEEDORES", "value": "CIF/NIF del emisor"},
+    {"key": "CIF CLIENTES", "value": "CIF/NIF del receptor"},
     {"key": "Nº FACTURA", "value": "número de factura"},
     {"key": "FECHA", "value": "fecha en formato DD/MM/YYYY"},
     {"key": "TOTAL", "value": "importe total"},
-    {"key": "CIF", "value": "CIF/NIF del emisor"},
     {"key": "BASE 0%IVA", "value": "base imponible 0%"},
     {"key": "CUOTA 0%IVA", "value": "cuota IVA 0%"},
     {"key": "BASE 4%IVA", "value": "base imponible 4%"},
@@ -243,10 +249,12 @@ Analiza el texto y devuelve UNICAMENTE un JSON válido con esta estructura (sin 
     {"key": "CUOTA 21%IVA", "value": "cuota IVA 21%"},
     {"key": "%JE IRPF", "value": "porcentaje IRPF"},
     {"key": "CUOTA IRPF", "value": "cuota IRPF"},
+    {"key": "PAIS PROVEEDOR", "value": "país del emisor/proveedor"},
+    {"key": "PAIS CLIENTE", "value": "país del receptor/cliente"},
     {"key": "MONEDA", "value": "EUR, BRL, etc."}
   ]
 }
-Reglas: Usa EXACTAMENTE las claves indicadas en "fields". Incluye solo los campos que encuentres. Usa "-" si no hay valor. Responde SOLO con el JSON.`
+Reglas: Usa EXACTAMENTE las claves indicadas. MAPEA por significado (NIF emisor→CIF PROVEEDORES, NIF receptor→CIF CLIENTES; cada línea IVA a su BASE/CUOTA del %). Solo si hay una única base/cuota sin desglose usa BASE 21%IVA/CUOTA 21%IVA. Usa "-" si no hay valor. Responde SOLO con el JSON.`
     : `Eres un asistente experto en extracción de datos de documentos. 
 Analiza el texto del documento y devuelve UNICAMENTE un JSON válido con esta estructura exacta (sin markdown, sin explicaciones):
 {
@@ -314,7 +322,7 @@ export async function extractMultiDocumentDataWithAI(
 ): Promise<ExtractedDocumentResult[]> {
   const usePozuelo = options?.excelStructure === 'asesoria-pozuelo';
   const fieldsHint = usePozuelo
-    ? 'Para cada documento usa claves: Nº FACTURA, FECHA, TOTAL, CIF, BASE 0%IVA, CUOTA 0%IVA, etc.'
+    ? 'Para cada documento usa SIEMPRE: CIF PROVEEDORES, CIF CLIENTES, Nº FACTURA, FECHA, TOTAL, BASE 0%IVA, CUOTA 0%IVA, BASE 4%IVA, CUOTA 4%IVA, BASE 10%IVA, CUOTA 10%IVA, BASE 21%IVA, CUOTA 21%IVA, %JE IRPF, CUOTA IRPF, PAIS PROVEEDOR, PAIS CLIENTE, MONEDA. Asigna cada valor al campo que tenga sentido (ej. línea 10%→BASE 10%IVA y CUOTA 10%IVA).'
     : 'Extrae los campos más relevantes (emisor, receptor, número, fecha, total, etc.).';
   const systemPrompt = `Eres un asistente experto en extracción de datos. Esta página puede contener 2 o más facturas/recibos distintos.
 Analiza el texto y devuelve UNICAMENTE un JSON con esta estructura (sin markdown):

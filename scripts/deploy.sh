@@ -42,7 +42,11 @@ else
 fi
 echo "Building Next.js application with static export..."
 rm -rf .next out
+# Workaround: Next.js 14 static export expects manifests during build - create if missing
+node scripts/fix-build-watch.js &
+WATCH_PID=$!
 npm run build
+kill $WATCH_PID 2>/dev/null || true
 # Verify out directory was created
 if [ ! -d "out" ]; then
   echo "Error: 'out' directory was not created. Build may have failed."
