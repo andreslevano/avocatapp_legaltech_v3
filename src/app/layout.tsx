@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   keywords: ['legaltech', 'ia', 'derecho', 'servicios legales'],
   authors: [{ name: 'Andres Levano' }],
   viewport: 'width=device-width, initial-scale=1',
+  icons: {
+    icon: '/icon.svg',
+  },
 };
 
 export default function RootLayout({

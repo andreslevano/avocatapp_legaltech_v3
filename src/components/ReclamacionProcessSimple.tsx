@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 import { saveUploadedFile, savePdfForUser } from '@/lib/storage';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
+import { isPilotUser } from '@/lib/pilot-users';
 
 interface ReclamacionProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -289,6 +290,25 @@ export default function ReclamacionProcessSimple({ onComplete, userId, userEmail
       setCurrentReclId(reclId);
       setPaymentDocId(docId);
       setPaymentReclId(reclId);
+
+      // Pilot users: saltar completamente Stripe y generar el documento directamente
+      if (userEmail && isPilotUser(userEmail)) {
+        try {
+          console.log('🧪 Pilot user detected, skipping Stripe payment for reclamación');
+          await generateDocument(docId, reclId);
+          setIsPaymentComplete(true);
+          return;
+        } catch (error) {
+          console.error('❌ Error generating document for pilot user:', error);
+          alert(
+            error instanceof Error
+              ? error.message
+              : 'Error generando el documento para usuario piloto.',
+          );
+          setIsProcessing(false);
+          return;
+        }
+      }
       
       // Si hay archivos subidos pero no guardados, guardarlos ahora
       if (userId && userId !== 'demo_user' && uploadedDocuments.length > 0 && uploadedFilesInfo.length === 0) {

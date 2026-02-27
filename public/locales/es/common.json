@@ -54,7 +54,7 @@
       "title": "ESTUDIANTES",
       "description": "",
       "price": "€3,00",
-      "period": "/escrito",
+      "period": "escrito",
       "feature1": "Cuentas con 8 áreas legales",
       "feature2": "7 tipos de escrito por área",
       "feature3": "Genera plantilla lista para completar",

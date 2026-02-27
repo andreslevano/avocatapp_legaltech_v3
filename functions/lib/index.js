@@ -84,6 +84,7 @@ else {
 const corsHandler = cors.default({ origin: true });
 // OpenAI client setup
 const openai_1 = __importDefault(require("openai"));
+const pilot_users_1 = require("./pilot-users");
 const resolveOpenAIKey = () => {
     // Cloud Functions v2: Use secrets via defineSecret
     // Try secret first, then fallback to environment variable
@@ -1492,7 +1493,7 @@ exports.createCheckoutSession = onRequestWithCorsAndSecrets({
             });
         }
         const stripe = new stripe_1.default(secretKey, { apiVersion: "2023-10-16" });
-        const { items, customerEmail, successUrl, cancelUrl, userId, documentType, docId, tutelaId, formData, subscriptionPlan, priceId } = req.body;
+        const { items, customerEmail, successUrl, cancelUrl, userId, documentType, docId, tutelaId, formData, subscriptionPlan, priceId, } = req.body;
         if (!userId || typeof userId !== 'string') {
             return res.status(400).json({
                 success: false,
@@ -1501,7 +1502,46 @@ exports.createCheckoutSession = onRequestWithCorsAndSecrets({
         }
         // Subscription mode: Abogados or Autoservicio plans with Stripe price ID
         if (subscriptionPlan && priceId && typeof priceId === 'string') {
-            console.log('Creating subscription checkout for plan:', subscriptionPlan, 'priceId:', priceId);
+            // Pilot users: skip Stripe completely and mark subscription as active
+            if (customerEmail && (0, pilot_users_1.isPilotUser)(customerEmail)) {
+                const firestore = admin.firestore();
+                const userRef = firestore.collection('users').doc(userId);
+                try {
+                    await userRef.set({
+                        role: 'pilot',
+                        subscription: {
+                            plan: 'premium',
+                            isActive: true,
+                            startDate: admin.firestore.FieldValue.serverTimestamp(),
+                        },
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    }, { merge: true });
+                    functions.logger.info('Pilot user subscription auto-activated', {
+                        userId,
+                        customerEmail,
+                        subscriptionPlan,
+                    });
+                }
+                catch (error) {
+                    functions.logger.error('Failed to auto-activate subscription for pilot user', { userId, customerEmail, error });
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Failed to activate pilot subscription',
+                    });
+                }
+                const redirectUrl = successUrl || `${req.headers.origin || ''}/dashboard`;
+                return res.json({
+                    success: true,
+                    url: redirectUrl,
+                    pilot: true,
+                });
+            }
+            functions.logger.info('Creating subscription checkout session', {
+                subscriptionPlan,
+                priceId,
+                userId,
+                customerEmail,
+            });
             const session = await stripe.checkout.sessions.create({
                 mode: 'subscription',
                 payment_method_types: ['card'],
@@ -1563,6 +1603,71 @@ exports.createCheckoutSession = onRequestWithCorsAndSecrets({
                 quantity: Number(item.quantity || 1),
             });
         });
+        // Pilot users for estudiantes: generar materiales sin pasar por Stripe
+        if (documentType === 'estudiantes' && customerEmail && (0, pilot_users_1.isPilotUser)(customerEmail)) {
+            try {
+                const first = normalizedItems[0];
+                const areaLegal = first.area || 'General';
+                const tipoEscrito = first.name || 'Documento legal';
+                const pais = first.country || DEFAULT_STUDENT_COUNTRY;
+                functions.logger.info('Pilot student purchase detected, generating package without Stripe', {
+                    userId,
+                    customerEmail,
+                    areaLegal,
+                    tipoEscrito,
+                    pais,
+                });
+                const packageResult = await generateStudentDocumentPackageCore({
+                    userId,
+                    userEmail: customerEmail,
+                    areaLegal,
+                    tipoEscrito,
+                    pais,
+                });
+                const purchaseData = {
+                    userId,
+                    customerEmail,
+                    status: 'completed',
+                    currency: currency.toUpperCase(),
+                    documentType: 'estudiantes',
+                    source: 'pilot',
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    totalCents,
+                    total: isCOP ? totalCents : totalCents / 100,
+                    items: normalizedItems.map((item, index) => ({
+                        id: `${orderId}-item-${index}`,
+                        name: item.name,
+                        area: item.area,
+                        country: item.country,
+                        price: item.price,
+                        quantity: item.quantity,
+                        status: 'completed',
+                        documentType: 'estudiantes',
+                        packageFiles: index === 0 ? packageResult.files : undefined,
+                    })),
+                };
+                await orderRef.set(purchaseData);
+                functions.logger.info('Pilot student purchase stored in Firestore', {
+                    orderId,
+                    userId,
+                });
+                const redirectUrl = successUrl || `${req.headers.origin || ''}/dashboard/estudiantes?payment=success`;
+                return res.json({
+                    success: true,
+                    url: redirectUrl,
+                    pilot: true,
+                    orderId,
+                });
+            }
+            catch (error) {
+                functions.logger.error('Failed to generate student package for pilot user without Stripe', { userId, customerEmail, error });
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to generate student package for pilot user',
+                });
+            }
+        }
         await orderRef.set({
             userId,
             customerEmail: customerEmail || null,

@@ -63,6 +63,23 @@ export default function Pricing() {
       href: '/signup?plan=abogados',
       isBeta: false,
     },
+    {
+      name: 'SOLO GENERACIÓN DE ESCRITOS',
+      price: '10',
+      period: 'escrito',
+      description: '',
+      features: [
+        'Acción de Tutela',
+        'Reclamación de Cantidades',
+        'Acuerdo de confidencialidad',
+        'Contrato de Servicio',
+        'Más de 50 escritos más',
+      ],
+      popular: false,
+      cta: 'Empezar ahora',
+      href: '/signup?plan=generacion-escritos',
+      isFixedPrice: true,
+    },
   ];
 
 
@@ -79,7 +96,7 @@ export default function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto items-stretch">
           {plans.map((plan, index) => (
             <div
               key={index}
@@ -102,22 +119,8 @@ export default function Pricing() {
                 {plan.description && <p className="text-body text-text-secondary mb-4">{plan.description}</p>}
 
                 <div className="mb-2">
-                  {plan.name === t('pricing.students.title') ? (
-                    <>
-                      <span className="text-4xl font-bold text-text-primary">€{plan.price}</span>
-                      <span className="text-text-secondary">/{plan.period}</span>
-                    </>
-                  ) : plan.name === 'AUTOSERVICIO' ? (
-                    <>
-                      <span className="text-4xl font-bold text-text-primary">€{plan.price}</span>
-                      <span className="text-text-secondary">/{plan.period}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-4xl font-bold text-text-primary">€{plan.price}</span>
-                      <span className="text-text-secondary">/{plan.period}</span>
-                    </>
-                  )}
+                  <span className="text-4xl font-bold text-text-primary">€{plan.price}</span>
+                  <span className="text-text-secondary">/{plan.period}</span>
                 </div>
               </div>
 

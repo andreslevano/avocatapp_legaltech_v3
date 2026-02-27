@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { UploadedDocument, DocumentCategory, DocumentSummary, GeneratedDocument } from '@/types';
 import AnalisisExitoModal from './AnalisisExitoModal';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
+import { isPilotUser } from '@/lib/pilot-users';
 
 interface TutelaProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -473,6 +474,25 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
       
       setCurrentTutelaId(tutelaId);
       setPaymentDocId(docId);
+      
+      // Usuarios piloto: saltar Stripe y generar la tutela directamente
+      if (isPilotUser(userEmail)) {
+        try {
+          console.log('🧪 Pilot user detected, skipping Stripe payment for acción de tutela');
+          await generateDocument(docId, tutelaId);
+          setIsPaymentComplete(true);
+          return;
+        } catch (error) {
+          console.error('❌ Error generating tutela for pilot user:', error);
+          alert(
+            error instanceof Error
+              ? error.message
+              : 'Error generando la acción de tutela para usuario piloto.',
+          );
+          setIsProcessing(false);
+          return;
+        }
+      }
       
       // ⭐ NUEVO: Guardar metadata en Firestore antes del pago
       // Esto permite que el webhook asocie el pago con los datos del formulario

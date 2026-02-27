@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword, Auth } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/hooks/useI18n';
 import { handleUserReactivation } from '@/lib/user-reactivation';
@@ -127,8 +128,15 @@ export default function Login() {
     <div className="min-h-screen bg-app flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 bg-sidebar rounded-lg flex items-center justify-center">
-            <span className="text-text-on-dark font-bold text-xl">A</span>
+          <div className="w-12 h-12 bg-sidebar rounded-lg flex items-center justify-center p-2">
+            <Image
+              src="/images/avocat-logo-white-v1.png"
+              alt="Avocat logo"
+              width={32}
+              height={32}
+              className="h-full w-full object-contain"
+              priority
+            />
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">

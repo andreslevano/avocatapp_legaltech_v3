@@ -5,11 +5,15 @@ import { createUserWithEmailAndPassword, Auth, signInWithEmailAndPassword } from
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/hooks/useI18n';
 import AccountReactivationModal from '@/components/AccountReactivationModal';
 import { checkUserStatus, reactivateUserAccount } from '@/lib/user-reactivation';
 import { trackSignupStart, trackRegistrationConversion } from '@/lib/gtag';
+import { isPilotUser } from '@/lib/pilot-users';
+import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
+import { SUBSCRIPTION_PRICE_IDS } from '@/lib/subscription-prices';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -37,10 +41,10 @@ export default function SignUp() {
     switch (plan) {
       case 'Estudiantes':
         return '/dashboard/estudiantes';
-      case 'Reclamación de Cantidades':
-        return '/dashboard/autoservicio/reclamacion-cantidades';
-      case 'Acción de Tutela':
-        return '/dashboard/autoservicio/accion-tutela';
+      case 'Solo Generacion de Escritos':
+        return '/dashboard/autoservicio/generacion-escritos';
+      case 'Autoservicio':
+        return '/dashboard/autoservicio/revision-email';
       case 'Abogados':
       default:
         return '/dashboard';
@@ -90,6 +94,23 @@ export default function SignUp() {
     }
   }, []);
 
+  // Pre-select plan from URL param (e.g. /signup?plan=abogados)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const planParam = params.get('plan')?.toLowerCase();
+    const planMap: Record<string, string> = {
+      abogados: 'Abogados',
+      estudiantes: 'Estudiantes',
+      autoservicio: 'Autoservicio',
+      'generacion-escritos': 'Solo Generacion de Escritos',
+    };
+    const mappedPlan = planParam ? planMap[planParam] : null;
+    if (mappedPlan) {
+      setFormData(prev => ({ ...prev, plan: mappedPlan }));
+    }
+  }, []);
+
   // Track signup start when user first interacts with the form
   useEffect(() => {
     const handleFirstInteraction = () => {
@@ -111,15 +132,7 @@ export default function SignUp() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    // If country changes, reset plan selection
-    if (name === 'country') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-        plan: '', // Reset plan when country changes
-        firm: '' // Reset firm when country changes
-      }));
-    } else if (name === 'plan') {
+    if (name === 'plan') {
       // If plan changes, reset firm if not Abogados
       setFormData(prev => ({
         ...prev,
@@ -172,8 +185,11 @@ export default function SignUp() {
       if (user && db) {
         try {
           const userDocRef = doc(db, 'users', user.uid);
-          const displayName = `${formData.firstName} ${formData.lastName}`.trim() || formData.email.split('@')[0];
-          
+          const displayName =
+            `${formData.firstName} ${formData.lastName}`.trim() ||
+            formData.email.split('@')[0];
+          const pilot = isPilotUser(formData.email);
+
           const userData = {
             uid: user.uid,
             email: formData.email,
@@ -186,30 +202,37 @@ export default function SignUp() {
             firm: formData.firm || null,
             isAdmin: false,
             isActive: true,
-            role: 'user',
+            role: pilot ? 'pilot' : 'user',
             createdAt: serverTimestamp(),
             lastLoginAt: serverTimestamp(),
             subscription: {
-              plan: 'free',
+              plan: pilot ? 'premium' : 'free',
               startDate: serverTimestamp(),
-              isActive: true
+              isActive: true,
             },
             preferences: {
               language: 'es',
               notifications: true,
-              theme: 'light'
+              theme: 'light',
             },
             stats: {
               totalDocuments: 0,
               totalGenerations: 0,
-              totalSpent: 0
-            }
+              totalSpent: 0,
+            },
           };
-          
+
           await setDoc(userDocRef, userData);
-          console.log('✅ User document created in Firestore:', user.uid);
+          console.log(
+            '✅ User document created in Firestore:',
+            user.uid,
+            pilot ? '(pilot user)' : '',
+          );
         } catch (firestoreError) {
-          console.error('❌ Error creating user document in Firestore:', firestoreError);
+          console.error(
+            '❌ Error creating user document in Firestore:',
+            firestoreError,
+          );
           // Don't block navigation if Firestore fails, but log the error
           // The webhook will try to create it if missing
         }
@@ -220,16 +243,44 @@ export default function SignUp() {
       // Track registration conversion
       trackRegistrationConversion();
       
-      // Redirigir directamente al dashboard seleccionado
       const dashboardUrl = getDashboardUrl(formData.plan);
-      console.log('Attempting to navigate to dashboard:', dashboardUrl);
-      console.log('Form data:', formData);
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+      // Abogados and Autoservicio require payment before dashboard access (skip for pilot users)
+      const priceId = !isPilotUser(formData.email) && formData.plan === 'Abogados' ? SUBSCRIPTION_PRICE_IDS.Abogados
+        : !isPilotUser(formData.email) && formData.plan === 'Autoservicio' ? SUBSCRIPTION_PRICE_IDS.Autoservicio : null;
+
+      if (priceId && user) {
+        try {
+          const endpoint = getCheckoutSessionEndpoint();
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.uid,
+              customerEmail: formData.email,
+              subscriptionPlan: formData.plan,
+              priceId,
+              successUrl: `${baseUrl}${dashboardUrl}`,
+              cancelUrl: `${baseUrl}/signup`,
+            }),
+          });
+          const data = await response.json();
+          if (data.success && data.url) {
+            window.location.href = data.url;
+            return;
+          }
+          console.error('Checkout error:', data.error || 'Unknown');
+        } catch (checkoutError) {
+          console.error('Checkout request failed:', checkoutError);
+        }
+      }
+
       try {
         await router.push(dashboardUrl);
         console.log('Navigation successful');
       } catch (navError) {
         console.error('Navigation error:', navError);
-        // Fallback: try window.location
         window.location.href = dashboardUrl;
       }
 
@@ -311,8 +362,15 @@ export default function SignUp() {
     <div className="min-h-screen bg-app flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 bg-sidebar rounded-lg flex items-center justify-center">
-            <span className="text-text-on-dark font-bold text-xl">A</span>
+          <div className="w-12 h-12 bg-sidebar rounded-lg flex items-center justify-center p-2">
+            <Image
+              src="/images/avocat-logo-white-v1.png"
+              alt="Avocat logo"
+              width={32}
+              height={32}
+              className="h-full w-full object-contain"
+              priority
+            />
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
@@ -411,27 +469,12 @@ export default function SignUp() {
                 value={formData.plan}
                 onChange={handleInputChange}
                 className="mt-1 input-field"
-                disabled={!formData.country}
               >
-                <option value="">
-                  {!formData.country ? 'Primero selecciona un país' : 'Selecciona tu plan'}
-                </option>
-                {formData.country === 'España' && (
-                  <>
-                    <option value="Estudiantes">Estudiantes</option>
-                    <option value="Reclamación de Cantidades">Reclamación de Cantidades</option>
-                    <option value="Abogados">Abogados</option>
-                  </>
-                )}
-                {formData.country === 'Colombia' && (
-                  <>
-                    <option value="Acción de Tutela">Acción de Tutela</option>
-                    <option value="Abogados">Abogados</option>
-                  </>
-                )}
-                {formData.country && formData.country !== 'España' && formData.country !== 'Colombia' && (
-                  <option value="Abogados">Abogados</option>
-                )}
+                <option value="">Selecciona tu plan</option>
+                <option value="Abogados">Abogados</option>
+                <option value="Estudiantes">Estudiantes</option>
+                <option value="Autoservicio">Autoservicio</option>
+                <option value="Solo Generacion de Escritos">Solo Generacion de Escritos</option>
               </select>
             </div>
 

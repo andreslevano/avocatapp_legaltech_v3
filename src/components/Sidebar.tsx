@@ -115,6 +115,7 @@ export default function Sidebar({ user, isOpen: controlledOpen, onToggle, onClos
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminChecked, setAdminChecked] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [userPlan, setUserPlan] = useState<string | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -133,6 +134,7 @@ export default function Sidebar({ user, isOpen: controlledOpen, onToggle, onClos
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setIsAdmin(userData.isAdmin === true);
+          setUserPlan(userData.plan ?? null);
           const name = userData.displayName ?? userData.profile?.displayName ?? '';
           if (name) setDisplayName(name);
         }
@@ -144,6 +146,43 @@ export default function Sidebar({ user, isOpen: controlledOpen, onToggle, onClos
     };
     checkAdminStatus();
   }, [user]);
+
+  const canNavigateTo = (href: string): boolean => {
+    if (isAdmin) return true;
+    const plan = userPlan || '';
+    if (plan === 'Abogados') {
+      return href === '/dashboard' || href.startsWith('/dashboard/casos') || href.startsWith('/dashboard/directorio-clientes');
+    }
+    if (plan === 'Autoservicio') {
+      return href.startsWith('/dashboard/autoservicio') || href === '/dashboard/analisis-caso' || href === '/dashboard/generar-escritos';
+    }
+    if (plan === 'Estudiantes') {
+      return href.startsWith('/dashboard/estudiantes');
+    }
+    if (plan === 'Solo Generacion de Escritos') {
+      return href === '/dashboard/autoservicio/generacion-escritos';
+    }
+    return true;
+  };
+
+  const NavItem = ({ href, children, isChild = false, icon }: { href: string; children: React.ReactNode; isChild?: boolean; icon?: React.ReactNode }) => {
+    const allowed = canNavigateTo(href);
+    const baseClasses = getLinkClasses(href, isChild);
+    if (allowed) {
+      return (
+        <Link href={href} className={`block ${baseClasses}`} onClick={closeSidebar}>
+          {icon}
+          {children}
+        </Link>
+      );
+    }
+    return (
+      <span className={`block ${baseClasses} opacity-50 cursor-not-allowed pointer-events-none`} title="No disponible en tu plan">
+        {icon}
+        {children}
+      </span>
+    );
+  };
 
   useEffect(() => {
     if (!pathname) return;
@@ -194,7 +233,17 @@ export default function Sidebar({ user, isOpen: controlledOpen, onToggle, onClos
         <div className="flex flex-col h-full">
           {/* Logo + collapse toggle */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-border/50 shrink-0">
-            <Link href="/dashboard" className="flex items-center min-w-0" onClick={closeSidebar}>
+            <Link
+              href={
+                isAdmin ? '/dashboard' :
+                userPlan === 'Estudiantes' ? '/dashboard/estudiantes' :
+                userPlan === 'Solo Generacion de Escritos' ? '/dashboard/autoservicio/generacion-escritos' :
+                userPlan === 'Autoservicio' ? '/dashboard/autoservicio/revision-email' :
+                '/dashboard'
+              }
+              className="flex items-center min-w-0"
+              onClick={closeSidebar}
+            >
               <Image
                 src="/images/avocat-logo-white-v1.png"
                 alt="Avocat"
@@ -223,16 +272,22 @@ export default function Sidebar({ user, isOpen: controlledOpen, onToggle, onClos
             {/* Abogados */}
             <div className="space-y-1">
               {isCollapsed ? (
-                <Link
-                  href="/dashboard"
-                  className={`flex items-center justify-center w-full px-2 py-3 text-base font-medium rounded-lg transition-colors duration-200 text-text-on-dark hover:bg-hover/20 ${
-                    isPathActive(pathname, '/dashboard', ['/dashboard/casos', '/dashboard/directorio-clientes']) ? 'bg-hover/30' : ''
-                  }`}
-                  onClick={closeSidebar}
-                  title="Abogados"
-                >
-                  {Icons.briefcase(iconCls)}
-                </Link>
+                canNavigateTo('/dashboard') ? (
+                  <Link
+                    href="/dashboard"
+                    className={`flex items-center justify-center w-full px-2 py-3 text-base font-medium rounded-lg transition-colors duration-200 text-text-on-dark hover:bg-hover/20 ${
+                      isPathActive(pathname, '/dashboard', ['/dashboard/casos', '/dashboard/directorio-clientes']) ? 'bg-hover/30' : ''
+                    }`}
+                    onClick={closeSidebar}
+                    title="Abogados"
+                  >
+                    {Icons.briefcase(iconCls)}
+                  </Link>
+                ) : (
+                  <span className="flex items-center justify-center w-full px-2 py-3 text-base font-medium rounded-lg text-text-on-dark opacity-50 cursor-not-allowed pointer-events-none" title="No disponible en tu plan">
+                    {Icons.briefcase(iconCls)}
+                  </span>
+                )
               ) : (
               <button
                 onClick={() => toggleSection('abogados')}
@@ -251,52 +306,63 @@ export default function Sidebar({ user, isOpen: controlledOpen, onToggle, onClos
               )}
               {expandedSections.abogados && !isCollapsed && (
                 <div className="pl-4 space-y-1">
-                  <Link href="/dashboard" className={`block ${getLinkClasses('/dashboard', true)}`} onClick={closeSidebar}>
-                    {Icons.grid('w-4 h-4 mr-3')}
-                    Dashboard
-                  </Link>
-                  <Link href="/dashboard/casos" className={`block ${getLinkClasses('/dashboard/casos', true)}`} onClick={closeSidebar}>
-                    {Icons.folder('w-4 h-4 mr-3')}
-                    Casos
-                  </Link>
-                  <Link href="/dashboard/directorio-clientes" className={`block ${getLinkClasses('/dashboard/directorio-clientes', true)}`} onClick={closeSidebar}>
-                    {Icons.users('w-4 h-4 mr-3')}
-                    Clientes
-                  </Link>
+                  <NavItem href="/dashboard" isChild icon={Icons.grid('w-4 h-4 mr-3')}>Dashboard</NavItem>
+                  <NavItem href="/dashboard/casos" isChild icon={Icons.folder('w-4 h-4 mr-3')}>Casos</NavItem>
+                  <NavItem href="/dashboard/directorio-clientes" isChild icon={Icons.users('w-4 h-4 mr-3')}>Clientes</NavItem>
                 </div>
               )}
             </div>
 
             {/* Estudiantes */}
-            <Link
-              href="/dashboard/estudiantes"
-              className={`flex items-center px-4 py-3 text-base font-medium rounded-lg transition-colors duration-200 text-text-on-dark ${
-                pathname?.includes('/dashboard/estudiantes') ? 'bg-hover/30 border-l-4 border-l-text-on-dark' : 'hover:bg-hover/20'
-              } ${isCollapsed ? 'justify-center px-2' : ''}`}
-              onClick={closeSidebar}
-              title={isCollapsed ? 'Estudiantes' : undefined}
-            >
-              {Icons.academicCap(iconCls)}
-              {!isCollapsed && (
-                <div className="flex-1 min-w-0 ml-3">
-                  <div className="font-medium">Estudiantes</div>
-                </div>
-              )}
-            </Link>
+            {canNavigateTo('/dashboard/estudiantes') ? (
+              <Link
+                href="/dashboard/estudiantes"
+                className={`flex items-center px-4 py-3 text-base font-medium rounded-lg transition-colors duration-200 text-text-on-dark ${
+                  pathname?.includes('/dashboard/estudiantes') ? 'bg-hover/30 border-l-4 border-l-text-on-dark' : 'hover:bg-hover/20'
+                } ${isCollapsed ? 'justify-center px-2' : ''}`}
+                onClick={closeSidebar}
+                title={isCollapsed ? 'Estudiantes' : undefined}
+              >
+                {Icons.academicCap(iconCls)}
+                {!isCollapsed && (
+                  <div className="flex-1 min-w-0 ml-3">
+                    <div className="font-medium">Estudiantes</div>
+                  </div>
+                )}
+              </Link>
+            ) : (
+              <span
+                className={`flex items-center px-4 py-3 text-base font-medium rounded-lg text-text-on-dark opacity-50 cursor-not-allowed pointer-events-none ${isCollapsed ? 'justify-center px-2' : ''}`}
+                title="No disponible en tu plan"
+              >
+                {Icons.academicCap(iconCls)}
+                {!isCollapsed && (
+                  <div className="flex-1 min-w-0 ml-3">
+                    <div className="font-medium">Estudiantes</div>
+                  </div>
+                )}
+              </span>
+            )}
 
             {/* Autoservicio */}
             <div className="space-y-1">
               {isCollapsed ? (
-                <Link
-                  href="/dashboard/autoservicio/revision-email"
-                  className={`flex items-center justify-center w-full px-2 py-3 text-base font-medium rounded-lg transition-colors duration-200 text-text-on-dark hover:bg-hover/20 ${
-                    pathname?.startsWith('/dashboard/autoservicio') || pathname?.includes('/dashboard/generar-escritos') || pathname?.includes('/dashboard/analisis-caso') ? 'bg-hover/30' : ''
-                  }`}
-                  onClick={closeSidebar}
-                  title="Autoservicio"
-                >
-                  {Icons.clipboard(iconCls)}
-                </Link>
+                (canNavigateTo('/dashboard/autoservicio/revision-email') || canNavigateTo('/dashboard/autoservicio/generacion-escritos')) ? (
+                  <Link
+                    href={canNavigateTo('/dashboard/autoservicio/revision-email') ? '/dashboard/autoservicio/revision-email' : '/dashboard/autoservicio/generacion-escritos'}
+                    className={`flex items-center justify-center w-full px-2 py-3 text-base font-medium rounded-lg transition-colors duration-200 text-text-on-dark hover:bg-hover/20 ${
+                      pathname?.startsWith('/dashboard/autoservicio') || pathname?.includes('/dashboard/generar-escritos') || pathname?.includes('/dashboard/analisis-caso') ? 'bg-hover/30' : ''
+                    }`}
+                    onClick={closeSidebar}
+                    title="Autoservicio"
+                  >
+                    {Icons.clipboard(iconCls)}
+                  </Link>
+                ) : (
+                  <span className="flex items-center justify-center w-full px-2 py-3 text-base font-medium rounded-lg text-text-on-dark opacity-50 cursor-not-allowed pointer-events-none" title="No disponible en tu plan">
+                    {Icons.clipboard(iconCls)}
+                  </span>
+                )
               ) : (
               <button
                 onClick={() => toggleSection('autoservicio')}
@@ -315,22 +381,10 @@ export default function Sidebar({ user, isOpen: controlledOpen, onToggle, onClos
               )}
               {expandedSections.autoservicio && !isCollapsed && (
                 <div className="pl-4 space-y-1">
-                  <Link href="/dashboard/autoservicio/revision-email" className={`block ${getLinkClasses('/dashboard/autoservicio/revision-email', true)}`} onClick={closeSidebar}>
-                    {Icons.mail('w-4 h-4 mr-3')}
-                    Revisión de email
-                  </Link>
-                  <Link href="/dashboard/autoservicio/extraccion-datos" className={`block ${getLinkClasses('/dashboard/autoservicio/extraccion-datos', true)}`} onClick={closeSidebar}>
-                    {Icons.database('w-4 h-4 mr-3')}
-                    Extracción de datos
-                  </Link>
-                  <Link href="/dashboard/analisis-caso" className={`block ${getLinkClasses('/dashboard/analisis-caso', true)}`} onClick={closeSidebar}>
-                    {Icons.search('w-4 h-4 mr-3')}
-                    Análisis de documentos
-                  </Link>
-                  <Link href="/dashboard/autoservicio/generacion-escritos" className={`block ${getLinkClasses('/dashboard/autoservicio/generacion-escritos', true)}`} onClick={closeSidebar}>
-                    {Icons.documentText('w-4 h-4 mr-3')}
-                    Generación de Escritos
-                  </Link>
+                  <NavItem href="/dashboard/autoservicio/revision-email" isChild icon={Icons.mail('w-4 h-4 mr-3')}>Revisión de email</NavItem>
+                  <NavItem href="/dashboard/autoservicio/extraccion-datos" isChild icon={Icons.database('w-4 h-4 mr-3')}>Extracción de datos</NavItem>
+                  <NavItem href="/dashboard/analisis-caso" isChild icon={Icons.search('w-4 h-4 mr-3')}>Análisis de documentos</NavItem>
+                  <NavItem href="/dashboard/autoservicio/generacion-escritos" isChild icon={Icons.documentText('w-4 h-4 mr-3')}>Generación de Escritos</NavItem>
                 </div>
               )}
             </div>

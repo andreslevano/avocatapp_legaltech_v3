@@ -18,6 +18,7 @@ import {
 } from '@/lib/storage';
 import { buildOcrPath } from '@/lib/storage-paths';
 import { getExtraccionDatosExtractEndpoint } from '@/lib/api-endpoints';
+import { isPilotUser } from '@/lib/pilot-users';
 import { extractTextFromPdfWithOcr, extractTextFromPdfWithOcrPerPage, extractTextFromPdfWithOcrForPageIndices, extractTextFromImageWithOcr } from '@/lib/ocr-pdf-client';
 
 const ACCEPTED_TYPES = [
@@ -415,6 +416,7 @@ export default function ExtraccionDatosPage() {
   const [editedFields, setEditedFields] = useState<Record<string, { key: string; value: string }[]>>({});
   const [savingDocId, setSavingDocId] = useState<string | null>(null);
   const [excelStructure, setExcelStructure] = useState<ExcelStructureType>('estandar');
+  const hasSetPilotExcelDefault = useRef(false);
   const [invoiceDirection, setInvoiceDirection] = useState<Record<string, 'recibida' | 'emitida'>>({});
   const [isExporting, setIsExporting] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -455,6 +457,14 @@ export default function ExtraccionDatosPage() {
       .finally(() => { if (!cancelled) setIsLoadingExtracted(false); });
     return () => { cancelled = true; };
   }, [user?.uid]);
+
+  // Default "Estructura Excel" to "Estructura asesoría Pozuelo" for pilot user asesoria@asesoriapozuelo.com
+  useEffect(() => {
+    if (user?.email && isPilotUser(user.email) && !hasSetPilotExcelDefault.current) {
+      hasSetPilotExcelDefault.current = true;
+      setExcelStructure('asesoria-pozuelo');
+    }
+  }, [user?.email]);
 
   // Fetch document download URL when viewing a document
   useEffect(() => {
