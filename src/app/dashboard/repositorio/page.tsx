@@ -247,6 +247,7 @@ export default function RepositorioPage() {
   };
 
   const loadVersionHistory = (fileId: string) => {
+    setShowVersionHistory(false);
     // Mock version history
     const mockHistory: VersionHistory[] = [
       {
@@ -291,45 +292,45 @@ export default function RepositorioPage() {
       }
     ];
     setVersionHistory(mockHistory);
-    setShowVersionHistory(true);
   };
 
   const getFileIcon = (type: string) => {
+    const iconClass = 'w-5 h-5 text-text-secondary';
     switch (type) {
       case 'folder':
         return (
-          <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+          <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
         );
       case 'pdf':
         return (
-          <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+          <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         );
       case 'docx':
         return (
-          <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+          <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         );
       case 'txt':
         return (
-          <svg className="w-6 h-6 text-text-secondary" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+          <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         );
       case 'image':
         return (
-          <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+          <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         );
       default:
         return (
-          <svg className="w-6 h-6 text-text-secondary" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+          <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         );
     }
@@ -337,10 +338,10 @@ export default function RepositorioPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'current': return 'bg-green-100 text-green-800';
-      case 'archived': return 'bg-surface-muted/30 text-text-primary';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-surface-muted/30 text-text-primary';
+      case 'current': return 'bg-surface-muted/40 text-text-primary border border-border';
+      case 'archived': return 'bg-surface-muted/30 text-text-primary border border-border';
+      case 'draft': return 'bg-surface-muted/30 text-text-secondary border border-border';
+      default: return 'bg-surface-muted/30 text-text-primary border border-border';
     }
   };
 
@@ -365,38 +366,64 @@ export default function RepositorioPage() {
     return null;
   }
 
+  const fabClass = 'group relative w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors';
+  const fabLabelClass = 'absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none';
+
   return (
-    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      {/* Page Header */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-400 p-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" clipRule="evenodd" />
+    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 relative">
+      {/* Floating Action Buttons - top right, circular like analisis-caso */}
+      <div className="fixed top-24 right-8 z-50 flex flex-col gap-2">
+        <Link href="/dashboard/analisis-caso" className={fabClass} title="Volver al Análisis">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className={fabLabelClass}>Volver al Análisis</span>
+        </Link>
+        <button type="button" className={fabClass} title="Subir Nuevo Archivo">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          <span className={fabLabelClass}>Subir Archivo</span>
+        </button>
+        <button type="button" className={fabClass} title="Crear Nueva Carpeta">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          </svg>
+          <span className={fabLabelClass}>Crear Carpeta</span>
+        </button>
+        <button type="button" className={fabClass} title="Sincronizar Repositorio">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span className={fabLabelClass}>Sincronizar</span>
+        </button>
+        {selectedFile && selectedFile.type !== 'folder' && (
+          <>
+            <button type="button" className={fabClass} title="Descargar">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-            </div>
-            <div className="ml-3">
-              <h1 className="text-lg font-semibold text-purple-800">
-                Repositorio de Documentos del Caso
-              </h1>
-              <p className="text-sm text-purple-700">
-                Gestiona y controla versiones de todos los documentos del caso
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/dashboard/analisis-caso"
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            ← Volver al Análisis
-          </Link>
-        </div>
+              <span className={fabLabelClass}>Descargar</span>
+            </button>
+            <button type="button" className={fabClass} title="Editar">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span className={fabLabelClass}>Editar</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
+          <div className="mb-6">
+            <h1 className="text-h1 text-text-primary mb-2">Repositorio de Documentos del Caso</h1>
+            <p className="text-body text-text-secondary">
+              Gestiona y controla versiones de todos los documentos del caso
+            </p>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - File Explorer */}
             <div className="lg:col-span-2 space-y-6">
@@ -408,10 +435,10 @@ export default function RepositorioPage() {
                     <button
                       onClick={handleBackClick}
                       disabled={currentPath.length <= 1}
-                      className="p-1 text-text-secondary hover:text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-2 rounded-full text-text-secondary hover:bg-surface-muted/30 hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
                     <div className="flex items-center space-x-1 text-sm text-text-secondary">
@@ -428,21 +455,21 @@ export default function RepositorioPage() {
 
                   {/* View Controls */}
                   <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1">
                       <button
                         onClick={() => setViewMode('list')}
-                        className={`p-2 rounded ${viewMode === 'list' ? 'bg-surface-muted/30 text-text-primary' : 'text-text-secondary hover:text-text-secondary'}`}
+                        className={`p-2 rounded-full transition-colors ${viewMode === 'list' ? 'bg-surface-muted/30 text-text-primary' : 'text-text-secondary hover:bg-surface-muted/20 hover:text-text-primary'}`}
                       >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                         </svg>
                       </button>
                       <button
                         onClick={() => setViewMode('grid')}
-                        className={`p-2 rounded ${viewMode === 'grid' ? 'bg-surface-muted/30 text-text-primary' : 'text-text-secondary hover:text-text-secondary'}`}
+                        className={`p-2 rounded-full transition-colors ${viewMode === 'grid' ? 'bg-surface-muted/30 text-text-primary' : 'text-text-secondary hover:bg-surface-muted/20 hover:text-text-primary'}`}
                       >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                         </svg>
                       </button>
                     </div>
@@ -483,11 +510,11 @@ export default function RepositorioPage() {
                   </h2>
                 </div>
                 
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-border">
                   {filteredFiles.length === 0 ? (
                     <div className="p-8 text-center">
-                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <svg className="mx-auto h-12 w-12 text-text-secondary" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       <p className="mt-2 text-text-secondary">No se encontraron archivos</p>
                     </div>
@@ -519,8 +546,8 @@ export default function RepositorioPage() {
                             </div>
                           </div>
                           <div className="flex-shrink-0">
-                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                             </svg>
                           </div>
                         </div>
@@ -533,6 +560,14 @@ export default function RepositorioPage() {
 
             {/* Right Column - File Details and Version History */}
             <div className="space-y-6">
+              {!selectedFile && (
+                <div className="bg-card shadow-sm rounded-lg border border-border p-8 text-center">
+                  <svg className="mx-auto h-10 w-10 text-text-secondary mb-3" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p className="text-sm text-text-secondary">Selecciona un archivo para ver detalles</p>
+                </div>
+              )}
               {/* File Details */}
               {selectedFile && (
                 <div className="bg-card shadow-sm rounded-lg border border-border p-6">
@@ -571,93 +606,52 @@ export default function RepositorioPage() {
                         </span>
                       </div>
                     </div>
-                    
-                    <div className="pt-4 border-t border-border">
-                      <div className="flex space-x-2">
-                        <button className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
-                          Descargar
-                        </button>
-                        <button className="flex-1 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors">
-                          Editar
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Version History */}
+              {/* Version History - collapsible, hidden by default */}
               {selectedFile && selectedFile.type !== 'folder' && (
-                <div className="bg-card shadow-sm rounded-lg border border-border p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-text-primary">Historial de Versiones</h3>
-                    <button
-                      onClick={() => setShowVersionHistory(!showVersionHistory)}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                <div className="bg-card shadow-sm rounded-lg border border-border overflow-hidden">
+                  <button
+                    onClick={() => setShowVersionHistory(!showVersionHistory)}
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-muted/20 transition-colors"
+                  >
+                    <span className="text-sm font-medium text-text-primary">Historial de versiones</span>
+                    <span className="text-xs text-text-secondary">
+                      {versionHistory.length} versiones
+                    </span>
+                    <svg
+                      className={`w-5 h-5 text-text-secondary transition-transform ${showVersionHistory ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
                     >
-                      {showVersionHistory ? 'Ocultar' : 'Ver todo'}
-                    </button>
-                  </div>
-                  
-                  {showVersionHistory ? (
-                    <div className="space-y-3">
-                      {versionHistory.map((version) => (
-                        <div key={version.id} className="border border-border rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-text-primary">v{version.version}</span>
-                            <span className="text-xs text-text-secondary">{version.size}</span>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {showVersionHistory && (
+                    <div className="border-t border-border p-4 max-h-64 overflow-y-auto">
+                      <div className="space-y-3">
+                        {versionHistory.map((version) => (
+                          <div key={version.id} className="border border-border rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-text-primary">v{version.version}</span>
+                              <span className="text-xs text-text-secondary">{version.size}</span>
+                            </div>
+                            <p className="text-xs text-text-secondary mb-2">{version.changes}</p>
+                            <div className="flex items-center justify-between text-xs text-text-secondary">
+                              <span>{version.author}</span>
+                              <span>{version.date.toLocaleDateString()}</span>
+                            </div>
                           </div>
-                          <p className="text-xs text-text-secondary mb-2">{version.changes}</p>
-                          <div className="flex items-center justify-between text-xs text-text-secondary">
-                            <span>{version.author}</span>
-                            <span>{version.date.toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {versionHistory.slice(0, 3).map((version) => (
-                        <div key={version.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                          <div>
-                            <span className="text-sm font-medium text-text-primary">v{version.version}</span>
-                            <p className="text-xs text-text-secondary">{version.changes}</p>
-                          </div>
-                          <span className="text-xs text-text-secondary">{version.date.toLocaleDateString()}</span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               )}
-
-              {/* Quick Actions */}
-              <div className="bg-card shadow-sm rounded-lg border border-border p-6">
-                <h3 className="text-lg font-semibold text-text-primary mb-4">Acciones Rápidas</h3>
-                
-                <div className="space-y-3">
-                  <button className="w-full flex items-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Subir Nuevo Archivo
-                  </button>
-                  
-                  <button className="w-full flex items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Crear Nueva Carpeta
-                  </button>
-                  
-                  <button className="w-full flex items-center px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                    Sincronizar Repositorio
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>

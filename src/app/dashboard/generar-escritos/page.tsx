@@ -7,6 +7,8 @@ import { onAuthStateChanged, signOut, User, Auth } from 'firebase/auth';
 import Link from 'next/link';
 import { useI18n } from '@/hooks/useI18n';
 
+type DocumentIconType = 'document' | 'scale' | 'briefcase' | 'shield' | 'home' | 'scroll' | 'chart';
+
 interface DocumentTemplate {
   id: string;
   name: string;
@@ -14,7 +16,63 @@ interface DocumentTemplate {
   category: string;
   estimatedTime: string;
   complexity: 'Baja' | 'Media' | 'Alta';
-  icon: string;
+  icon: DocumentIconType;
+}
+
+/** Minimalistic icons using site colors (text-text-primary / text-sidebar) */
+function DocumentTypeIcon({ type, selected, className = 'w-6 h-6' }: { type: DocumentIconType; selected?: boolean; className?: string }) {
+  const colorClass = selected ? 'text-sidebar' : 'text-text-primary';
+  const cls = `${colorClass} ${className}`.trim();
+  switch (type) {
+    case 'document':
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+      );
+    case 'scale':
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18 15a2.25 2.25 0 002.25-2.25 2.25 2.25 0 00-2.25-2.25 2.25 2.25 0 01-2.25-2.25 2.25 2.25 0 012.25-2.25 2.25 2.25 0 012.25 2.25 2.25 2.25 0 01-2.25 2.25M6 15a2.25 2.25 0 01-2.25-2.25 2.25 2.25 0 012.25-2.25 2.25 2.25 0 012.25 2.25 2.25 2.25 0 01-2.25 2.25" />
+        </svg>
+      );
+    case 'briefcase':
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />
+        </svg>
+      );
+    case 'shield':
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+        </svg>
+      );
+    case 'home':
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+        </svg>
+      );
+    case 'scroll':
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+      );
+    case 'chart':
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+        </svg>
+      );
+    default:
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+      );
+  }
 }
 
 interface GeneratedDocument {
@@ -30,88 +88,78 @@ export default function GenerarEscritosPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
+  const [selectedLegalArea, setSelectedLegalArea] = useState('');
+  const [selectedDocumentType, setSelectedDocumentType] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedDocument, setGeneratedDocument] = useState<GeneratedDocument | null>(null);
   const [customInstructions, setCustomInstructions] = useState('');
   const router = useRouter();
   const { t } = useI18n();
 
-  // Document templates
-  const documentTemplates: DocumentTemplate[] = [
-    {
-      id: '1',
-      name: 'Demanda Civil',
-      description: 'Demanda para procedimientos civiles ordinarios y verbales',
-      category: 'Derecho Civil',
-      estimatedTime: '15-20 min',
-      complexity: 'Media',
-      icon: '📋'
-    },
-    {
-      id: '2',
-      name: 'Escrito de Contestación',
-      description: 'Contestación a demanda civil con excepciones y defensas',
-      category: 'Derecho Civil',
-      estimatedTime: '20-25 min',
-      complexity: 'Alta',
-      icon: '⚖️'
-    },
-    {
-      id: '3',
-      name: 'Demanda Laboral',
-      description: 'Demanda por despido, salarios o condiciones laborales',
-      category: 'Derecho Laboral',
-      estimatedTime: '12-18 min',
-      complexity: 'Media',
-      icon: '💼'
-    },
-    {
-      id: '4',
-      name: 'Escrito de Tutela',
-      description: 'Acción de tutela para protección de derechos fundamentales',
-      category: 'Derecho Constitucional',
-      estimatedTime: '10-15 min',
-      complexity: 'Baja',
-      icon: '🛡️'
-    },
-    {
-      id: '5',
-      name: 'Contrato de Arrendamiento',
-      description: 'Contrato de arrendamiento comercial o residencial',
-      category: 'Derecho Civil',
-      estimatedTime: '8-12 min',
-      complexity: 'Baja',
-      icon: '🏠'
-    },
-    {
-      id: '6',
-      name: 'Poder General',
-      description: 'Poder general para pleitos y cobranzas',
-      category: 'Derecho Civil',
-      estimatedTime: '5-8 min',
-      complexity: 'Baja',
-      icon: '📜'
-    },
-    {
-      id: '7',
-      name: 'Demanda Mercantil',
-      description: 'Demanda en materia mercantil y comercial',
-      category: 'Derecho Mercantil',
-      estimatedTime: '18-25 min',
-      complexity: 'Alta',
-      icon: '💼'
-    },
-    {
-      id: '8',
-      name: 'Escrito de Apelación',
-      description: 'Apelación contra sentencia de primera instancia',
-      category: 'Derecho Procesal',
-      estimatedTime: '25-30 min',
-      complexity: 'Alta',
-      icon: '📈'
-    }
-  ];
+  // Legal areas and document types (Área Legal -> Tipo de Escrito)
+  const legalAreas: Record<string, { name: string; price?: number }[]> = {
+    'Derecho Constitucional': [
+      { name: 'Recurso de amparo ante el Tribunal Constitucional' },
+      { name: 'Recurso de inconstitucionalidad (modelo orientativo)' },
+      { name: 'Escrito de acción de protección de derechos fundamentales' },
+    ],
+    'Derecho Civil y Procesal Civil': [
+      { name: 'Demanda de reclamación de cantidad (juicio ordinario / verbal / monitorio)' },
+      { name: 'Escrito de oposición a juicio monitorio' },
+      { name: 'Demanda de desahucio por falta de pago' },
+      { name: 'Escrito de medidas cautelares' },
+      { name: 'Recurso de apelación en proceso civil' },
+      { name: 'Demanda de responsabilidad contractual / extracontractual' },
+      { name: 'Escrito de ejecución de sentencia' },
+    ],
+    'Derecho Penal y Procesal Penal': [
+      { name: 'Denuncia y querella criminal' },
+      { name: 'Escrito de acusación particular' },
+      { name: 'Escrito de defensa' },
+      { name: 'Solicitud de medidas cautelares' },
+      { name: 'Recurso de reforma y subsidiario de apelación' },
+      { name: 'Recurso de casación penal (modelo académico)' },
+    ],
+    'Derecho Laboral (Jurisdicción Social)': [
+      { name: 'Demanda por despido improcedente' },
+      { name: 'Demanda por reclamación de salarios' },
+      { name: 'Demanda por modificación sustancial de condiciones de trabajo' },
+      { name: 'Escrito de impugnación de sanción disciplinaria' },
+      { name: 'Escrito de ejecución de sentencia laboral' },
+    ],
+    'Derecho Administrativo y Contencioso-Administrativo': [
+      { name: 'Recurso administrativo de alzada' },
+      { name: 'Recurso potestativo de reposición' },
+      { name: 'Demanda contencioso-administrativa' },
+      { name: 'Medidas cautelares en vía contenciosa' },
+      { name: 'Recurso de apelación en lo contencioso-administrativo' },
+    ],
+    'Derecho Mercantil': [
+      { name: 'Demanda de impugnación de acuerdos sociales' },
+      { name: 'Solicitud de concurso voluntario' },
+      { name: 'Demanda por competencia desleal' },
+      { name: 'Demanda por incumplimiento contractual mercantil' },
+    ],
+    'Recursos procesales transversales': [
+      { name: 'Recurso de reposición' },
+      { name: 'Recurso de apelación' },
+      { name: 'Recurso de casación' },
+      { name: 'Recurso de queja' },
+    ],
+    'Derecho de Familia': [
+      { name: 'Demanda de divorcio contencioso' },
+      { name: 'Demanda de medidas paternofiliales' },
+      { name: 'Solicitud de modificación de medidas' },
+      { name: 'Demanda de alimentos' },
+      { name: 'Escrito de ejecución por impago de pensión alimenticia' },
+    ],
+  };
+
+  // Derived template when both area and document type are selected
+  const selectedTemplate: DocumentTemplate | null =
+    selectedLegalArea && selectedDocumentType
+      ? { id: 'derived', name: selectedDocumentType, description: '', category: selectedLegalArea, estimatedTime: '', complexity: 'Media', icon: 'document' }
+      : null;
 
   useEffect(() => {
     // Check if Firebase is properly initialized
@@ -146,8 +194,14 @@ export default function GenerarEscritosPage() {
     }
   };
 
-  const handleTemplateSelect = (template: DocumentTemplate) => {
-    setSelectedTemplate(template);
+  const handleLegalAreaChange = (area: string) => {
+    setSelectedLegalArea(area);
+    setSelectedDocumentType('');
+    setGeneratedDocument(null);
+  };
+
+  const handleDocumentTypeChange = (docType: string) => {
+    setSelectedDocumentType(docType);
     setGeneratedDocument(null);
   };
 
@@ -430,157 +484,161 @@ DERECHO:
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      {/* Page Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-400 p-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h1 className="text-lg font-semibold text-blue-800">
-                {t('dashboard.generateDocuments.title')}
-              </h1>
-              <p className="text-sm text-blue-700">
-                {t('dashboard.generateDocuments.subtitle')}
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/dashboard/analisis-caso"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 relative">
+      {/* Floating actions - Volver and Generar (same area, rounded) */}
+      <div className="fixed top-6 right-8 z-50 flex flex-col gap-2">
+        <Link
+          href="/dashboard/analisis-caso"
+          className="group flex items-center justify-center w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg hover:bg-text-primary transition-colors"
+          title={t('dashboard.generateDocuments.backToAnalysis')}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            {t('dashboard.generateDocuments.backToAnalysis')}
+          </span>
+        </Link>
+        {selectedTemplate && (
+          <button
+            onClick={handleGenerateDocument}
+            disabled={isGenerating}
+            className="group relative flex items-center justify-center w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg hover:bg-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={`${t('dashboard.generateDocuments.generate')} ${selectedTemplate.name}`}
           >
-            ← {t('dashboard.generateDocuments.backToAnalysis')}
-          </Link>
+            {isGenerating ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-text-on-dark border-t-transparent" />
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            )}
+            <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              {isGenerating ? t('dashboard.generateDocuments.generating') : `${t('dashboard.generateDocuments.generate')} ${selectedTemplate.name}`}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Page Header - site palette */}
+      <div className="border-l-4 border-sidebar bg-surface-muted/20 p-4 mb-6 pr-16">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <DocumentTypeIcon type="document" className="h-5 w-5 text-sidebar" />
+          </div>
+          <div className="ml-3">
+            <h1 className="text-h1 text-text-primary">
+              {t('dashboard.generateDocuments.title')}
+            </h1>
+            <p className="text-body text-text-secondary mt-0.5">
+              {t('dashboard.generateDocuments.subtitle')}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          {/* Top Section - Document Selection and Instructions */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Left Column - Document Type Selection */}
-            <div className="lg:col-span-1">
-              <div className="bg-card shadow-sm rounded-lg border border-border p-6">
-                <h2 className="text-lg font-semibold text-text-primary mb-4">{t('dashboard.generateDocuments.documentType')}</h2>
-                
-                <div className="space-y-2">
-                  {documentTemplates.map((template) => (
-                    <div
-                      key={template.id}
-                      onClick={() => handleTemplateSelect(template)}
-                      className={`group relative flex items-center p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                        selectedTemplate?.id === template.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-border hover:border-border'
-                      }`}
+          {/* Top Section - Document Selection (Área Legal + Tipo de Escrito) and Instructions - same height */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-stretch min-h-[420px]">
+            {/* Left Column - Área Legal and Tipo de Escrito dropdowns */}
+            <div className="lg:col-span-1 flex flex-col min-h-0">
+              <div className="bg-card shadow-md rounded-xl border border-border p-6 flex flex-col flex-1 min-h-0">
+                <h2 className="text-h3 text-text-primary mb-4 flex-shrink-0">{t('dashboard.generateDocuments.documentType')}</h2>
+                <div className="space-y-4 flex-1">
+                  <div>
+                    <label htmlFor="legal-area" className="block text-sm font-medium text-text-primary mb-2">
+                      {t('dashboard.generateDocuments.legalArea')}
+                    </label>
+                    <select
+                      id="legal-area"
+                      value={selectedLegalArea}
+                      onChange={(e) => handleLegalAreaChange(e.target.value)}
+                      className="input-field rounded-xl"
                     >
-                      <div className="text-2xl mr-3">{template.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-text-primary truncate">
-                          {template.name}
-                        </h3>
-                        <p className="text-xs text-text-secondary truncate">
-                          {template.category}
-                        </p>
-                      </div>
-                      
-                      {/* Tooltip */}
-                      <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-10 hidden group-hover:block">
-                        <div className="font-medium mb-1">{template.name}</div>
-                        <div className="text-gray-300 mb-2">{template.description}</div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className={`px-2 py-1 rounded-full text-white ${
-                            template.complexity === 'Baja' ? 'bg-green-500' : 
-                            template.complexity === 'Media' ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}>
-                            {template.complexity}
-                          </span>
-                          <span className="text-gray-400">{template.estimatedTime}</span>
-                        </div>
-                        {/* Tooltip arrow */}
-                        <div className="absolute left-4 -top-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-800"></div>
-                      </div>
-                    </div>
-                  ))}
+                      <option value="">{t('dashboard.generateDocuments.selectLegalArea')}</option>
+                      {Object.keys(legalAreas).map((area) => (
+                        <option key={area} value={area}>
+                          {area}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="document-type" className="block text-sm font-medium text-text-primary mb-2">
+                      {t('dashboard.generateDocuments.documentTypeSelect')}
+                    </label>
+                    <select
+                      id="document-type"
+                      value={selectedDocumentType}
+                      onChange={(e) => handleDocumentTypeChange(e.target.value)}
+                      disabled={!selectedLegalArea}
+                      className="input-field rounded-xl disabled:bg-surface-muted/30 disabled:cursor-not-allowed"
+                    >
+                      <option value="">
+                        {selectedLegalArea ? t('dashboard.generateDocuments.selectDocumentType') : t('dashboard.generateDocuments.selectDocumentTypeFirst')}
+                      </option>
+                      {selectedLegalArea &&
+                        legalAreas[selectedLegalArea]?.map((doc) => (
+                          <option key={doc.name} value={doc.name}>
+                            {doc.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Instructions and Generate Button */}
-            <div className="lg:col-span-2">
-              <div className="bg-card shadow-sm rounded-lg border border-border p-6">
-                <h3 className="text-lg font-semibold text-text-primary mb-4">{t('dashboard.generateDocuments.specialInstructions')}</h3>
+            {/* Right Column - Instructions only (Generar is floating top-right) */}
+            <div className="lg:col-span-2 flex flex-col min-h-0">
+              <div className="bg-card shadow-md rounded-xl border border-border p-6 flex flex-col flex-1 min-h-0">
+                <h3 className="text-h3 text-text-primary mb-4 flex-shrink-0">{t('dashboard.generateDocuments.specialInstructions')}</h3>
                 <textarea
                   value={customInstructions}
                   onChange={(e) => setCustomInstructions(e.target.value)}
                   rows={6}
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sidebar focus:border-sidebar mb-4"
+                  className="w-full flex-1 min-h-[200px] px-3 py-2 border border-border rounded-xl focus:ring-2 focus:ring-sidebar focus:border-sidebar bg-card text-text-primary placeholder:text-text-secondary resize-y"
                   placeholder={t('dashboard.generateDocuments.instructionsPlaceholder')}
                 />
-                
-                {selectedTemplate && (
-                  <button
-                    onClick={handleGenerateDocument}
-                    disabled={isGenerating}
-                    className="w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                        <span>{t('dashboard.generateDocuments.generating')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        <span>{t('dashboard.generateDocuments.generate')} {selectedTemplate.name}</span>
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Document Display Section */}
-          <div className="bg-card shadow-lg rounded-lg border border-border min-h-[600px]">
+          {/* Document Display Section - site palette, rounded */}
+          <div className="bg-card shadow-md rounded-xl border border-border min-h-[600px]">
             {generatedDocument ? (
               <>
-                {/* Document Header */}
-                <div className="p-6 border-b border-border bg-gradient-to-r from-gray-50 to-blue-50">
+                {/* Document Header - site colors */}
+                <div className="p-6 border-b border-border bg-surface-muted/20">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-text-primary">{t('dashboard.generateDocuments.generatedDocument')}</h2>
-                    <div className="flex items-center space-x-4">
+                    <h2 className="text-h2 text-text-primary">{t('dashboard.generateDocuments.generatedDocument')}</h2>
+                    <div className="flex items-center gap-3">
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        generatedDocument.status === 'Completado' ? 'bg-green-100 text-green-800' :
-                        generatedDocument.status === 'Generando' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
+                        generatedDocument.status === 'Completado' ? 'bg-surface-muted/50 text-text-primary' :
+                        generatedDocument.status === 'Generando' ? 'bg-surface-muted/70 text-text-primary' :
+                        'bg-surface-muted text-text-primary'
                       }`}>
                         {generatedDocument.status}
                       </span>
                       {generatedDocument.status === 'Completado' && (
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleDownloadDocument('pdf')}
-                            className="flex items-center px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                            className="flex items-center px-4 py-2 rounded-full bg-sidebar text-text-on-dark shadow-md hover:bg-text-primary transition-colors text-sm font-medium"
                           >
-                            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                             PDF
                           </button>
                           <button
                             onClick={() => handleDownloadDocument('docx')}
-                            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                            className="flex items-center px-4 py-2 rounded-full bg-sidebar text-text-on-dark shadow-md hover:bg-text-primary transition-colors text-sm font-medium"
                           >
-                            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                             Word
                           </button>
@@ -591,14 +649,12 @@ DERECHO:
                   
                   <div className="flex items-center space-x-6 text-sm text-text-secondary">
                     <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                      </svg>
+                      <DocumentTypeIcon type="document" className="w-4 h-4 mr-2 text-text-secondary" />
                       {generatedDocument.template}
                     </span>
                     <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                      <svg className="w-4 h-4 mr-2 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                       {generatedDocument.createdAt.toLocaleDateString()}
                     </span>
@@ -609,21 +665,21 @@ DERECHO:
                 <div className="p-8">
                   {generatedDocument.status === 'Generando' ? (
                     <div className="text-center py-16">
-                      <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-6"></div>
+                      <div className="animate-spin rounded-full h-16 w-16 border-2 border-sidebar border-t-transparent mx-auto mb-6"></div>
                       <h3 className="text-xl font-semibold text-text-primary mb-2">Generando Documento</h3>
                       <p className="text-text-secondary">Nuestra IA está creando tu documento legal profesional...</p>
                     </div>
                   ) : (
                     <div className="max-w-4xl mx-auto">
-                      {/* Professional Legal Document Format */}
-                      <div className="bg-card border-2 border-border shadow-xl">
+                      {/* Professional Legal Document Format - site palette */}
+                      <div className="bg-card border-2 border-border shadow-lg rounded-xl overflow-hidden">
                         {/* Document Header */}
-                        <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white p-8">
+                        <div className="bg-sidebar text-text-on-dark p-8">
                           <div className="text-center">
                             <h1 className="text-2xl lg:text-3xl font-bold mb-4 tracking-wide">
                               {generatedDocument.template.toUpperCase()}
                             </h1>
-                            <div className="border-t border-blue-300 pt-4">
+                            <div className="border-t border-surface-muted/50 pt-4">
                               <p className="text-lg opacity-90">ESTUDIO JURÍDICO PROFESIONAL</p>
                               <p className="text-sm opacity-75 mt-1">Documento Legal Generado por IA</p>
                             </div>
@@ -640,7 +696,7 @@ DERECHO:
                                 // Check if it's a title (all caps or specific patterns)
                                 if (paragraph.trim().toUpperCase() === paragraph.trim() && paragraph.trim().length > 10) {
                                   return (
-                                    <h2 key={index} className="text-xl font-bold text-text-primary mt-8 mb-4 border-l-4 border-blue-600 pl-4">
+                                    <h2 key={index} className="text-xl font-bold text-text-primary mt-8 mb-4 border-l-4 border-sidebar pl-4">
                                       {paragraph.trim()}
                                     </h2>
                                   );
@@ -683,10 +739,10 @@ DERECHO:
                     </div>
                   )}
                   
-                  {/* Approve and Save Button */}
+                  {/* Approve and Save Button - floating rounded, site colors */}
                   {generatedDocument.status === 'Completado' && (
                     <div className="mt-8 flex justify-center">
-                      <button className="flex items-center px-8 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl">
+                      <button className="flex items-center px-8 py-3 rounded-full bg-sidebar text-text-on-dark font-semibold hover:bg-text-primary transition-all shadow-lg hover:shadow-xl">
                         <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -698,29 +754,29 @@ DERECHO:
               </>
             ) : (
               <div className="p-16 text-center">
-                <svg className="mx-auto h-20 w-20 text-gray-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h3 className="text-2xl font-semibold text-text-primary mb-4">Generador de Documentos Legales</h3>
-                <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-                  Selecciona un tipo de documento legal de la lista superior para comenzar a generar tu escrito profesional con inteligencia artificial.
+                <div className="mx-auto w-20 h-20 mb-6 rounded-2xl bg-surface-muted/30 flex items-center justify-center">
+                  <DocumentTypeIcon type="document" className="h-12 w-12 text-sidebar" />
+                </div>
+                <h3 className="text-h2 text-text-primary mb-4">Generador de Documentos Legales</h3>
+                <p className="text-body text-text-secondary max-w-2xl mx-auto">
+                  {t('dashboard.generateDocuments.emptyStateMessage')}
                 </p>
-                <div className="mt-8 flex justify-center space-x-4">
+                <div className="mt-8 flex justify-center flex-wrap gap-6">
                   <div className="flex items-center text-sm text-text-secondary">
-                    <svg className="w-5 h-5 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <svg className="w-5 h-5 mr-2 text-sidebar" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Documentos profesionales
                   </div>
                   <div className="flex items-center text-sm text-text-secondary">
-                    <svg className="w-5 h-5 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <svg className="w-5 h-5 mr-2 text-sidebar" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Formato legal estándar
                   </div>
                   <div className="flex items-center text-sm text-text-secondary">
-                    <svg className="w-5 h-5 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <svg className="w-5 h-5 mr-2 text-sidebar" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Descarga en PDF/Word
                   </div>

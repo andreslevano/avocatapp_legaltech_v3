@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 import Sidebar from './Sidebar';
@@ -19,6 +19,8 @@ export default function DashboardShell({ children }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // false = expanded, always show full menu
   const router = useRouter();
+  const pathname = usePathname();
+  const hideTopBanner = pathname === '/dashboard/generar-escritos';
 
   useEffect(() => {
     if (auth && typeof auth.onAuthStateChanged === 'function' && 'app' in auth) {
@@ -66,23 +68,25 @@ export default function DashboardShell({ children }: DashboardShellProps) {
           onCollapseToggle={() => setSidebarCollapsed((c) => !c)}
         />
         <div className="flex-1 flex flex-col lg:pl-0 min-w-0 min-h-0 overflow-hidden">
-          {/* Top bar */}
-          <header className="shrink-0 z-40 bg-sidebar shadow-sm border-b border-border/50">
-            <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-              {/* Mobile only: toggle overlay. Desktop uses sidebar's collapse button. */}
-              <button
-                onClick={() => setSidebarOpen((o) => !o)}
-                className="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-text-on-dark hover:bg-hover/20"
-                aria-label="Open menu"
-              >
-                <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <div className="flex-1" />
-              <UserMenu user={user} currentPlan="Avocat" />
-            </div>
-          </header>
+          {/* Top bar - hidden on generar-escritos for cleaner layout */}
+          {!hideTopBanner && (
+            <header className="shrink-0 z-40 bg-sidebar shadow-sm border-b border-border/50">
+              <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+                {/* Mobile only: toggle overlay. Desktop uses sidebar's collapse button. */}
+                <button
+                  onClick={() => setSidebarOpen((o) => !o)}
+                  className="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-text-on-dark hover:bg-hover/20"
+                  aria-label="Open menu"
+                >
+                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <div className="flex-1" />
+                <UserMenu user={user} currentPlan="Avocat" />
+              </div>
+            </header>
+          )}
           <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>
         </div>
       </div>
