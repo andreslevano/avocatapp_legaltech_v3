@@ -14,19 +14,19 @@ interface LogoProps {
 
 const VARIANT_CONFIG: Record<LogoVariant, { src: string; width: number; height: number; alt: string }> = {
   symbol: {
-    src: '/logos/avocat-symbol.png',
+    src: '/logos/avocat-symbol.svg',
     width: 40,
     height: 40,
     alt: 'Avocat',
   },
   stacked: {
-    src: '/logos/avocat-stacked.png',
+    src: '/logos/avocat-stacked.svg',
     width: 120,
     height: 80,
     alt: 'Avocat — Plataforma LegalTech',
   },
   signature: {
-    src: '/logos/avocat-signature.png',
+    src: '/logos/avocat-signature.svg',
     width: 160,
     height: 36,
     alt: 'Avocat',

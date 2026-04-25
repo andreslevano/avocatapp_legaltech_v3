@@ -50,7 +50,7 @@ function formatDateTime(ts: Timestamp): string {
 
 export default function CaseDetailPage() {
   const { userDoc } = useAppAuth();
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>() ?? { id: '' };
   const router = useRouter();
 
   const [caseDoc, setCaseDoc] = useState<CaseDoc | null>(null);
