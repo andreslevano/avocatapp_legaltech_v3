@@ -65,12 +65,7 @@ export default function RootLayout({
             })(window, document, "clarity", "script", "vu7td8np1h");
           `}
         </Script>
-        {/* Zapier Interfaces Chatbot — public landing only */}
-        <Script
-          src="https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js"
-          strategy="afterInteractive"
-          type="module"
-        />
+        {/* NOTE: Zapier Chatbot script is loaded in (public)/layout.tsx only */}
         <I18nProvider>
           <div className="min-h-screen bg-avocat-cream">
             {children}

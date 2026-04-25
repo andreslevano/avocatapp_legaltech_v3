@@ -16,13 +16,13 @@ export interface UserDoc {
   updatedAt: unknown;
 }
 
-/** Returns the default dashboard route for a given plan */
+/** Returns the default app route for a given plan */
 export function getDashboardRoute(plan: UserPlan | null): string {
   switch (plan) {
-    case 'Abogados':    return '/dashboard';
-    case 'Estudiantes': return '/dashboard/estudiantes';
-    case 'Autoservicio': return '/dashboard/autoservicio/revision-email';
-    default:            return '/onboarding';
+    case 'Abogados':     return '/dashboard';
+    case 'Estudiantes':  return '/agent';
+    case 'Autoservicio': return '/agent';
+    default:             return '/onboarding';
   }
 }
 

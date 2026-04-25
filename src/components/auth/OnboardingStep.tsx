@@ -9,9 +9,9 @@ import type { Plan } from '@/components/auth/PlanCards';
 import { Button } from '@/components/ui/Button';
 
 const PLAN_DASHBOARDS: Record<Plan, string> = {
-  Abogados: '/dashboard',
-  Estudiantes: '/dashboard/estudiantes',
-  Autoservicio: '/dashboard/autoservicio/revision-email',
+  Abogados:    '/dashboard',
+  Estudiantes: '/agent',
+  Autoservicio: '/agent',
 };
 
 interface OnboardingStepProps {
