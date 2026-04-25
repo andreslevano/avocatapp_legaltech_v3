@@ -28,5 +28,14 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "scripts", "functions"]
+  "exclude": [
+    "node_modules",
+    "scripts",
+    "functions",
+    "src/app/api.disabled",
+    "src/app/api 2.disabled",
+    "src/pages.disabled",
+    "src/**/* 2.ts",
+    "src/**/* 2.tsx"
+  ]
 }

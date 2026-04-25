@@ -1,20 +1,17 @@
 {
   "hosting": {
-    "public": "out",
+    "source": ".",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      {
-        "source": "/api/extraccion-datos/extract",
-        "function": "extraccionDatosExtract"
-      }
-    ],
     "cleanUrls": true,
     "headers": [
       {"source": "/locales/**", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]},
       {"source": "/images/**", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]},
-      {"source": "**/*.@(js|css|jpg|jpeg|gif|png|svg|webp|ico|woff|woff2|ttf|eot)", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]},
-      {"source": "**/*.html", "headers": [{"key": "Cache-Control", "value": "no-cache, no-store, must-revalidate"}]}
-    ]
+      {"source": "/logos/**", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]},
+      {"source": "**/*.@(js|css|jpg|jpeg|gif|png|svg|webp|ico|woff|woff2|ttf|eot)", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]}
+    ],
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
   },
   "storage": {"rules": "storage.rules"},
   "functions": {"source": "functions", "runtime": "nodejs20"}

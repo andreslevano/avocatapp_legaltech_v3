@@ -1,17 +1,37 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
+import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
 import '@/styles/globals.css';
 import { I18nProvider } from '@/contexts/I18nContext';
+
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Avocat - Plataforma LegalTech',
   description: 'Plataforma moderna de tecnología legal impulsada por IA',
   keywords: ['legaltech', 'ia', 'derecho', 'servicios legales'],
   authors: [{ name: 'Andres Levano' }],
-  viewport: 'width=device-width, initial-scale=1',
   icons: {
     icon: '/icon.svg',
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -20,8 +40,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
-      <body className="font-serif antialiased">
+    <html lang="es" className={`${cormorant.variable} ${dmSans.variable}`}>
+      <body className="font-sans antialiased">
         {/* Google tag (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=AW-16479671897"
@@ -35,14 +55,19 @@ export default function RootLayout({
             gtag('config', 'AW-16479671897');
           `}
         </Script>
-        {/* Zapier Interfaces Chatbot */}
-        <Script
-          src="https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js"
-          strategy="afterInteractive"
-          type="module"
-        />
+        {/* Microsoft Clarity */}
+        <Script id="ms-clarity" strategy="afterInteractive">
+          {`
+            (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window, document, "clarity", "script", "vu7td8np1h");
+          `}
+        </Script>
+        {/* NOTE: Zapier Chatbot script is loaded in (public)/layout.tsx only */}
         <I18nProvider>
-          <div className="min-h-screen bg-app">
+          <div className="min-h-screen bg-avocat-cream">
             {children}
           </div>
         </I18nProvider>

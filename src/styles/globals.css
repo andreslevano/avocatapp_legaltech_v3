@@ -2,70 +2,83 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
-
 :root {
-  /* Premium legal-tech grayscale palette */
-  --color-app: #F2F2F2;
-  --color-sidebar: #1E1E1E;
-  --color-card: #FFFFFF;
-  --color-surface-muted: #C4C4C4;
-  --color-border: #9A9A9A;
-  --color-hover: #B8B8B8;
-  --color-text-primary: #1E1E1E;
-  --color-text-secondary: #5F5F5F;
-  --color-text-on-dark: #F2F2F2;
-  --font-eb-garamond: 'EB Garamond', Garamond, 'Libre Baskerville', 'Times New Roman', serif;
+  /* Brand palette v3 — warm legal-gold */
+  --color-app:            #F9F4EA;
+  --color-sidebar:        #1e1e1e;
+  --color-card:           #FFFFFF;
+  --color-border:         #C8C0B0;
+  --color-text-primary:   #1e1e1e;
+  --color-text-secondary: #5f5f5f;
+  --color-text-on-dark:   #F9F4EA;
+
+  /* Gold accent */
+  --color-gold:           #B8882A;
+  --color-gold-l:         #E8C97A;
+  --color-gold-bg:        #FDF3DC;
+  --color-muted:          #EDE8DE;
+
+  /* Dark surface */
+  --color-ds-bg:          #161410;
+  --color-ds-card:        #1e1c16;
+  --color-ds-card2:       #252218;
+  --color-ds-border:      #2e2b20;
+  --color-ds-text:        #c8c0ac;
+  --color-ds-head:        #e8d4a0;
+
+  /* Typography */
+  --font-display:         'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --font-sans:            'DM Sans', system-ui, sans-serif;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
-    font-family: var(--font-eb-garamond);
+    font-family: var(--font-sans);
     background-color: var(--color-app);
     color: var(--color-text-primary);
     -webkit-tap-highlight-color: transparent;
+    font-feature-settings: 'kern' 1, 'liga' 1;
   }
 
-  /* Typography scale */
-  h1 {
-    @apply text-h1 font-bold text-text-primary;
-  }
-  h2 {
-    @apply text-h2 font-semibold text-text-primary;
-  }
-  h3 {
-    @apply text-h3 font-semibold text-text-primary;
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    color: var(--color-text-primary);
   }
 
-  button,
-  a {
+  h1 { @apply text-h1 font-semibold; }
+  h2 { @apply text-h2 font-semibold; }
+  h3 { @apply text-h3 font-medium; }
+
+  button, a {
     touch-action: manipulation;
   }
 }
 
 @layer components {
+  /* Legacy aliases — preserved for existing components */
   .btn-primary {
-    @apply bg-sidebar hover:bg-text-primary text-text-on-dark font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-avocat-black hover:opacity-90 text-avocat-cream font-sans font-medium py-2.5 px-5 rounded-md transition-opacity duration-150;
   }
 
   .btn-secondary {
-    @apply bg-card hover:bg-hover text-text-primary font-medium py-2 px-4 rounded-lg border border-border transition-colors duration-200;
+    @apply bg-white hover:bg-avocat-muted text-avocat-black font-sans font-medium py-2.5 px-5 rounded-md border border-avocat-border transition-colors duration-150;
   }
 
   .card {
-    @apply bg-card rounded-xl shadow-lg border border-border p-6;
+    @apply bg-white rounded-xl shadow-card border border-avocat-border p-6;
   }
 
   .input-field {
-    @apply w-full px-3 py-2 border border-border rounded-lg bg-card text-text-primary focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-sidebar;
+    @apply w-full px-3 py-2.5 border border-avocat-border rounded-md bg-white text-avocat-black placeholder:text-avocat-gray9 focus:outline-none focus:ring-2 focus:ring-avocat-gold focus:border-avocat-gold transition-shadow duration-150;
   }
 }
 
-/* Zapier chatbot embed: align with grayscale (widget may use shadow DOM; override what is possible) */
+/* Zapier chatbot — override what shadow DOM allows */
 zapier-interfaces-chatbot-embed {
-  --zapier-primary: var(--color-sidebar) !important;
+  --zapier-primary: var(--color-gold) !important;
 }
