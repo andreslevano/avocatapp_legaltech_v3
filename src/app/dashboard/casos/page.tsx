@@ -403,7 +403,7 @@ function CasosHubContent() {
     <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 relative">
       {/* Floating Crear Caso button - fixed so always visible when scrolling */}
       <Link
-        href="/dashboard/crear-caso"
+        href="/cases/new"
         className="fixed top-24 right-8 z-50 flex items-center gap-2 px-5 py-3 bg-sidebar text-text-on-dark rounded-full shadow-lg hover:bg-text-primary transition-colors"
         title="Crear Caso"
       >

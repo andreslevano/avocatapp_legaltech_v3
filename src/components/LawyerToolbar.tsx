@@ -10,7 +10,7 @@ export default function LawyerToolbar({ position = 'top' }: LawyerToolbarProps) 
   const router = useRouter();
 
   const handleCreateCase = () => {
-    router.push('/dashboard/crear-caso');
+    router.push('/cases/new');
   };
 
   return (
