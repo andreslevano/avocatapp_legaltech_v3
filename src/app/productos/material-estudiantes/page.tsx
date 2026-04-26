@@ -1,293 +1,152 @@
-'use client';
-
 import Link from 'next/link';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import { Button } from '@/components/ui/Button';
+import { Tag } from '@/components/ui/Tag';
+
+const AREAS = [
+  { name: 'Derecho Constitucional', docs: ['Recurso de amparo', 'Recurso de inconstitucionalidad', 'Acción de protección'] },
+  { name: 'Derecho Civil', docs: ['Demanda de reclamación', 'Escrito de oposición', 'Medidas cautelares'] },
+  { name: 'Derecho Laboral', docs: ['Demanda por despido', 'Reclamación de salarios', 'Accidente laboral'] },
+  { name: 'Derecho Penal', docs: ['Denuncia y querella', 'Escrito de defensa', 'Recurso de apelación'] },
+];
+
+const PACKAGE = [
+  { title: 'Template DOCX', description: 'Plantilla editable en Word lista para personalizar' },
+  { title: 'Template PDF', description: 'Versión PDF de referencia con notas al margen' },
+  { title: 'Ejemplo completo', description: 'Documento desarrollado con datos reales de ejemplo' },
+  { title: 'Material de estudio', description: 'Guía con explicaciones, fundamentos y claves del texto' },
+];
+
+const BENEFITS = [
+  'Más de 50 tipos de documentos legales disponibles',
+  'Precios accesibles desde €3 por documento',
+  'Material de estudio incluido en cada paquete',
+  'Descarga inmediata después del pago',
+  'Tutor socrático IA disponible con el plan Estudiantes',
+];
 
 export default function MaterialEstudiantesPage() {
-  const legalAreas = [
-    {
-      name: 'Derecho Constitucional',
-      documents: ['Recurso de amparo', 'Recurso de inconstitucionalidad', 'Acción de protección'],
-      color: 'blue',
-    },
-    {
-      name: 'Derecho Civil y Procesal Civil',
-      documents: ['Demanda de reclamación', 'Escrito de oposición', 'Medidas cautelares'],
-      color: 'green',
-    },
-    {
-      name: 'Derecho Laboral',
-      documents: ['Demanda por despido', 'Reclamación de salarios', 'Accidente laboral'],
-      color: 'orange',
-    },
-    {
-      name: 'Derecho Penal',
-      documents: ['Denuncia y querella', 'Escrito de defensa', 'Recurso de apelación'],
-      color: 'red',
-    },
-  ];
-
-  const packageContents = [
-    {
-      title: 'Template DOCX',
-      description: 'Plantilla editable en Word lista para personalizar',
-      icon: (className?: string) => (
-        <svg className={className ?? 'w-12 h-12'} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-      ),
-    },
-    {
-      title: 'Template PDF',
-      description: 'Versión PDF de la plantilla para referencia',
-      icon: (className?: string) => (
-        <svg className={className ?? 'w-12 h-12'} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-      ),
-    },
-    {
-      title: 'Ejemplo Completo',
-      description: 'Documento de ejemplo completamente desarrollado',
-      icon: (className?: string) => (
-        <svg className={className ?? 'w-12 h-12'} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-      ),
-    },
-    {
-      title: 'Material de Estudio',
-      description: 'Guía y explicaciones sobre el documento',
-      icon: (className?: string) => (
-        <svg className={className ?? 'w-12 h-12'} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-      ),
-    },
-  ];
-
-  const benefits = [
-    'Más de 50 tipos de documentos legales disponibles',
-    'Precios accesibles desde €3 por documento',
-    'Material de estudio incluido en cada paquete',
-    'Descarga inmediata después del pago',
-    'Actualizaciones y nuevas plantillas regularmente',
-  ];
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-grow">
-        {/* Hero Section */}
-        <section className="relative py-20 lg:py-32 min-h-[500px] md:min-h-[600px] lg:min-h-[700px] overflow-hidden">
-          {/* Background Image */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: 'url(/images/hero-estudiantes-background.png)',
-            }}
-          >
-            {/* Dark overlay for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/60"></div>
-          </div>
-
-          {/* Content */}
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h1 className="text-5xl font-bold text-white mb-6 drop-shadow-lg">
-                Material de Estudio Legal
-              </h1>
-              <p className="text-xl text-white/95 max-w-3xl mx-auto drop-shadow-md">
-                Accede a una amplia biblioteca de plantillas legales profesionales, ejemplos completos y material de estudio para estudiantes de derecho.
-              </p>
-            </div>
-
-            {/* Hero Illustration */}
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-card/95 backdrop-blur-sm rounded-xl shadow-2xl p-8 border border-border">
-                <div className="grid grid-cols-2 gap-6 mb-6">
-                  <div className="bg-[var(--color-app)] rounded-lg p-6 border border-border">
-                    <div className="w-10 h-10 mb-3 flex items-center justify-center text-sidebar">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                    </div>
-                    <div className="text-2xl font-bold text-text-primary mb-2">50+</div>
-                    <div className="text-sm text-text-primary font-medium">Documentos Disponibles</div>
-                  </div>
-                  <div className="bg-[var(--color-app)] rounded-lg p-6 border border-border">
-                    <div className="w-10 h-10 mb-3 flex items-center justify-center text-sidebar">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
-                    </div>
-                    <div className="text-2xl font-bold text-text-primary mb-2">10+</div>
-                    <div className="text-sm text-text-primary font-medium">Áreas Legales</div>
-                  </div>
-                </div>
-                <div className="border-t border-border pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-sidebar rounded-lg flex items-center justify-center text-text-on-dark font-bold">
-                        €
-                      </div>
-                      <div>
-                        <div className="font-semibold text-text-primary">Precio Accesible</div>
-                        <div className="text-sm text-text-primary">Desde €3 por documento</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-text-primary">4 Archivos</div>
-                      <div className="text-sm text-text-primary">Por cada documento</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Additional gradient overlay at bottom for smooth transition */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
-        </section>
-
-        {/* Legal Areas Section */}
-        <section className="py-20 bg-card">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-text-primary mb-4">
-                Áreas Legales Disponibles
-              </h2>
-              <p className="text-xl text-text-primary max-w-2xl mx-auto">
-                Explora nuestra amplia colección de documentos organizados por área legal.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {legalAreas.map((area, index) => (
-                <div
-                  key={index}
-                  className="bg-[var(--color-app)] rounded-xl p-6 border border-border hover:shadow-lg transition-shadow"
-                >
-                  <h3 className="text-xl font-semibold text-text-primary mb-4">
-                    {area.name}
-                  </h3>
-                  <ul className="space-y-2">
-                    {area.documents.map((doc, docIndex) => (
-                      <li key={docIndex} className="flex items-center space-x-2 text-text-primary">
-                        <svg className="w-5 h-5 text-sidebar flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>{doc}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Package Contents Section */}
-        <section className="py-20 bg-[var(--color-app)]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-text-primary mb-4">
-                ¿Qué Incluye Cada Paquete?
-              </h2>
-              <p className="text-xl text-text-primary max-w-2xl mx-auto">
-                Cada documento incluye un paquete completo con todo lo que necesitas para estudiar y practicar.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {packageContents.map((item, index) => (
-                <div
-                  key={index}
-                  className="bg-card rounded-xl p-6 text-center border border-border hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex justify-center mb-4 text-sidebar">
-                    {item.icon()}
-                  </div>
-                  <h3 className="text-lg font-semibold text-text-primary mb-2">
-                    {item.title}
-                  </h3>
-                  <p className="text-text-primary text-sm">{item.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works Section */}
-        <section className="py-20 bg-card">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-text-primary mb-4">
-                Proceso Simple
-              </h2>
-            </div>
-
-            <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[
-                  { step: '1', title: 'Explora el Catálogo', description: 'Navega por las diferentes áreas legales y tipos de documentos' },
-                  { step: '2', title: 'Selecciona y Compra', description: 'Elige los documentos que necesitas y completa tu compra' },
-                  { step: '3', title: 'Descarga Inmediata', description: 'Accede instantáneamente a todos los archivos del paquete' },
-                ].map((item, index) => (
-                  <div key={index} className="text-center">
-                    <div className="w-16 h-16 bg-sidebar text-text-on-dark rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                      {item.step}
-                    </div>
-                    <h3 className="text-lg font-semibold text-text-primary mb-2">{item.title}</h3>
-                    <p className="text-text-primary">{item.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Benefits Section */}
-        <section className="py-20 bg-[var(--color-app)]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold text-text-primary mb-4">
-                  Por Qué Elegir Nuestro Material
-                </h2>
-              </div>
-
-              <div className="space-y-4">
-                {benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-start space-x-4 bg-card rounded-lg p-4 shadow-sm border border-border">
-                    <div className="flex-shrink-0">
-                      <svg className="w-6 h-6 text-sidebar" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <p className="text-lg text-text-primary">{benefit}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section - palette gradient (no green/blue) */}
-        <section className="py-20 bg-gradient-to-r from-[var(--color-sidebar)] to-[#3d3d3d]">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-4xl font-bold text-white mb-6">
-              Comienza a Estudiar con Material Profesional
-            </h2>
-            <p className="text-xl text-white/90 mb-8">
-              Accede a plantillas legales profesionales, ejemplos completos y material de estudio diseñado para estudiantes de derecho.
-            </p>
-            <Link
-              href="/signup"
-              className="inline-flex items-center px-8 py-4 bg-card text-text-primary font-semibold rounded-lg hover:bg-[var(--color-app)] transition-colors shadow-lg text-lg"
-            >
-              Explorar Material
-              <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
+    <div className="min-h-screen">
+      {/* Hero */}
+      <section
+        className="relative min-h-[560px] flex items-center py-24 overflow-hidden"
+        style={{ backgroundImage: 'url(/images/hero-estudiantes-background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
+        <div className="absolute inset-0 bg-avocat-black/75" />
+        <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
+          <Tag variant="gold" className="mb-6">Plan Estudiantes — €3/escrito</Tag>
+          <h1 className="font-display text-h1 text-avocat-cream mb-6 max-w-3xl mx-auto">
+            Material de Estudio Legal
+          </h1>
+          <p className="font-sans text-body text-avocat-cream/80 max-w-2xl mx-auto mb-10">
+            Accede a una biblioteca de plantillas legales profesionales, ejemplos completos y un tutor socrático IA para estudiantes de derecho.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link href="/signup?plan=Estudiantes">
+              <Button variant="BtnGold" size="lg">Explorar material</Button>
             </Link>
-            <p className="mt-4 text-white/90 text-sm">
-              Más de 50 documentos disponibles • Precios desde €3
+            <Link href="/login">
+              <Button variant="BtnOutlineDark" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
+                Ya tengo cuenta
+              </Button>
+            </Link>
+          </div>
+          <div className="mt-12 grid grid-cols-3 gap-6 max-w-sm mx-auto">
+            {[['50+', 'Documentos'], ['10+', 'Áreas legales'], ['€3', 'Desde']].map(([val, lbl]) => (
+              <div key={lbl} className="text-center">
+                <div className="font-display text-[32px] text-avocat-gold leading-none">{val}</div>
+                <div className="font-sans text-small text-avocat-cream/60 mt-1">{lbl}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Areas */}
+      <section className="py-20 bg-avocat-cream">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <h2 className="font-display text-h2 text-avocat-black mb-3">Áreas legales disponibles</h2>
+            <p className="font-sans text-body text-avocat-gray5 max-w-xl mx-auto">
+              Documentos organizados por área para facilitar tu estudio.
             </p>
           </div>
-        </section>
-      </main>
-      <Footer />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {AREAS.map((a) => (
+              <div key={a.name} className="bg-white rounded-xl p-6 border border-avocat-border shadow-card">
+                <h3 className="font-sans font-semibold text-[16px] text-avocat-black mb-4">{a.name}</h3>
+                <ul className="space-y-2">
+                  {a.docs.map((d) => (
+                    <li key={d} className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-avocat-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-sans text-small text-avocat-gray5">{d}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Package contents */}
+      <section className="py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <h2 className="font-display text-h2 text-avocat-black mb-3">¿Qué incluye cada paquete?</h2>
+            <p className="font-sans text-body text-avocat-gray5 max-w-xl mx-auto">
+              Cada documento viene con 4 archivos para que puedas estudiar y practicar.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {PACKAGE.map((p) => (
+              <div key={p.title} className="bg-avocat-cream rounded-xl p-6 border border-avocat-border text-center">
+                <div className="w-12 h-12 rounded-xl bg-avocat-gold-bg border border-avocat-gold-l flex items-center justify-center text-avocat-gold mx-auto mb-4">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="font-sans font-semibold text-[15px] text-avocat-black mb-2">{p.title}</h3>
+                <p className="font-sans text-small text-avocat-gray5">{p.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits */}
+      <section className="py-20 bg-avocat-cream">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="font-display text-h2 text-avocat-black text-center mb-10">Por qué elegir Avocat</h2>
+          <div className="space-y-3">
+            {BENEFITS.map((b) => (
+              <div key={b} className="flex items-start gap-3 bg-white rounded-xl px-5 py-4 border border-avocat-border">
+                <svg className="w-5 h-5 text-avocat-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="font-sans text-small text-avocat-black">{b}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-20 bg-avocat-black">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="font-display text-h2 text-avocat-cream mb-4">
+            Estudia con material profesional real
+          </h2>
+          <p className="font-sans text-body text-avocat-cream/70 mb-8">
+            Más de 50 documentos disponibles. Precios desde €3.
+          </p>
+          <Link href="/signup?plan=Estudiantes">
+            <Button variant="BtnGold" size="lg">Ver catálogo</Button>
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }
-
