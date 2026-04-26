@@ -1,6 +1,9 @@
 'use client';
 
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAppAuth } from '@/contexts/AppAuthContext';
+import { getCase, type CaseDoc } from '@/lib/firestore';
 import AppHeader from '@/components/layout/AppHeader';
 import AgentChat from '@/components/agent/AgentChat';
 
@@ -10,16 +13,46 @@ const PLAN_SUBTITLE: Record<string, string> = {
   Autoservicio: 'Modo particular — lenguaje claro',
 };
 
-export default function AgentPage() {
+function AgentContent() {
   const { user, userDoc } = useAppAuth();
+  const searchParams = useSearchParams();
+  const caseId = searchParams?.get('caseId') ?? null;
+  const [caseDoc, setCaseDoc] = useState<CaseDoc | null>(null);
+
+  useEffect(() => {
+    if (!caseId) return;
+    getCase(caseId).then(c => {
+      if (c && c.userId === userDoc.uid) setCaseDoc(c);
+    }).catch(() => {});
+  }, [caseId, userDoc.uid]);
+
+  const subtitle = caseDoc
+    ? `Caso: ${caseDoc.title}`
+    : PLAN_SUBTITLE[userDoc.plan ?? ''] ?? '';
 
   return (
     <div className="flex flex-col h-full">
-      <AppHeader
-        title="Agente IA"
-        subtitle={PLAN_SUBTITLE[userDoc.plan ?? ''] ?? ''}
+      <AppHeader title="Agente IA" subtitle={subtitle} />
+      <AgentChat
+        user={user}
+        userDoc={userDoc}
+        caseContext={caseDoc ? { id: caseDoc.id, title: caseDoc.title, type: caseDoc.type, client: caseDoc.client, notes: caseDoc.notes } : undefined}
       />
-      <AgentChat user={user} userDoc={userDoc} />
     </div>
+  );
+}
+
+export default function AgentPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col h-full">
+        <AppHeader title="Agente IA" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+        </div>
+      </div>
+    }>
+      <AgentContent />
+    </Suspense>
   );
 }

@@ -28,6 +28,15 @@ const SHARED_NAV = [
     ),
   },
   {
+    href: '/tools',
+    label: 'Herramientas',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+      </svg>
+    ),
+  },
+  {
     href: '/documents',
     label: 'Documentos',
     icon: (
@@ -64,6 +73,23 @@ interface RailProps {
   userDoc: UserDoc;
 }
 
+function NavItem({ href, label, icon, active }: { href: string; label: string; icon: React.ReactNode; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      title={label}
+      className={[
+        'w-9 h-9 flex items-center justify-center rounded-lg transition-colors',
+        active
+          ? 'bg-avocat-gold text-white'
+          : 'text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#252218]',
+      ].join(' ')}
+    >
+      {icon}
+    </Link>
+  );
+}
+
 export default function Rail({ user, userDoc }: RailProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -71,6 +97,8 @@ export default function Rail({ user, userDoc }: RailProps) {
   const isLawyer = userDoc.plan === 'Abogados';
   const navItems = isLawyer ? [...LAWYER_NAV, ...SHARED_NAV] : SHARED_NAV;
   const homeHref = isLawyer ? '/dashboard' : '/agent';
+  // Mobile shows max 4 items
+  const mobileItems = navItems.slice(0, 4);
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -86,51 +114,64 @@ export default function Rail({ user, userDoc }: RailProps) {
     .toUpperCase();
 
   return (
-    <nav className="w-[52px] h-full bg-[#161410] flex flex-col items-center py-3 border-r border-[#2e2b20] flex-shrink-0">
-      {/* Logo */}
-      <div className="mb-5">
-        <Logo variant="symbol" theme="gold" size={28} href={homeHref} />
-      </div>
+    <>
+      {/* ── Desktop: left vertical rail ── */}
+      <nav className="hidden md:flex w-[52px] h-full bg-[#161410] flex-col items-center py-3 border-r border-[#2e2b20] flex-shrink-0">
+        <div className="mb-5">
+          <Logo variant="symbol" theme="gold" size={28} href={homeHref} />
+        </div>
+        <div className="flex-1 flex flex-col items-center gap-1">
+          {navItems.map(({ href, label, icon }) => (
+            <NavItem
+              key={href}
+              href={href}
+              label={label}
+              icon={icon}
+              active={pathname === href || pathname.startsWith(`${href}/`)}
+            />
+          ))}
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <button
+            onClick={handleLogout}
+            title="Cerrar sesión"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#252218] transition-colors"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+            </svg>
+          </button>
+          <div className="w-7 h-7 rounded-full bg-avocat-gold/20 border border-avocat-gold/40 flex items-center justify-center">
+            <span className="text-[10px] font-sans font-semibold text-avocat-gold leading-none">{initials}</span>
+          </div>
+        </div>
+      </nav>
 
-      {/* Nav items */}
-      <div className="flex-1 flex flex-col items-center gap-1">
-        {navItems.map(({ href, label, icon }) => {
+      {/* ── Mobile: fixed bottom navigation ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#161410] border-t border-[#2e2b20] flex items-center justify-around z-40 px-2">
+        {mobileItems.map(({ href, label, icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={href}
               href={href}
-              title={label}
-              className={[
-                'w-9 h-9 flex items-center justify-center rounded-lg transition-colors',
-                active
-                  ? 'bg-avocat-gold text-white'
-                  : 'text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#252218]',
-              ].join(' ')}
+              className="flex flex-col items-center gap-0.5 flex-1 py-2"
             >
-              {icon}
+              <span className={active ? 'text-avocat-gold' : 'text-[#6b6050]'}>{icon}</span>
+              <span className={`text-[9px] font-sans ${active ? 'text-avocat-gold' : 'text-[#6b6050]'}`}>{label}</span>
             </Link>
           );
         })}
-      </div>
-
-      {/* Bottom: logout + avatar */}
-      <div className="flex flex-col items-center gap-2">
         <button
           onClick={handleLogout}
-          title="Cerrar sesión"
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#252218] transition-colors"
+          className="flex flex-col items-center gap-0.5 flex-1 py-2 text-[#6b6050]"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
           </svg>
+          <span className="text-[9px] font-sans">Salir</span>
         </button>
-        <div className="w-7 h-7 rounded-full bg-avocat-gold/20 border border-avocat-gold/40 flex items-center justify-center">
-          <span className="text-[10px] font-sans font-semibold text-avocat-gold leading-none">
-            {initials}
-          </span>
-        </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }
