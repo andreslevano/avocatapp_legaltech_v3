@@ -115,7 +115,7 @@ export default function CaseDetailPage() {
         actions={
           <div className="flex items-center gap-2">
             <Link
-              href={`/agent?case=${caseDoc.id}`}
+              href={`/agent?caseId=${caseDoc.id}`}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-avocat-gold/10 border border-avocat-gold/20 text-avocat-gold text-[12px] font-sans font-medium hover:bg-avocat-gold/20 transition-colors"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">

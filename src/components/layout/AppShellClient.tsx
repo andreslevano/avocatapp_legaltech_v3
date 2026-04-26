@@ -8,6 +8,7 @@ import type { User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import type { UserDoc } from '@/lib/auth';
 import { AppAuthProvider } from '@/contexts/AppAuthContext';
+import { SidebarProvider } from '@/contexts/SidebarContext';
 import Rail from '@/components/layout/Rail';
 import Sidebar from '@/components/layout/Sidebar';
 
@@ -22,37 +23,23 @@ export default function AppShellClient({ children }: AppShellClientProps) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!auth) {
-      router.push('/login');
-      return;
-    }
+    if (!auth) { router.push('/login'); return; }
 
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
-      if (!fbUser) {
-        router.push('/login');
-        return;
-      }
+      if (!fbUser) { router.push('/login'); return; }
 
-      if (!db) {
-        setUser(fbUser);
-        setLoading(false);
-        return;
-      }
+      if (!db) { setUser(fbUser); setLoading(false); return; }
 
       try {
         const snap = await getDoc(doc(db, 'users', fbUser.uid));
         if (!snap.exists()) { router.push('/onboarding'); return; }
-
         const data = snap.data() as UserDoc;
         if (!data.plan || !data.onboardingComplete) { router.push('/onboarding'); return; }
-
         setUser(fbUser);
         setUserDoc(data);
       } catch {
-        router.push('/login');
-        return;
+        router.push('/login'); return;
       }
-
       setLoading(false);
     });
 
@@ -71,13 +58,21 @@ export default function AppShellClient({ children }: AppShellClientProps) {
 
   return (
     <AppAuthProvider user={user} userDoc={userDoc}>
-      <div className="flex h-screen overflow-hidden bg-[#161410]">
-        <Rail user={user} userDoc={userDoc} />
-        <Sidebar userDoc={userDoc} />
-        <main className="flex-1 overflow-auto flex flex-col">
-          {children}
-        </main>
-      </div>
+      <SidebarProvider>
+        {/* Main shell grid */}
+        <div className="flex h-screen overflow-hidden bg-[#161410]">
+          {/* Rail: hidden on mobile (shows as fixed bottom nav instead) */}
+          <Rail user={user} userDoc={userDoc} />
+
+          {/* Sidebar: 220px on desktop, slide-in overlay on mobile */}
+          <Sidebar userDoc={userDoc} />
+
+          {/* Main content: full width on mobile, flex-1 on desktop */}
+          <main className="flex-1 overflow-auto flex flex-col min-w-0 pb-16 md:pb-0">
+            {children}
+          </main>
+        </div>
+      </SidebarProvider>
     </AppAuthProvider>
   );
 }
