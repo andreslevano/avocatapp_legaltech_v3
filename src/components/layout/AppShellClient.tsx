@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import type { UserDoc } from '@/lib/auth';
@@ -12,39 +12,55 @@ import { SidebarProvider } from '@/contexts/SidebarContext';
 import Rail from '@/components/layout/Rail';
 import Sidebar from '@/components/layout/Sidebar';
 
+const LAWYER_ONLY_PATHS = ['/dashboard', '/clients'];
+
 interface AppShellClientProps {
   children: React.ReactNode;
 }
 
 export default function AppShellClient({ children }: AppShellClientProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user,    setUser]    = useState<User | null>(null);
   const [userDoc, setUserDoc] = useState<UserDoc | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const router   = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!auth) { router.push('/login'); return; }
 
-    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+    let unsubDoc: (() => void) | null = null;
+
+    const unsubAuth = onAuthStateChanged(auth, (fbUser) => {
       if (!fbUser) { router.push('/login'); return; }
+      if (!db)     { setUser(fbUser); setLoading(false); return; }
 
-      if (!db) { setUser(fbUser); setLoading(false); return; }
-
-      try {
-        const snap = await getDoc(doc(db, 'users', fbUser.uid));
+      // Replace one-time getDoc with a real-time listener so plan changes
+      // made in Firestore (e.g. by an admin) propagate immediately.
+      if (unsubDoc) unsubDoc();
+      unsubDoc = onSnapshot(doc(db, 'users', fbUser.uid), (snap) => {
         if (!snap.exists()) { router.push('/onboarding'); return; }
         const data = snap.data() as UserDoc;
         if (!data.plan || !data.onboardingComplete) { router.push('/onboarding'); return; }
         setUser(fbUser);
         setUserDoc(data);
-      } catch {
-        router.push('/login'); return;
-      }
-      setLoading(false);
+        setLoading(false);
+      });
     });
 
-    return () => unsub();
+    return () => {
+      unsubAuth();
+      if (unsubDoc) unsubDoc();
+    };
   }, [router]);
+
+  // Plan-based route guard: redirect non-Abogados away from lawyer-only routes
+  useEffect(() => {
+    if (!userDoc || !pathname) return;
+    const isLawyerOnly = LAWYER_ONLY_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'));
+    if (isLawyerOnly && userDoc.plan !== 'Abogados') {
+      router.replace('/agent');
+    }
+  }, [userDoc, pathname, router]);
 
   if (loading) {
     return (
@@ -59,15 +75,9 @@ export default function AppShellClient({ children }: AppShellClientProps) {
   return (
     <AppAuthProvider user={user} userDoc={userDoc}>
       <SidebarProvider>
-        {/* Main shell grid */}
         <div className="flex h-screen overflow-hidden bg-[#161410]">
-          {/* Rail: hidden on mobile (shows as fixed bottom nav instead) */}
           <Rail user={user} userDoc={userDoc} />
-
-          {/* Sidebar: 220px on desktop, slide-in overlay on mobile */}
           <Sidebar userDoc={userDoc} />
-
-          {/* Main content: full width on mobile, flex-1 on desktop */}
           <main className="flex-1 overflow-auto flex flex-col min-w-0 pb-16 md:pb-0">
             {children}
           </main>
