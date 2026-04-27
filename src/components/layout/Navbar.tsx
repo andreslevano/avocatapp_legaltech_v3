@@ -20,7 +20,12 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Logo variant="symbol" theme="gold" size={36} />
+          <div className="flex items-center gap-2.5">
+            <Logo variant="symbol" theme="gold" size={36} />
+            <span className="font-display text-[20px] font-semibold text-avocat-gold tracking-tight leading-none">
+              AVOCAT
+            </span>
+          </div>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6">
