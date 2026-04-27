@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -14,6 +14,12 @@ import Sidebar from '@/components/layout/Sidebar';
 
 const LAWYER_ONLY_PATHS = ['/dashboard', '/clients'];
 
+function isLawyerOnlyPath(pathname: string) {
+  return LAWYER_ONLY_PATHS.some(
+    p => pathname === p || pathname.startsWith(p + '/')
+  );
+}
+
 interface AppShellClientProps {
   children: React.ReactNode;
 }
@@ -24,6 +30,9 @@ export default function AppShellClient({ children }: AppShellClientProps) {
   const [loading, setLoading] = useState(true);
   const router   = useRouter();
   const pathname = usePathname();
+  // Keep a ref so the onSnapshot callback always sees the current pathname
+  const pathnameRef = useRef(pathname);
+  useEffect(() => { pathnameRef.current = pathname; }, [pathname]);
 
   useEffect(() => {
     if (!auth) { router.push('/login'); return; }
@@ -34,13 +43,20 @@ export default function AppShellClient({ children }: AppShellClientProps) {
       if (!fbUser) { router.push('/login'); return; }
       if (!db)     { setUser(fbUser); setLoading(false); return; }
 
-      // Replace one-time getDoc with a real-time listener so plan changes
-      // made in Firestore (e.g. by an admin) propagate immediately.
       if (unsubDoc) unsubDoc();
       unsubDoc = onSnapshot(doc(db, 'users', fbUser.uid), (snap) => {
         if (!snap.exists()) { router.push('/onboarding'); return; }
         const data = snap.data() as UserDoc;
         if (!data.plan || !data.onboardingComplete) { router.push('/onboarding'); return; }
+
+        // Guard: redirect non-Abogados away from lawyer-only routes.
+        // Keep showing spinner (don't call setLoading(false)) until redirect
+        // completes so dashboard content never renders for wrong plan.
+        if (isLawyerOnlyPath(pathnameRef.current ?? '') && data.plan !== 'Abogados') {
+          router.replace('/agent');
+          return;
+        }
+
         setUser(fbUser);
         setUserDoc(data);
         setLoading(false);
@@ -52,15 +68,6 @@ export default function AppShellClient({ children }: AppShellClientProps) {
       if (unsubDoc) unsubDoc();
     };
   }, [router]);
-
-  // Plan-based route guard: redirect non-Abogados away from lawyer-only routes
-  useEffect(() => {
-    if (!userDoc || !pathname) return;
-    const isLawyerOnly = LAWYER_ONLY_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'));
-    if (isLawyerOnly && userDoc.plan !== 'Abogados') {
-      router.replace('/agent');
-    }
-  }, [userDoc, pathname, router]);
 
   if (loading) {
     return (
