@@ -226,7 +226,8 @@ export default function NewCasePage() {
   const [fileStates,   setFileStates]   = useState<FileState[]>([]);
   const [analyzeError, setAnalyzeError] = useState('');
 
-  const [intakeResult, setIntakeResult] = useState<IntakeResult | null>(null);
+  const [intakeResult,  setIntakeResult]  = useState<IntakeResult | null>(null);
+  const [intakeDocRefs, setIntakeDocRefs] = useState<Array<{ name: string; size: number; strategy: string }>>([]);
 
   const [form, setForm] = useState<CaseForm>({
     title: '', type: 'civil', client: '', ref: generateRef(), deadline: '', notes: '',
@@ -360,6 +361,17 @@ export default function NewCasePage() {
       const r: IntakeResult = data.result;
       setIntakeResult(r);
 
+      // Save document metadata to display in case detail
+      setIntakeDocRefs(
+        extracted
+          .filter(d => d.strategy !== 'error')
+          .map(d => ({
+            name:     d.name,
+            size:     d.size,
+            strategy: d.strategy,
+          }))
+      );
+
       setForm(prev => ({
         ...prev,
         title:    r.titulo  || prev.title,
@@ -377,7 +389,11 @@ export default function NewCasePage() {
     }
   };
 
-  const handleSkipToForm = () => { setIntakeResult(null); setStep('review'); };
+  const handleSkipToForm = () => {
+    setIntakeResult(null);
+    setIntakeDocRefs([]);
+    setStep('review');
+  };
 
   // ── Create case ───────────────────────────────────────────────
 
@@ -395,6 +411,21 @@ export default function NewCasePage() {
         client:   form.client.trim(),
         notes:    form.notes.trim(),
         deadline: null,
+        // Persist AI analysis so it appears in case detail
+        assessment: intakeResult ? {
+          resumen:     intakeResult.resumen,
+          partes:      intakeResult.partes,
+          riesgos:     intakeResult.riesgos,
+          puntosClave: intakeResult.puntosClave,
+          fechasClave: intakeResult.fechasClave,
+        } : undefined,
+        // Persist document metadata (name, size, extraction strategy)
+        documentRefs: intakeDocRefs.length > 0 ? intakeDocRefs.map(d => ({
+          name:     d.name,
+          type:     d.name.split('.').pop()?.toLowerCase() ?? '',
+          size:     d.size,
+          strategy: d.strategy,
+        })) : undefined,
       });
       router.push(`/cases/${id}`);
     } catch {

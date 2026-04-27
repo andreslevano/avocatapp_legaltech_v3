@@ -4,9 +4,14 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
-import { getCase, getConversations, updateCase, type CaseDoc, type ConversationDoc } from '@/lib/firestore';
+import {
+  getCase, getConversations, updateCase,
+  type CaseDoc, type ConversationDoc,
+} from '@/lib/firestore';
 import AppHeader from '@/components/layout/AppHeader';
 import type { Timestamp } from 'firebase/firestore';
+
+// ── Constants ──────────────────────────────────────────────────────
 
 const STATUS_OPTIONS = [
   { value: 'active',   label: 'Activo' },
@@ -23,14 +28,23 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  civil:        'Civil',
-  laboral:      'Laboral',
-  contractual:  'Contractual',
-  familia:      'Familia',
-  penal:        'Penal',
-  sucesoral:    'Sucesoral',
-  otro:         'Otro',
+  civil: 'Civil', laboral: 'Laboral', contractual: 'Contractual',
+  familia: 'Familia', penal: 'Penal', sucesoral: 'Sucesoral', otro: 'Otro',
 };
+
+const STRATEGY_LABEL: Record<string, string> = {
+  'text-pdf': 'PDF con texto',
+  ocr:        'PDF escaneado (OCR)',
+  txt:        'Texto plano',
+  docx:       'Word',
+  unsupported: 'Formato no soportado',
+};
+
+const FILE_ICON: Record<string, string> = {
+  pdf: '📄', txt: '📝', md: '📝', docx: '📝', doc: '📝',
+};
+
+// ── Helpers ────────────────────────────────────────────────────────
 
 function formatDate(ts: Timestamp | null): string {
   if (!ts) return '—';
@@ -48,16 +62,28 @@ function formatDateTime(ts: Timestamp): string {
   });
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024)        return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileIcon(ext: string): string {
+  return FILE_ICON[ext.toLowerCase()] ?? '📎';
+}
+
+// ── Component ──────────────────────────────────────────────────────
+
 export default function CaseDetailPage() {
   const { userDoc } = useAppAuth();
   const params = useParams<{ id: string }>() ?? { id: '' };
   const router = useRouter();
 
-  const [caseDoc, setCaseDoc] = useState<CaseDoc | null>(null);
+  const [caseDoc,       setCaseDoc]       = useState<CaseDoc | null>(null);
   const [conversations, setConversations] = useState<ConversationDoc[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [notFound, setNotFound] = useState(false);
+  const [loading,       setLoading]       = useState(true);
+  const [saving,        setSaving]        = useState(false);
+  const [notFound,      setNotFound]      = useState(false);
 
   useEffect(() => {
     if (!params.id) return;
@@ -107,6 +133,8 @@ export default function CaseDetailPage() {
     );
   }
 
+  const { assessment, documentRefs } = caseDoc;
+
   return (
     <div className="flex flex-col h-full">
       <AppHeader
@@ -133,16 +161,16 @@ export default function CaseDetailPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto space-y-5">
-          {/* Case info card */}
+
+          {/* ── Case info card ─────────────────────────────────── */}
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
             <div className="flex flex-wrap items-start gap-4 mb-5">
               <div className="flex-1 min-w-0">
                 <h2 className="font-display text-[20px] text-[#e8d4a0] leading-snug">{caseDoc.title}</h2>
                 <p className="text-[12px] text-[#6b6050] mt-1">{caseDoc.ref}</p>
               </div>
-              {/* Status selector */}
               <select
                 value={caseDoc.status}
                 onChange={e => handleStatusChange(e.target.value)}
@@ -150,17 +178,15 @@ export default function CaseDetailPage() {
                 className={`px-2.5 py-1 rounded-lg text-[12px] font-sans font-medium border cursor-pointer focus:outline-none ${STATUS_STYLE[caseDoc.status]} bg-transparent`}
               >
                 {STATUS_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value} className="bg-[#1e1c16] text-[#c8c0ac]">
-                    {o.label}
-                  </option>
+                  <option key={o.value} value={o.value} className="bg-[#1e1c16] text-[#c8c0ac]">{o.label}</option>
                 ))}
               </select>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Tipo', value: TYPE_LABELS[caseDoc.type] ?? caseDoc.type },
-                { label: 'Cliente', value: caseDoc.client || '—' },
+                { label: 'Tipo',        value: TYPE_LABELS[caseDoc.type] ?? caseDoc.type },
+                { label: 'Cliente',     value: caseDoc.client || '—' },
                 { label: 'Vencimiento', value: formatDate(caseDoc.deadline) },
                 { label: 'Actualizado', value: formatDate(caseDoc.updatedAt) },
               ].map(({ label, value }) => (
@@ -179,7 +205,117 @@ export default function CaseDetailPage() {
             )}
           </div>
 
-          {/* Conversations */}
+          {/* ── Documents attached ─────────────────────────────── */}
+          {documentRefs && documentRefs.length > 0 && (
+            <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#2e2b20] flex items-center justify-between">
+                <h3 className="text-[13px] font-sans font-semibold text-[#e8d4a0]">
+                  Documentos adjuntos
+                </h3>
+                <span className="text-[11px] text-[#6b6050]">{documentRefs.length} archivo{documentRefs.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="divide-y divide-[#2e2b20]">
+                {documentRefs.map((d, i) => {
+                  const ext = d.name.split('.').pop() ?? '';
+                  return (
+                    <div key={i} className="flex items-center gap-3 px-5 py-3">
+                      <span className="text-xl flex-shrink-0">{fileIcon(ext)}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-sans font-medium text-[#c8c0ac] truncate">{d.name}</p>
+                        <p className="text-[10px] text-[#6b6050] mt-0.5">
+                          {ext.toUpperCase()} · {formatBytes(d.size)} · {STRATEGY_LABEL[d.strategy] ?? d.strategy}
+                        </p>
+                      </div>
+                      <span className={`flex-shrink-0 px-2 py-0.5 rounded text-[10px] font-sans border ${
+                        d.strategy === 'ocr'
+                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      }`}>
+                        {d.strategy === 'ocr' ? 'OCR' : 'Texto'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── AI Assessment ──────────────────────────────────── */}
+          {assessment && (
+            <div className="space-y-3">
+              <h3 className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
+                Assessment de documentos
+              </h3>
+
+              {/* Resumen + partes */}
+              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
+                <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">
+                  Resumen ejecutivo
+                </p>
+                <p className="text-[13px] text-[#c8c0ac] leading-relaxed">{assessment.resumen}</p>
+                {assessment.partes.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {assessment.partes.map((p, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded-full bg-[#252218] border border-[#2e2b20] text-[11px] text-[#6b6050]">
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Riesgos + Puntos clave side by side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {assessment.riesgos.length > 0 && (
+                  <div className="bg-red-500/5 border border-red-500/15 rounded-xl p-5">
+                    <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-red-400 mb-3">
+                      ⚠ Riesgos y puntos de atención
+                    </p>
+                    <ul className="space-y-2">
+                      {assessment.riesgos.map((r, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-red-400 mt-0.5 flex-shrink-0 text-[12px]">•</span>
+                          <span className="text-[12px] text-red-300 leading-snug">{r}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {assessment.puntosClave.length > 0 && (
+                  <div className="bg-avocat-gold/5 border border-avocat-gold/15 rounded-xl p-5">
+                    <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-avocat-gold mb-3">
+                      ✦ Puntos jurídicos clave
+                    </p>
+                    <ul className="space-y-2">
+                      {assessment.puntosClave.map((p, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-avocat-gold mt-0.5 flex-shrink-0 text-[12px]">•</span>
+                          <span className="text-[12px] text-[#c8c0ac] leading-snug">{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Fechas clave */}
+              {assessment.fechasClave.length > 0 && (
+                <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
+                  <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">
+                    📅 Fechas y plazos relevantes
+                  </p>
+                  <ul className="space-y-1.5">
+                    {assessment.fechasClave.map((f, i) => (
+                      <li key={i} className="text-[12px] text-[#c8c0ac]">• {f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Conversations ──────────────────────────────────── */}
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b border-[#2e2b20] flex items-center justify-between">
               <h3 className="text-[13px] font-sans font-semibold text-[#e8d4a0]">
@@ -191,10 +327,7 @@ export default function CaseDetailPage() {
             {conversations.length === 0 ? (
               <div className="px-5 py-8 text-center">
                 <p className="text-[12px] text-[#6b6050] mb-3">Sin conversaciones registradas para este caso.</p>
-                <Link
-                  href={`/agent?case=${caseDoc.id}`}
-                  className="text-avocat-gold text-[12px] hover:underline"
-                >
+                <Link href={`/agent?caseId=${caseDoc.id}`} className="text-avocat-gold text-[12px] hover:underline">
                   Iniciar consulta con IA →
                 </Link>
               </div>
@@ -220,6 +353,7 @@ export default function CaseDetailPage() {
               </div>
             )}
           </div>
+
         </div>
       </div>
     </div>

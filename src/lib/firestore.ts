@@ -26,6 +26,21 @@ export type CaseType =
 
 export type CaseStatus = 'active' | 'urgent' | 'closed' | 'archived';
 
+export interface DocumentRef {
+  name: string;
+  type: string;     // file extension: 'pdf', 'txt', 'docx'
+  size: number;     // bytes
+  strategy: string; // 'text-pdf' | 'ocr' | 'txt' | 'docx' | 'unsupported'
+}
+
+export interface CaseAssessment {
+  resumen: string;
+  partes: string[];
+  riesgos: string[];
+  puntosClave: string[];
+  fechasClave: string[];
+}
+
 export interface CaseDoc {
   id: string;
   userId: string;
@@ -36,6 +51,8 @@ export interface CaseDoc {
   client: string;
   deadline: Timestamp | null;
   documents: string[];
+  documentRefs?: DocumentRef[];   // metadata of uploaded files
+  assessment?: CaseAssessment;    // AI analysis from intake
   notes: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -97,18 +114,24 @@ export async function createCase(
   userId: string,
   data: Pick<CaseDoc, 'title' | 'type' | 'status' | 'ref' | 'client' | 'notes'> & {
     deadline?: Timestamp | null;
+    assessment?: CaseAssessment;
+    documentRefs?: DocumentRef[];
   }
 ): Promise<string> {
   if (!db) throw new Error('Firestore not available');
-  const ref = await addDoc(collection(db, 'cases'), {
-    ...data,
+  const { assessment, documentRefs, ...rest } = data;
+  const payload: Record<string, unknown> = {
+    ...rest,
     userId,
     documents: [],
     deadline: data.deadline ?? null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
-  return ref.id;
+  };
+  if (assessment)    payload.assessment    = assessment;
+  if (documentRefs?.length) payload.documentRefs = documentRefs;
+  const firestoreRef = await addDoc(collection(db, 'cases'), payload);
+  return firestoreRef.id;
 }
 
 export async function updateCase(
