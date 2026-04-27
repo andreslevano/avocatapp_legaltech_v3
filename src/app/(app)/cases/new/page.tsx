@@ -159,6 +159,11 @@ export default function NewCasePage() {
   const [dragging, setDragging] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [intakeResult, setIntakeResult] = useState<IntakeResult | null>(null);
+  const [intakeMeta, setIntakeMeta] = useState<{
+    strategies: { file: string; strategy: string }[];
+    requiresOcr: boolean;
+    extractionQuality: 'full' | 'partial';
+  } | null>(null);
   const [analyzeError, setAnalyzeError] = useState('');
 
   const [form, setForm] = useState<CaseForm>({
@@ -202,6 +207,7 @@ export default function NewCasePage() {
 
       const r: IntakeResult = data.result;
       setIntakeResult(r);
+      setIntakeMeta(data.meta ?? null);
 
       // Pre-fill form
       setForm(prev => ({
@@ -378,9 +384,52 @@ export default function NewCasePage() {
               {/* Assessment panel (left/top) */}
               {intakeResult && (
                 <div className="space-y-2">
-                  <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">
-                    Análisis de documentos
-                  </p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
+                      Análisis de documentos
+                    </p>
+                    {intakeMeta && (
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-sans font-medium border ${
+                        intakeMeta.extractionQuality === 'full'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      }`}>
+                        {intakeMeta.extractionQuality === 'full' ? 'Extracción completa' : 'Extracción parcial'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* OCR warning banner */}
+                  {intakeMeta?.requiresOcr && (
+                    <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl px-4 py-3 mb-3">
+                      <p className="text-[12px] font-sans font-semibold text-amber-400 mb-1">
+                        ⚠ Documento escaneado detectado
+                      </p>
+                      <p className="text-[11px] text-amber-300/80 leading-relaxed">
+                        Uno o más archivos son PDFs de imagen (sin capa de texto). La extracción se basa en
+                        metadatos y nombre de archivo. Para análisis completo usa{' '}
+                        <a href="/tools/extraccion-datos" className="underline hover:text-amber-200">
+                          Extracción de Datos con OCR
+                        </a>
+                        {' '}o sube una versión con texto seleccionable.
+                      </p>
+                      {intakeMeta.strategies.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {intakeMeta.strategies.map((s, i) => (
+                            <span key={i} className={`text-[10px] px-2 py-0.5 rounded-full border font-sans ${
+                              s.strategy === 'image-pdf'
+                                ? 'border-amber-500/30 text-amber-400/80'
+                                : 'border-emerald-500/20 text-emerald-400/70'
+                            }`}>
+                              {s.file.length > 20 ? s.file.slice(0, 18) + '…' : s.file}
+                              {' '}· {s.strategy === 'image-pdf' ? 'imagen' : s.strategy === 'txt' ? 'texto' : 'texto-PDF'}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <AssessmentPanel result={intakeResult} />
                 </div>
               )}
