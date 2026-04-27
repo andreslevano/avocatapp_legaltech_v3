@@ -1,169 +1,207 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
-import { Tag } from '@/components/ui/Tag';
+import AnimatedSection from './AnimatedSection';
 
 const PLANS = [
   {
     id: 'student',
-    name: 'Estudiante',
+    name: 'Estudiantes',
     price: '€3',
-    unit: 'por escrito',
-    description: 'Tutor socrático de Derecho. Aprende razonando.',
-    href: '/signup?plan=estudiantes',
-    cta: 'Empezar',
+    unit: '/escrito',
+    desc: 'Tutor socrático y material académico',
+    color: '#4A90C4',
+    bg: '#f0f5ff',
+    border: '#4A90C4',
+    features: [
+      '8 áreas legales',
+      '7 tipos de escrito',
+      'Tutoría socrática',
+      'Dossier académico',
+      'Descarga y email',
+    ],
+    cta: 'Empezar →',
+    ctaStyle: 'border',
     featured: false,
-    features: [
-      'Agente tutor socrático',
-      'Generación de escritos',
-      'Feedback sobre errores',
-      'Sin suscripción mensual',
-    ],
-  },
-  {
-    id: 'lawyer',
-    name: 'Abogado',
-    price: '€75',
-    unit: 'mes',
-    description: 'Gestión completa de casos + agente IA avanzado.',
-    href: '/signup?plan=abogados',
-    cta: 'Comenzar ahora',
-    featured: true,
-    badge: 'Más popular',
-    features: [
-      'Agente IA con contexto de casos',
-      'Dashboard KPIs + Charts',
-      'Escritos en formato oficial',
-      'Directorio de clientes',
-      'Historial por caso',
-      'Soporte prioritario',
-    ],
   },
   {
     id: 'self',
-    name: 'Particular',
+    name: 'Autoservicio',
     price: '€50',
-    unit: 'mes',
-    description: 'Asistente legal en lenguaje llano, sin tecnicismos.',
-    href: '/signup?plan=autoservicio',
-    cta: 'Empezar',
-    featured: false,
+    unit: '/mes',
+    desc: 'Asistente legal para particulares',
+    color: '#3DAB7A',
+    bg: '#f0faf5',
+    border: '#3DAB7A',
     features: [
-      'Asistente en lenguaje simple',
-      'Guías de reclamación paso a paso',
-      'Generación de documentos',
-      'Disponible 24/7',
+      '100 créditos/mes',
+      'Análisis de documentos',
+      'Extracción de datos',
+      'Evaluación de riesgo',
+      'Generación de escritos',
     ],
+    cta: 'Empezar →',
+    ctaStyle: 'border',
+    featured: false,
   },
-];
+  {
+    id: 'lawyer',
+    name: 'Abogados',
+    price: '€75',
+    unit: '/mes',
+    desc: 'Suite completa para el despacho profesional',
+    color: '#B8882A',
+    bg: '#1e1c16',
+    border: '#B8882A',
+    features: [
+      'Dashboard y métricas',
+      'Gestión completa de casos',
+      'Directorio de clientes',
+      'Repositorio de documentos',
+      '+50 tipos de escritos',
+      'Análisis IA + extracción',
+      'Modo Agente completo',
+    ],
+    cta: 'Prueba gratis 14 días →',
+    ctaStyle: 'filled',
+    featured: true,
+    badge: 'Más popular',
+  },
+  {
+    id: 'solo',
+    name: 'Solo escritos',
+    price: '€10',
+    unit: '/escrito',
+    desc: 'Escritos puntuales sin suscripción',
+    color: '#9a9a9a',
+    bg: '#fafafa',
+    border: '#C8C0B0',
+    features: [
+      'Acción de tutela',
+      'Reclamación de cantidades',
+      'Acuerdo de confidencialidad',
+      'Contrato de servicio',
+      '+50 escritos más',
+    ],
+    cta: 'Empezar →',
+    ctaStyle: 'border',
+    featured: false,
+  },
+] as const;
 
 export default function PricingSection() {
   return (
-    <section id="precios" className="bg-avocat-cream py-20">
+    <section className="bg-avocat-cream py-20 border-t border-avocat-border/40" id="precios">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-display text-h2 text-avocat-black text-center mb-2">
-          Planes transparentes
-        </h2>
-        <p className="text-body text-avocat-gray5 text-center mb-12">
-          Sin permanencia. Cancela cuando quieras.
-        </p>
+        <AnimatedSection className="text-center mb-12">
+          <div className="inline-block px-3 py-1 rounded-full bg-avocat-gold-bg border border-avocat-gold-l/40 text-[11px] font-sans font-semibold text-avocat-gold uppercase tracking-widest mb-4">
+            Precios
+          </div>
+          <h2
+            className="font-display text-avocat-black font-semibold leading-tight"
+            style={{ fontSize: 'clamp(26px, 3vw, 38px)' }}
+          >
+            Simple y transparente
+          </h2>
+          <p className="font-sans text-[15px] text-avocat-gray5 mt-3">
+            Sin costes ocultos. Cambia de plan cuando quieras.
+          </p>
+        </AnimatedSection>
 
-        <div className="grid md:grid-cols-3 gap-6 items-start">
-          {PLANS.map((plan) => (
-            <div
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {PLANS.map((plan, i) => (
+            <AnimatedSection
               key={plan.id}
-              className={[
-                'rounded-xl border p-6 flex flex-col',
-                plan.featured
-                  ? 'bg-avocat-black border-avocat-gold shadow-elevated scale-[1.02]'
-                  : 'bg-white border-avocat-border shadow-card',
-              ].join(' ')}
+              delay={i * 100}
+              className="relative rounded-2xl overflow-hidden flex flex-col"
+              style={{ background: plan.bg, border: `1px solid ${plan.featured ? plan.border : plan.border + '40'}` }}
             >
-              {/* Badge */}
-              {plan.badge && (
-                <Tag variant="gold" size="sm" className="self-start mb-4">
+              {plan.featured && (
+                <div
+                  className="absolute top-0 left-0 right-0 py-1.5 text-center text-[10px] font-sans font-semibold text-white"
+                  style={{ background: plan.color }}
+                >
                   {plan.badge}
-                </Tag>
+                </div>
               )}
 
-              <h3
-                className={`font-display text-h3 mb-1 ${
-                  plan.featured ? 'text-avocat-cream' : 'text-avocat-black'
-                }`}
-              >
-                {plan.name}
-              </h3>
-              <p
-                className={`text-small mb-4 ${
-                  plan.featured ? 'text-ds-text' : 'text-avocat-gray5'
-                }`}
-              >
-                {plan.description}
-              </p>
-
-              {/* Price */}
-              <div className="mb-6">
-                <span
-                  className={`text-[40px] font-display font-semibold ${
-                    plan.featured ? 'text-avocat-gold-l' : 'text-avocat-black'
-                  }`}
+              <div className={`p-5 flex-1 flex flex-col ${plan.featured ? 'pt-9' : ''}`}>
+                {/* Plan name */}
+                <p
+                  className="text-[11px] font-sans font-semibold uppercase tracking-widest mb-3"
+                  style={{ color: plan.color }}
                 >
-                  {plan.price}
-                </span>
-                <span
-                  className={`text-small ml-1 ${
-                    plan.featured ? 'text-ds-text' : 'text-avocat-gray5'
-                  }`}
-                >
-                  /{plan.unit}
-                </span>
-              </div>
+                  {plan.name}
+                </p>
 
-              {/* Features */}
-              <ul className="space-y-2 mb-8 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5">
-                    <svg
-                      className={`mt-0.5 flex-shrink-0 w-4 h-4 ${
-                        plan.featured ? 'text-avocat-gold' : 'text-avocat-gold'
-                      }`}
-                      fill="none"
-                      viewBox="0 0 16 16"
-                    >
-                      <path
-                        d="M3 8l4 4 6-6"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span
-                      className={`text-small ${
-                        plan.featured ? 'text-ds-text' : 'text-avocat-gray5'
-                      }`}
-                    >
+                {/* Price */}
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span
+                    className="font-display font-bold"
+                    style={{ fontSize: 36, color: plan.featured ? '#e8d4a0' : plan.color }}
+                  >
+                    {plan.price}
+                  </span>
+                  <span
+                    className="text-[12px] font-sans"
+                    style={{ color: plan.featured ? '#6b6050' : plan.color + '99' }}
+                  >
+                    {plan.unit}
+                  </span>
+                </div>
+
+                {/* Divider */}
+                <div
+                  className="h-px my-4"
+                  style={{ background: plan.featured ? '#2e2b20' : plan.border + '25' }}
+                />
+
+                {/* Features */}
+                <ul className="space-y-2.5 mb-6 flex-1">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-[12px] font-sans"
+                      style={{ color: plan.featured ? '#c8c0ac' : '#5f5f5f' }}>
+                      <div
+                        className="w-3.5 h-3.5 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ background: `${plan.color}20` }}
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: plan.color }} />
+                      </div>
                       {f}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
 
-              <Link href={plan.href}>
-                <Button
-                  variant={plan.featured ? 'BtnGold' : 'BtnOutlineDark'}
-                  size="md"
-                  fullWidth
-                >
-                  {plan.cta}
-                </Button>
-              </Link>
-            </div>
+                {/* CTA */}
+                <Link href="/signup">
+                  <button
+                    className="w-full py-2.5 rounded-xl text-[13px] font-sans font-medium transition-colors"
+                    style={
+                      plan.ctaStyle === 'filled'
+                        ? { background: plan.color, color: '#fff' }
+                        : { border: `1.5px solid ${plan.color}`, color: plan.color, background: 'transparent' }
+                    }
+                  >
+                    {plan.cta}
+                  </button>
+                </Link>
+              </div>
+            </AnimatedSection>
           ))}
         </div>
 
-        <p className="text-small text-avocat-gray9 text-center mt-8">
-          ¿Equipo grande o institución? <Link href="/contacto" className="text-avocat-gold hover:underline">Contáctanos</Link> para un plan Enterprise.
-        </p>
+        {/* Enterprise banner */}
+        <AnimatedSection delay={400} className="mt-8 text-center">
+          <div className="inline-flex items-center gap-4 bg-avocat-gold-bg border border-avocat-gold-l/40 rounded-xl px-6 py-4">
+            <span className="text-[13px] font-sans text-avocat-gray5">
+              ¿Necesitas un plan empresarial?
+            </span>
+            <Link
+              href="/contacto"
+              className="text-[13px] font-sans font-semibold text-avocat-gold hover:underline"
+            >
+              Contactar ventas →
+            </Link>
+          </div>
+        </AnimatedSection>
       </div>
     </section>
   );

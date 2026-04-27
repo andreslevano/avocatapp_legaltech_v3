@@ -1,33 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import OnboardingStep from '@/components/auth/OnboardingStep';
 
-export default function OnboardingPage() {
-  const [user, setUser] = useState<User | null>(null);
+function OnboardingContent() {
+  const [user, setUser]               = useState<User | null>(null);
   const [displayName, setDisplayName] = useState('');
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [loading, setLoading]         = useState(true);
+  const router                        = useRouter();
+  const searchParams                  = useSearchParams();
+  const isChangingPlan                = searchParams.get('mode') === 'change';
 
   useEffect(() => {
     if (!auth) { router.push('/login'); return; }
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        router.push('/login');
-        return;
-      }
+      if (!firebaseUser) { router.push('/login'); return; }
 
-      // If user already has a plan, redirect to dashboard
       if (db) {
         const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
         if (snap.exists()) {
           const data = snap.data();
-          if (data.plan && data.onboardingComplete) {
+          // Only redirect away if NOT in plan-change mode
+          if (!isChangingPlan && data.plan && data.onboardingComplete) {
             router.push('/dashboard');
             return;
           }
@@ -40,7 +39,7 @@ export default function OnboardingPage() {
     });
 
     return () => unsub();
-  }, [router]);
+  }, [router, isChangingPlan]);
 
   if (loading) {
     return (
@@ -53,4 +52,18 @@ export default function OnboardingPage() {
   if (!user) return null;
 
   return <OnboardingStep uid={user.uid} displayName={displayName} />;
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-avocat-cream flex items-center justify-center">
+          <div className="h-8 w-8 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+        </div>
+      }
+    >
+      <OnboardingContent />
+    </Suspense>
+  );
 }

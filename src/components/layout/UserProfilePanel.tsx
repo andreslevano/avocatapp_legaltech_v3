@@ -220,7 +220,7 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
         </Link>
 
         <Link
-          href="/onboarding"
+          href="/onboarding?mode=change"
           onClick={onClose}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-[12px] font-sans text-[#c8c0ac] hover:text-[#e8d4a0] hover:bg-[#252218] transition-colors"
         >
