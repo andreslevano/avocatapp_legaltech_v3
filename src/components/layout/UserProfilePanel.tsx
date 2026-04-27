@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // used only for logout redirect
+import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -36,22 +37,19 @@ const PLAN_META: Record<UserPlan, { label: string; price: string; desc: string; 
 };
 
 const COUNTRIES = [
-  { code: 'ES', label: 'España',   flag: '🇪🇸' },
-  { code: 'CO', label: 'Colombia', flag: '🇨🇴' },
-  { code: 'MX', label: 'México',   flag: '🇲🇽' },
-  { code: 'CL', label: 'Chile',    flag: '🇨🇱' },
-  { code: 'PE', label: 'Perú',     flag: '🇵🇪' },
-  { code: 'EC', label: 'Ecuador',  flag: '🇪🇨' },
-  { code: 'AR', label: 'Argentina',flag: '🇦🇷' },
+  { label: 'España',    flag: '🇪🇸' },
+  { label: 'Colombia',  flag: '🇨🇴' },
+  { label: 'México',    flag: '🇲🇽' },
+  { label: 'Chile',     flag: '🇨🇱' },
+  { label: 'Perú',      flag: '🇵🇪' },
+  { label: 'Ecuador',   flag: '🇪🇨' },
+  { label: 'Argentina', flag: '🇦🇷' },
 ];
 
-// Map stored country name → display
 function countryDisplay(stored?: string): { label: string; flag: string } | null {
   if (!stored) return null;
-  const match = COUNTRIES.find(
-    c => c.label.toLowerCase() === stored.toLowerCase() || c.code.toLowerCase() === stored.toLowerCase()
-  );
-  return match ? { label: match.label, flag: match.flag } : { label: stored, flag: '🌍' };
+  const match = COUNTRIES.find(c => c.label.toLowerCase() === stored.toLowerCase());
+  return match ?? { label: stored, flag: '🌍' };
 }
 
 // ── Component ──────────────────────────────────────────────────────
@@ -59,18 +57,22 @@ function countryDisplay(stored?: string): { label: string; flag: string } | null
 interface UserProfilePanelProps {
   open: boolean;
   onClose: () => void;
-  /** position: 'right' (desktop Rail) | 'top' (mobile bottom nav) */
-  position?: 'right' | 'top';
+  /** anchorRect: bounding rect of the trigger button, for positioning */
+  anchorRect?: DOMRect | null;
 }
 
-export default function UserProfilePanel({ open, onClose, position = 'right' }: UserProfilePanelProps) {
+export default function UserProfilePanel({ open, onClose, anchorRect }: UserProfilePanelProps) {
   const { user, userDoc } = useAppAuth();
   const router = useRouter();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const [editingCountry, setEditingCountry] = useState(false);
+  const [editingCountry,  setEditingCountry]  = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(userDoc.country ?? '');
-  const [savingCountry, setSavingCountry] = useState(false);
+  const [savingCountry,   setSavingCountry]   = useState(false);
+  const [mounted,         setMounted]         = useState(false);
+
+  // Portal requires document — avoid SSR
+  useEffect(() => { setMounted(true); }, []);
 
   // Close on click outside
   useEffect(() => {
@@ -92,12 +94,29 @@ export default function UserProfilePanel({ open, onClose, position = 'right' }: 
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   const planMeta = userDoc.plan ? PLAN_META[userDoc.plan] : null;
   const country  = countryDisplay(selectedCountry || userDoc.country);
   const initials = (user.displayName ?? user.email ?? 'U')
     .split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+  // Position: right of the trigger button (anchor), or fallback fixed bottom-left
+  const panelStyle: React.CSSProperties = anchorRect
+    ? {
+        position: 'fixed',
+        left:     anchorRect.right + 12,
+        bottom:   window.innerHeight - anchorRect.bottom,
+        width:    288,
+        zIndex:   9999,
+      }
+    : {
+        position: 'fixed',
+        left:     64,
+        bottom:   20,
+        width:    288,
+        zIndex:   9999,
+      };
 
   const handleSaveCountry = async () => {
     if (!db || !selectedCountry) return;
@@ -119,15 +138,9 @@ export default function UserProfilePanel({ open, onClose, position = 'right' }: 
     router.push('/login');
   };
 
-  const positionCls = position === 'right'
-    ? 'left-full bottom-2 ml-3'
-    : 'bottom-full left-0 mb-3';
+  const panel = (
+    <div ref={panelRef} style={panelStyle} className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl shadow-elevated overflow-hidden">
 
-  return (
-    <div
-      ref={panelRef}
-      className={`absolute ${positionCls} w-72 bg-[#1e1c16] border border-[#2e2b20] rounded-2xl shadow-elevated z-50 overflow-hidden`}
-    >
       {/* ── Avatar + name + email ── */}
       <div className="px-5 py-4 border-b border-[#2e2b20] flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-avocat-gold/20 border border-avocat-gold/40 flex items-center justify-center flex-shrink-0">
@@ -145,12 +158,8 @@ export default function UserProfilePanel({ open, onClose, position = 'right' }: 
       {planMeta && (
         <div className={`mx-4 my-3 px-3.5 py-3 rounded-xl border ${planMeta.bg}`}>
           <div className="flex items-center justify-between mb-1">
-            <span className={`text-[12px] font-sans font-semibold ${planMeta.color}`}>
-              {planMeta.label}
-            </span>
-            <span className={`text-[12px] font-display font-semibold ${planMeta.color}`}>
-              {planMeta.price}
-            </span>
+            <span className={`text-[12px] font-sans font-semibold ${planMeta.color}`}>{planMeta.label}</span>
+            <span className={`text-[12px] font-display font-semibold ${planMeta.color}`}>{planMeta.price}</span>
           </div>
           <p className="text-[11px] text-[#6b6050] leading-snug">{planMeta.desc}</p>
         </div>
@@ -169,7 +178,6 @@ export default function UserProfilePanel({ open, onClose, position = 'right' }: 
             </button>
           )}
         </div>
-
         {editingCountry ? (
           <div className="mt-2 flex items-center gap-2">
             <select
@@ -179,9 +187,7 @@ export default function UserProfilePanel({ open, onClose, position = 'right' }: 
             >
               <option value="">Seleccionar...</option>
               {COUNTRIES.map(c => (
-                <option key={c.code} value={c.label} className="bg-[#161410]">
-                  {c.flag} {c.label}
-                </option>
+                <option key={c.label} value={c.label} className="bg-[#161410]">{c.flag} {c.label}</option>
               ))}
             </select>
             <button
@@ -189,14 +195,9 @@ export default function UserProfilePanel({ open, onClose, position = 'right' }: 
               disabled={savingCountry || !selectedCountry}
               className="px-2.5 py-1.5 rounded-lg bg-avocat-gold text-white text-[11px] font-sans font-medium hover:bg-[#a07824] disabled:opacity-50 transition-colors"
             >
-              {savingCountry ? '...' : 'OK'}
+              {savingCountry ? '…' : 'OK'}
             </button>
-            <button
-              onClick={() => setEditingCountry(false)}
-              className="px-2 py-1.5 rounded-lg text-[11px] text-[#6b6050] hover:text-[#c8c0ac] transition-colors"
-            >
-              ✕
-            </button>
+            <button onClick={() => setEditingCountry(false)} className="px-2 py-1.5 rounded-lg text-[11px] text-[#6b6050] hover:text-[#c8c0ac] transition-colors">✕</button>
           </div>
         ) : (
           <p className="mt-1.5 text-[13px] text-[#c8c0ac]">
@@ -205,7 +206,7 @@ export default function UserProfilePanel({ open, onClose, position = 'right' }: 
         )}
       </div>
 
-      {/* ── Actions ── */}
+      {/* ── Navigation actions ── */}
       <div className="px-2 py-2 space-y-0.5">
         <Link
           href="/profile"
@@ -241,4 +242,6 @@ export default function UserProfilePanel({ open, onClose, position = 'right' }: 
       </div>
     </div>
   );
+
+  return createPortal(panel, document.body);
 }

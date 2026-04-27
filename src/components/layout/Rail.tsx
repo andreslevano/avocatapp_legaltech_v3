@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
@@ -102,7 +102,16 @@ export default function Rail({ user, userDoc }: RailProps) {
   // Mobile shows max 4 items
   const mobileItems = navItems.slice(0, 4);
 
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileOpen,   setProfileOpen]   = useState(false);
+  const [anchorRect,    setAnchorRect]    = useState<DOMRect | null>(null);
+  const avatarBtnRef = useRef<HTMLButtonElement>(null);
+
+  const openProfile = () => {
+    if (avatarBtnRef.current) {
+      setAnchorRect(avatarBtnRef.current.getBoundingClientRect());
+    }
+    setProfileOpen(v => !v);
+  };
 
   const initials = (user.displayName ?? user.email ?? 'U')
     .split(' ')
@@ -129,25 +138,24 @@ export default function Rail({ user, userDoc }: RailProps) {
             />
           ))}
         </div>
-        {/* Avatar button → opens profile panel */}
-        <div className="relative">
-          <button
-            onClick={() => setProfileOpen(v => !v)}
-            title="Perfil de usuario"
-            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors ${
-              profileOpen
-                ? 'bg-avocat-gold/30 border-avocat-gold'
-                : 'bg-avocat-gold/20 border-avocat-gold/40 hover:border-avocat-gold/70'
-            }`}
-          >
-            <span className="text-[11px] font-sans font-semibold text-avocat-gold leading-none">{initials}</span>
-          </button>
-          <UserProfilePanel
-            open={profileOpen}
-            onClose={() => setProfileOpen(false)}
-            position="right"
-          />
-        </div>
+        {/* Avatar button → opens profile panel (Portal) */}
+        <button
+          ref={avatarBtnRef}
+          onClick={openProfile}
+          title="Perfil de usuario"
+          className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors ${
+            profileOpen
+              ? 'bg-avocat-gold/30 border-avocat-gold'
+              : 'bg-avocat-gold/20 border-avocat-gold/40 hover:border-avocat-gold/70'
+          }`}
+        >
+          <span className="text-[11px] font-sans font-semibold text-avocat-gold leading-none">{initials}</span>
+        </button>
+        <UserProfilePanel
+          open={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          anchorRect={anchorRect}
+        />
       </nav>
 
       {/* ── Mobile: fixed bottom navigation ── */}
@@ -165,21 +173,16 @@ export default function Rail({ user, userDoc }: RailProps) {
             </Link>
           );
         })}
-        {/* Mobile avatar button */}
-        <div className="relative flex flex-col items-center gap-0.5 flex-1 py-2">
-          <button
-            onClick={() => setProfileOpen(v => !v)}
-            className="w-7 h-7 rounded-full bg-avocat-gold/20 border border-avocat-gold/40 flex items-center justify-center"
-          >
+        {/* Mobile avatar button — same panel (Portal) */}
+        <button
+          onClick={openProfile}
+          className="flex flex-col items-center gap-0.5 flex-1 py-2"
+        >
+          <div className="w-7 h-7 rounded-full bg-avocat-gold/20 border border-avocat-gold/40 flex items-center justify-center">
             <span className="text-[10px] font-sans font-semibold text-avocat-gold leading-none">{initials}</span>
-          </button>
+          </div>
           <span className="text-[9px] font-sans text-[#6b6050]">Perfil</span>
-          <UserProfilePanel
-            open={profileOpen}
-            onClose={() => setProfileOpen(false)}
-            position="top"
-          />
-        </div>
+        </button>
       </nav>
     </>
   );
