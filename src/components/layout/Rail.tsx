@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
@@ -7,6 +8,7 @@ import type { User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import Logo from '@/components/brand/Logo';
 import type { UserDoc } from '@/lib/auth';
+import UserProfilePanel from '@/components/layout/UserProfilePanel';
 
 const SHARED_NAV = [
   {
@@ -100,11 +102,7 @@ export default function Rail({ user, userDoc }: RailProps) {
   // Mobile shows max 4 items
   const mobileItems = navItems.slice(0, 4);
 
-  const handleLogout = async () => {
-    if (!auth) return;
-    await signOut(auth);
-    router.push('/login');
-  };
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const initials = (user.displayName ?? user.email ?? 'U')
     .split(' ')
@@ -131,19 +129,24 @@ export default function Rail({ user, userDoc }: RailProps) {
             />
           ))}
         </div>
-        <div className="flex flex-col items-center gap-2">
+        {/* Avatar button → opens profile panel */}
+        <div className="relative">
           <button
-            onClick={handleLogout}
-            title="Cerrar sesión"
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#252218] transition-colors"
+            onClick={() => setProfileOpen(v => !v)}
+            title="Perfil de usuario"
+            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors ${
+              profileOpen
+                ? 'bg-avocat-gold/30 border-avocat-gold'
+                : 'bg-avocat-gold/20 border-avocat-gold/40 hover:border-avocat-gold/70'
+            }`}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-            </svg>
+            <span className="text-[11px] font-sans font-semibold text-avocat-gold leading-none">{initials}</span>
           </button>
-          <div className="w-7 h-7 rounded-full bg-avocat-gold/20 border border-avocat-gold/40 flex items-center justify-center">
-            <span className="text-[10px] font-sans font-semibold text-avocat-gold leading-none">{initials}</span>
-          </div>
+          <UserProfilePanel
+            open={profileOpen}
+            onClose={() => setProfileOpen(false)}
+            position="right"
+          />
         </div>
       </nav>
 
@@ -162,15 +165,21 @@ export default function Rail({ user, userDoc }: RailProps) {
             </Link>
           );
         })}
-        <button
-          onClick={handleLogout}
-          className="flex flex-col items-center gap-0.5 flex-1 py-2 text-[#6b6050]"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-          </svg>
-          <span className="text-[9px] font-sans">Salir</span>
-        </button>
+        {/* Mobile avatar button */}
+        <div className="relative flex flex-col items-center gap-0.5 flex-1 py-2">
+          <button
+            onClick={() => setProfileOpen(v => !v)}
+            className="w-7 h-7 rounded-full bg-avocat-gold/20 border border-avocat-gold/40 flex items-center justify-center"
+          >
+            <span className="text-[10px] font-sans font-semibold text-avocat-gold leading-none">{initials}</span>
+          </button>
+          <span className="text-[9px] font-sans text-[#6b6050]">Perfil</span>
+          <UserProfilePanel
+            open={profileOpen}
+            onClose={() => setProfileOpen(false)}
+            position="top"
+          />
+        </div>
       </nav>
     </>
   );
