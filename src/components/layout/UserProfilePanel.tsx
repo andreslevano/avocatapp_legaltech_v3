@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // used only for logout redirect
 import { signOut } from 'firebase/auth';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import type { User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import type { UserDoc, UserPlan } from '@/lib/auth';
+import type { UserPlan } from '@/lib/auth';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 
 // ── Plan metadata ──────────────────────────────────────────────────
@@ -207,25 +207,27 @@ export default function UserProfilePanel({ open, onClose, position = 'right' }: 
 
       {/* ── Actions ── */}
       <div className="px-2 py-2 space-y-0.5">
-        <button
-          onClick={() => { onClose(); router.push('/profile'); }}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[12px] font-sans text-[#c8c0ac] hover:text-[#e8d4a0] hover:bg-[#252218] transition-colors text-left"
+        <Link
+          href="/profile"
+          onClick={onClose}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-[12px] font-sans text-[#c8c0ac] hover:text-[#e8d4a0] hover:bg-[#252218] transition-colors"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 flex-shrink-0">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
           </svg>
           Ver perfil completo
-        </button>
+        </Link>
 
-        <button
-          onClick={() => { onClose(); router.push('/onboarding'); }}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[12px] font-sans text-[#c8c0ac] hover:text-[#e8d4a0] hover:bg-[#252218] transition-colors text-left"
+        <Link
+          href="/onboarding"
+          onClick={onClose}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-[12px] font-sans text-[#c8c0ac] hover:text-[#e8d4a0] hover:bg-[#252218] transition-colors"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 flex-shrink-0">
             <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
           </svg>
           Cambiar plan
-        </button>
+        </Link>
 
         <button
           onClick={handleLogout}
