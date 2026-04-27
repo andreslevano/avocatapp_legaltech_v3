@@ -26,7 +26,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
-            <Logo variant="signature" theme="light" size={28} href="/" />
+            <Logo variant="signature" theme="gold" size={28} href="/" />
             <p className="mt-4 text-small text-ds-text leading-relaxed">
               Plataforma LegalTech con IA para abogados, estudiantes y particulares.
             </p>
