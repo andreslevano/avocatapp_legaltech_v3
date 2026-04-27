@@ -33,8 +33,10 @@ export default function Sidebar({ userDoc }: SidebarProps) {
   const pathname = usePathname();
   const { open, close } = useSidebar();
 
+  const isLawyer = userDoc.plan === 'Abogados';
+
   useEffect(() => {
-    if (!db || !userDoc.uid) return;
+    if (!isLawyer || !db || !userDoc.uid) return;
     const q = query(collection(db, 'cases'), where('userId', '==', userDoc.uid));
     getDocs(q)
       .then(snap => {
@@ -42,7 +44,10 @@ export default function Sidebar({ userDoc }: SidebarProps) {
         setCases(docs.sort((a, b) => a.title.localeCompare(b.title)));
       })
       .catch(() => {});
-  }, [userDoc.uid]);
+  }, [userDoc.uid, isLawyer]);
+
+  // Non-Abogados: render nothing (no sidebar panel)
+  if (!isLawyer) return null;
 
   const filtered = cases.filter(
     c =>
@@ -124,12 +129,12 @@ export default function Sidebar({ userDoc }: SidebarProps) {
 
   return (
     <>
-      {/* ── Desktop: inline in flex container ── */}
+      {/* Desktop: inline */}
       <div className="hidden md:flex h-full">
         <SidebarContent />
       </div>
 
-      {/* ── Mobile: fixed slide-in overlay ── */}
+      {/* Mobile: slide-in overlay */}
       {open && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/60" onClick={close} />

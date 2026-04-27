@@ -12,7 +12,7 @@ import { SidebarProvider } from '@/contexts/SidebarContext';
 import Rail from '@/components/layout/Rail';
 import Sidebar from '@/components/layout/Sidebar';
 
-const LAWYER_ONLY_PATHS = ['/dashboard', '/clients'];
+const LAWYER_ONLY_PATHS = ['/dashboard', '/clients', '/cases'];
 
 function isLawyerOnlyPath(pathname: string) {
   return LAWYER_ONLY_PATHS.some(
