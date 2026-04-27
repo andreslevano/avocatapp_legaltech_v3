@@ -7,6 +7,10 @@ export interface UserDoc {
   uid: string;
   email: string;
   displayName: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  country?: string;
   plan: UserPlan | null;
   onboardingComplete: boolean;
   isActive: boolean;
