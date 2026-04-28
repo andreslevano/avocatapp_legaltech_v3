@@ -4,6 +4,7 @@ import { useState } from 'react';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { useAppAuth } from '@/contexts/AppAuthContext';
 
 interface ExtractedField { key: string; value: string; }
 interface ExtractionResult {
@@ -15,6 +16,7 @@ interface ExtractionResult {
 }
 
 export default function ExtraccionDatosPage() {
+  const { userDoc } = useAppAuth();
   const [text, setText] = useState('');
   const [fileName, setFileName] = useState('');
   const [extracting, setExtracting] = useState(false);
@@ -46,7 +48,7 @@ ${text.slice(0, 12000)}`;
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: prompt, history: [], userPlan: 'Abogados', caseContext: null }),
+        body: JSON.stringify({ message: prompt, history: [], userPlan: userDoc.plan, caseContext: null }),
       });
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();

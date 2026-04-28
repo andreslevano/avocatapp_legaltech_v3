@@ -4,6 +4,7 @@ import { useState } from 'react';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { useAppAuth } from '@/contexts/AppAuthContext';
 
 interface EmailAnalysis {
   categoria: string;
@@ -15,6 +16,7 @@ interface EmailAnalysis {
 }
 
 export default function RevisionEmailPage() {
+  const { userDoc } = useAppAuth();
   const [emailText, setEmailText] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<EmailAnalysis | null>(null);
@@ -46,7 +48,7 @@ ${emailText}`;
         body: JSON.stringify({
           message: prompt,
           history: [],
-          userPlan: 'Abogados',
+          userPlan: userDoc.plan,
           caseContext: null,
         }),
       });

@@ -15,6 +15,8 @@ import Sidebar from '@/components/layout/Sidebar';
 const LAWYER_ONLY_PATHS = ['/dashboard', '/clients', '/cases'];
 
 function isLawyerOnlyPath(pathname: string) {
+  // Autoservicio tools live under /dashboard/autoservicio — open to all plans
+  if (pathname.startsWith('/dashboard/autoservicio')) return false;
   return LAWYER_ONLY_PATHS.some(
     p => pathname === p || pathname.startsWith(p + '/')
   );

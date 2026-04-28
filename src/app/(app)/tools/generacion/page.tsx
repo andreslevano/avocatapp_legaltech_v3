@@ -4,6 +4,8 @@ import { useState } from 'react';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { useAppAuth } from '@/contexts/AppAuthContext';
+import { downloadAsWord, downloadAsPdf } from '@/lib/agent-export';
 
 const DOC_TYPES = [
   { value: 'demanda_ordinario', label: 'Demanda — Juicio Ordinario' },
@@ -19,6 +21,7 @@ const DOC_TYPES = [
 ];
 
 export default function GeneracionPage() {
+  const { userDoc } = useAppAuth();
   const [docType, setDocType] = useState('demanda_ordinario');
   const [details, setDetails] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -48,7 +51,7 @@ Requisitos:
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: prompt, history: [], userPlan: 'Abogados', caseContext: null }),
+        body: JSON.stringify({ message: prompt, history: [], userPlan: userDoc.plan, caseContext: null }),
       });
 
       const reader = res.body?.getReader();
@@ -71,16 +74,6 @@ Requisitos:
 
   const handleCopy = () => {
     navigator.clipboard.writeText(result);
-  };
-
-  const handleDownload = () => {
-    const blob = new Blob([result], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${docType}-${Date.now()}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -136,7 +129,8 @@ Requisitos:
                 <span className="text-[13px] font-sans font-semibold text-[#e8d4a0]">{selectedLabel}</span>
                 <div className="flex gap-2">
                   <Button variant="BtnGhost" size="sm" onClick={handleCopy}>Copiar</Button>
-                  <Button variant="BtnOutlineDark" size="sm" onClick={handleDownload}>Descargar .txt</Button>
+                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsWord(result, selectedLabel)}>Word</Button>
+                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsPdf(result, selectedLabel)}>PDF</Button>
                 </div>
               </div>
               <pre className="px-5 py-4 text-[12px] font-sans text-[#c8c0ac] whitespace-pre-wrap leading-relaxed overflow-x-auto max-h-[500px] overflow-y-auto">
