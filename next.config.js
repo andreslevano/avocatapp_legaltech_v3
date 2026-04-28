@@ -18,7 +18,7 @@ const nextConfig = {
   },
   // Configuración para API routes
   experimental: {
-    serverComponentsExternalPackages: ['pino', 'pdfkit', 'tesseract.js', 'pdf-parse']
+    serverComponentsExternalPackages: ['pino', 'pdfkit', 'tesseract.js', 'pdf-parse', 'mammoth', 'xlsx']
   },
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   webpack: (config, { isServer }) => {

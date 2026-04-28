@@ -13,6 +13,19 @@ interface AgentChatProps {
   caseContext?: object;
 }
 
+const BINARY_MIMES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+]);
+
+function isBinaryDoc(att: MessageAttachment): boolean {
+  const ext = att.name.split('.').pop()?.toLowerCase() ?? '';
+  return BINARY_MIMES.has(att.mimeType) || ['pdf', 'docx', 'doc', 'xlsx', 'xls'].includes(ext);
+}
+
 export default function AgentChat({ user: _user, userDoc, caseContext }: AgentChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState(false);
@@ -27,14 +40,13 @@ export default function AgentChat({ user: _user, userDoc, caseContext }: AgentCh
       if (streaming) return;
 
       const imageAttachments = attachments.filter(a => a.mimeType.startsWith('image/'));
-      const textAttachments = attachments.filter(a => !a.mimeType.startsWith('image/'));
+      const textAttachments  = attachments.filter(a => a.mimeType.startsWith('text/') && a.text);
+      const binaryDocs       = attachments.filter(isBinaryDoc);
 
-      // Append text-file contents inline so the model can read them
+      // Text file contents are appended inline client-side
       let fullMessage = text;
       for (const att of textAttachments) {
-        if (att.text) {
-          fullMessage += `\n\n[Documento adjunto: ${att.name}]\n${att.text}`;
-        }
+        fullMessage += `\n\n[Documento adjunto: ${att.name}]\n${att.text}`;
       }
 
       const userMsg: Message = {
@@ -45,12 +57,7 @@ export default function AgentChat({ user: _user, userDoc, caseContext }: AgentCh
       };
 
       const assistantId = `a-${Date.now()}`;
-      const assistantMsg: Message = {
-        id: assistantId,
-        role: 'assistant',
-        content: '',
-        streaming: true,
-      };
+      const assistantMsg: Message = { id: assistantId, role: 'assistant', content: '', streaming: true };
 
       setMessages(prev => [...prev, userMsg, assistantMsg]);
       setStreaming(true);
@@ -63,7 +70,10 @@ export default function AgentChat({ user: _user, userDoc, caseContext }: AgentCh
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: fullMessage,
+            // Images → vision content parts (handled in route)
             attachments: imageAttachments.map(({ name, mimeType, base64 }) => ({ name, mimeType, base64 })),
+            // Binary docs → server-side text extraction
+            documents: binaryDocs.map(({ name, mimeType, base64 }) => ({ name, mimeType, base64 })),
             history,
             userPlan: userDoc.plan,
             caseContext: caseContext ?? null,
