@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { UserDoc } from '@/lib/auth';
 import type { User } from 'firebase/auth';
-import AgentMessage, { type Message } from './AgentMessage';
+import AgentMessage, { type Message, type MessageAttachment } from './AgentMessage';
 import AgentInput from './AgentInput';
 import AgentWelcome from './AgentWelcome';
 
@@ -23,13 +23,25 @@ export default function AgentChat({ user: _user, userDoc, caseContext }: AgentCh
   }, [messages]);
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, attachments: MessageAttachment[] = []) => {
       if (streaming) return;
+
+      const imageAttachments = attachments.filter(a => a.mimeType.startsWith('image/'));
+      const textAttachments = attachments.filter(a => !a.mimeType.startsWith('image/'));
+
+      // Append text-file contents inline so the model can read them
+      let fullMessage = text;
+      for (const att of textAttachments) {
+        if (att.text) {
+          fullMessage += `\n\n[Documento adjunto: ${att.name}]\n${att.text}`;
+        }
+      }
 
       const userMsg: Message = {
         id: `u-${Date.now()}`,
         role: 'user',
-        content: text,
+        content: text || (attachments.length > 0 ? `[${attachments.map(a => a.name).join(', ')}]` : ''),
+        attachments: attachments.length > 0 ? attachments : undefined,
       };
 
       const assistantId = `a-${Date.now()}`;
@@ -50,7 +62,8 @@ export default function AgentChat({ user: _user, userDoc, caseContext }: AgentCh
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: text,
+            message: fullMessage,
+            attachments: imageAttachments.map(({ name, mimeType, base64 }) => ({ name, mimeType, base64 })),
             history,
             userPlan: userDoc.plan,
             caseContext: caseContext ?? null,
@@ -70,28 +83,19 @@ export default function AgentChat({ user: _user, userDoc, caseContext }: AgentCh
             accumulated += decoder.decode(value, { stream: true });
             const snapshot = accumulated;
             setMessages(prev =>
-              prev.map(m =>
-                m.id === assistantId ? { ...m, content: snapshot } : m
-              )
+              prev.map(m => m.id === assistantId ? { ...m, content: snapshot } : m)
             );
           }
         }
 
         setMessages(prev =>
-          prev.map(m =>
-            m.id === assistantId ? { ...m, streaming: false } : m
-          )
+          prev.map(m => m.id === assistantId ? { ...m, streaming: false } : m)
         );
       } catch {
         setMessages(prev =>
           prev.map(m =>
             m.id === assistantId
-              ? {
-                  ...m,
-                  content:
-                    'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.',
-                  streaming: false,
-                }
+              ? { ...m, content: 'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.', streaming: false }
               : m
           )
         );
