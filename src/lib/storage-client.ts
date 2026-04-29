@@ -1,6 +1,6 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
-  collection, addDoc, serverTimestamp, query, where, getDocs, orderBy
+  collection, addDoc, serverTimestamp, query, where, getDocs
 } from 'firebase/firestore';
 import { storage, db } from '@/lib/firebase';
 
@@ -109,15 +109,24 @@ export async function uploadDocument(
   };
 }
 
+function sortByCreatedAt(docs: DocumentRecord[]): DocumentRecord[] {
+  return docs.sort((a, b) => {
+    const aTs = (a.createdAt as { seconds?: number } | null)?.seconds ?? 0;
+    const bTs = (b.createdAt as { seconds?: number } | null)?.seconds ?? 0;
+    return bTs - aTs;
+  });
+}
+
 export async function getUserDocuments(userId: string): Promise<DocumentRecord[]> {
   if (!db) return [];
+  // No orderBy — avoids composite index requirement; sort client-side instead
   const q = query(
     collection(db, 'documents'),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
+    where('userId', '==', userId)
   );
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as DocumentRecord));
+  const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as DocumentRecord));
+  return sortByCreatedAt(docs);
 }
 
 export async function getCaseDocuments(userId: string, caseId: string): Promise<DocumentRecord[]> {
@@ -125,11 +134,11 @@ export async function getCaseDocuments(userId: string, caseId: string): Promise<
   const q = query(
     collection(db, 'documents'),
     where('userId', '==', userId),
-    where('caseId', '==', caseId),
-    orderBy('createdAt', 'desc')
+    where('caseId', '==', caseId)
   );
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as DocumentRecord));
+  const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as DocumentRecord));
+  return sortByCreatedAt(docs);
 }
 
 export function formatBytes(bytes: number): string {

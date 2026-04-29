@@ -27,7 +27,7 @@ export default function DocumentsPage() {
     if (!userDoc.uid) return;
     getUserDocuments(userDoc.uid)
       .then(setDocs)
-      .catch(() => {})
+      .catch(err => setError(`Error al cargar documentos: ${err?.message ?? err}`))
       .finally(() => setLoading(false));
   }, [userDoc.uid]);
 
