@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCase, type CaseDoc } from '@/lib/firestore';
+import { getCaseDocuments, type DocumentRecord } from '@/lib/storage-client';
 import AppHeader from '@/components/layout/AppHeader';
 import AgentChat from '@/components/agent/AgentChat';
 import type { CaseContext } from '@/components/agent/AgentWelcome';
@@ -18,23 +19,25 @@ function AgentContent() {
   const { user, userDoc } = useAppAuth();
   const searchParams = useSearchParams();
 
-  // Firestore case lookup via ?caseId=
-  const caseId = searchParams?.get('caseId') ?? null;
-  const [caseDoc, setCaseDoc] = useState<CaseDoc | null>(null);
+  const caseId      = searchParams?.get('caseId')     ?? null;
+  const caseTitle   = searchParams?.get('caseTitle')  ?? null;
+  const caseType    = searchParams?.get('caseType')   ?? null;
+  const caseClient  = searchParams?.get('caseClient') ?? null;
 
-  // URL-param case context (from analisis-caso and other non-Firestore sources)
-  const caseTitle  = searchParams?.get('caseTitle')  ?? null;
-  const caseType   = searchParams?.get('caseType')   ?? null;
-  const caseClient = searchParams?.get('caseClient') ?? null;
+  const [caseDoc, setCaseDoc]         = useState<CaseDoc | null>(null);
+  const [caseDocs, setCaseDocs]       = useState<DocumentRecord[]>([]);
 
   useEffect(() => {
     if (!caseId) return;
     getCase(caseId).then(c => {
-      if (c && c.userId === userDoc.uid) setCaseDoc(c);
+      if (c && c.userId === userDoc.uid) {
+        setCaseDoc(c);
+        // Fetch documents stored for this case
+        getCaseDocuments(userDoc.uid, c.id).then(setCaseDocs).catch(() => {});
+      }
     }).catch(() => {});
   }, [caseId, userDoc.uid]);
 
-  // Prefer Firestore case; fall back to URL params
   const caseContext: CaseContext | undefined = caseDoc
     ? { id: caseDoc.id, title: caseDoc.title, type: caseDoc.type, client: caseDoc.client, notes: caseDoc.notes }
     : (caseTitle || caseType)
@@ -53,6 +56,7 @@ function AgentContent() {
         user={user}
         userDoc={userDoc}
         caseContext={caseContext}
+        caseDocuments={caseDocs}
       />
     </div>
   );

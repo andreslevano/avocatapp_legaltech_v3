@@ -7,12 +7,13 @@ import AgentMessage, { type Message, type MessageAttachment } from './AgentMessa
 import AgentInput from './AgentInput';
 import AgentWelcome, { type CaseContext } from './AgentWelcome';
 import { isLegalDocument, buildWordBlob } from '@/lib/agent-export';
-import { saveDocumentToStorage } from '@/lib/storage-client';
+import { saveDocumentToStorage, type DocumentRecord } from '@/lib/storage-client';
 
 interface AgentChatProps {
   user: User;
   userDoc: UserDoc;
   caseContext?: CaseContext;
+  caseDocuments?: DocumentRecord[];
 }
 
 const BINARY_MIMES = new Set([
@@ -22,6 +23,14 @@ const BINARY_MIMES = new Set([
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ]);
+
+const EXT_MIME: Record<string, string> = {
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  doc: 'application/msword',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  xls: 'application/vnd.ms-excel',
+};
 
 function isBinaryDoc(att: MessageAttachment): boolean {
   const ext = att.name.split('.').pop()?.toLowerCase() ?? '';
@@ -33,12 +42,42 @@ interface SavedToast {
   url: string;
 }
 
-export default function AgentChat({ user, userDoc, caseContext }: AgentChatProps) {
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Fetch up to 5 case documents from Firebase Storage and return as MessageAttachments
+async function fetchCaseDocAttachments(docs: DocumentRecord[]): Promise<MessageAttachment[]> {
+  const results: MessageAttachment[] = [];
+  for (const doc of docs.slice(0, 5)) {
+    try {
+      const res = await fetch(doc.downloadUrl);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      const ext = doc.type.toLowerCase();
+      const mimeType = EXT_MIME[ext] ?? blob.type ?? 'application/octet-stream';
+      const base64 = await blobToBase64(blob);
+      results.push({ name: doc.name, mimeType, base64 });
+    } catch {
+      // skip inaccessible docs
+    }
+  }
+  return results;
+}
+
+export default function AgentChat({ user, userDoc, caseContext, caseDocuments = [] }: AgentChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [savedToast, setSavedToast] = useState<SavedToast | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track whether case docs have already been injected into the first message
+  const casDocsInjectedRef = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -49,6 +88,11 @@ export default function AgentChat({ user, userDoc, caseContext }: AgentChatProps
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, []);
+
+  // Reset injection flag when case context changes
+  useEffect(() => {
+    casDocsInjectedRef.current = false;
+  }, [caseContext?.id]);
 
   function showDocSavedToast(name: string, url: string) {
     setSavedToast({ name, url });
@@ -68,6 +112,20 @@ export default function AgentChat({ user, userDoc, caseContext }: AgentChatProps
       for (const att of textAttachments) {
         fullMessage += `\n\n[Documento adjunto: ${att.name}]\n${att.text}`;
       }
+
+      // On the first message of a case session, auto-include the case documents
+      let injectedCaseDocs: MessageAttachment[] = [];
+      if (
+        caseContext?.id &&
+        caseDocuments.length > 0 &&
+        messages.length === 0 &&
+        !casDocsInjectedRef.current
+      ) {
+        casDocsInjectedRef.current = true;
+        injectedCaseDocs = await fetchCaseDocAttachments(caseDocuments);
+      }
+
+      const allBinaryDocs = [...binaryDocs, ...injectedCaseDocs.filter(isBinaryDoc)];
 
       const userMsg: Message = {
         id: `u-${Date.now()}`,
@@ -98,7 +156,7 @@ export default function AgentChat({ user, userDoc, caseContext }: AgentChatProps
                 source: 'uploaded',
               });
             } catch {
-              // silent — don't interrupt the chat
+              // silent
             }
           })
         ).catch(() => {});
@@ -113,7 +171,7 @@ export default function AgentChat({ user, userDoc, caseContext }: AgentChatProps
           body: JSON.stringify({
             message: fullMessage,
             attachments: imageAttachments.map(({ name, mimeType, base64 }) => ({ name, mimeType, base64 })),
-            documents: binaryDocs.map(({ name, mimeType, base64 }) => ({ name, mimeType, base64 })),
+            documents: allBinaryDocs.map(({ name, mimeType, base64 }) => ({ name, mimeType, base64 })),
             history,
             userPlan: userDoc.plan,
             caseContext: caseContext ?? null,
@@ -156,7 +214,7 @@ export default function AgentChat({ user, userDoc, caseContext }: AgentChatProps
             });
             showDocSavedToast(filename, record.downloadUrl);
           } catch {
-            // silent — document still shown in chat
+            // silent
           }
         }
       } catch {
@@ -171,7 +229,7 @@ export default function AgentChat({ user, userDoc, caseContext }: AgentChatProps
         setStreaming(false);
       }
     },
-    [messages, streaming, userDoc.plan, caseContext, user.uid]
+    [messages, streaming, userDoc.plan, caseContext, caseDocuments, user.uid]
   );
 
   const showWelcome = messages.length === 0;

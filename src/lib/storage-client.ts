@@ -120,6 +120,18 @@ export async function getUserDocuments(userId: string): Promise<DocumentRecord[]
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as DocumentRecord));
 }
 
+export async function getCaseDocuments(userId: string, caseId: string): Promise<DocumentRecord[]> {
+  if (!db) return [];
+  const q = query(
+    collection(db, 'documents'),
+    where('userId', '==', userId),
+    where('caseId', '==', caseId),
+    orderBy('createdAt', 'desc')
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as DocumentRecord));
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
