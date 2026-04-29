@@ -115,3 +115,19 @@ jspm_packages/
 env.local
 CONFIGURACION_CREDENCIALES.md
 .env.local.bak
+
+# macOS Finder duplicate artifacts ("file 2.tsx", "folder 2/", "file 3.svg")
+* 2/
+* 3/
+* 4/
+* 2.ts
+* 2.tsx
+* 2.js
+* 2.js.map
+* 2.svg
+* 2.png
+* 2.md
+* 3.svg
+* 4.svg
+exports/
+avocat_claude_code_kickoff.md

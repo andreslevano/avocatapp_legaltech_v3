@@ -1,5 +1,17 @@
-# Avocat — Claude Code Kickoff Document
-**Fecha:** 24 abr 2026 | **Repo:** andreslevano/avocatapp_legaltech_v3 | **Branch:** dev
+# Avocat — Claude Code Reference Document
+**Actualizado:** 29 abr 2026 | **Repo:** andreslevano/avocatapp_legaltech_v3 | **Rama de trabajo:** dev
+
+## ESTADO ACTUAL (post-deploy)
+- **v3 en producción** en avocatapp.com (Firebase Hosting, SSR via web frameworks)
+- Todas las sesiones de implementación completadas (S1–S5)
+- Features post-deploy implementadas:
+  - Landing rebuild + profile page redesign
+  - Real-time plan sync + route guard para rutas Abogado-only
+  - Plan-specific navigation and data isolation
+  - File upload en agente (PDF, DOCX, XLSX) con drag-drop y paste
+  - Document download desde el agente (Word y PDF)
+- **Rama de trabajo:** `dev` — todos los commits van aquí, NO a `main`
+- **Rama estable:** `main` — solo recibe merges tras QA en dev
 
 ---
 
@@ -33,7 +45,7 @@ Plataforma LegalTech con IA. Tres tipos de usuario con experiencias distintas:
 | # | Decisión | Valor |
 |---|---|---|
 | 1 | Repo | github.com/andreslevano/avocatapp_legaltech_v3 |
-| 2 | Rama de trabajo | `dev` (no tocar `main` hasta QA completo) |
+| 2 | Rama de trabajo | `dev` — push siempre a `origin/dev`, nunca a `origin/main` |
 | 3 | Firebase project | `avocat-legaltech-v3` (único, sin staging) |
 | 4 | AI provider | OpenAI GPT-4o (mantener, no migrar) |
 | 5 | Agente | Real API desde el inicio (no mock) |
@@ -395,14 +407,14 @@ OPENAI_API_KEY=...                    # Ya debe existir
 ## DEPENDENCIAS A INSTALAR
 
 ```bash
-# Verificar que estas están en package.json, instalar si faltan:
+# Dependencias principales (ya instaladas):
 npm install chart.js react-chartjs-2   # Charts en dashboard
-npm install openai                      # OpenAI SDK (verificar versión >=4)
-npm install @types/node                 # Types
-
-# Si no están ya:
+npm install openai                      # OpenAI SDK >=4
 npm install firebase                    # Firebase SDK
 npm install next                        # Next.js 14+
+npm install docx jspdf html2canvas     # Generación de documentos
+npm install mammoth                     # Lectura de archivos DOCX en el agente
+npm install esbuild                     # Build tooling
 ```
 
 ---
