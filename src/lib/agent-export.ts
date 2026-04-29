@@ -82,6 +82,15 @@ function sanitizeFilename(title: string): string {
   return title.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s\-_]/g, '').trim().replace(/\s+/g, '_').slice(0, 80);
 }
 
+export function isLegalDocument(content: string): boolean {
+  if (content.length < 400) return false;
+  if (/^#{1,3}\s.+/m.test(content)) return true;
+  if ((content.match(/\*\*[^*]{5,60}\*\*/g) ?? []).length >= 3) return true;
+  if (/^(PRIMERO|SEGUNDO|TERCERO|HECHOS|FUNDAMENTOS|PETICIÓN|SUPLICO|ANTECEDENTES|OBJETO|CONSIDERANDO|AL JUZGADO|AL TRIBUNAL|DEMANDA|CONTRATO|ACUERDO|CARTA)\b/m.test(content)) return true;
+  if ((content.match(/^[A-ZÁÉÍÓÚÜÑ\s]{8,50}$/gm) ?? []).length >= 2) return true;
+  return false;
+}
+
 export function extractDocTitle(content: string): string {
   const h1 = content.match(/^# (.+)$/m);
   if (h1) return h1[1].trim();
@@ -91,14 +100,19 @@ export function extractDocTitle(content: string): string {
   return first?.trim().slice(0, 60) ?? 'Documento legal';
 }
 
-export function downloadAsWord(content: string, title?: string) {
+export function buildWordBlob(content: string, title?: string): { blob: Blob; filename: string } {
   const docTitle = title ?? extractDocTitle(content);
   const html = buildDocHtml(content, docTitle);
-  const blob = new Blob(['﻿', html], { type: 'application/msword' });
+  const blob = new Blob(['﻿' + html], { type: 'application/msword' });
+  return { blob, filename: `${sanitizeFilename(docTitle)}.doc` };
+}
+
+export function downloadAsWord(content: string, title?: string) {
+  const { blob, filename } = buildWordBlob(content, title);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${sanitizeFilename(docTitle)}.doc`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

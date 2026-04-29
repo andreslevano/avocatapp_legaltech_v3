@@ -490,6 +490,24 @@ Basado en la calidad de la documentación, precedentes legales y fortalezas del 
           </span>
         </button>
         <button
+          onClick={() => {
+            const params = new URLSearchParams();
+            if (caseData?.title) params.set('caseTitle', caseData.title);
+            if (caseData?.type) params.set('caseType', caseData.type);
+            if (caseData?.clientName) params.set('caseClient', caseData.clientName);
+            router.push(`/agent?${params.toString()}`);
+          }}
+          className="group relative w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors"
+          title="Consultar con IA"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+          <span className="absolute right-full mr-3 whitespace-nowrap px-3 py-1.5 bg-sidebar text-text-on-dark text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Consultar con IA
+          </span>
+        </button>
+        <button
           onClick={handleGenerateDocuments}
           className="group relative w-12 h-12 rounded-full bg-sidebar text-text-on-dark shadow-lg flex items-center justify-center hover:bg-text-primary transition-colors"
           title="Generar Escritos"

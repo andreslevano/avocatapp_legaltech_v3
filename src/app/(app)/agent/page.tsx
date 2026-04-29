@@ -6,6 +6,7 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCase, type CaseDoc } from '@/lib/firestore';
 import AppHeader from '@/components/layout/AppHeader';
 import AgentChat from '@/components/agent/AgentChat';
+import type { CaseContext } from '@/components/agent/AgentWelcome';
 
 const PLAN_SUBTITLE: Record<string, string> = {
   Abogados:    'Modo abogado — IA jurídica profesional',
@@ -16,8 +17,15 @@ const PLAN_SUBTITLE: Record<string, string> = {
 function AgentContent() {
   const { user, userDoc } = useAppAuth();
   const searchParams = useSearchParams();
+
+  // Firestore case lookup via ?caseId=
   const caseId = searchParams?.get('caseId') ?? null;
   const [caseDoc, setCaseDoc] = useState<CaseDoc | null>(null);
+
+  // URL-param case context (from analisis-caso and other non-Firestore sources)
+  const caseTitle  = searchParams?.get('caseTitle')  ?? null;
+  const caseType   = searchParams?.get('caseType')   ?? null;
+  const caseClient = searchParams?.get('caseClient') ?? null;
 
   useEffect(() => {
     if (!caseId) return;
@@ -26,8 +34,16 @@ function AgentContent() {
     }).catch(() => {});
   }, [caseId, userDoc.uid]);
 
-  const subtitle = caseDoc
-    ? `Caso: ${caseDoc.title}`
+  // Prefer Firestore case; fall back to URL params
+  const caseContext: CaseContext | undefined = caseDoc
+    ? { id: caseDoc.id, title: caseDoc.title, type: caseDoc.type, client: caseDoc.client, notes: caseDoc.notes }
+    : (caseTitle || caseType)
+      ? { title: caseTitle ?? undefined, type: caseType ?? undefined, client: caseClient ?? undefined }
+      : undefined;
+
+  const activeTitle = caseDoc?.title ?? caseTitle;
+  const subtitle = activeTitle
+    ? `Caso: ${activeTitle}`
     : PLAN_SUBTITLE[userDoc.plan ?? ''] ?? '';
 
   return (
@@ -36,7 +52,7 @@ function AgentContent() {
       <AgentChat
         user={user}
         userDoc={userDoc}
-        caseContext={caseDoc ? { id: caseDoc.id, title: caseDoc.title, type: caseDoc.type, client: caseDoc.client, notes: caseDoc.notes } : undefined}
+        caseContext={caseContext}
       />
     </div>
   );
