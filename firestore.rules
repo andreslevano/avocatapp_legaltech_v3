@@ -26,14 +26,55 @@ service cloud.firestore {
 
     // uploaded_files: users can read/write their own (userId field)
     match /uploaded_files/{fileId} {
-      allow read, write: if request.auth != null
-        && (resource == null || resource.data.userId == request.auth.uid)
-        && (request.resource == null || request.resource.data.userId == request.auth.uid);
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-    // Allow read/write only for authenticated users by default.
+    // users/{userId}: only the owner can read/write their own profile document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // cases: owned by the userId field
+    match /cases/{caseId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // clients: owned by the userId field
+    match /clients/{clientId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // conversations: owned by the userId field
+    match /conversations/{conversationId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // documents: owned by the userId field
+    match /documents/{docId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // purchases: created and updated server-side by the Stripe webhook (Admin SDK,
+    // bypasses these rules). Clients may only read their own purchase records.
+    match /purchases/{purchaseId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // payment_metadata: client creates a record before checkout so the Stripe webhook
+    // (Admin SDK) can associate the payment with this user. No client reads/updates.
+    match /payment_metadata/{metadataId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Everything else is denied by default. Server-side code (Cloud Functions) uses
+    // the Admin SDK and is not subject to these rules.
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }
