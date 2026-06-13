@@ -1,5 +1,5 @@
 # Avocat — Claude Code Reference Document
-**Actualizado:** 30 abr 2026 | **Repo:** andreslevano/avocatapp_legaltech_v3
+**Actualizado:** 13 jun 2026 | **Repo:** andreslevano/avocatapp_legaltech_v3
 
 ---
 
@@ -20,6 +20,7 @@
 - **Contexto de caso en agente:** navegación desde caso → agente con 4 acciones contextualizadas
 - **Carga automática de documentos del caso:** al abrir el agente desde un caso, los documentos adjuntos se inyectan automáticamente en el primer mensaje
 - Firestore rules + indexes desplegados (`firebase deploy --only firestore`)
+- **Firestore rules — seguridad por colección:** se eliminó el catch-all `allow read, write: if request.auth != null` (cualquier usuario autenticado podía leer/escribir cualquier documento). Reglas actuales en `firestore.rules`: ownership por `userId` para `cases`, `clients`, `conversations`, `documents`, `users/{userId}`, `uploaded_files` y `users/{userId}/extraccion_datos_*`; `purchases` solo lectura del propio usuario (escritura solo Admin SDK/webhook Stripe); `payment_metadata` solo `create` con `userId` propio; `contact_messages` create público con validación de campos; catch-all final `allow read, write: if false`. Validado con 33 tests en el emulador (`@firebase/rules-unit-testing`) antes de desplegar a producción.
 
 ---
 
@@ -229,4 +230,4 @@ firebase deploy --only firestore --project avocat-legaltech-v3 # Deploy rules + 
 
 ---
 
-*Avocat LegalTech — Claude Code Reference v2.0 — 30 abr 2026*
+*Avocat LegalTech — Claude Code Reference v2.1 — 13 jun 2026*
