@@ -1849,7 +1849,7 @@ export const createCheckoutSession = onRequestWithCorsAndSecrets({
     // Para EUR, el precio debe estar en centavos
     const normalizedItems = items.map((item: any) => ({
       name: String(item.name ?? 'Documento legal'),
-      area: item.area ? String(item.area) : undefined,
+      ...(item.area ? { area: String(item.area) } : {}),
       country: item.country ? String(item.country) : DEFAULT_STUDENT_COUNTRY,
       priceCents: isCOP ? Number(item.price || 0) : Number(item.price || 0), // Para COP, ya está en la unidad mínima
       price: isCOP ? Number(item.price || 0) : Number(item.price || 0) / 100, // Para EUR, convertir de centavos

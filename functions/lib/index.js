@@ -1594,14 +1594,7 @@ exports.createCheckoutSession = onRequestWithCorsAndSecrets({
         // Para EUR, el precio debe estar en centavos
         const normalizedItems = items.map((item) => {
             var _a;
-            return ({
-                name: String((_a = item.name) !== null && _a !== void 0 ? _a : 'Documento legal'),
-                area: item.area ? String(item.area) : undefined,
-                country: item.country ? String(item.country) : DEFAULT_STUDENT_COUNTRY,
-                priceCents: isCOP ? Number(item.price || 0) : Number(item.price || 0), // Para COP, ya está en la unidad mínima
-                price: isCOP ? Number(item.price || 0) : Number(item.price || 0) / 100, // Para EUR, convertir de centavos
-                quantity: Number(item.quantity || 1),
-            });
+            return (Object.assign(Object.assign({ name: String((_a = item.name) !== null && _a !== void 0 ? _a : 'Documento legal') }, (item.area ? { area: String(item.area) } : {})), { country: item.country ? String(item.country) : DEFAULT_STUDENT_COUNTRY, priceCents: isCOP ? Number(item.price || 0) : Number(item.price || 0), price: isCOP ? Number(item.price || 0) : Number(item.price || 0) / 100, quantity: Number(item.quantity || 1) }));
         });
         // Pilot users for estudiantes: generar materiales sin pasar por Stripe
         if (documentType === 'estudiantes' && customerEmail && (0, pilot_users_1.isPilotUser)(customerEmail)) {
