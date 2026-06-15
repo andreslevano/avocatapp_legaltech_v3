@@ -4,14 +4,15 @@ import { getFirestore, connectFirestoreEmulator, Firestore } from 'firebase/fire
 import { getStorage, connectStorageEmulator, FirebaseStorage } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator, Functions } from 'firebase/functions';
 
-// Firebase configuration - hardcoded for now to ensure it works
+// Firebase configuration - reads from env vars, falling back to the
+// known avocat-legaltech-v3 project values for this single-project setup
 const firebaseConfig = {
-  apiKey: "AIzaSyAiINqBn-d7vRyRZVHO600rVhHZd0B0qjM",
-  authDomain: "avocat-legaltech-v3.firebaseapp.com",
-  projectId: "avocat-legaltech-v3",
-  storageBucket: "avocat-legaltech-v3.firebasestorage.app",
-  messagingSenderId: "1023426971669",
-  appId: "1:1023426971669:web:fefbb72a56f7a60d3ca61c"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAiINqBn-d7vRyRZVHO600rVhHZd0B0qjM",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "avocat-legaltech-v3.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "avocat-legaltech-v3",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "avocat-legaltech-v3.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "1023426971669",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:1023426971669:web:fefbb72a56f7a60d3ca61c"
 };
 
 console.log('Firebase config check:', {
