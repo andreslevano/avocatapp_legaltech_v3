@@ -1493,7 +1493,7 @@ exports.createCheckoutSession = onRequestWithCorsAndSecrets({
             });
         }
         const stripe = new stripe_1.default(secretKey, { apiVersion: "2023-10-16" });
-        const { items, customerEmail, successUrl, cancelUrl, userId, documentType, docId, tutelaId, formData, subscriptionPlan, priceId, } = req.body;
+        const { items, customerEmail, successUrl, cancelUrl, userId, documentType, docId, tutelaId, caseId, uid, formData, subscriptionPlan, priceId, } = req.body;
         if (!userId || typeof userId !== 'string') {
             return res.status(400).json({
                 success: false,
@@ -1818,6 +1818,12 @@ exports.createCheckoutSession = onRequestWithCorsAndSecrets({
             if (tutelaId)
                 stripeMetadata.tutelaId = tutelaId;
             // formData se guarda en Firestore, no en Stripe metadata
+        }
+        else if (documentType === 'reclamacion_cantidades') {
+            if (caseId)
+                stripeMetadata.caseId = caseId;
+            if (uid)
+                stripeMetadata.uid = uid;
         }
         // Log exact data being sent to Stripe
         console.log('Creating Stripe checkout session with:', {

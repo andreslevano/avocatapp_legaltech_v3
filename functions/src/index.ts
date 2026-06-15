@@ -1720,6 +1720,8 @@ export const createCheckoutSession = onRequestWithCorsAndSecrets({
       documentType,
       docId,
       tutelaId,
+      caseId,
+      uid,
       formData,
       subscriptionPlan,
       priceId,
@@ -2087,6 +2089,9 @@ export const createCheckoutSession = onRequestWithCorsAndSecrets({
       if (docId) stripeMetadata.docId = docId;
       if (tutelaId) stripeMetadata.tutelaId = tutelaId;
       // formData se guarda en Firestore, no en Stripe metadata
+    } else if (documentType === 'reclamacion_cantidades') {
+      if (caseId) stripeMetadata.caseId = caseId;
+      if (uid) stripeMetadata.uid = uid;
     }
 
     // Log exact data being sent to Stripe
