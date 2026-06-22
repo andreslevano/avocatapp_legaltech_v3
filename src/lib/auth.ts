@@ -18,6 +18,10 @@ export interface UserDoc {
   role: string;
   createdAt: unknown;
   updatedAt: unknown;
+  // Credit system (Autoservicio subscribers only)
+  creditos_disponibles?: number;
+  creditos_consumidos?: number;
+  stripe_customer_id?: string;
 }
 
 /** Returns the default app route for a given plan */

@@ -5,6 +5,7 @@ import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
+import { consumirCredito } from '@/lib/creditos';
 
 interface ExtractedField { key: string; value: string; }
 interface ExtractionResult {
@@ -16,7 +17,7 @@ interface ExtractionResult {
 }
 
 export default function ExtraccionDatosPage() {
-  const { userDoc } = useAppAuth();
+  const { user, userDoc } = useAppAuth();
   const [text, setText] = useState('');
   const [fileName, setFileName] = useState('');
   const [extracting, setExtracting] = useState(false);
@@ -28,6 +29,14 @@ export default function ExtraccionDatosPage() {
     setError('');
     setExtracting(true);
     setResult(null);
+
+    const idToken = await user.getIdToken();
+    const credit = await consumirCredito(idToken, 'Extracción de datos');
+    if (!credit.ok) {
+      setError('Créditos insuficientes. Recarga tu saldo desde la página de Herramientas.');
+      setExtracting(false);
+      return;
+    }
 
     const prompt = `Extrae los datos del siguiente documento y devuelve ÚNICAMENTE un JSON válido (sin markdown) con esta estructura:
 {

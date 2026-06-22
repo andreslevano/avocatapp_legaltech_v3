@@ -4,6 +4,8 @@ import { useState, useRef } from 'react';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { useAppAuth } from '@/contexts/AppAuthContext';
+import { consumirCredito } from '@/lib/creditos';
 
 interface AnalisisResult {
   resumen: string;
@@ -27,6 +29,7 @@ async function readFileAsText(file: File): Promise<string> {
 }
 
 export default function AnalisisPage() {
+  const { user } = useAppAuth();
   const [text, setText] = useState('');
   const [fileName, setFileName] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
@@ -48,6 +51,13 @@ export default function AnalisisPage() {
     setAnalyzing(true);
     setResult(null);
     try {
+      const idToken = await user.getIdToken();
+      const credit = await consumirCredito(idToken, 'Análisis de documentos');
+      if (!credit.ok) {
+        setError('Créditos insuficientes. Recarga tu saldo desde la página de Herramientas.');
+        setAnalyzing(false);
+        return;
+      }
       const res = await fetch('/api/tools/analisis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

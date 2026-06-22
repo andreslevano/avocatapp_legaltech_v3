@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { downloadAsWord, downloadAsPdf } from '@/lib/agent-export';
+import { consumirCredito } from '@/lib/creditos';
 
 const DOC_TYPES = [
   { value: 'demanda_ordinario', label: 'Demanda — Juicio Ordinario' },
@@ -21,7 +22,7 @@ const DOC_TYPES = [
 ];
 
 export default function GeneracionPage() {
-  const { userDoc } = useAppAuth();
+  const { user, userDoc } = useAppAuth();
   const [docType, setDocType] = useState('demanda_ordinario');
   const [details, setDetails] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -35,6 +36,14 @@ export default function GeneracionPage() {
     setError('');
     setGenerating(true);
     setResult('');
+
+    const idToken = await user.getIdToken();
+    const credit = await consumirCredito(idToken, 'Generación de escritos');
+    if (!credit.ok) {
+      setError('Créditos insuficientes. Recarga tu saldo desde la página de Herramientas.');
+      setGenerating(false);
+      return;
+    }
 
     const prompt = `Genera un documento legal profesional de tipo "${selectedLabel}" en Derecho español.
 

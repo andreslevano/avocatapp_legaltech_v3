@@ -5,6 +5,7 @@ import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
+import { consumirCredito } from '@/lib/creditos';
 
 interface EmailAnalysis {
   categoria: string;
@@ -16,7 +17,7 @@ interface EmailAnalysis {
 }
 
 export default function RevisionEmailPage() {
-  const { userDoc } = useAppAuth();
+  const { user, userDoc } = useAppAuth();
   const [emailText, setEmailText] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<EmailAnalysis | null>(null);
@@ -27,6 +28,14 @@ export default function RevisionEmailPage() {
     setError('');
     setAnalyzing(true);
     setResult(null);
+
+    const idToken = await user.getIdToken();
+    const credit = await consumirCredito(idToken, 'Revisión de email');
+    if (!credit.ok) {
+      setError('Créditos insuficientes. Recarga tu saldo desde la página de Herramientas.');
+      setAnalyzing(false);
+      return;
+    }
 
     const prompt = `Analiza el siguiente email y devuelve un JSON con la estructura exacta (sin markdown):
 {
