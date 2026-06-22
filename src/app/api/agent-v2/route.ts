@@ -14,15 +14,17 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: 'buscar_casos',
     description:
-      'Busca los casos del usuario en Firestore por palabra clave. ' +
-      'Devuelve id, título, tipo, estado, cliente y fecha límite de los casos coincidentes. ' +
-      'Úsalo cuando el usuario mencione un caso concreto o pida información sobre sus expedientes.',
+      'Lista y busca los casos del usuario en Firestore. ' +
+      'Pasa query="" o "todos" para obtener todos los casos. ' +
+      'Pasa un término específico (cliente, tipo, referencia) para filtrar. ' +
+      'El estado se devuelve en inglés (active, urgent, closed, archived) — tradúcelo al responder. ' +
+      'Úsalo siempre que el usuario pregunte por sus casos o expedientes.',
     input_schema: {
       type: 'object' as const,
       properties: {
         query: {
           type: 'string',
-          description: 'Término de búsqueda (nombre del caso, cliente, tipo, palabras clave)',
+          description: 'Término de búsqueda. Usa "" o "todos" para listar todos los casos sin filtrar.',
         },
       },
       required: ['query'],
@@ -78,17 +80,34 @@ async function executeTool(
     switch (name) {
       case 'buscar_casos': {
         const q = String(input.query ?? '').toLowerCase().trim();
+
+        // Spanish → English status synonyms so "activos"/"urgentes" etc. match stored values
+        const STATUS_SYNONYMS: Record<string, string> = {
+          activo: 'active', activos: 'active',
+          urgente: 'urgent', urgentes: 'urgent',
+          cerrado: 'closed', cerrados: 'closed',
+          archivado: 'archived', archivados: 'archived',
+        };
+
         const snap = await db().collection('cases').where('userId', '==', uid).get();
-        const matches = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }) as Record<string, unknown>)
-          .filter(c => {
-            const haystack = [c.title, c.type, c.client, c.notes, c.ref]
-              .filter(Boolean)
-              .join(' ')
-              .toLowerCase();
-            return q.split(' ').some(term => haystack.includes(term));
-          })
-          .slice(0, 5)
+        const all = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Record<string, unknown>);
+
+        // Broad terms → return all cases (let Claude filter by status/type)
+        const BROAD_TERMS = ['todos', 'todas', 'mis casos', 'mis expedientes', 'lista', 'listar', ''];
+        const isBroad = BROAD_TERMS.some(t => q === t) || q.length <= 2;
+
+        const matches = (isBroad ? all : all.filter(c => {
+          const statusEn = String(c.status ?? '').toLowerCase();
+          const haystack = [c.title, c.type, c.client, c.notes, c.ref, statusEn]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+          return q.split(/\s+/).some(term => {
+            const mapped = STATUS_SYNONYMS[term] ?? term;
+            return haystack.includes(mapped) || haystack.includes(term);
+          });
+        }))
+          .slice(0, 10)
           .map(c => ({
             id: c.id,
             title: c.title,
@@ -100,9 +119,17 @@ async function executeTool(
               ? (c.deadline as { toDate: () => Date }).toDate().toISOString().split('T')[0]
               : null,
           }));
-        return matches.length > 0
-          ? matches
-          : { message: `No se encontraron casos que coincidan con "${input.query}".` };
+        if (matches.length === 0) {
+          // Return all as fallback so Claude can reason about the empty state
+          const fallback = all.slice(0, 10).map(c => ({
+            id: c.id, title: c.title, type: c.type, status: c.status,
+            client: c.client, ref: c.ref, deadline: null,
+          }));
+          return fallback.length > 0
+            ? { note: `Sin coincidencias exactas para "${input.query}". Casos disponibles:`, cases: fallback }
+            : { message: 'No se encontraron casos registrados para este usuario.' };
+        }
+        return matches;
       }
 
       case 'buscar_documentos_caso': {
@@ -168,32 +195,16 @@ interface StoredMessage {
   timestamp: FirebaseFirestore.FieldValue | { seconds: number };
 }
 
-// Reconstructs Claude message params from persisted history
-function buildClaudeMessages(
-  stored: StoredMessage[],
-): Anthropic.MessageParam[] {
+// Reconstructs Claude message params from persisted history.
+// We use plain text for all turns — avoids tool_use_id mismatches when the
+// final assistant text is stored without the intermediate tool_use blocks.
+function buildClaudeMessages(stored: StoredMessage[]): Anthropic.MessageParam[] {
   const result: Anthropic.MessageParam[] = [];
   for (const msg of stored) {
-    if (msg.role === 'user') {
-      result.push({ role: 'user', content: msg.content });
-    } else {
-      if (msg.rawContentJson) {
-        const rawContent = JSON.parse(msg.rawContentJson) as Anthropic.ContentBlock[];
-        result.push({ role: 'assistant', content: rawContent });
-        if (msg.toolUses && msg.toolUses.length > 0) {
-          result.push({
-            role: 'user',
-            content: msg.toolUses.map(tu => ({
-              type: 'tool_result' as const,
-              tool_use_id: tu.id,
-              content: tu.result,
-            })),
-          });
-        }
-      } else {
-        result.push({ role: 'assistant', content: msg.content });
-      }
-    }
+    // Skip empty content (can happen if a turn had only tool calls and no text)
+    const text = msg.content?.trim() ?? '';
+    if (!text) continue;
+    result.push({ role: msg.role, content: text });
   }
   return result;
 }
