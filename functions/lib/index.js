@@ -2829,12 +2829,35 @@ async function processTutelaDocument(item, itemIndex, purchaseRef, userId, custo
 }
 // Async function to process webhook without blocking the response
 async function processWebhookAsync(event) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
     try {
         const db = admin.firestore();
         const openai = createOpenAIClient();
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
+            // ── Subscription activation (Abogados / Autoservicio plan checkout) ──────
+            if (session.mode === 'subscription') {
+                const subUserId = (_b = (_a = session.metadata) === null || _a === void 0 ? void 0 : _a.userId) !== null && _b !== void 0 ? _b : null;
+                const subPlan = (_d = (_c = session.metadata) === null || _c === void 0 ? void 0 : _c.planType) !== null && _d !== void 0 ? _d : null;
+                if (subUserId && subPlan) {
+                    const userRef = db.collection('users').doc(subUserId);
+                    await userRef.set(Object.assign(Object.assign({ plan: subPlan, isActive: true }, (session.customer ? { stripe_customer_id: String(session.customer) } : {})), { updatedAt: admin.firestore.FieldValue.serverTimestamp() }), { merge: true });
+                    if (subPlan === 'Autoservicio') {
+                        await userRef.update({
+                            creditos_disponibles: admin.firestore.FieldValue.increment(100),
+                            creditos_consumidos: admin.firestore.FieldValue.increment(0),
+                        });
+                        await userRef.collection('creditos_log').add({
+                            tipo: 'grant_subscription',
+                            cantidad: 100,
+                            descripcion: 'Activación suscripción Autoservicio',
+                            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                        });
+                    }
+                    console.log(`✅ Subscription activated: userId=${subUserId} plan=${subPlan}`);
+                }
+                return;
+            }
             // Only process payment mode sessions that are actually paid
             if (session.mode !== 'payment' || session.payment_status !== 'paid') {
                 console.log(`Skipping session ${session.id}: mode=${session.mode}, status=${session.payment_status}`);
@@ -2856,13 +2879,13 @@ async function processWebhookAsync(event) {
             }
             // Extract metadata
             // ⭐ NUEVO: Payment Links no pasan metadata, buscar en Firestore
-            let itemsJson = (_a = session.metadata) === null || _a === void 0 ? void 0 : _a.items;
-            let documentType = ((_b = session.metadata) === null || _b === void 0 ? void 0 : _b.documentType) || 'estudiantes';
-            let tutelaId = ((_c = session.metadata) === null || _c === void 0 ? void 0 : _c.tutelaId) || null;
-            let docId = ((_d = session.metadata) === null || _d === void 0 ? void 0 : _d.docId) || null;
-            let caseId = ((_e = session.metadata) === null || _e === void 0 ? void 0 : _e.caseId) || null;
-            let uid = ((_f = session.metadata) === null || _f === void 0 ? void 0 : _f.uid) || null;
-            let formDataJson = (_g = session.metadata) === null || _g === void 0 ? void 0 : _g.formData;
+            let itemsJson = (_e = session.metadata) === null || _e === void 0 ? void 0 : _e.items;
+            let documentType = ((_f = session.metadata) === null || _f === void 0 ? void 0 : _f.documentType) || 'estudiantes';
+            let tutelaId = ((_g = session.metadata) === null || _g === void 0 ? void 0 : _g.tutelaId) || null;
+            let docId = ((_h = session.metadata) === null || _h === void 0 ? void 0 : _h.docId) || null;
+            let caseId = ((_j = session.metadata) === null || _j === void 0 ? void 0 : _j.caseId) || null;
+            let uid = ((_k = session.metadata) === null || _k === void 0 ? void 0 : _k.uid) || null;
+            let formDataJson = (_l = session.metadata) === null || _l === void 0 ? void 0 : _l.formData;
             let formData = formDataJson ? JSON.parse(formDataJson) : null;
             // Detectar reclamación si tiene caseId y uid pero no documentType
             if (!documentType || documentType === 'estudiantes') {
@@ -2872,7 +2895,7 @@ async function processWebhookAsync(event) {
                 }
             }
             // Declare userId and customerEmail early to avoid "used before declaration" error
-            let userId = ((_h = session.metadata) === null || _h === void 0 ? void 0 : _h.userId) || null;
+            let userId = ((_m = session.metadata) === null || _m === void 0 ? void 0 : _m.userId) || null;
             let customerEmail = session.customer_email || null;
             // Si no hay metadata en session (Payment Link), buscar en Firestore
             if (!itemsJson) {
@@ -3052,7 +3075,7 @@ async function processWebhookAsync(event) {
             // userId and customerEmail were already declared above, now we try to get them from various sources
             // If not set yet, try to get from session metadata
             if (!userId) {
-                userId = ((_j = session.metadata) === null || _j === void 0 ? void 0 : _j.userId) || null;
+                userId = ((_o = session.metadata) === null || _o === void 0 ? void 0 : _o.userId) || null;
             }
             // Try to get customer email from various sources if not already set
             if (!customerEmail) {
@@ -3135,7 +3158,7 @@ async function processWebhookAsync(event) {
                 console.warn(`⚠️ Usando email placeholder: ${customerEmail}`);
             }
             const totalAmount = session.amount_total || 0;
-            const currency = ((_k = session.currency) === null || _k === void 0 ? void 0 : _k.toUpperCase()) || 'EUR';
+            const currency = ((_p = session.currency) === null || _p === void 0 ? void 0 : _p.toUpperCase()) || 'EUR';
             // Create purchase document
             const purchaseId = (0, uuid_1.v4)();
             const purchaseRef = db.collection('purchases').doc(purchaseId);
@@ -3335,6 +3358,24 @@ async function processWebhookAsync(event) {
                     purchaseData.items = [];
                 }
             }
+            // ── Credit top-up: grant credits and finish, no document generation ────
+            if (documentType === 'credito_topup' && userId) {
+                const CREDITOS_TOPUP_EUR10 = 10;
+                const userRef = db.collection('users').doc(userId);
+                await userRef.update({
+                    creditos_disponibles: admin.firestore.FieldValue.increment(CREDITOS_TOPUP_EUR10),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+                await userRef.collection('creditos_log').add({
+                    tipo: 'grant_topup',
+                    cantidad: CREDITOS_TOPUP_EUR10,
+                    descripcion: `Top-up €10 (+${CREDITOS_TOPUP_EUR10} créditos)`,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+                await purchaseRef.set({ status: 'completed', updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+                console.log(`✅ Top-up ${CREDITOS_TOPUP_EUR10} créditos → userId=${userId}`);
+                return;
+            }
             // Process all items in parallel
             console.log(`🚀 Iniciando generación paralela de ${purchaseData.items.length} items...`);
             const itemPromises = purchaseData.items.map((item, index) => processItemDocuments(item, index));
@@ -3379,6 +3420,31 @@ async function processWebhookAsync(event) {
             await purchaseRef.update(finalUpdateData);
             console.log(`✅ Compra procesada completamente: ${purchaseId} (status: ${finalStatus}, items: ${documentsGenerated}/${totalItems}, documentos: ${totalDocumentsGenerated})`);
             console.log(`   Items en la actualización final: ${finalUpdateData.items.length}`);
+        }
+        else if (event.type === 'invoice.paid') {
+            // Grant 100 credits on each Autoservicio billing cycle renewal
+            const invoice = event.data.object;
+            if (invoice.billing_reason === 'subscription_cycle' && invoice.customer) {
+                const customerId = String(invoice.customer);
+                const userSnap = await db.collection('users')
+                    .where('stripe_customer_id', '==', customerId)
+                    .limit(1)
+                    .get();
+                if (!userSnap.empty) {
+                    const userRef = userSnap.docs[0].ref;
+                    await userRef.update({
+                        creditos_disponibles: admin.firestore.FieldValue.increment(100),
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    });
+                    await userRef.collection('creditos_log').add({
+                        tipo: 'grant_subscription',
+                        cantidad: 100,
+                        descripcion: 'Renovación mensual Autoservicio',
+                        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    });
+                    console.log(`✅ 100 créditos renovados → stripe_customer_id=${customerId}`);
+                }
+            }
         }
         else if (event.type === 'checkout.session.expired' || event.type === 'payment_intent.payment_failed') {
             const session = event.data.object;

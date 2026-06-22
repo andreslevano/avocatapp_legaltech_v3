@@ -3342,6 +3342,38 @@ async function processWebhookAsync(event: Stripe.Event) {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       
+      // ── Subscription activation (Abogados / Autoservicio plan checkout) ──────
+      if (session.mode === 'subscription') {
+        const subUserId: string | null = session.metadata?.userId ?? null;
+        const subPlan: string | null = session.metadata?.planType ?? null;
+        if (subUserId && subPlan) {
+          const userRef = db.collection('users').doc(subUserId);
+          await userRef.set(
+            {
+              plan: subPlan,
+              isActive: true,
+              ...(session.customer ? { stripe_customer_id: String(session.customer) } : {}),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+          if (subPlan === 'Autoservicio') {
+            await userRef.update({
+              creditos_disponibles: admin.firestore.FieldValue.increment(100),
+              creditos_consumidos: admin.firestore.FieldValue.increment(0),
+            });
+            await userRef.collection('creditos_log').add({
+              tipo: 'grant_subscription',
+              cantidad: 100,
+              descripcion: 'Activación suscripción Autoservicio',
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+          console.log(`✅ Subscription activated: userId=${subUserId} plan=${subPlan}`);
+        }
+        return;
+      }
+
       // Only process payment mode sessions that are actually paid
       if (session.mode !== 'payment' || session.payment_status !== 'paid') {
         console.log(`Skipping session ${session.id}: mode=${session.mode}, status=${session.payment_status}`);
@@ -3914,6 +3946,25 @@ async function processWebhookAsync(event: Stripe.Event) {
         }
       }
       
+      // ── Credit top-up: grant credits and finish, no document generation ────
+      if (documentType === 'credito_topup' && userId) {
+        const CREDITOS_TOPUP_EUR10 = 10;
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update({
+          creditos_disponibles: admin.firestore.FieldValue.increment(CREDITOS_TOPUP_EUR10),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        await userRef.collection('creditos_log').add({
+          tipo: 'grant_topup',
+          cantidad: CREDITOS_TOPUP_EUR10,
+          descripcion: `Top-up €10 (+${CREDITOS_TOPUP_EUR10} créditos)`,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        await purchaseRef.set({ status: 'completed', updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        console.log(`✅ Top-up ${CREDITOS_TOPUP_EUR10} créditos → userId=${userId}`);
+        return;
+      }
+
       // Process all items in parallel
       console.log(`🚀 Iniciando generación paralela de ${purchaseData.items.length} items...`);
       const itemPromises = purchaseData.items.map((item: any, index: number) => 
@@ -3972,6 +4023,30 @@ async function processWebhookAsync(event: Stripe.Event) {
       console.log(`✅ Compra procesada completamente: ${purchaseId} (status: ${finalStatus}, items: ${documentsGenerated}/${totalItems}, documentos: ${totalDocumentsGenerated})`);
       console.log(`   Items en la actualización final: ${finalUpdateData.items.length}`);
       
+    } else if (event.type === 'invoice.paid') {
+      // Grant 100 credits on each Autoservicio billing cycle renewal
+      const invoice = event.data.object as any;
+      if (invoice.billing_reason === 'subscription_cycle' && invoice.customer) {
+        const customerId = String(invoice.customer);
+        const userSnap = await db.collection('users')
+          .where('stripe_customer_id', '==', customerId)
+          .limit(1)
+          .get();
+        if (!userSnap.empty) {
+          const userRef = userSnap.docs[0].ref;
+          await userRef.update({
+            creditos_disponibles: admin.firestore.FieldValue.increment(100),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          await userRef.collection('creditos_log').add({
+            tipo: 'grant_subscription',
+            cantidad: 100,
+            descripcion: 'Renovación mensual Autoservicio',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          console.log(`✅ 100 créditos renovados → stripe_customer_id=${customerId}`);
+        }
+      }
     } else if (event.type === 'checkout.session.expired' || event.type === 'payment_intent.payment_failed') {
       const session = event.data.object as any;
       const orderId = session?.client_reference_id;

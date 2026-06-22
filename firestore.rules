@@ -30,9 +30,27 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-    // users/{userId}: only the owner can read/write their own profile document
+    // users/{userId}: owner can read their full profile.
+    // For writes: owner can update profile fields, but credit/Stripe fields are
+    // Admin-SDK-only (mutated by the Stripe webhook and /api/creditos/consumir).
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['creditos_disponibles', 'creditos_consumidos', 'stripe_customer_id']);
+    }
+
+    // users/{userId}/creditos_log: owner can read for balance history display.
+    // All writes are Admin-SDK-only (stripeWebhook + /api/creditos/consumir).
+    match /users/{userId}/creditos_log/{logId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // users/{userId}/reclamaciones_cantidades: owner can read; writes are Admin-SDK-only
+    // (created by /api/reclamacion-cantidades server route before Stripe checkout).
+    match /users/{userId}/reclamaciones_cantidades/{caseId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
     }
 
     // cases: owned by the userId field
