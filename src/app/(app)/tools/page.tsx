@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import AppHeader from '@/components/layout/AppHeader';
+import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
+import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
+import { useState } from 'react';
 
 const TOOLS_COMMON = [
   {
@@ -46,18 +49,84 @@ const TOOLS_AUTOSERVICIO = [
   },
 ];
 
-export default function ToolsPage() {
-  const { userDoc } = useAppAuth();
-  const isAutoservicio = userDoc.plan === 'Autoservicio';
+const TOOLS_ESTUDIANTES = [
+  {
+    href: '/tools/estudiantes',
+    title: 'Documentos por Área Legal',
+    description: 'Más de 44 modelos de escritos académicos de las 8 áreas del derecho español. €3 por documento.',
+    icon: '🎓',
+  },
+];
 
-  const tools = isAutoservicio
-    ? [...TOOLS_AUTOSERVICIO, ...TOOLS_COMMON]
-    : TOOLS_COMMON;
+const CREDITOS_TOPUP_EUR10 = 10;
+
+export default function ToolsPage() {
+  const { user, userDoc } = useAppAuth();
+  const isAutoservicio = userDoc.plan === 'Autoservicio';
+  const isEstudiantes = userDoc.plan === 'Estudiantes';
+  const [topping, setTopping] = useState(false);
+
+  const tools = [
+    ...(isEstudiantes ? TOOLS_ESTUDIANTES : []),
+    ...(isAutoservicio ? TOOLS_AUTOSERVICIO : []),
+    ...TOOLS_COMMON,
+  ];
+
+  const creditos = userDoc.creditos_disponibles ?? 0;
+
+  async function handleTopup() {
+    if (!user) return;
+    setTopping(true);
+    try {
+      const endpoint = getCheckoutSessionEndpoint();
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: [{ name: `Top-up ${CREDITOS_TOPUP_EUR10} créditos Autoservicio`, price: 1000, quantity: 1 }],
+          documentType: 'credito_topup',
+          userId: user.uid,
+          uid: user.uid,
+          customerEmail: user.email ?? '',
+          successUrl: `${window.location.origin}/tools?topup=success`,
+          cancelUrl: `${window.location.origin}/tools`,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } finally {
+      setTopping(false);
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
       <AppHeader title="Herramientas" subtitle="Funciones especializadas con IA" />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5">
+
+        {/* Credit balance banner for Autoservicio */}
+        {isAutoservicio && (
+          <div className="flex items-center justify-between bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-5 py-3 max-w-3xl">
+            <div>
+              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-0.5">
+                Créditos disponibles
+              </p>
+              <p className={`text-[22px] font-display font-semibold ${creditos <= 5 ? 'text-amber-400' : 'text-[#e8d4a0]'}`}>
+                {creditos}
+                <span className="text-[13px] font-sans text-[#6b6050] ml-1">/ mes</span>
+              </p>
+            </div>
+            <Button
+              variant="BtnOutlineDark"
+              size="sm"
+              loading={topping}
+              onClick={handleTopup}
+            >
+              + 10 créditos · €10
+            </Button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl">
           {tools.map(t => (
             <Link
