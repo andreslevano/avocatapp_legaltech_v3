@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, authAdmin } from '@/lib/firebase-admin';
 import { buildSystemPrompt } from '@/lib/agent-prompts';
+import { generateEmbedding } from '@/lib/vertex-embeddings';
 
 // ── Anthropic client ────────────────────────────────────────────────────────
 
@@ -160,13 +161,80 @@ async function executeTool(
       }
 
       case 'buscar_normativa_jurisprudencia': {
-        // Placeholder — Step 2.3 will wire this to the Firestore Vector Search RAG pipeline
-        return {
-          placeholder: true,
-          message:
-            'RAG no configurado todavía. El corpus jurídico español (Código Civil, LEC, Tribunal Supremo) ' +
-            'estará disponible en Step 2.3.',
-        };
+        const query = String(input.query ?? '').trim();
+        if (!query) return { error: 'query es requerido' };
+
+        try {
+          // Generate query embedding via Vertex AI text-embedding-005
+          const queryVector = await generateEmbedding(query, 'RETRIEVAL_QUERY');
+
+          // Firestore Vector Search — top 20 by cosine similarity
+          const vectorQuery = db()
+            .collection('legal_chunks')
+            .findNearest(
+              'embedding',
+              FieldValue.vector(queryVector),
+              { limit: 20, distanceMeasure: 'COSINE', distanceResultField: 'similarity' },
+            );
+
+          const snap = await vectorQuery.get();
+          if (snap.empty) {
+            return {
+              message: 'No se encontraron resultados en el corpus jurídico español para esta consulta.',
+            };
+          }
+
+          // Post-filter by requested areas, return top 5
+          const requestedAreas = Array.isArray(input.areas)
+            ? (input.areas as string[])
+            : [];
+
+          const results = snap.docs
+            .map(d => {
+              const data = d.data();
+              return {
+                lawName: data.lawName as string,
+                lawShort: data.lawShort as string,
+                articleNumber: data.articleNumber as string,
+                sectionTitle: data.sectionTitle as string,
+                content: (data.content as string).slice(0, 800), // trim for context window
+                sourceUrl: data.sourceUrl as string,
+                sourceType: data.sourceType as string,
+                areas: data.areas as string[],
+                tribunal: data.tribunal as string | undefined,
+                sala: data.sala as string | undefined,
+                fecha: data.fecha as string | undefined,
+                ecli: data.ecli as string | undefined,
+                similarity: data.similarity as number | undefined,
+              };
+            })
+            .filter(r =>
+              requestedAreas.length === 0 ||
+              r.areas.some(a => requestedAreas.includes(a)),
+            )
+            .slice(0, 5);
+
+          return results;
+        } catch (ragErr) {
+          const msg = (ragErr as Error).message ?? '';
+          // If vector index not yet built, return helpful message
+          if (msg.includes('index') || msg.includes('FAILED_PRECONDITION')) {
+            return {
+              message:
+                'El índice vectorial de Firestore aún se está construyendo (~30 min). ' +
+                'Inténtalo de nuevo en unos minutos.',
+            };
+          }
+          // If no chunks ingested yet
+          if (msg.includes('collection') || msg.includes('not found')) {
+            return {
+              message:
+                'El corpus jurídico español aún no ha sido ingestado. ' +
+                'Ejecuta: npx ts-node --project tsconfig.scripts.json scripts/ingest-spain-legal.ts',
+            };
+          }
+          throw ragErr;
+        }
       }
 
       default:

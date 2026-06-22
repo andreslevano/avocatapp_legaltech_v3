@@ -89,6 +89,12 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
+    // legal_chunks: public legal data (BOE + CENDOJ), readable by anyone.
+    // Writes are Admin-SDK-only (ingestion script).
+    match /legal_chunks/{chunkId} {
+      allow read: if true;
+    }
+
     // Everything else is denied by default. Server-side code (Cloud Functions) uses
     // the Admin SDK and is not subject to these rules.
     match /{document=**} {

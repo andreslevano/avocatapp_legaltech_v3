@@ -15,7 +15,7 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   attachments?: MessageAttachment[];
-  toolCalls?: { name: string; status?: 'running' | 'done' }[];
+  toolCalls?: { name: string; status?: 'running' | 'done'; result?: string }[];
   streaming?: boolean;
 }
 
@@ -47,7 +47,7 @@ export default function AgentMessage({ message }: { message: Message }) {
         {message.toolCalls && message.toolCalls.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-1.5">
             {message.toolCalls.map((tc, i) => (
-              <ToolCallBadge key={i} name={tc.name} status={tc.status} />
+              <ToolCallBadge key={i} name={tc.name} status={tc.status} result={tc.result} />
             ))}
           </div>
         )}

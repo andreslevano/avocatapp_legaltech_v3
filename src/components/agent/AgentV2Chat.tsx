@@ -119,7 +119,7 @@ export default function AgentV2Chat({ user, userDoc, caseId }: AgentV2ChatProps)
                         ...m,
                         toolCalls: (m.toolCalls ?? []).map(tc =>
                           tc.name === (event.name as string) && tc.status === 'running'
-                            ? { ...tc, status: 'done' as const }
+                            ? { ...tc, status: 'done' as const, result: event.result as string | undefined }
                             : tc,
                         ),
                       }
