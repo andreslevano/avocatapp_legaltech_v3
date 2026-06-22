@@ -43,7 +43,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stripeWebhook = exports.generateStudentDocumentPackage = exports.createCheckoutSession = exports.analyzeDocuments = exports.getUserStatus = exports.reactivateUser = exports.checkUserStatusByEmail = exports.updateUserStatus = exports.cleanupUser = exports.enableUser = exports.disableUser = exports.getUserStats = exports.accionTutela = exports.reclamacionCantidades = exports.testOpenAI = exports.extraccionDatosExtract = exports.helloWorld = void 0;
+exports.stripeWebhook = exports.createBillingPortalSession = exports.generateStudentDocumentPackage = exports.createCheckoutSession = exports.analyzeDocuments = exports.getUserStatus = exports.reactivateUser = exports.checkUserStatusByEmail = exports.updateUserStatus = exports.cleanupUser = exports.enableUser = exports.disableUser = exports.getUserStats = exports.accionTutela = exports.reclamacionCantidades = exports.testOpenAI = exports.extraccionDatosExtract = exports.helloWorld = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const cors = __importStar(require("cors"));
@@ -3463,6 +3463,44 @@ async function processWebhookAsync(event) {
         // Don't throw - we already responded to Stripe
     }
 }
+// Stripe Billing Portal — creates a session so the user can manage their subscription
+exports.createBillingPortalSession = onRequestWithCorsAndSecrets({
+    secrets: stripeSecretKey ? [stripeSecretKey] : [],
+}, async (req, res) => {
+    var _a, _b;
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method not allowed' });
+        return;
+    }
+    try {
+        const secretKey = resolveStripeSecretKey();
+        const stripe = new stripe_1.default(secretKey, { apiVersion: '2023-10-16' });
+        const { userId, returnUrl } = req.body;
+        if (!userId) {
+            res.status(400).json({ success: false, error: 'Missing userId' });
+            return;
+        }
+        const userSnap = await admin.firestore().collection('users').doc(userId).get();
+        if (!userSnap.exists) {
+            res.status(404).json({ success: false, error: 'User not found' });
+            return;
+        }
+        const stripeCustomerId = (_a = userSnap.data()) === null || _a === void 0 ? void 0 : _a.stripe_customer_id;
+        if (!stripeCustomerId) {
+            res.status(400).json({ success: false, error: 'no_stripe_customer' });
+            return;
+        }
+        const session = await stripe.billingPortal.sessions.create({
+            customer: stripeCustomerId,
+            return_url: returnUrl !== null && returnUrl !== void 0 ? returnUrl : 'https://avocatapp.com/subscription',
+        });
+        res.json({ success: true, url: session.url });
+    }
+    catch (err) {
+        console.error('[createBillingPortalSession]', err);
+        res.status(500).json({ success: false, error: (_b = err.message) !== null && _b !== void 0 ? _b : 'Internal error' });
+    }
+});
 // Export the Express app as a Cloud Function
 // Increased timeout to 540s (9 minutes) to allow document generation to complete
 exports.stripeWebhook = functions.https.onRequest({

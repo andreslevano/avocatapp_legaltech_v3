@@ -26,6 +26,13 @@ export function getCheckoutSessionEndpoint(): string {
 }
 
 /**
+ * Stripe Billing Portal — always uses the Cloud Function directly (no local equivalent).
+ */
+export function getBillingPortalEndpoint(): string {
+  return 'https://createbillingportalsession-1023426971669.us-central1.run.app';
+}
+
+/**
  * Get the extraction endpoint URL.
  * In production, use Cloud Function directly to avoid Hosting rewrite issues (502).
  * In development, use Next.js API route.

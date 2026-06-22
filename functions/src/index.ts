@@ -4064,6 +4064,49 @@ async function processWebhookAsync(event: Stripe.Event) {
   }
 }
 
+// Stripe Billing Portal — creates a session so the user can manage their subscription
+export const createBillingPortalSession = onRequestWithCorsAndSecrets({
+  secrets: stripeSecretKey ? [stripeSecretKey] : [],
+}, async (req: any, res: any) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  try {
+    const secretKey = resolveStripeSecretKey();
+    const stripe = new Stripe(secretKey, { apiVersion: '2023-10-16' });
+
+    const { userId, returnUrl } = req.body as { userId?: string; returnUrl?: string };
+    if (!userId) {
+      res.status(400).json({ success: false, error: 'Missing userId' });
+      return;
+    }
+
+    const userSnap = await admin.firestore().collection('users').doc(userId).get();
+    if (!userSnap.exists) {
+      res.status(404).json({ success: false, error: 'User not found' });
+      return;
+    }
+
+    const stripeCustomerId: string | undefined = userSnap.data()?.stripe_customer_id;
+    if (!stripeCustomerId) {
+      res.status(400).json({ success: false, error: 'no_stripe_customer' });
+      return;
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: returnUrl ?? 'https://avocatapp.com/subscription',
+    });
+
+    res.json({ success: true, url: session.url });
+  } catch (err: any) {
+    console.error('[createBillingPortalSession]', err);
+    res.status(500).json({ success: false, error: err.message ?? 'Internal error' });
+  }
+});
+
 // Export the Express app as a Cloud Function
 // Increased timeout to 540s (9 minutes) to allow document generation to complete
 export const stripeWebhook = functions.https.onRequest({
