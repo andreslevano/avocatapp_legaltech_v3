@@ -48,6 +48,27 @@ const TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'buscar_documentos_propios',
+    description:
+      'Busca en los documentos propios del usuario (subidos o generados por IA) usando similitud semántica. ' +
+      'Devuelve fragmentos relevantes con nombre del archivo, caso asociado y extracto de contenido. ' +
+      'Úsalo cuando el usuario pregunte por el contenido de sus propios documentos o archivos.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Consulta en lenguaje natural sobre el contenido de los documentos',
+        },
+        case_id: {
+          type: 'string',
+          description: 'Filtrar solo por documentos de un caso específico (opcional)',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
     name: 'buscar_normativa_jurisprudencia',
     description:
       'Busca normativa española (Código Civil, LEC, legislación laboral) y jurisprudencia del ' +
@@ -76,6 +97,7 @@ async function executeTool(
   name: string,
   input: Record<string, unknown>,
   uid: string,
+  userCountry: string = 'España',
 ): Promise<unknown> {
   try {
     switch (name) {
@@ -160,6 +182,63 @@ async function executeTool(
           : { message: `No se encontraron documentos para el caso "${caseId}".` };
       }
 
+      case 'buscar_documentos_propios': {
+        const query = String(input.query ?? '').trim();
+        if (!query) return { error: 'query es requerido' };
+
+        try {
+          const queryVector = await generateEmbedding(query, 'RETRIEVAL_QUERY');
+
+          const vectorQuery = db()
+            .collection('documents')
+            .findNearest(
+              'embedding',
+              FieldValue.vector(queryVector),
+              { limit: 10, distanceMeasure: 'COSINE', distanceResultField: 'score' },
+            );
+
+          const snap = await vectorQuery.get();
+          if (snap.empty) {
+            return { message: 'No se encontraron documentos relevantes.' };
+          }
+
+          // SECURITY: post-filter by owner — Admin SDK bypasses Firestore rules
+          const caseFilter = input.case_id ? String(input.case_id) : null;
+          const results = snap.docs
+            .map(d => {
+              const data = d.data();
+              return {
+                id: d.id,
+                userId: data.userId as string,
+                name: data.name as string,
+                type: data.type as string,
+                caseId: (data.caseId as string | null) ?? null,
+                downloadUrl: data.downloadUrl as string,
+                source: data.source as string,
+                score: data.score as number | undefined,
+              };
+            })
+            .filter(d => d.userId === uid)
+            .filter(d => !caseFilter || d.caseId === caseFilter)
+            .slice(0, 5)
+            .map(({ userId: _u, ...rest }) => rest);
+
+          return results.length > 0
+            ? results
+            : { message: 'No se encontraron documentos relevantes para esta consulta.' };
+        } catch (ragErr) {
+          const msg = (ragErr as Error).message ?? '';
+          if (msg.includes('index') || msg.includes('FAILED_PRECONDITION')) {
+            return {
+              message:
+                'El índice vectorial de documentos aún se está construyendo. ' +
+                'Inténtalo de nuevo en unos minutos.',
+            };
+          }
+          throw ragErr;
+        }
+      }
+
       case 'buscar_normativa_jurisprudencia': {
         const query = String(input.query ?? '').trim();
         if (!query) return { error: 'query es requerido' };
@@ -213,6 +292,19 @@ async function executeTool(
               r.areas.some(a => requestedAreas.includes(a)),
             )
             .slice(0, 5);
+
+          // Country-awareness: warn if user's country is not Spain
+          const SPAIN_VARIANTS = ['españa', 'spain', 'es'];
+          const isSpain = SPAIN_VARIANTS.some(v =>
+            (userCountry ?? '').toLowerCase().includes(v),
+          );
+
+          if (!isSpain) {
+            return {
+              aviso_pais: `Tu país de operación es **${userCountry}**. El corpus jurídico de Avocat cubre actualmente solo legislación y jurisprudencia española. Los resultados siguientes son de derecho español, que puede diferir significativamente del ordenamiento jurídico de ${userCountry}. Se añadirá documentación legal local para tu país próximamente.`,
+              resultados_espana: results,
+            };
+          }
 
           return results;
         } catch (ragErr) {
@@ -295,19 +387,75 @@ export async function POST(req: NextRequest) {
     return new Response('Invalid token', { status: 401 });
   }
 
-  const { message, caseId, convId } = (await req.json()) as {
+  const { message, caseId, convId, documents } = (await req.json()) as {
     message: string;
     caseId?: string;
     convId?: string;
+    documents?: { name: string; mimeType: string; base64: string }[];
   };
 
-  if (!message?.trim()) {
+  if (!message?.trim() && !documents?.length) {
     return new Response('Missing message', { status: 400 });
   }
 
-  // Load user plan from Firestore (don't trust client-supplied plan)
+  // Extract text from any binary docs sent from the client (PDF/DOCX)
+  let fullMessage = message?.trim() ?? '';
+  if (documents?.length) {
+    for (const doc of documents) {
+      const buffer = Buffer.from(doc.base64, 'base64');
+      const ext = doc.name.split('.').pop()?.toLowerCase() ?? '';
+      let extracted = '';
+      try {
+        if (doc.mimeType === 'application/pdf' || ext === 'pdf') {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const pdfParse = require('pdf-parse');
+          extracted = ((await pdfParse(buffer)).text ?? '').slice(0, 12000);
+        } else if (doc.mimeType.includes('word') || ['docx', 'doc'].includes(ext)) {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const mammoth = require('mammoth');
+          extracted = ((await mammoth.extractRawText({ buffer })).value ?? '').slice(0, 12000);
+        } else if (doc.mimeType.includes('sheet') || doc.mimeType.includes('excel') || ['xlsx', 'xls'].includes(ext)) {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const XLSX = require('xlsx');
+          const wb = XLSX.read(buffer, { type: 'buffer' });
+          for (const name of wb.SheetNames) {
+            extracted += `[Hoja: ${name}]\n${XLSX.utils.sheet_to_csv(wb.Sheets[name])}\n\n`;
+          }
+          extracted = extracted.slice(0, 12000);
+        }
+      } catch { /* extraction failed — skip */ }
+      if (extracted.trim()) fullMessage += `\n\n[Documento adjunto: ${doc.name}]\n${extracted}`;
+    }
+  }
+
+  // Load user plan + country from Firestore (don't trust client-supplied values)
   const userSnap = await db().collection('users').doc(uid).get();
-  const userPlan = (userSnap.data()?.plan as 'Abogados' | 'Estudiantes' | 'Autoservicio') ?? 'Autoservicio';
+  const userData = userSnap.data() ?? {};
+  const userPlan = (userData.plan as 'Abogados' | 'Estudiantes' | 'Autoservicio') ?? 'Autoservicio';
+  const userCountry = (userData.country as string) || 'España';
+
+  // Load full case context when caseId is provided
+  let fullCaseContext: object | null = null;
+  if (caseId) {
+    try {
+      const caseSnap = await db().collection('cases').doc(caseId).get();
+      if (caseSnap.exists && caseSnap.data()?.userId === uid) {
+        const cd = caseSnap.data()!;
+        fullCaseContext = {
+          id: caseId,
+          ref: cd.ref ?? null,
+          title: cd.title ?? null,
+          type: cd.type ?? null,
+          status: cd.status ?? null,
+          client: cd.client ?? null,
+          deadline: cd.deadline?.toDate?.()?.toISOString?.().split('T')[0] ?? null,
+          notes: cd.notes ?? null,
+        };
+      }
+    } catch {
+      fullCaseContext = { id: caseId };
+    }
+  }
 
   // Load or create conversation
   const convsRef = db().collection('users').doc(uid).collection('conversations');
@@ -326,7 +474,7 @@ export async function POST(req: NextRequest) {
       uid,
       caseId: caseId ?? null,
       agentVersion: 'v2',
-      title: message.slice(0, 60),
+      title: (message || fullMessage).slice(0, 60),
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       messages: [],
@@ -336,16 +484,16 @@ export async function POST(req: NextRequest) {
   // Append user message to stored messages (optimistic write)
   const userMsg: StoredMessage = {
     role: 'user',
-    content: message,
+    content: fullMessage,
     timestamp: FieldValue.serverTimestamp(),
   };
   storedMessages = [...storedMessages, userMsg];
 
   // Build system prompt and initial Claude messages
-  const systemPrompt = buildSystemPrompt(userPlan, caseId ? { id: caseId } : null);
+  const systemPrompt = buildSystemPrompt(userPlan, fullCaseContext, userCountry);
   let claudeMessages: Anthropic.MessageParam[] = [
     ...buildClaudeMessages(storedMessages.slice(0, -1)), // history without new user msg
-    { role: 'user', content: message },
+    { role: 'user', content: fullMessage },
   ];
 
   // SSE streaming
@@ -414,7 +562,7 @@ export async function POST(req: NextRequest) {
             } catch {
               parsedInput = {};
             }
-            const result = await executeTool(tu.name, parsedInput, uid);
+            const result = await executeTool(tu.name, parsedInput, uid, userCountry);
             const resultStr = JSON.stringify(result);
 
             emit({ type: 'tool_end', id: tu.id, name: tu.name, result: resultStr });

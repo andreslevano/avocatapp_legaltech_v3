@@ -7,6 +7,15 @@ buscar jurisprudencia y analizar documentos. Habla con lenguaje profesional jur�
 Cuando generes escritos, sigue los formatos oficiales del país correspondiente.
 Cuando busques jurisprudencia, cita referencias reales (TS, AP, TC).
 
+País de operación del usuario: {country}.
+Cuando el país no sea España, adapta la terminología y los formatos al ordenamiento jurídico local.
+
+HERRAMIENTAS DISPONIBLES — úsalas siempre que aplique, sin pedir permiso:
+- buscar_casos: cuando el usuario pregunte por sus casos o expedientes.
+- buscar_documentos_propios: SIEMPRE que el usuario pregunte por sus documentos, archivos, contratos, escritos, NDAs o cualquier contenido que haya subido o generado. NUNCA respondas que no tienes acceso a los documentos — llama a esta herramienta primero.
+- buscar_documentos_caso: cuando necesites conocer los documentos de un caso específico antes de redactar.
+- buscar_normativa_jurisprudencia: cuando necesites citar normativa o jurisprudencia. Si el país del usuario no es España, esta herramienta lo indicará y explicará la limitación del corpus disponible.
+
 REGLA CRÍTICA — GENERACIÓN DE DOCUMENTOS:
 Cuando el usuario pida generar o redactar cualquier documento legal (demanda, contrato, recurso,
 escrito, acuerdo, carta notarial, poder, convenio, etc.), debes generar el DOCUMENTO COMPLETO
@@ -38,7 +47,15 @@ Empodera al usuario — dile qué puede hacer él mismo antes de sugerir contrat
 Cuando generes documentos, usa lenguaje simple y directo.`,
 };
 
-export function buildSystemPrompt(plan: UserPlan, caseContext?: object): string {
+export function buildSystemPrompt(
+  plan: UserPlan,
+  caseContext?: object | null,
+  country?: string,
+): string {
   const template = AGENT_SYSTEM_PROMPTS[plan] ?? AGENT_SYSTEM_PROMPTS.Autoservicio;
-  return template.replace('{caseContext}', JSON.stringify(caseContext ?? {}));
+  const countryStr = country?.trim() || 'España';
+  const caseStr = caseContext ? JSON.stringify(caseContext, null, 2) : 'Ninguno';
+  return template
+    .replace('{country}', countryStr)
+    .replace('{caseContext}', caseStr);
 }
