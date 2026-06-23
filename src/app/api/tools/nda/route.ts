@@ -77,6 +77,28 @@ ${noCompetencia ? '9. No competencia\n' : ''}${penalizacion ? '10. Cláusula pen
 Adapta todas las referencias legales (plazos de prescripción, normativa de protección de datos, régimen de daños) a la jurisdicción de **${jurisdiccion}**.`;
 }
 
+async function searchExistingNdas(uid: string): Promise<string[]> {
+  const queryVector = await generateEmbedding(
+    'NDA acuerdo de confidencialidad no divulgación secreto empresarial',
+    'RETRIEVAL_QUERY',
+  );
+  const snap = await db()
+    .collection('documents')
+    .findNearest('embedding', FieldValue.vector(queryVector), {
+      limit: 8,
+      distanceMeasure: 'COSINE',
+      distanceResultField: 'score',
+    })
+    .get();
+
+  return snap.docs
+    .map(d => ({ ...d.data(), id: d.id }))
+    .filter((d): d is Record<string, string> => d.userId === uid)
+    .slice(0, 3)
+    .map(d => d.name as string)
+    .filter(Boolean);
+}
+
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('Authorization') ?? '';
   const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -92,34 +114,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json()) as NdaBody;
   if (!body.objeto?.trim()) return new Response('Missing objeto', { status: 400 });
 
-  // Search user's repository for existing NDAs to use as reference
-  let existingNdas: string[] = [];
-  try {
-    const queryVector = await generateEmbedding(
-      'NDA acuerdo de confidencialidad no divulgación secreto empresarial',
-      'RETRIEVAL_QUERY',
-    );
-    const snap = await db()
-      .collection('documents')
-      .findNearest('embedding', FieldValue.vector(queryVector), {
-        limit: 8,
-        distanceMeasure: 'COSINE',
-        distanceResultField: 'score',
-      })
-      .get();
-
-    existingNdas = snap.docs
-      .map(d => ({ ...d.data(), id: d.id }))
-      .filter((d): d is Record<string, string> => d.userId === uid)
-      .slice(0, 3)
-      .map(d => d.name as string)
-      .filter(Boolean);
-  } catch {
-    // Vector search unavailable — proceed without repository context
-  }
-
-  const prompt = buildPrompt(body, existingNdas);
-
+  // Start streaming immediately — do NOT block on Vertex AI search before returning response
   const encoder = new TextEncoder();
   const readable = new ReadableStream({
     async start(controller) {
@@ -128,8 +123,23 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        // Emit repository search result so the UI can show it
+        // Repository search inside the stream with 8-second timeout
+        // so slow Vertex AI doesn't block the HTTP response
+        let existingNdas: string[] = [];
+        try {
+          existingNdas = await Promise.race([
+            searchExistingNdas(uid),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error('search_timeout')), 8000),
+            ),
+          ]);
+        } catch {
+          // Search timed out or failed — proceed without repository context
+        }
+
         emit({ type: 'repo_check', found: existingNdas.length, names: existingNdas });
+
+        const prompt = buildPrompt(body, existingNdas);
 
         const stream = anthropic.messages.stream({
           model: 'claude-sonnet-4-6',
