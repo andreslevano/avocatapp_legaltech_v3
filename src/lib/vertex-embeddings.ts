@@ -18,8 +18,8 @@ const VERTEX_URL =
 
 async function getAccessToken(): Promise<string> {
   const app = getAdmin();
-  const credential = (app as unknown as { credential: { getAccessToken: () => Promise<{ access_token: string }> } })
-    .credential;
+  const credential = app.options.credential;
+  if (!credential) throw new Error('Firebase Admin credential not initialised');
   const token = await credential.getAccessToken();
   return token.access_token;
 }
