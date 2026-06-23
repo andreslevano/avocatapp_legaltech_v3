@@ -12,6 +12,10 @@
  *   Phase B: CENDOJ — Tribunal Supremo sentencias (Civil + Social)
  */
 
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+
 import * as admin from 'firebase-admin';
 import { load as cheerioLoad } from 'cheerio';
 
@@ -196,82 +200,108 @@ interface CendojResult {
 }
 
 async function fetchCendojSentencias(
-  sala: '10' | '40', // 10=Civil, 40=Social
+  sala: 'civil' | 'social',
   maxPages: number,
 ): Promise<LegalChunk[]> {
-  const salaName = sala === '10' ? 'Sala de lo Civil' : 'Sala de lo Social';
-  const areas = sala === '10' ? ['civil', 'contractual'] : ['laboral'];
+  const salaName = sala === 'civil' ? 'Sala de lo Civil' : 'Sala de lo Social';
+  const salaCode = sala === 'civil' ? '10' : '40';
+  const areas = sala === 'civil' ? ['civil', 'contractual'] : ['laboral'];
   console.log(`  Fetching CENDOJ TS ${salaName}...`);
 
   const chunks: LegalChunk[] = [];
 
+  // Try multiple known CENDOJ endpoints
+  const endpoints = [
+    // Newer CENDOJ OpenData API
+    (page: number) =>
+      `https://cendoj.poderjudicial.es/api/v1/jurisprudencia` +
+      `?organo=TRIBUNAL+SUPREMO&sala=${salaCode}&page=${page}&size=25&sort=fecha,desc`,
+    // Legacy search interface
+    (page: number) =>
+      `https://www.poderjudicial.es/search/indexAN.jsp` +
+      `?org=TS&sala=${salaCode}&pag=${page}&nres=25&tip=AN`,
+    // CENDOJ portal direct
+    (page: number) =>
+      `https://www.poderjudicial.es/cgpj/es/Buscadores/Buscador-de-jurisprudencia/` +
+      `Resultados-de-busqueda/?sala=${salaCode}&page=${page}`,
+  ];
+
   for (let page = 1; page <= maxPages; page++) {
-    try {
-      const url =
-        `https://www.poderjudicial.es/search/AN/openInterface.do` +
-        `?apelacion=AN&org=TS&sala=${sala}&pag=${page}&nres=25&dscrd=true`;
-
-      const res = await fetch(url, {
-        headers: {
-          'Accept': 'application/json, text/javascript, */*',
-          'User-Agent': 'Mozilla/5.0 (compatible; avocat-legal-rag/1.0)',
-        },
-      });
-
-      if (!res.ok) {
-        console.log(`    Page ${page}: HTTP ${res.status}, stopping`);
-        break;
-      }
-
-      const contentType = res.headers.get('content-type') ?? '';
-      let results: CendojResult[] = [];
-
-      if (contentType.includes('json')) {
-        const data = (await res.json()) as { results?: CendojResult[] } | CendojResult[];
-        results = Array.isArray(data) ? data : (data as { results?: CendojResult[] }).results ?? [];
-      } else {
-        // HTML response — try to parse embedded JSON
-        const text = await res.text();
-        const jsonMatch = text.match(/\[(\{[\s\S]*?\})\]/);
-        if (!jsonMatch) { console.log(`    Page ${page}: no JSON found, stopping`); break; }
-        try { results = JSON.parse(`[${jsonMatch[1]}]`) as CendojResult[]; } catch { break; }
-      }
-
-      if (results.length === 0) break;
-
-      for (const r of results) {
-        const ecli = r.ECLI ?? '';
-        const texto = (r.TEXTO ?? r.RESUMEN ?? '').replace(/\s+/g, ' ').trim();
-        if (texto.length < 100) continue;
-
-        const content = texto.slice(0, 5600);
-        const fecha = r.FECHA ?? '';
-        const year = fecha.split('/').pop() ?? fecha.split('-')[0] ?? '';
-        const num = ecli.split(':').pop() ?? chunks.length.toString();
-        const chunkId = `STS-${sala === '10' ? 'civil' : 'social'}-${year}-${num}`;
-
-        chunks.push({
-          chunkId,
-          content,
-          lawName: 'Sentencia Tribunal Supremo',
-          lawShort: 'STS',
-          articleNumber: ecli ? `STS ${ecli.split(':').slice(-2).join('/')}` : `STS ${year}/${num}`,
-          sectionTitle: r.RMATERIA ?? '',
-          jurisdiction: 'ES',
-          areas,
-          sourceType: 'sentencia',
-          sourceUrl: `https://www.poderjudicial.es/search/AN/openInterface.do?ecli=${encodeURIComponent(ecli)}`,
-          tribunal: 'Tribunal Supremo',
-          sala: salaName,
-          fecha: fecha.includes('/') ? fecha.split('/').reverse().join('-') : fecha,
-          ecli,
+    let fetched = false;
+    for (const endpointFn of endpoints) {
+      try {
+        const url = endpointFn(page);
+        const res = await fetch(url, {
+          headers: {
+            Accept: 'application/json, text/html, */*',
+            'User-Agent': 'Mozilla/5.0 (compatible; avocat-legal-rag/1.0)',
+          },
         });
-      }
 
-      console.log(`    Page ${page}: ${results.length} sentencias (total so far: ${chunks.length})`);
-      await new Promise(r => setTimeout(r, 200)); // polite rate limit
-    } catch (err) {
-      console.warn(`    Page ${page} error: ${(err as Error).message}`);
+        if (!res.ok) continue;
+
+        const contentType = res.headers.get('content-type') ?? '';
+        let results: CendojResult[] = [];
+
+        if (contentType.includes('json')) {
+          const data = (await res.json()) as
+            | { content?: CendojResult[]; results?: CendojResult[] }
+            | CendojResult[];
+          results = Array.isArray(data)
+            ? data
+            : (data as { content?: CendojResult[]; results?: CendojResult[] }).content ??
+              (data as { results?: CendojResult[] }).results ??
+              [];
+        } else {
+          // Try to extract JSON from HTML
+          const text = await res.text();
+          const m = text.match(/\[\s*\{[\s\S]*?"ECLI"[\s\S]*?\}\s*\]/i);
+          if (!m) continue;
+          try { results = JSON.parse(m[0]) as CendojResult[]; } catch { continue; }
+        }
+
+        if (results.length === 0) { fetched = true; break; }
+
+        for (const r of results) {
+          const ecli = r.ECLI ?? '';
+          const texto = (r.TEXTO ?? r.RESUMEN ?? '').replace(/\s+/g, ' ').trim();
+          if (texto.length < 100) continue;
+          const fecha = r.FECHA ?? '';
+          const year = fecha.split('/').pop() ?? fecha.split('-')[0] ?? '';
+          const num = ecli.split(':').pop() ?? String(chunks.length);
+          const chunkId = `STS-${sala}-${year}-${num}`;
+          chunks.push({
+            chunkId,
+            content: texto.slice(0, 5600),
+            lawName: 'Sentencia Tribunal Supremo',
+            lawShort: 'STS',
+            articleNumber: ecli ? `STS ${ecli.split(':').slice(-2).join('/')}` : `STS ${year}/${num}`,
+            sectionTitle: r.RMATERIA ?? '',
+            jurisdiction: 'ES',
+            areas,
+            sourceType: 'sentencia',
+            sourceUrl: `https://cendoj.poderjudicial.es/?ecli=${encodeURIComponent(ecli)}`,
+            tribunal: 'Tribunal Supremo',
+            sala: salaName,
+            fecha: fecha.includes('/') ? fecha.split('/').reverse().join('-') : fecha,
+            ecli,
+          });
+        }
+
+        console.log(`    Page ${page}: ${results.length} results (total: ${chunks.length})`);
+        fetched = true;
+        await new Promise(r => setTimeout(r, 200));
+        break;
+      } catch {
+        continue;
+      }
+    }
+    if (!fetched) {
+      console.log(`    Page ${page}: all endpoints failed, stopping CENDOJ fetch`);
+      break;
+    }
+    if (chunks.length === 0 && page === 1) {
+      console.log(`  CENDOJ returned 0 results — skipping sentencias (legislation-only corpus)`);
       break;
     }
   }
@@ -283,7 +313,7 @@ async function fetchCendojSentencias(
 // ── Embed + write to Firestore ──────────────────────────────────────────────
 
 async function ingestChunks(chunks: LegalChunk[]): Promise<void> {
-  const BATCH_EMBED = 50; // Vertex AI max per request
+  const BATCH_EMBED = 12; // 12 × ~1400 tokens ≈ 16,800 tokens — under Vertex AI's 20k limit
   const BATCH_WRITE = 499; // Firestore batch limit
 
   // Skip already-ingested chunks
@@ -353,10 +383,10 @@ async function main() {
   console.log('PHASE B: CENDOJ Sentencias');
   const sentenciaChunks: LegalChunk[] = [];
   try {
-    const civil = await fetchCendojSentencias('10', 20); // up to 500 sentencias
+    const civil = await fetchCendojSentencias('civil', 20);
     sentenciaChunks.push(...civil);
     await new Promise(r => setTimeout(r, 500));
-    const social = await fetchCendojSentencias('40', 10); // up to 250 sentencias
+    const social = await fetchCendojSentencias('social', 10);
     sentenciaChunks.push(...social);
   } catch (err) {
     console.error(`  ERROR fetching CENDOJ: ${(err as Error).message}`);
