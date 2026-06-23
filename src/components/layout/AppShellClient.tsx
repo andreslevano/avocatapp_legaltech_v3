@@ -12,7 +12,7 @@ import { SidebarProvider } from '@/contexts/SidebarContext';
 import Rail from '@/components/layout/Rail';
 import Sidebar from '@/components/layout/Sidebar';
 
-const LAWYER_ONLY_PATHS = ['/dashboard', '/clients', '/cases'];
+const LAWYER_ONLY_PATHS = ['/dashboard', '/cases'];
 
 function isLawyerOnlyPath(pathname: string) {
   // Autoservicio tools live under /dashboard/autoservicio — open to all plans

@@ -63,9 +63,16 @@ export interface ClientDoc {
   userId: string;
   name: string;
   email: string;
+  phone?: string;
   activeCases: number;
   lastCaseDate: Timestamp;
   status: 'active' | 'inactive';
+  // Legal info for document generation
+  company?: string;
+  idType?: string;
+  idNumber?: string;
+  address?: string;
+  representativeCapacity?: string;
 }
 
 export interface ConversationMessage {

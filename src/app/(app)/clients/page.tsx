@@ -19,9 +19,18 @@ interface NewClientForm {
   name: string;
   email: string;
   phone: string;
+  company: string;
+  idType: string;
+  idNumber: string;
+  representativeCapacity: string;
+  address: string;
 }
 
-const EMPTY_FORM: NewClientForm = { name: '', email: '', phone: '' };
+const EMPTY_FORM: NewClientForm = {
+  name: '', email: '', phone: '',
+  company: '', idType: 'RUT', idNumber: '',
+  representativeCapacity: '', address: '',
+};
 
 export default function ClientsPage() {
   const { userDoc } = useAppAuth();
@@ -52,6 +61,11 @@ export default function ClientsPage() {
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
+        company: form.company.trim(),
+        idType: form.idType,
+        idNumber: form.idNumber.trim(),
+        representativeCapacity: form.representativeCapacity.trim(),
+        address: form.address.trim(),
         activeCases: 0,
         lastCaseDate: serverTimestamp(),
         status: 'active',
@@ -62,6 +76,12 @@ export default function ClientsPage() {
         userId: userDoc.uid,
         name: form.name.trim(),
         email: form.email.trim(),
+        phone: form.phone.trim(),
+        company: form.company.trim(),
+        idType: form.idType,
+        idNumber: form.idNumber.trim(),
+        representativeCapacity: form.representativeCapacity.trim(),
+        address: form.address.trim(),
         activeCases: 0,
         lastCaseDate: null as unknown as Timestamp,
         status: 'active',
@@ -134,24 +154,70 @@ export default function ClientsPage() {
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowModal(false)} />
           <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-6 w-full max-w-md shadow-elevated">
             <h2 className="font-display text-h3 text-[#e8d4a0] mb-5">Nuevo cliente</h2>
-            <form onSubmit={handleAddClient} className="space-y-4">
+            <form onSubmit={handleAddClient} className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
               {error && <p className="text-[12px] text-red-400">{error}</p>}
+
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6050]">Datos de contacto</p>
               {[
                 { label: 'Nombre *', field: 'name', type: 'text', placeholder: 'Nombre completo' },
                 { label: 'Email', field: 'email', type: 'email', placeholder: 'email@dominio.com' },
-                { label: 'Teléfono', field: 'phone', type: 'tel', placeholder: '+34 600 000 000' },
+                { label: 'Teléfono', field: 'phone', type: 'tel', placeholder: '+56 9 0000 0000' },
               ].map(({ label, field, type, placeholder }) => (
                 <div key={field}>
-                  <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">{label}</label>
-                  <input
-                    type={type}
-                    placeholder={placeholder}
+                  <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">{label}</label>
+                  <input type={type} placeholder={placeholder}
                     value={form[field as keyof NewClientForm]}
                     onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value }))}
                     className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
                   />
                 </div>
               ))}
+
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6050] pt-2">Información legal</p>
+              <div>
+                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Empresa / Organización</label>
+                <input type="text" placeholder="Nombre de la empresa"
+                  value={form.company}
+                  onChange={e => setForm(p => ({ ...p, company: e.target.value }))}
+                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Tipo ID</label>
+                  <select value={form.idType} onChange={e => setForm(p => ({ ...p, idType: e.target.value }))}
+                    className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40">
+                    {['RUT', 'DNI', 'Pasaporte', 'Cédula', 'CUIT', 'NIF', 'Otro'].map(t => (
+                      <option key={t} value={t} className="bg-[#161410]">{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Número ID</label>
+                  <input type="text" placeholder="12.345.678-9"
+                    value={form.idNumber}
+                    onChange={e => setForm(p => ({ ...p, idNumber: e.target.value }))}
+                    className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Cargo / Calidad</label>
+                <input type="text" placeholder="Ej: Gerente General, Representante Legal"
+                  value={form.representativeCapacity}
+                  onChange={e => setForm(p => ({ ...p, representativeCapacity: e.target.value }))}
+                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Dirección</label>
+                <input type="text" placeholder="Calle, número, ciudad, país"
+                  value={form.address}
+                  onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
+                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                />
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <Button type="button" variant="BtnGhost" size="md" fullWidth onClick={() => setShowModal(false)}>Cancelar</Button>
                 <Button type="submit" variant="BtnGold" size="md" fullWidth loading={saving}>Guardar</Button>

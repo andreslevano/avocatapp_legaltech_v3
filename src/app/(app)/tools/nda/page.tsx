@@ -1,61 +1,71 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { downloadAsWord, downloadAsPdf, buildWordBlob } from '@/lib/agent-export';
-import { saveDocumentToStorage } from '@/lib/storage-client';
+import { saveDocumentToStorage, getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
+import { getClients, type ClientDoc } from '@/lib/firestore';
 
 type Tipo = 'unilateral' | 'bilateral';
+type Lang = 'es' | 'en';
 
 interface Parte {
   nombre: string;
   empresa: string;
   cargo: string;
+  idType: string;
+  idNumber: string;
+  address: string;
 }
 
+const EMPTY_PARTE: Parte = { nombre: '', empresa: '', cargo: '', idType: 'RUT', idNumber: '', address: '' };
+
 const DURACIONES = [
-  { value: '1 año', label: '1 año' },
-  { value: '2 años', label: '2 años' },
-  { value: '3 años', label: '3 años' },
-  { value: '5 años', label: '5 años' },
-  { value: 'Indefinida mientras exista la relación comercial', label: 'Indefinida' },
+  { value: '1 año', label: '1 año / 1 year' },
+  { value: '2 años', label: '2 años / 2 years' },
+  { value: '3 años', label: '3 años / 3 years' },
+  { value: '5 años', label: '5 años / 5 years' },
+  { value: 'Indefinida mientras exista la relación comercial', label: 'Indefinida / Indefinite' },
 ];
 
-function ParteFields({ label, value, onChange }: {
+const ID_TYPES = ['RUT', 'DNI', 'Pasaporte', 'Cédula', 'CUIT', 'NIF', 'Otro'];
+
+const INPUT_CLS = 'bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
+
+interface ParteFieldsProps {
   label: string;
   value: Parte;
   onChange: (p: Parte) => void;
-}) {
+  headerAction?: React.ReactNode;
+}
+
+function ParteFields({ label, value, onChange, headerAction }: ParteFieldsProps) {
   return (
     <div className="space-y-3">
-      <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-avocat-gold/70">
-        {label}
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <input
-          type="text"
-          placeholder="Nombre completo *"
-          value={value.nombre}
-          onChange={e => onChange({ ...value, nombre: e.target.value })}
-          className="bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
-        />
-        <input
-          type="text"
-          placeholder="Empresa / Organización"
-          value={value.empresa}
-          onChange={e => onChange({ ...value, empresa: e.target.value })}
-          className="bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
-        />
-        <input
-          type="text"
-          placeholder="Cargo / Representación"
-          value={value.cargo}
-          onChange={e => onChange({ ...value, cargo: e.target.value })}
-          className="bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
-        />
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-avocat-gold/70">{label}</p>
+        {headerAction}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <input type="text" placeholder="Nombre completo *" value={value.nombre}
+          onChange={e => onChange({ ...value, nombre: e.target.value })} className={INPUT_CLS} />
+        <input type="text" placeholder="Empresa / Organización" value={value.empresa}
+          onChange={e => onChange({ ...value, empresa: e.target.value })} className={INPUT_CLS} />
+        <input type="text" placeholder="Cargo / Representación" value={value.cargo}
+          onChange={e => onChange({ ...value, cargo: e.target.value })} className={INPUT_CLS} />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <select value={value.idType} onChange={e => onChange({ ...value, idType: e.target.value })}
+          className={INPUT_CLS}>
+          {ID_TYPES.map(t => <option key={t} value={t} className="bg-[#161410]">{t}</option>)}
+        </select>
+        <input type="text" placeholder="Número de identificación" value={value.idNumber}
+          onChange={e => onChange({ ...value, idNumber: e.target.value })} className={INPUT_CLS} />
+        <input type="text" placeholder="Dirección completa" value={value.address}
+          onChange={e => onChange({ ...value, address: e.target.value })} className={INPUT_CLS} />
       </div>
     </div>
   );
@@ -63,24 +73,65 @@ function ParteFields({ label, value, onChange }: {
 
 export default function NdaPage() {
   const { user, userDoc } = useAppAuth();
+  const ud = userDoc as Record<string, unknown>;
 
   // Form state
-  const [tipo, setTipo] = useState<Tipo>('unilateral');
-  const [divulgante, setDivulgante] = useState<Parte>({ nombre: '', empresa: '', cargo: '' });
-  const [receptora, setReceptora] = useState<Parte>({ nombre: '', empresa: '', cargo: '' });
-  const [objeto, setObjeto] = useState('');
-  const [duracion, setDuracion] = useState('2 años');
+  const [language, setLanguage]       = useState<Lang>('es');
+  const [tipo, setTipo]               = useState<Tipo>('unilateral');
+  const [divulgante, setDivulgante]   = useState<Parte>(EMPTY_PARTE);
+  const [receptora, setReceptora]     = useState<Parte>(EMPTY_PARTE);
+  const [objeto, setObjeto]           = useState('');
+  const [duracion, setDuracion]       = useState('2 años');
   const [jurisdiccion, setJurisdiccion] = useState(
-    (userDoc as Record<string, unknown>).country as string || 'Chile'
+    (ud.country as string) || 'Chile'
   );
   const [noCompetencia, setNoCompetencia] = useState(false);
-  const [penalizacion, setPenalizacion] = useState(false);
+  const [penalizacion, setPenalizacion]   = useState(false);
+
+  // Reference doc
+  const [userDocs, setUserDocs]         = useState<DocumentRecord[]>([]);
+  const [referenceDocId, setReferenceDocId] = useState('');
+
+  // Client selector for receptora
+  const [clients, setClients]           = useState<ClientDoc[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState('');
 
   // Status
-  const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState('');
-  const [error, setError] = useState('');
-  const [saved, setSaved] = useState(false);
+  const [generating, setGenerating]   = useState(false);
+  const [result, setResult]           = useState('');
+  const [error, setError]             = useState('');
+  const [saved, setSaved]             = useState(false);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    getUserDocuments(user.uid).then(setUserDocs).catch(() => {});
+    getClients(user.uid).then(setClients).catch(() => {});
+  }, [user?.uid]);
+
+  const fillFromProfile = () => {
+    setDivulgante({
+      nombre: (ud.displayName as string) || userDoc.displayName || '',
+      empresa: (ud.legalCompanyName as string) || '',
+      cargo: (ud.legalRepresentativeCapacity as string) || '',
+      idType: (ud.legalIdType as string) || 'RUT',
+      idNumber: (ud.legalIdNumber as string) || '',
+      address: (ud.legalAddress as string) || '',
+    });
+  };
+
+  const fillFromClient = (clientId: string) => {
+    setSelectedClientId(clientId);
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+    setReceptora({
+      nombre: client.name,
+      empresa: client.company || '',
+      cargo: client.representativeCapacity || '',
+      idType: client.idType || 'RUT',
+      idNumber: client.idNumber || '',
+      address: client.address || '',
+    });
+  };
 
   const handleGenerate = async () => {
     if (!divulgante.nombre.trim()) return setError('Ingresa el nombre de la parte divulgante.');
@@ -94,10 +145,18 @@ export default function NdaPage() {
 
     try {
       const idToken = await user.getIdToken();
+
+      const selectedDoc = userDocs.find(d => d.id === referenceDocId);
+
       const res = await fetch('/api/tools/nda', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ tipo, divulgante, receptora, objeto, duracion, jurisdiccion, noCompetencia, penalizacion }),
+        body: JSON.stringify({
+          tipo, divulgante, receptora, objeto, duracion, jurisdiccion,
+          noCompetencia, penalizacion, language,
+          referenceDocUrl: selectedDoc?.downloadUrl || undefined,
+          referenceDocName: selectedDoc?.name || undefined,
+        }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -178,42 +237,84 @@ export default function NdaPage() {
           {/* Form */}
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-6">
 
-            {/* Tipo */}
-            <div>
-              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">
-                Tipo de NDA
-              </p>
-              <div className="flex gap-3">
-                {(['unilateral', 'bilateral'] as Tipo[]).map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setTipo(t)}
-                    className={`px-4 py-2.5 rounded-lg text-[12px] font-sans border transition-colors ${
-                      tipo === t
-                        ? 'border-avocat-gold/50 bg-avocat-gold/10 text-avocat-gold'
-                        : 'border-[#2e2b20] text-[#6b6050] hover:text-[#c8c0ac] hover:border-[#3a3630]'
-                    }`}
-                  >
-                    {t === 'unilateral' ? 'Unilateral' : 'Bilateral / Mutuo'}
-                    <span className="ml-2 text-[10px] opacity-60">
-                      {t === 'unilateral' ? '(1 parte divulga)' : '(ambas partes divulgan)'}
-                    </span>
-                  </button>
-                ))}
+            {/* Language + Tipo row */}
+            <div className="flex flex-wrap gap-4 items-start">
+              {/* Language toggle */}
+              <div>
+                <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">
+                  Idioma / Language
+                </p>
+                <div className="flex gap-2">
+                  {(['es', 'en'] as Lang[]).map(l => (
+                    <button key={l} onClick={() => setLanguage(l)}
+                      className={`px-3 py-1.5 rounded-lg text-[12px] font-sans border transition-colors ${
+                        language === l
+                          ? 'border-avocat-gold/50 bg-avocat-gold/10 text-avocat-gold'
+                          : 'border-[#2e2b20] text-[#6b6050] hover:text-[#c8c0ac]'
+                      }`}>
+                      {l === 'es' ? '🇪🇸 Español' : '🇬🇧 English'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tipo */}
+              <div>
+                <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">
+                  Tipo de NDA
+                </p>
+                <div className="flex gap-2">
+                  {(['unilateral', 'bilateral'] as Tipo[]).map(t => (
+                    <button key={t} onClick={() => setTipo(t)}
+                      className={`px-3 py-1.5 rounded-lg text-[12px] font-sans border transition-colors ${
+                        tipo === t
+                          ? 'border-avocat-gold/50 bg-avocat-gold/10 text-avocat-gold'
+                          : 'border-[#2e2b20] text-[#6b6050] hover:text-[#c8c0ac]'
+                      }`}>
+                      {t === 'unilateral' ? 'Unilateral' : 'Bilateral / Mutuo'}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Partes */}
-            <div className="space-y-4">
+            <div className="space-y-5">
               <ParteFields
                 label="Parte divulgante (quien comparte información)"
                 value={divulgante}
                 onChange={setDivulgante}
+                headerAction={
+                  <button
+                    type="button"
+                    onClick={fillFromProfile}
+                    className="text-[11px] font-sans text-avocat-gold/70 hover:text-avocat-gold border border-avocat-gold/20 hover:border-avocat-gold/40 px-2.5 py-1 rounded-md transition-colors"
+                  >
+                    Usar mis datos de perfil
+                  </button>
+                }
               />
+
               <ParteFields
                 label="Parte receptora (quien recibe y se obliga)"
                 value={receptora}
                 onChange={setReceptora}
+                headerAction={
+                  clients.length > 0 ? (
+                    <select
+                      value={selectedClientId}
+                      onChange={e => fillFromClient(e.target.value)}
+                      className="text-[11px] font-sans bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/30 text-[#6b6050] px-2.5 py-1 rounded-md transition-colors focus:outline-none"
+                    >
+                      <option value="">Seleccionar cliente…</option>
+                      {clients.map(c => (
+                        <option key={c.id} value={c.id} className="bg-[#161410]">
+                          {c.name}{c.company ? ` — ${c.company}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null
+                }
               />
             </div>
 
@@ -222,10 +323,7 @@ export default function NdaPage() {
               <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
                 Objeto de la confidencialidad *
               </label>
-              <textarea
-                rows={4}
-                value={objeto}
-                onChange={e => setObjeto(e.target.value)}
+              <textarea rows={4} value={objeto} onChange={e => setObjeto(e.target.value)}
                 placeholder="Describe el proyecto, negociación o información que se quiere proteger.&#10;Ej: Proyecto de desarrollo de software para gestión de inventarios. Se compartirán especificaciones técnicas, código fuente, datos de clientes y proyecciones financieras con el propósito de evaluar una potencial alianza comercial."
                 className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-3 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40 resize-none leading-relaxed"
               />
@@ -237,11 +335,8 @@ export default function NdaPage() {
                 <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
                   Duración de la confidencialidad
                 </label>
-                <select
-                  value={duracion}
-                  onChange={e => setDuracion(e.target.value)}
-                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40"
-                >
+                <select value={duracion} onChange={e => setDuracion(e.target.value)}
+                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40">
                   {DURACIONES.map(d => (
                     <option key={d.value} value={d.value} className="bg-[#161410]">{d.label}</option>
                   ))}
@@ -251,15 +346,33 @@ export default function NdaPage() {
                 <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
                   Jurisdicción / Ley aplicable
                 </label>
-                <input
-                  type="text"
-                  value={jurisdiccion}
-                  onChange={e => setJurisdiccion(e.target.value)}
+                <input type="text" value={jurisdiccion} onChange={e => setJurisdiccion(e.target.value)}
                   placeholder="Ej: Chile, España, Argentina..."
                   className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
                 />
               </div>
             </div>
+
+            {/* Reference document */}
+            {userDocs.length > 0 && (
+              <div>
+                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
+                  Documento de referencia (opcional)
+                </label>
+                <select value={referenceDocId} onChange={e => setReferenceDocId(e.target.value)}
+                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40">
+                  <option value="" className="bg-[#161410]">Sin referencia</option>
+                  {userDocs.map(d => (
+                    <option key={d.id} value={d.id} className="bg-[#161410]">{d.name}</option>
+                  ))}
+                </select>
+                {referenceDocId && (
+                  <p className="mt-1 text-[11px] font-sans text-[#6b6050]">
+                    La IA usará este documento como referencia de estilo y estructura.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Cláusulas adicionales */}
             <div>
@@ -272,12 +385,10 @@ export default function NdaPage() {
                   { key: 'penalizacion', label: 'Cláusula penal por incumplimiento', value: penalizacion, set: setPenalizacion },
                 ].map(opt => (
                   <label key={opt.key} className="flex items-center gap-2.5 cursor-pointer">
-                    <div
-                      onClick={() => opt.set(!opt.value)}
+                    <div onClick={() => opt.set(!opt.value)}
                       className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                         opt.value ? 'bg-avocat-gold border-avocat-gold' : 'border-[#3a3630] bg-[#161410]'
-                      }`}
-                    >
+                      }`}>
                       {opt.value && (
                         <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3">
                           <path d="M2 6l3 3 5-5" stroke="#161410" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -315,25 +426,13 @@ export default function NdaPage() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    variant="BtnGhost"
-                    size="sm"
-                    onClick={() => navigator.clipboard.writeText(result)}
-                  >
+                  <Button variant="BtnGhost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>
                     Copiar
                   </Button>
-                  <Button
-                    variant="BtnOutlineDark"
-                    size="sm"
-                    onClick={() => downloadAsWord(result, ndaTitle)}
-                  >
+                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsWord(result, ndaTitle)}>
                     Word
                   </Button>
-                  <Button
-                    variant="BtnOutlineDark"
-                    size="sm"
-                    onClick={() => downloadAsPdf(result, ndaTitle)}
-                  >
+                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsPdf(result, ndaTitle)}>
                     PDF
                   </Button>
                 </div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { createCase, type CaseType } from '@/lib/firestore';
+import { saveDocumentToStorage } from '@/lib/storage-client';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import type { OcrPdfProgress } from '@/lib/ocr-pdf-client';
@@ -213,7 +214,7 @@ function AssessmentPanel({ result }: { result: IntakeResult }) {
 // ── Main page ──────────────────────────────────────────────────────
 
 export default function NewCasePage() {
-  const { userDoc } = useAppAuth();
+  const { user, userDoc } = useAppAuth();
   const router = useRouter();
 
   const [step,    setStep]    = useState<Step>('upload');
@@ -228,6 +229,8 @@ export default function NewCasePage() {
 
   const [intakeResult,  setIntakeResult]  = useState<IntakeResult | null>(null);
   const [intakeDocRefs, setIntakeDocRefs] = useState<Array<{ name: string; size: number; strategy: string }>>([]);
+  // Keeps extracted texts alongside file objects so we can upload after case creation
+  const [extractedFiles, setExtractedFiles] = useState<Array<{ file: File; text: string; strategy: string }>>([]);
 
   const [form, setForm] = useState<CaseForm>({
     title: '', type: 'civil', client: '', ref: generateRef(), deadline: '', notes: '',
@@ -362,14 +365,16 @@ export default function NewCasePage() {
       setIntakeResult(r);
 
       // Save document metadata to display in case detail
+      const validExtracted = extracted.filter(d => d.strategy !== 'error');
       setIntakeDocRefs(
-        extracted
-          .filter(d => d.strategy !== 'error')
-          .map(d => ({
-            name:     d.name,
-            size:     d.size,
-            strategy: d.strategy,
-          }))
+        validExtracted.map(d => ({ name: d.name, size: d.size, strategy: d.strategy }))
+      );
+      // Keep file objects + texts so we can upload to Storage after case creation
+      setExtractedFiles(
+        files.map(f => {
+          const match = validExtracted.find(d => d.name === f.name);
+          return match ? { file: f, text: match.text, strategy: match.strategy } : null;
+        }).filter(Boolean) as Array<{ file: File; text: string; strategy: string }>
       );
 
       setForm(prev => ({
@@ -411,7 +416,6 @@ export default function NewCasePage() {
         client:   form.client.trim(),
         notes:    form.notes.trim(),
         deadline: null,
-        // Persist AI analysis so it appears in case detail
         assessment: intakeResult ? {
           resumen:     intakeResult.resumen,
           partes:      intakeResult.partes,
@@ -419,7 +423,6 @@ export default function NewCasePage() {
           puntosClave: intakeResult.puntosClave,
           fechasClave: intakeResult.fechasClave,
         } : undefined,
-        // Persist document metadata (name, size, extraction strategy)
         documentRefs: intakeDocRefs.length > 0 ? intakeDocRefs.map(d => ({
           name:     d.name,
           type:     d.name.split('.').pop()?.toLowerCase() ?? '',
@@ -427,6 +430,32 @@ export default function NewCasePage() {
           strategy: d.strategy,
         })) : undefined,
       });
+
+      // Upload original files to Storage + documents collection (fire-and-forget)
+      if (extractedFiles.length > 0) {
+        const idToken = await user.getIdToken();
+        Promise.all(
+          extractedFiles.map(async ({ file, text }) => {
+            try {
+              const record = await saveDocumentToStorage({
+                userId: userDoc.uid,
+                plan:   userDoc.plan ?? 'Abogados',
+                blob:   file,
+                name:   file.name,
+                caseId: id,
+                source: 'uploaded',
+              });
+              // Trigger vector embedding with extracted text
+              await fetch('/api/documents/embed', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+                body:    JSON.stringify({ docId: record.id, ...(text ? { text } : {}) }),
+              });
+            } catch { /* silent — case already created */ }
+          })
+        ).catch(() => {});
+      }
+
       router.push(`/cases/${id}`);
     } catch {
       setSaveError('Error al crear el caso. Intenta de nuevo.');

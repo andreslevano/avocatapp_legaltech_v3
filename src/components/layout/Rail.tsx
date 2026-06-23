@@ -62,6 +62,7 @@ const NAV_ESTUDIANTES = [
 const NAV_AUTOSERVICIO = [
   { href: '/agent',      label: 'Asistente',    icon: <IconAgent /> },
   { href: '/tools',      label: 'Herramientas', icon: <IconTools /> },
+  { href: '/clients',    label: 'Clientes',     icon: <IconClients /> },
   { href: '/documents',  label: 'Documentos',   icon: <IconDocs /> },
 ];
 

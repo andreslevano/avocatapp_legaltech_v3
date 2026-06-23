@@ -51,7 +51,6 @@ async function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-// Fetch up to 5 case documents from Firebase Storage and return as MessageAttachments
 async function fetchCaseDocAttachments(docs: DocumentRecord[]): Promise<MessageAttachment[]> {
   const results: MessageAttachment[] = [];
   for (const doc of docs.slice(0, 5)) {
@@ -76,8 +75,8 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
   const [savedToast, setSavedToast] = useState<SavedToast | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Track whether case docs have already been injected into the first message
   const casDocsInjectedRef = useRef(false);
+  const convIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -89,9 +88,10 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
     };
   }, []);
 
-  // Reset injection flag when case context changes
+  // Reset conversation when case changes
   useEffect(() => {
     casDocsInjectedRef.current = false;
+    convIdRef.current = null;
   }, [caseContext?.id]);
 
   function showDocSavedToast(name: string, url: string) {
@@ -112,8 +112,11 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
       for (const att of textAttachments) {
         fullMessage += `\n\n[Documento adjunto: ${att.name}]\n${att.text}`;
       }
+      for (const img of imageAttachments) {
+        fullMessage += `\n[Imagen adjunta: ${img.name}]`;
+      }
 
-      // On the first message of a case session, auto-include the case documents
+      // On first message of a case session, auto-include the case documents
       let injectedCaseDocs: MessageAttachment[] = [];
       if (
         caseContext?.id &&
@@ -135,7 +138,13 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
       };
 
       const assistantId = `a-${Date.now()}`;
-      const assistantMsg: Message = { id: assistantId, role: 'assistant', content: '', streaming: true };
+      const assistantMsg: Message = {
+        id: assistantId,
+        role: 'assistant',
+        content: '',
+        streaming: true,
+        toolCalls: [],
+      };
 
       setMessages(prev => [...prev, userMsg, assistantMsg]);
       setStreaming(true);
@@ -163,18 +172,19 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
       }
 
       try {
-        const history = messages.map(m => ({ role: m.role, content: m.content }));
+        const idToken = await user.getIdToken();
 
-        const res = await fetch('/api/agent', {
+        const res = await fetch('/api/agent-v2', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+          },
           body: JSON.stringify({
             message: fullMessage,
-            attachments: imageAttachments.map(({ name, mimeType, base64 }) => ({ name, mimeType, base64 })),
+            caseId: caseContext?.id,
+            convId: convIdRef.current ?? undefined,
             documents: allBinaryDocs.map(({ name, mimeType, base64 }) => ({ name, mimeType, base64 })),
-            history,
-            userPlan: userDoc.plan,
-            caseContext: caseContext ?? null,
           }),
         });
 
@@ -182,17 +192,52 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
 
         const reader = res.body?.getReader();
         const decoder = new TextDecoder();
+        let sseBuffer = '';
         let accumulated = '';
 
         if (reader) {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            accumulated += decoder.decode(value, { stream: true });
-            const snapshot = accumulated;
-            setMessages(prev =>
-              prev.map(m => m.id === assistantId ? { ...m, content: snapshot } : m)
-            );
+            sseBuffer += decoder.decode(value, { stream: true });
+            const parts = sseBuffer.split('\n\n');
+            sseBuffer = parts.pop() ?? '';
+
+            for (const part of parts) {
+              if (!part.startsWith('data: ')) continue;
+              const raw = part.slice(6).trim();
+              let ev: Record<string, unknown>;
+              try { ev = JSON.parse(raw); } catch { continue; }
+
+              if (ev.type === 'text') {
+                accumulated += ev.delta as string;
+                setMessages(prev =>
+                  prev.map(m => m.id === assistantId ? { ...m, content: accumulated } : m)
+                );
+              } else if (ev.type === 'tool_start') {
+                setMessages(prev =>
+                  prev.map(m => m.id === assistantId ? {
+                    ...m,
+                    toolCalls: [...(m.toolCalls ?? []), { name: ev.name as string, status: 'running' as const }],
+                  } : m)
+                );
+              } else if (ev.type === 'tool_end') {
+                setMessages(prev =>
+                  prev.map(m => m.id === assistantId ? {
+                    ...m,
+                    toolCalls: (m.toolCalls ?? []).map(tc =>
+                      tc.name === (ev.name as string) && tc.status === 'running'
+                        ? { name: tc.name, status: 'done' as const, result: ev.result as string }
+                        : tc
+                    ),
+                  } : m)
+                );
+              } else if (ev.type === 'done') {
+                convIdRef.current = ev.convId as string;
+              } else if (ev.type === 'error') {
+                throw new Error(ev.message as string ?? 'Error del servidor');
+              }
+            }
           }
         }
 
@@ -213,6 +258,14 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
               source: 'generated',
             });
             showDocSavedToast(filename, record.downloadUrl);
+            // Trigger vector embedding with the text we already have (fire-and-forget)
+            user.getIdToken().then(token =>
+              fetch('/api/documents/embed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ docId: record.id, text: accumulated.slice(0, 12000) }),
+              })
+            ).catch(() => {});
           } catch {
             // silent
           }
@@ -229,7 +282,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
         setStreaming(false);
       }
     },
-    [messages, streaming, userDoc.plan, caseContext, caseDocuments, user.uid]
+    [messages, streaming, userDoc.plan, caseContext, caseDocuments, user]
   );
 
   const showWelcome = messages.length === 0;

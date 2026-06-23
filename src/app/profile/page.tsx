@@ -79,11 +79,17 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
 export default function ProfilePage() {
   const { user, userDoc } = useAppAuth();
 
+  const ud = userDoc as Record<string, unknown>;
   const [form, setForm] = useState({
-    displayName: userDoc.displayName || user.displayName || '',
-    phone:       userDoc.phone       || '',
-    country:     userDoc.country     || '',
-    specialty:   (userDoc as Record<string, unknown>).legalSpecialty as string || '',
+    displayName:              userDoc.displayName || user.displayName || '',
+    phone:                    (ud.phone       as string) || '',
+    country:                  (ud.country     as string) || '',
+    specialty:                (ud.legalSpecialty as string) || '',
+    legalCompanyName:         (ud.legalCompanyName as string) || '',
+    legalIdType:              (ud.legalIdType as string) || 'RUT',
+    legalIdNumber:            (ud.legalIdNumber as string) || '',
+    legalRepresentativeCapacity: (ud.legalRepresentativeCapacity as string) || '',
+    legalAddress:             (ud.legalAddress as string) || '',
   });
   const [saving, setSaving]   = useState(false);
   const [saved,  setSaved]    = useState(false);
@@ -108,10 +114,15 @@ export default function ProfilePage() {
     setError('');
     try {
       await updateDoc(doc(db, 'users', userDoc.uid), {
-        displayName:    form.displayName,
-        phone:          form.phone,
-        country:        form.country,
-        legalSpecialty: form.specialty,
+        displayName:                 form.displayName,
+        phone:                       form.phone,
+        country:                     form.country,
+        legalSpecialty:              form.specialty,
+        legalCompanyName:            form.legalCompanyName,
+        legalIdType:                 form.legalIdType,
+        legalIdNumber:               form.legalIdNumber,
+        legalRepresentativeCapacity: form.legalRepresentativeCapacity,
+        legalAddress:                form.legalAddress,
         updatedAt: serverTimestamp(),
       });
       setSaved(true);
@@ -245,6 +256,67 @@ export default function ProfilePage() {
               </select>
             </Field>
           )}
+        </div>
+
+        {/* Legal info for document generation */}
+        <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 space-y-5 mt-4">
+          <div>
+            <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
+              Información legal para documentos
+            </p>
+            <p className="text-[11px] font-sans text-[#3a3630] mt-1">
+              Estos datos se usarán para pre-completar NDAs y otros documentos generados con IA.
+            </p>
+          </div>
+
+          <Field label="Empresa / Organización">
+            <Input
+              type="text"
+              value={form.legalCompanyName}
+              onChange={e => setForm(f => ({ ...f, legalCompanyName: e.target.value }))}
+              placeholder="Nombre de tu empresa u organización"
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Tipo de identificación">
+              <select
+                value={form.legalIdType}
+                onChange={e => setForm(f => ({ ...f, legalIdType: e.target.value }))}
+                className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3.5 py-2.5 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40 transition-colors"
+              >
+                {['RUT', 'DNI', 'Pasaporte', 'Cédula', 'CUIT', 'NIF', 'Otro'].map(t => (
+                  <option key={t} value={t} className="bg-[#161410]">{t}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Número de identificación">
+              <Input
+                type="text"
+                value={form.legalIdNumber}
+                onChange={e => setForm(f => ({ ...f, legalIdNumber: e.target.value }))}
+                placeholder="Ej: 12.345.678-9"
+              />
+            </Field>
+          </div>
+
+          <Field label="Cargo / Calidad en que actúa">
+            <Input
+              type="text"
+              value={form.legalRepresentativeCapacity}
+              onChange={e => setForm(f => ({ ...f, legalRepresentativeCapacity: e.target.value }))}
+              placeholder="Ej: Gerente General, Representante Legal, Titular"
+            />
+          </Field>
+
+          <Field label="Dirección completa">
+            <Input
+              type="text"
+              value={form.legalAddress}
+              onChange={e => setForm(f => ({ ...f, legalAddress: e.target.value }))}
+              placeholder="Calle, número, ciudad, región, país"
+            />
+          </Field>
         </div>
 
         {/* Save area */}
