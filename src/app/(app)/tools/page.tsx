@@ -9,6 +9,12 @@ import { useState } from 'react';
 
 const TOOLS_COMMON = [
   {
+    href: '/tools/nda',
+    title: 'Generador de NDA',
+    description: 'Crea un Acuerdo de Confidencialidad completo y listo para firma. Consulta NDAs previos en tu repositorio como referencia.',
+    icon: '🔏',
+  },
+  {
     href: '/tools/analisis',
     title: 'Análisis de Documentos',
     description: 'Sube un documento y GPT-4o extrae resumen, riesgos, cláusulas clave y recomendaciones.',
