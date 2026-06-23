@@ -78,7 +78,6 @@ export default function NdaPage() {
 
   // Status
   const [generating, setGenerating] = useState(false);
-  const [repoStatus, setRepoStatus] = useState<{ found: number; names: string[] } | null>(null);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
@@ -90,7 +89,6 @@ export default function NdaPage() {
 
     setError('');
     setResult('');
-    setRepoStatus(null);
     setSaved(false);
     setGenerating(true);
 
@@ -122,9 +120,7 @@ export default function NdaPage() {
             let ev: Record<string, unknown>;
             try { ev = JSON.parse(part.slice(6).trim()); } catch { continue; }
 
-            if (ev.type === 'repo_check') {
-              setRepoStatus({ found: ev.found as number, names: ev.names as string[] });
-            } else if (ev.type === 'text') {
+            if (ev.type === 'text') {
               accumulated += ev.delta as string;
               setResult(accumulated);
             } else if (ev.type === 'error') {
@@ -298,27 +294,13 @@ export default function NdaPage() {
 
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-[#6b6050]">
-                Buscará NDAs previos en tu repositorio para usarlos como referencia
+                El NDA se guardará automáticamente en tu repositorio de documentos
               </p>
               <Button variant="BtnGold" size="md" loading={generating} onClick={handleGenerate}>
                 Generar NDA
               </Button>
             </div>
           </div>
-
-          {/* Repository check result */}
-          {repoStatus !== null && (
-            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-[12px] font-sans ${
-              repoStatus.found > 0
-                ? 'bg-avocat-gold/5 border-avocat-gold/20 text-avocat-gold/80'
-                : 'bg-[#1e1c16] border-[#2e2b20] text-[#6b6050]'
-            }`}>
-              <span>{repoStatus.found > 0 ? '📂' : '🔍'}</span>
-              {repoStatus.found > 0
-                ? `${repoStatus.found} NDA${repoStatus.found > 1 ? 's' : ''} previo${repoStatus.found > 1 ? 's' : ''} encontrado${repoStatus.found > 1 ? 's' : ''}: ${repoStatus.names.join(', ')} — usados como referencia`
-                : 'No se encontraron NDAs previos en el repositorio — generando desde plantilla estándar'}
-            </div>
-          )}
 
           {/* Streaming result */}
           {result && (
