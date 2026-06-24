@@ -5,7 +5,7 @@ import Link from 'next/link';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
-import { downloadAsWord, downloadAsPdf, buildWordBlob, buildPdfBlob } from '@/lib/agent-export';
+import { downloadAsWord, downloadAsPdf, buildWordBlob, buildPdfBlob, type DocMeta } from '@/lib/agent-export';
 import { saveDocumentToStorage, getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
 import { getClients, type ClientDoc } from '@/lib/firestore';
 
@@ -75,6 +75,12 @@ export default function NdaPage() {
   const { user, userDoc } = useAppAuth();
   const ud = userDoc as Record<string, unknown>;
   const signatureUrl = (ud.signatureUrl as string) || undefined;
+  const meta: DocMeta = {
+    authorName: (ud.legalCompanyName as string) || userDoc.displayName || '',
+    authorNif: (ud.legalIdNumber as string)
+      ? `${(ud.legalIdType as string) || ''} ${(ud.legalIdNumber as string)}`.trim()
+      : undefined,
+  };
 
   // Form state
   const [language, setLanguage]       = useState<Lang>('es');
@@ -194,9 +200,9 @@ export default function NdaPage() {
       if (accumulated.length > 200) {
         try {
           const ndaName = `NDA_${divulgante.empresa || divulgante.nombre}_${receptora.empresa || receptora.nombre}`.replace(/\s+/g, '_').slice(0, 60);
-          const { blob } = buildWordBlob(accumulated, ndaName, signatureUrl);
+          const { blob } = buildWordBlob(accumulated, ndaName, signatureUrl, meta);
           // Generate PDF in parallel (fire — don't block if it fails)
-          const pdfBlobResult = await buildPdfBlob(accumulated, ndaName, signatureUrl).catch(() => null);
+          const pdfBlobResult = await buildPdfBlob(accumulated, ndaName, signatureUrl, meta).catch(() => null);
           const record = await saveDocumentToStorage({
             userId: user.uid,
             plan: userDoc.plan ?? 'Autoservicio',
@@ -440,10 +446,10 @@ export default function NdaPage() {
                   <Button variant="BtnGhost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>
                     Copiar
                   </Button>
-                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsWord(result, ndaTitle, signatureUrl)}>
+                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsWord(result, ndaTitle, signatureUrl, meta)}>
                     Word
                   </Button>
-                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsPdf(result, ndaTitle, signatureUrl)}>
+                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsPdf(result, ndaTitle, signatureUrl, meta)}>
                     PDF
                   </Button>
                 </div>
