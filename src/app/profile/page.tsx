@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 
 const COUNTRIES = [
@@ -94,6 +95,97 @@ export default function ProfilePage() {
   const [saving, setSaving]   = useState(false);
   const [saved,  setSaved]    = useState(false);
   const [error,  setError]    = useState('');
+
+  // Signature pad
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const isDrawing    = useRef(false);
+  const lastPos      = useRef({ x: 0, y: 0 });
+  const [hasSig,     setHasSig]     = useState(false);
+  const [savingSig,  setSavingSig]  = useState(false);
+  const [sigSaved,   setSigSaved]   = useState(false);
+  const [signatureUrl, setSignatureUrl] = useState((ud.signatureUrl as string) || '');
+  const [showPad,    setShowPad]    = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !showPad) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    // Prevent page scroll on touch
+    const block = (e: TouchEvent) => e.preventDefault();
+    canvas.addEventListener('touchstart', block, { passive: false });
+    canvas.addEventListener('touchmove',  block, { passive: false });
+    return () => {
+      canvas.removeEventListener('touchstart', block);
+      canvas.removeEventListener('touchmove',  block);
+    };
+  }, [showPad]);
+
+  const getPos = useCallback((e: React.MouseEvent | React.TouchEvent): { x: number; y: number } => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ('touches' in e) {
+      const t = e.touches[0];
+      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+    }
+    return { x: ((e as React.MouseEvent).clientX - rect.left) * scaleX,
+             y: ((e as React.MouseEvent).clientY - rect.top)  * scaleY };
+  }, []);
+
+  const onStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    isDrawing.current = true;
+    const pos = getPos(e);
+    lastPos.current = pos;
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) { ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
+    setHasSig(true);
+  }, [getPos]);
+
+  const onMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing.current) return;
+    const pos = getPos(e);
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) { ctx.lineTo(pos.x, pos.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
+    lastPos.current = pos;
+  }, [getPos]);
+
+  const onEnd = useCallback(() => { isDrawing.current = false; }, []);
+
+  const clearPad = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSig(false);
+  };
+
+  const saveSignature = async () => {
+    if (!canvasRef.current || !hasSig || !storage || !db) return;
+    setSavingSig(true);
+    try {
+      const blob = await new Promise<Blob>((res, rej) =>
+        canvasRef.current!.toBlob(b => b ? res(b) : rej(new Error('empty')), 'image/png')
+      );
+      const path = `users/${userDoc.uid}/firma/signature.png`;
+      const sRef = storageRef(storage, path);
+      await uploadBytes(sRef, blob, { contentType: 'image/png' });
+      const url = await getDownloadURL(sRef);
+      await updateDoc(doc(db, 'users', userDoc.uid), { signatureUrl: url, updatedAt: serverTimestamp() });
+      setSignatureUrl(url);
+      setSigSaved(true);
+      setShowPad(false);
+      setTimeout(() => setSigSaved(false), 3000);
+    } catch {
+      // silent — user can retry
+    } finally {
+      setSavingSig(false);
+    }
+  };
 
   const initials = (user.displayName ?? user.email ?? 'U')
     .split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
@@ -317,6 +409,97 @@ export default function ProfilePage() {
               placeholder="Calle, número, ciudad, región, país"
             />
           </Field>
+        </div>
+
+        {/* Signature pad */}
+        <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 mt-4">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
+                Firma manuscrita
+              </p>
+              <p className="text-[11px] font-sans text-[#3a3630] mt-1">
+                Se incluirá automáticamente en los documentos generados que requieran firma.
+              </p>
+            </div>
+            {sigSaved && (
+              <span className="text-[12px] font-sans text-emerald-400 flex items-center gap-1.5 flex-shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Guardada
+              </span>
+            )}
+          </div>
+
+          {/* Existing signature preview */}
+          {signatureUrl && !showPad && (
+            <div className="mb-3">
+              <div className="bg-white rounded-lg p-3 inline-block border border-[#2e2b20]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={signatureUrl} alt="Firma guardada" className="h-16 max-w-[280px] object-contain" />
+              </div>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => { setShowPad(true); clearPad(); }}
+                  className="text-[11px] font-sans text-avocat-gold/70 hover:text-avocat-gold border border-avocat-gold/20 hover:border-avocat-gold/40 px-3 py-1.5 rounded-md transition-colors"
+                >
+                  Cambiar firma
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Signature canvas */}
+          {(!signatureUrl || showPad) && (
+            <div>
+              <div className="relative rounded-lg overflow-hidden border border-[#2e2b20] bg-white mb-2" style={{ touchAction: 'none' }}>
+                <canvas
+                  ref={canvasRef}
+                  width={600}
+                  height={160}
+                  className="w-full h-[120px] cursor-crosshair block"
+                  onMouseDown={onStart}
+                  onMouseMove={onMove}
+                  onMouseUp={onEnd}
+                  onMouseLeave={onEnd}
+                  onTouchStart={onStart}
+                  onTouchMove={onMove}
+                  onTouchEnd={onEnd}
+                />
+                {!hasSig && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="text-[12px] font-sans text-[#bbb] select-none">
+                      Dibuja tu firma aquí
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={clearPad}
+                  className="text-[11px] font-sans text-[#6b6050] hover:text-[#c8c0ac] border border-[#2e2b20] hover:border-[#3a3630] px-3 py-1.5 rounded-md transition-colors"
+                >
+                  Limpiar
+                </button>
+                {showPad && signatureUrl && (
+                  <button
+                    onClick={() => { setShowPad(false); clearPad(); }}
+                    className="text-[11px] font-sans text-[#6b6050] hover:text-[#c8c0ac] border border-[#2e2b20] hover:border-[#3a3630] px-3 py-1.5 rounded-md transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                )}
+                <button
+                  onClick={saveSignature}
+                  disabled={!hasSig || savingSig}
+                  className="text-[11px] font-sans font-medium text-avocat-black bg-avocat-gold hover:bg-[#a07824] disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 rounded-md transition-colors"
+                >
+                  {savingSig ? 'Guardando…' : 'Guardar firma'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Save area */}
