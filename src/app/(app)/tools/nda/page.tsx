@@ -92,8 +92,10 @@ export default function NdaPage() {
   const [jurisdiccion, setJurisdiccion] = useState(
     (ud.country as string) || 'Chile'
   );
-  const [noCompetencia, setNoCompetencia] = useState(false);
-  const [penalizacion, setPenalizacion]   = useState(false);
+  const [noCompetencia, setNoCompetencia]       = useState(false);
+  const [penalizacion, setPenalizacion]         = useState(false);
+  const [penalizacionMonto, setPenalizacionMonto] = useState('5.000');
+  const [ciudadJurisdiccion, setCiudadJurisdiccion] = useState('');
 
   // Reference doc
   const [userDocs, setUserDocs]         = useState<DocumentRecord[]>([]);
@@ -160,7 +162,10 @@ export default function NdaPage() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({
           tipo, divulgante, receptora, objeto, duracion, jurisdiccion,
-          noCompetencia, penalizacion, language,
+          ciudadJurisdiccion: ciudadJurisdiccion || undefined,
+          noCompetencia, penalizacion,
+          penalizacionMonto: penalizacion ? penalizacionMonto : undefined,
+          language,
           referenceDocUrl: selectedDoc?.downloadUrl || undefined,
           referenceDocName: selectedDoc?.name || undefined,
         }),
@@ -339,8 +344,8 @@ export default function NdaPage() {
               />
             </div>
 
-            {/* Duración + Jurisdicción */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Duración + Jurisdicción + Ciudad */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
                   Duración de la confidencialidad
@@ -357,7 +362,16 @@ export default function NdaPage() {
                   Jurisdicción / Ley aplicable
                 </label>
                 <input type="text" value={jurisdiccion} onChange={e => setJurisdiccion(e.target.value)}
-                  placeholder="Ej: Chile, España, Argentina..."
+                  placeholder="Ej: España, Chile, Argentina..."
+                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
+                  Ciudad de los tribunales
+                </label>
+                <input type="text" value={ciudadJurisdiccion} onChange={e => setCiudadJurisdiccion(e.target.value)}
+                  placeholder={`Ej: Madrid, Barcelona…`}
                   className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
                 />
               </div>
@@ -389,7 +403,7 @@ export default function NdaPage() {
               <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">
                 Cláusulas adicionales
               </p>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 items-center">
                 {[
                   { key: 'noCompetencia', label: 'No competencia', value: noCompetencia, set: setNoCompetencia },
                   { key: 'penalizacion', label: 'Cláusula penal por incumplimiento', value: penalizacion, set: setPenalizacion },
@@ -408,6 +422,19 @@ export default function NdaPage() {
                     <span className="text-[13px] font-sans text-[#c8c0ac]">{opt.label}</span>
                   </label>
                 ))}
+                {penalizacion && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] text-[#6b6050]">€</span>
+                    <input
+                      type="text"
+                      value={penalizacionMonto}
+                      onChange={e => setPenalizacionMonto(e.target.value)}
+                      placeholder="5.000"
+                      className="w-24 bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-1.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                    />
+                    <span className="text-[11px] text-[#6b6050]">por infracción</span>
+                  </div>
+                )}
               </div>
             </div>
 

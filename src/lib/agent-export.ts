@@ -99,6 +99,16 @@ function injectSignature(html: string, signatureUrl?: string): string {
 
 // ── HTML document template ────────────────────────────────────────────────────
 
+function wrapSignatureSection(html: string): string {
+  // Wrap content following a signature/firmas h2 in .sig-section so CSS can strip indent/justify
+  const wrapped = html.replace(
+    /(<h2>[^<]*(SIGNATURE BLOCK|BLOQUE DE FIRMAS|FIRMAS? Y SELLOS|IX\.\s*FIRMAS?|VIII\.\s*FIRMAS?|FIRMAS?)\b[^<]*<\/h2>)/gi,
+    '<div class="sig-section">$1',
+  );
+  // Close the wrapper just before the footer (always present in our template)
+  return wrapped.replace(/(<div class="doc-footer">)/, '</div>$1');
+}
+
 function buildDocHtml(content: string, title: string, signatureUrl?: string, meta?: DocMeta): string {
   const date = new Date().toLocaleDateString('es-ES', {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -107,7 +117,7 @@ function buildDocHtml(content: string, title: string, signatureUrl?: string, met
   const authorName = meta?.authorName || 'AVOCAT LegalTech';
   const authorNif  = meta?.authorNif  || '';
 
-  const bodyHtml = injectSignature(mdToHtml(content), signatureUrl);
+  const bodyHtml = wrapSignatureSection(injectSignature(mdToHtml(content), signatureUrl));
 
   const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -201,6 +211,13 @@ function buildDocHtml(content: string, title: string, signatureUrl?: string, met
   strong { font-weight: bold; }
   em     { font-style: italic; }
   code   { font-family: 'Courier New', monospace; font-size: 10pt; }
+
+  /* ── Signature section — left-aligned, no indent ── */
+  .sig-section p, .sig-section li {
+    text-indent: 0;
+    text-align: left;
+    word-spacing: normal;
+  }
 
   /* ── Footer ── */
   .doc-footer {

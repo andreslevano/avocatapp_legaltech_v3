@@ -46,8 +46,10 @@ interface NdaBody {
   objeto: string;
   duracion: string;
   jurisdiccion: string;
+  ciudadJurisdiccion?: string;
   noCompetencia: boolean;
   penalizacion: boolean;
+  penalizacionMonto?: string;
   language?: 'es' | 'en';
   referenceDocUrl?: string;
   referenceDocName?: string;
@@ -64,12 +66,14 @@ function parteLabel(p: Parte, lang: 'es' | 'en'): string {
 function buildPrompt(body: NdaBody, referenceContext?: string): string {
   const { tipo, divulgante, receptora, objeto, duracion, jurisdiccion, noCompetencia, penalizacion } = body;
   const lang = body.language === 'en' ? 'en' : 'es';
+  const penMonto = body.penalizacionMonto?.trim() || '5.000';
+  const ciudad   = body.ciudadJurisdiccion?.trim() || jurisdiccion;
 
   if (lang === 'en') {
     const tipoLabel = tipo === 'bilateral' ? 'BILATERAL (Mutual)' : 'UNILATERAL';
     const extras = [
       noCompetencia && '- Non-compete clause',
-      penalizacion  && '- Liquidated damages / penalty clause',
+      penalizacion  && `- Liquidated damages / penalty clause (fixed amount: €${penMonto} per breach)`,
     ].filter(Boolean).join('\n');
 
     const refSection = referenceContext
@@ -104,11 +108,11 @@ PARTIES:
 
 PURPOSE / SUBJECT MATTER: ${objeto}
 DURATION: ${duracion}
-JURISDICTION / GOVERNING LAW: ${jurisdiccion}
+JURISDICTION / GOVERNING LAW: ${jurisdiccion} — courts of **${ciudad}**
 ${extras ? `ADDITIONAL CLAUSES:\n${extras}` : ''}
 
-Include: definition of confidential information, obligations of the receiving party, exclusions, permitted use, term, return/destruction of information, no license granted, indemnification${noCompetencia ? ', non-compete' : ''}${penalizacion ? ', liquidated damages' : ''}, general provisions, and the signature block below.
-Adapt all legal references to the laws of ${jurisdiccion}.
+Include: definition of confidential information, obligations of the receiving party, exclusions, permitted use, term, return/destruction of information, no license granted, indemnification${noCompetencia ? ', non-compete' : ''}${penalizacion ? `, liquidated damages (€${penMonto} per breach)` : ''}, general provisions, and the signature block below.
+Adapt all legal references to the laws of ${jurisdiccion}. Do NOT use [TO BE COMPLETED] placeholders — all amounts and jurisdiction details are provided above.
 
 ${signatureInstructions}`;
   }
@@ -117,7 +121,7 @@ ${signatureInstructions}`;
   const tipoLabel = tipo === 'bilateral' ? 'BILATERAL (mutuo)' : 'UNILATERAL';
   const extras = [
     noCompetencia && '- No competencia',
-    penalizacion  && '- Cláusula penal por incumplimiento',
+    penalizacion  && `- Cláusula penal por incumplimiento (importe fijo: €${penMonto} por infracción)`,
   ].filter(Boolean).join('\n');
 
   const refSection = referenceContext
@@ -152,11 +156,11 @@ PARTES:
 
 OBJETO: ${objeto}
 DURACIÓN: ${duracion}
-JURISDICCIÓN: ${jurisdiccion}
+JURISDICCIÓN: ${jurisdiccion} — tribunales de **${ciudad}**
 ${extras ? `CLÁUSULAS ADICIONALES:\n${extras}` : ''}
 
-Incluye: definición de información confidencial, obligaciones, exclusiones, limitación de uso, vigencia, devolución/destrucción de información, ausencia de licencia, indemnización${noCompetencia ? ', no competencia' : ''}${penalizacion ? ', cláusula penal' : ''}, disposiciones generales y el bloque de firmas indicado a continuación.
-Adapta referencias legales a la jurisdicción de ${jurisdiccion}.
+Incluye: definición de información confidencial, obligaciones, exclusiones, limitación de uso, vigencia, devolución/destrucción de información, ausencia de licencia, indemnización${noCompetencia ? ', no competencia' : ''}${penalizacion ? `, cláusula penal (€${penMonto} por infracción)` : ''}, disposiciones generales y el bloque de firmas indicado a continuación.
+Adapta referencias legales a la jurisdicción de ${jurisdiccion}. NO uses marcadores [COMPLETAR] — todos los importes y la ciudad de tribunales están indicados arriba.
 
 ${signatureInstructions}`;
 }

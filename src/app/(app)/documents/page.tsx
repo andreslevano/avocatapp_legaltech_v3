@@ -45,17 +45,19 @@ function DocTile({ d, cases, showCase, onClick }: {
   d: DocumentRecord; cases: CaseDoc[]; showCase: boolean; onClick: () => void;
 }) {
   const caseDoc = d.caseId ? cases.find(c => c.id === d.caseId) : null;
+  // If a paired PDF exists, display as PDF regardless of the stored Word type
+  const displayType = d.pdfDownloadUrl ? 'pdf' : d.type;
   return (
     <button
       onClick={onClick}
       className="text-left bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-4 hover:border-avocat-gold/30 hover:bg-[#252218] transition-colors group w-full"
     >
-      <div className="text-3xl mb-3">{typeIcon(d.type)}</div>
+      <div className="text-3xl mb-3">{typeIcon(displayType)}</div>
       <p className="text-[13px] font-sans font-medium text-[#c8c0ac] group-hover:text-[#e8d4a0] truncate mb-1">
         {d.name}
       </p>
       <p className="text-[11px] text-[#6b6050]">
-        {d.type.toUpperCase()} · {formatBytes(d.size)}
+        {displayType.toUpperCase()} · {formatBytes(d.size)}
       </p>
       <p className="text-[11px] text-[#3a3630] mt-0.5">{formatDate(d.createdAt)}</p>
       {showCase && d.caseId && (
@@ -77,10 +79,13 @@ const PDF_TYPE    = 'pdf';
 
 function PreviewModal({ d, cases, onClose }: { d: DocumentRecord; cases: CaseDoc[]; onClose: () => void }) {
   const caseDoc = d.caseId ? cases.find(c => c.id === d.caseId) : null;
-  const ext = d.type.toLowerCase();
+  // Prefer PDF preview when a paired PDF exists
+  const previewUrl = d.pdfDownloadUrl || d.downloadUrl;
+  const ext = d.pdfDownloadUrl ? 'pdf' : d.type.toLowerCase();
   const isPdf   = ext === PDF_TYPE;
   const isImage = IMAGE_TYPES.has(ext);
   const canPreview = isPdf || isImage;
+  const hasWord = d.type.toLowerCase() === 'doc' || d.type.toLowerCase() === 'docx';
 
   // Close on Escape
   useEffect(() => {
@@ -127,7 +132,7 @@ function PreviewModal({ d, cases, onClose }: { d: DocumentRecord; cases: CaseDoc
         <div className="flex-1 overflow-auto min-h-0">
           {isPdf && (
             <iframe
-              src={d.downloadUrl}
+              src={previewUrl}
               title={d.name}
               className="w-full h-full min-h-[400px] sm:min-h-[500px] border-0"
             />
@@ -151,20 +156,24 @@ function PreviewModal({ d, cases, onClose }: { d: DocumentRecord; cases: CaseDoc
 
         {/* Footer actions */}
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[#2e2b20] flex-shrink-0">
-          {isPdf && !d.pdfDownloadUrl && (
-            <a href={d.downloadUrl} target="_blank" rel="noopener noreferrer">
+          {isPdf && (
+            <a href={previewUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="BtnGhost" size="sm">Abrir en nueva pestaña</Button>
             </a>
           )}
           {d.pdfDownloadUrl ? (
             <>
-              <a href={d.pdfDownloadUrl} target="_blank" rel="noopener noreferrer" download>
-                <Button variant="BtnOutlineDark" size="sm">Descargar PDF</Button>
-              </a>
               <a href={d.downloadUrl} target="_blank" rel="noopener noreferrer" download>
-                <Button variant="BtnGold" size="sm">Descargar Word</Button>
+                <Button variant="BtnOutlineDark" size="sm">Descargar Word</Button>
+              </a>
+              <a href={d.pdfDownloadUrl} target="_blank" rel="noopener noreferrer" download>
+                <Button variant="BtnGold" size="sm">Descargar PDF</Button>
               </a>
             </>
+          ) : hasWord ? (
+            <a href={d.downloadUrl} download={d.name} target="_blank" rel="noopener noreferrer">
+              <Button variant="BtnGold" size="sm">Descargar Word</Button>
+            </a>
           ) : (
             <a href={d.downloadUrl} download={d.name} target="_blank" rel="noopener noreferrer">
               <Button variant="BtnGold" size="sm">Descargar</Button>
