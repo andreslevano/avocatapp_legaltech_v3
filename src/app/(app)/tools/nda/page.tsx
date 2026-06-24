@@ -74,6 +74,7 @@ function ParteFields({ label, value, onChange, headerAction }: ParteFieldsProps)
 export default function NdaPage() {
   const { user, userDoc } = useAppAuth();
   const ud = userDoc as Record<string, unknown>;
+  const signatureUrl = (ud.signatureUrl as string) || undefined;
 
   // Form state
   const [language, setLanguage]       = useState<Lang>('es');
@@ -193,7 +194,7 @@ export default function NdaPage() {
       if (accumulated.length > 200) {
         try {
           const ndaName = `NDA_${divulgante.empresa || divulgante.nombre}_${receptora.empresa || receptora.nombre}`.replace(/\s+/g, '_').slice(0, 60);
-          const { blob } = buildWordBlob(accumulated, ndaName);
+          const { blob } = buildWordBlob(accumulated, ndaName, signatureUrl);
           const record = await saveDocumentToStorage({
             userId: user.uid,
             plan: userDoc.plan ?? 'Autoservicio',
@@ -404,9 +405,16 @@ export default function NdaPage() {
             {error && <p className="text-[12px] text-red-400">{error}</p>}
 
             <div className="flex items-center justify-between">
-              <p className="text-[11px] text-[#6b6050]">
-                El NDA se guardará automáticamente en tu repositorio de documentos
-              </p>
+              <div className="space-y-0.5">
+                <p className="text-[11px] text-[#6b6050]">
+                  El NDA se guardará automáticamente en tu repositorio de documentos
+                </p>
+                {signatureUrl && (
+                  <p className="text-[11px] text-avocat-gold/60">
+                    Tu firma se incluirá en la sección de firmas del Word y PDF
+                  </p>
+                )}
+              </div>
               <Button variant="BtnGold" size="md" loading={generating} onClick={handleGenerate}>
                 Generar NDA
               </Button>
@@ -429,10 +437,10 @@ export default function NdaPage() {
                   <Button variant="BtnGhost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>
                     Copiar
                   </Button>
-                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsWord(result, ndaTitle)}>
+                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsWord(result, ndaTitle, signatureUrl)}>
                     Word
                   </Button>
-                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsPdf(result, ndaTitle)}>
+                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsPdf(result, ndaTitle, signatureUrl)}>
                     PDF
                   </Button>
                 </div>

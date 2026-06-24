@@ -18,7 +18,18 @@ function markdownToHtml(md: string): string {
     .replace(/\n/g, '<br>');
 }
 
-function buildDocHtml(content: string, title: string): string {
+const SIG_IMG = (url: string) =>
+  `<img src="${url}" alt="Firma" style="height:52px;max-width:220px;vertical-align:middle;display:inline-block;margin-top:2px;" />`;
+
+function injectSignature(html: string, signatureUrl?: string): string {
+  if (!signatureUrl) return html;
+  // Replace only the FIRST occurrence (divulgante / disclosing party)
+  return html
+    .replace(/Firma:\s*_{4,}/, `Firma: ${SIG_IMG(signatureUrl)}`)
+    .replace(/Signature:\s*_{4,}/, `Signature: ${SIG_IMG(signatureUrl)}`);
+}
+
+function buildDocHtml(content: string, title: string, signatureUrl?: string): string {
   const date = new Date().toLocaleDateString('es-ES', {
     year: 'numeric', month: 'long', day: 'numeric',
   });
@@ -71,7 +82,7 @@ function buildDocHtml(content: string, title: string): string {
     <span>${date}</span>
   </div>
   <h1>${title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h1>
-  <p>${markdownToHtml(content)}</p>
+  <p>${injectSignature(markdownToHtml(content), signatureUrl)}</p>
   <div class="doc-footer">Generado por AVOCAT LegalTech · avocatapp.com · ${date}</div>
 </div>
 </body>
@@ -100,15 +111,15 @@ export function extractDocTitle(content: string): string {
   return first?.trim().slice(0, 60) ?? 'Documento legal';
 }
 
-export function buildWordBlob(content: string, title?: string): { blob: Blob; filename: string } {
+export function buildWordBlob(content: string, title?: string, signatureUrl?: string): { blob: Blob; filename: string } {
   const docTitle = title ?? extractDocTitle(content);
-  const html = buildDocHtml(content, docTitle);
+  const html = buildDocHtml(content, docTitle, signatureUrl);
   const blob = new Blob(['﻿' + html], { type: 'application/msword' });
   return { blob, filename: `${sanitizeFilename(docTitle)}.doc` };
 }
 
-export function downloadAsWord(content: string, title?: string) {
-  const { blob, filename } = buildWordBlob(content, title);
+export function downloadAsWord(content: string, title?: string, signatureUrl?: string) {
+  const { blob, filename } = buildWordBlob(content, title, signatureUrl);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -119,9 +130,9 @@ export function downloadAsWord(content: string, title?: string) {
   URL.revokeObjectURL(url);
 }
 
-export function downloadAsPdf(content: string, title?: string) {
+export function downloadAsPdf(content: string, title?: string, signatureUrl?: string) {
   const docTitle = title ?? extractDocTitle(content);
-  const html = buildDocHtml(content, docTitle);
+  const html = buildDocHtml(content, docTitle, signatureUrl);
   const autoprint = `<script>window.onload=function(){window.print();setTimeout(()=>window.close(),800);};<\/script>`;
   const printHtml = html.replace('</head>', `${autoprint}</head>`);
   const win = window.open('', '_blank', 'width=900,height=750');
