@@ -6,28 +6,28 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const NDA_SYSTEM_PROMPT = {
   es: `Eres un experto redactor de Acuerdos de Confidencialidad (NDA).
-Genera NDAs profesionales, completos y listos para firma, adaptados a la jurisdicción indicada.
+IDIOMA OBLIGATORIO: Escribe TODO el documento en ESPAÑOL. Ninguna palabra en otro idioma.
 
 REGLAS:
-- Genera el NDA COMPLETO en tu respuesta — no omitas cláusulas ni la sección de firmas.
+- Genera el NDA COMPLETO — no omitas cláusulas ni la sección de firmas.
+- Sé CONCISO: máximo 1800 palabras en total. Lenguaje jurídico preciso, sin párrafos redundantes.
 - Usa # para el título y ## para cada cláusula numerada.
 - Usa **negrita** para nombres, fechas, plazos e importes.
 - Usa [COMPLETAR] donde falten datos.
-- Sé conciso: incluye todas las cláusulas pero sin texto redundante.
-- Adapta las referencias legales a la jurisdicción indicada.
-- SIEMPRE incluye al final un bloque de FIRMAS completo con: nombre, cargo, tipo y número de identificación, dirección y línea de firma para cada parte.`,
+- Adapta referencias legales a la jurisdicción indicada.
+- PRIORIDAD MÁXIMA: la sección de FIRMAS al final es OBLIGATORIA. Si necesitas acortar cláusulas anteriores, hazlo — pero el bloque de firmas SIEMPRE debe aparecer completo.`,
 
   en: `You are an expert drafter of Non-Disclosure Agreements (NDA).
-Generate professional, complete, and execution-ready NDAs adapted to the specified jurisdiction.
+MANDATORY LANGUAGE: Write the ENTIRE document in ENGLISH ONLY. No Spanish or any other language.
 
 RULES:
-- Generate the COMPLETE NDA in your response — do not omit any clauses or the signature section.
+- Generate the COMPLETE NDA — do not omit any clauses or the signature section.
+- Be CONCISE: maximum 1800 words total. Precise legal language, no redundant paragraphs.
 - Use # for the title and ## for each numbered clause.
 - Use **bold** for names, dates, terms, and amounts.
 - Use [TO BE COMPLETED] where data is missing.
-- Be concise: include all clauses without redundant text.
 - Adapt legal references to the specified jurisdiction.
-- ALWAYS include at the end a complete SIGNATURE BLOCK with: name, title, ID type and number, address, and signature line for each party.`,
+- TOP PRIORITY: the SIGNATURE BLOCK at the end is MANDATORY. If you need to shorten earlier clauses, do so — but the signature block MUST always appear complete.`,
 };
 
 interface Parte {
@@ -73,7 +73,7 @@ function buildPrompt(body: NdaBody, referenceContext?: string): string {
     ].filter(Boolean).join('\n');
 
     const refSection = referenceContext
-      ? `\n\nREFERENCE DOCUMENT (use as style/content reference — adapt for the parties below):\n---\n${referenceContext.slice(0, 3000)}\n---`
+      ? `\n\nREFERENCE DOCUMENT (use as style/structure reference only — adapt for the parties below):\n---\n${referenceContext.slice(0, 1500)}\n---`
       : '';
 
     const signatureInstructions = `
@@ -94,7 +94,9 @@ Address: ${receptora.address || '[ADDRESS]'}
 Date: ____________
 Signature: ________________________`;
 
-    return `Generate a complete ${tipoLabel} Non-Disclosure Agreement ready for execution.${refSection}
+    return `LANGUAGE: ENGLISH ONLY — write every word of this document in English.
+
+Generate a complete ${tipoLabel} Non-Disclosure Agreement ready for execution.${refSection}
 
 PARTIES:
 - Disclosing Party: **${parteLabel(divulgante, 'en')}**
@@ -119,7 +121,7 @@ ${signatureInstructions}`;
   ].filter(Boolean).join('\n');
 
   const refSection = referenceContext
-    ? `\n\nDOCUMENTO DE REFERENCIA (úsalo como referencia de estilo/contenido — adapta para las partes indicadas):\n---\n${referenceContext.slice(0, 3000)}\n---`
+    ? `\n\nDOCUMENTO DE REFERENCIA (úsalo como referencia de estilo/estructura — adapta para las partes indicadas):\n---\n${referenceContext.slice(0, 1500)}\n---`
     : '';
 
   const signatureInstructions = `
@@ -140,7 +142,9 @@ Domicilio: ${receptora.address || '[DIRECCIÓN]'}
 Fecha: ____________
 Firma: ________________________`;
 
-  return `Genera un NDA ${tipoLabel} completo y listo para firma.${refSection}
+  return `IDIOMA: ESPAÑOL — escribe cada palabra del documento en español.
+
+Genera un NDA ${tipoLabel} completo y listo para firma.${refSection}
 
 PARTES:
 - Divulgante: **${parteLabel(divulgante, 'es')}**
@@ -208,7 +212,7 @@ export async function POST(req: NextRequest) {
 
         const stream = anthropic.messages.stream({
           model: 'claude-sonnet-4-6',
-          max_tokens: 2500,
+          max_tokens: 3000,
           system: NDA_SYSTEM_PROMPT[lang],
           messages: [{ role: 'user', content: prompt }],
         });
