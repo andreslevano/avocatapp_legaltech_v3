@@ -13,6 +13,7 @@ export interface DocumentRecord {
   size: number;
   storagePath: string;
   downloadUrl: string;
+  pdfDownloadUrl?: string;
   source?: 'generated' | 'uploaded';
   createdAt: unknown;
 }
@@ -30,20 +31,32 @@ export async function saveDocumentToStorage(params: {
   name: string;
   caseId?: string | null;
   source?: 'generated' | 'uploaded';
+  pdfBlob?: Blob;
 }): Promise<DocumentRecord> {
-  const { userId, plan, blob, name, caseId, source = 'generated' } = params;
+  const { userId, plan, blob, name, caseId, source = 'generated', pdfBlob } = params;
   if (!storage || !db) throw new Error('Firebase no disponible');
 
   const userType = PLAN_FOLDER[plan] ?? 'autoservicio';
   const subFolder = caseId ? `casos/${caseId}` : 'generacion-escritos';
-  const storagePath = `users/${userId}/${userType}/${subFolder}/${Date.now()}_${name}`;
+  const ts = Date.now();
+  const storagePath = `users/${userId}/${userType}/${subFolder}/${ts}_${name}`;
   const storageRef = ref(storage, storagePath);
 
   await uploadBytes(storageRef, blob, { contentType: blob.type });
   const downloadUrl = await getDownloadURL(storageRef);
 
+  // Upload PDF version alongside if provided
+  let pdfDownloadUrl: string | undefined;
+  if (pdfBlob) {
+    const pdfName = name.replace(/\.[^.]+$/, '.pdf');
+    const pdfPath = `users/${userId}/${userType}/${subFolder}/${ts}_${pdfName}`;
+    const pdfRef = ref(storage, pdfPath);
+    await uploadBytes(pdfRef, pdfBlob, { contentType: 'application/pdf' });
+    pdfDownloadUrl = await getDownloadURL(pdfRef);
+  }
+
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
-  const docRef = await addDoc(collection(db, 'documents'), {
+  const firestorePayload: Record<string, unknown> = {
     userId,
     caseId: caseId ?? null,
     name,
@@ -53,7 +66,10 @@ export async function saveDocumentToStorage(params: {
     downloadUrl,
     source,
     createdAt: serverTimestamp(),
-  });
+  };
+  if (pdfDownloadUrl) firestorePayload.pdfDownloadUrl = pdfDownloadUrl;
+
+  const docRef = await addDoc(collection(db, 'documents'), firestorePayload);
 
   return {
     id: docRef.id,
@@ -64,6 +80,7 @@ export async function saveDocumentToStorage(params: {
     size: blob.size,
     storagePath,
     downloadUrl,
+    pdfDownloadUrl,
     source,
     createdAt: null,
   };

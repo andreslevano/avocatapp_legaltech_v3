@@ -6,7 +6,7 @@ import type { User } from 'firebase/auth';
 import AgentMessage, { type Message, type MessageAttachment } from './AgentMessage';
 import AgentInput from './AgentInput';
 import AgentWelcome, { type CaseContext } from './AgentWelcome';
-import { isLegalDocument, buildWordBlob } from '@/lib/agent-export';
+import { isLegalDocument, buildWordBlob, buildPdfBlob } from '@/lib/agent-export';
 import { saveDocumentToStorage, type DocumentRecord } from '@/lib/storage-client';
 
 interface AgentChatProps {
@@ -249,6 +249,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
         if (isLegalDocument(accumulated)) {
           try {
             const { blob, filename } = buildWordBlob(accumulated);
+            const pdfBlobResult = await buildPdfBlob(accumulated, filename.replace(/\.[^.]+$/, '')).catch(() => null);
             const record = await saveDocumentToStorage({
               userId: user.uid,
               plan: userDoc.plan ?? '',
@@ -256,6 +257,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
               name: filename,
               caseId: caseContext?.id ?? null,
               source: 'generated',
+              pdfBlob: pdfBlobResult?.blob ?? undefined,
             });
             showDocSavedToast(filename, record.downloadUrl);
             // Trigger vector embedding with the text we already have (fire-and-forget)

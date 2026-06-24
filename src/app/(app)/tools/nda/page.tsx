@@ -5,7 +5,7 @@ import Link from 'next/link';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
-import { downloadAsWord, downloadAsPdf, buildWordBlob } from '@/lib/agent-export';
+import { downloadAsWord, downloadAsPdf, buildWordBlob, buildPdfBlob } from '@/lib/agent-export';
 import { saveDocumentToStorage, getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
 import { getClients, type ClientDoc } from '@/lib/firestore';
 
@@ -190,11 +190,13 @@ export default function NdaPage() {
         }
       }
 
-      // Auto-save to documents repository
+      // Auto-save to documents repository (Word + PDF)
       if (accumulated.length > 200) {
         try {
           const ndaName = `NDA_${divulgante.empresa || divulgante.nombre}_${receptora.empresa || receptora.nombre}`.replace(/\s+/g, '_').slice(0, 60);
           const { blob } = buildWordBlob(accumulated, ndaName, signatureUrl);
+          // Generate PDF in parallel (fire — don't block if it fails)
+          const pdfBlobResult = await buildPdfBlob(accumulated, ndaName, signatureUrl).catch(() => null);
           const record = await saveDocumentToStorage({
             userId: user.uid,
             plan: userDoc.plan ?? 'Autoservicio',
@@ -202,6 +204,7 @@ export default function NdaPage() {
             name: `${ndaName}.doc`,
             caseId: null,
             source: 'generated',
+            pdfBlob: pdfBlobResult?.blob ?? undefined,
           });
           setSaved(true);
           user.getIdToken().then(token =>

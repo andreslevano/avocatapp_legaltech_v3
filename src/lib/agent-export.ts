@@ -111,6 +111,53 @@ export function extractDocTitle(content: string): string {
   return first?.trim().slice(0, 60) ?? 'Documento legal';
 }
 
+export async function buildPdfBlob(
+  content: string,
+  title?: string,
+  signatureUrl?: string
+): Promise<{ blob: Blob; filename: string }> {
+  const docTitle = title ?? extractDocTitle(content);
+  const html = buildDocHtml(content, docTitle, signatureUrl);
+
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  Object.assign(container.style, {
+    position: 'fixed', top: '-9999px', left: '-9999px',
+    width: '794px', background: 'white', zIndex: '-1',
+  });
+  document.body.appendChild(container);
+
+  try {
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ]);
+
+    const canvas = await html2canvas(container, {
+      scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.88);
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW;
+    const imgH = (canvas.height / canvas.width) * imgW;
+
+    pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
+    let consumed = pageH;
+    while (consumed < imgH) {
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, -consumed, imgW, imgH);
+      consumed += pageH;
+    }
+
+    return { blob: pdf.output('blob'), filename: `${sanitizeFilename(docTitle)}.pdf` };
+  } finally {
+    document.body.removeChild(container);
+  }
+}
+
 export function buildWordBlob(content: string, title?: string, signatureUrl?: string): { blob: Blob; filename: string } {
   const docTitle = title ?? extractDocTitle(content);
   const html = buildDocHtml(content, docTitle, signatureUrl);

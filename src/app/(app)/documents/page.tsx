@@ -23,7 +23,10 @@ function tsSeconds(ts: unknown): number {
 function formatDate(ts: unknown): string {
   const s = tsSeconds(ts);
   if (!s) return '—';
-  return new Date(s * 1000).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(s * 1000).toLocaleString('es-ES', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
 }
 
 async function triggerEmbed(docId: string, idToken: string) {
@@ -148,14 +151,25 @@ function PreviewModal({ d, cases, onClose }: { d: DocumentRecord; cases: CaseDoc
 
         {/* Footer actions */}
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[#2e2b20] flex-shrink-0">
-          {isPdf && (
+          {isPdf && !d.pdfDownloadUrl && (
             <a href={d.downloadUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="BtnGhost" size="sm">Abrir en nueva pestaña</Button>
             </a>
           )}
-          <a href={d.downloadUrl} download={d.name} target="_blank" rel="noopener noreferrer">
-            <Button variant="BtnGold" size="sm">Descargar</Button>
-          </a>
+          {d.pdfDownloadUrl ? (
+            <>
+              <a href={d.pdfDownloadUrl} target="_blank" rel="noopener noreferrer" download>
+                <Button variant="BtnOutlineDark" size="sm">Descargar PDF</Button>
+              </a>
+              <a href={d.downloadUrl} target="_blank" rel="noopener noreferrer" download>
+                <Button variant="BtnGold" size="sm">Descargar Word</Button>
+              </a>
+            </>
+          ) : (
+            <a href={d.downloadUrl} download={d.name} target="_blank" rel="noopener noreferrer">
+              <Button variant="BtnGold" size="sm">Descargar</Button>
+            </a>
+          )}
         </div>
       </div>
     </div>
