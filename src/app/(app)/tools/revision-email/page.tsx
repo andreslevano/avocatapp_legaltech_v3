@@ -7,8 +7,43 @@ import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCases, createCase, updateCase, type CaseDoc } from '@/lib/firestore';
+import { saveAnalysisDocument } from '@/lib/agent-export';
 import type { GmailMessage, GmailMessageFull } from '@/lib/gmail';
 import type { EmailAnalysisResult } from '@/app/api/gmail/analyze/route';
+
+function analysisToMarkdown(a: EmailAnalysisResult, subject: string, from: string, date: string): string {
+  const lines: string[] = [
+    `# Análisis de Email — ${a.categoria}`,
+    '',
+    `**Asunto:** ${subject}`,
+    `**De:** ${from}`,
+    `**Fecha:** ${date}`,
+    `**Urgencia:** ${a.urgencia.toUpperCase()}`,
+    '',
+    '## Resumen',
+    a.resumen,
+  ];
+  if (a.partesInvolucradas?.length) {
+    lines.push('', '## Partes involucradas');
+    a.partesInvolucradas.forEach(p => lines.push(`- ${p}`));
+  }
+  if (a.fechasClave?.length) {
+    lines.push('', '## Fechas clave');
+    a.fechasClave.forEach(f => lines.push(`- ${f}`));
+  }
+  if (a.accionesRequeridas?.length) {
+    lines.push('', '## Acciones requeridas');
+    a.accionesRequeridas.forEach(ac => lines.push(`- ${ac}`));
+  }
+  if (a.riesgoLegal && a.riesgoLegal !== 'Sin riesgo aparente') {
+    lines.push('', '## Riesgo legal', a.riesgoLegal);
+  }
+  if (a.adjuntosRelevantes?.length) {
+    lines.push('', '## Adjuntos relevantes');
+    a.adjuntosRelevantes.forEach(adj => lines.push(`- ${adj}`));
+  }
+  return lines.join('\n');
+}
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -30,7 +65,7 @@ const INPUT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 
 
 // ── Gmail tab ─────────────────────────────────────────────────────────────────
 
-function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user']; userDoc: ReturnType<typeof useAppAuth>['userDoc'] }) {
+function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user']; userDoc: ReturnType<typeof useAppAuth>['userDoc']; }) {
   const ud = userDoc as Record<string, unknown>;
   const [connected, setConnected]     = useState<boolean>(Boolean(ud.gmailConnected));
   const [gmailEmail, setGmailEmail]   = useState<string>((ud.gmailEmail as string) ?? '');
@@ -59,6 +94,10 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
   const [caseForm, setCaseForm]       = useState({ title: '', type: 'civil', client: '', notes: '' });
   const [savingCase, setSavingCase]   = useState(false);
   const [caseSaved, setCaseSaved]     = useState('');
+
+  // Save analysis as document
+  const [savingDoc, setSavingDoc]     = useState(false);
+  const [docSaved, setDocSaved]       = useState('');
 
   useEffect(() => {
     if (user?.uid) getCases(user.uid).then(setCases).catch(() => {});
@@ -364,19 +403,47 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
                 )}
               </div>
 
-              {caseSaved ? (
-                <div className="flex items-center gap-3 pt-2">
-                  <span className="text-[12px] text-emerald-400">Caso guardado correctamente</span>
-                  <Link href={caseSaved} className="text-[12px] text-avocat-gold hover:underline">Ver caso →</Link>
-                </div>
-              ) : (
-                <div className="flex gap-2 pt-2 flex-wrap">
-                  <Button variant="BtnGold" size="sm" onClick={() => setShowCreateCase(true)}>Crear caso</Button>
-                  <Button variant="BtnOutlineDark" size="sm" onClick={() => setShowLinkCase(v => !v)}>
-                    Vincular a caso existente
+              <div className="flex gap-2 pt-2 flex-wrap items-center">
+                {caseSaved ? (
+                  <>
+                    <span className="text-[12px] text-emerald-400">Caso guardado</span>
+                    <Link href={caseSaved} className="text-[12px] text-avocat-gold hover:underline">Ver caso →</Link>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="BtnGold" size="sm" onClick={() => setShowCreateCase(true)}>Crear caso</Button>
+                    <Button variant="BtnOutlineDark" size="sm" onClick={() => setShowLinkCase(v => !v)}>
+                      Vincular a caso
+                    </Button>
+                  </>
+                )}
+                {docSaved ? (
+                  <Link href="/documents" className="text-[12px] text-avocat-gold hover:underline ml-auto">Ver documento →</Link>
+                ) : (
+                  <Button
+                    variant="BtnGhost"
+                    size="sm"
+                    loading={savingDoc}
+                    onClick={async () => {
+                      if (!analysis || !selected) return;
+                      setSavingDoc(true);
+                      try {
+                        const md = analysisToMarkdown(analysis, selected.subject, selected.from, selected.date);
+                        await saveAnalysisDocument({
+                          content: md,
+                          title: `Análisis email — ${analysis.categoria}`,
+                          userId: user.uid,
+                          plan: userDoc.plan ?? 'Abogados',
+                        });
+                        setDocSaved('done');
+                      } catch { /* silent */ }
+                      setSavingDoc(false);
+                    }}
+                  >
+                    Guardar como documento
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Link to existing case */}
               {showLinkCase && !caseSaved && (

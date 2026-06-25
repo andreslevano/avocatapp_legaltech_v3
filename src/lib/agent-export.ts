@@ -282,9 +282,11 @@ export async function buildPdfBlob(
 
   const container = document.createElement('div');
   container.innerHTML = html;
+  // 794px = A4 at 96dpi; 96px ≈ 2.54cm matches @page margin:2.5cm for html2canvas
   Object.assign(container.style, {
     position: 'fixed', top: '-9999px', left: '-9999px',
-    width: '794px', background: 'white', zIndex: '-1',
+    width: '794px', padding: '96px', background: 'white', zIndex: '-1',
+    boxSizing: 'border-box',
   });
   document.body.appendChild(container);
 
@@ -334,6 +336,29 @@ export function downloadAsWord(
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// Save any markdown content as Word+PDF to Firebase Storage and return the document record
+export async function saveAnalysisDocument(params: {
+  content: string;
+  title: string;
+  userId: string;
+  plan: string;
+  caseId?: string | null;
+}): Promise<import('@/lib/storage-client').DocumentRecord> {
+  const { content, title, userId, plan, caseId } = params;
+  const { blob: wordBlob, filename: wordFilename } = buildWordBlob(content, title);
+  const { saveDocumentToStorage } = await import('@/lib/storage-client');
+  let pdfBlob: Blob | undefined;
+  try {
+    const r = await buildPdfBlob(content, title);
+    pdfBlob = r.blob;
+  } catch { /* pdf generation optional */ }
+  return saveDocumentToStorage({
+    userId, plan, blob: wordBlob, name: wordFilename,
+    caseId: caseId ?? null, source: 'generated',
+    ...(pdfBlob ? { pdfBlob } : {}),
+  });
 }
 
 export function downloadAsPdf(

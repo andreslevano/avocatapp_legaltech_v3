@@ -41,6 +41,11 @@ export interface CaseAssessment {
   fechasClave: string[];
 }
 
+export interface CaseComment {
+  text: string;
+  createdAt: Timestamp;
+}
+
 export interface CaseDoc {
   id: string;
   userId: string;
@@ -49,10 +54,12 @@ export interface CaseDoc {
   status: CaseStatus;
   ref: string;
   client: string;
+  clientId?: string;              // linked client doc id
   deadline: Timestamp | null;
   documents: string[];
   documentRefs?: DocumentRef[];   // metadata of uploaded files
   assessment?: CaseAssessment;    // AI analysis from intake
+  comments?: CaseComment[];       // user timestamped comments
   notes: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -148,6 +155,17 @@ export async function updateCase(
   if (!db) throw new Error('Firestore not available');
   await updateDoc(doc(db, 'cases', caseId), {
     ...data,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function addCaseComment(caseId: string, text: string): Promise<void> {
+  if (!db) throw new Error('Firestore not available');
+  const snap = await getDoc(doc(db, 'cases', caseId));
+  const existing: CaseComment[] = (snap.data()?.comments as CaseComment[]) ?? [];
+  const newComment: CaseComment = { text, createdAt: serverTimestamp() as unknown as Timestamp };
+  await updateDoc(doc(db, 'cases', caseId), {
+    comments: [...existing, newComment],
     updatedAt: serverTimestamp(),
   });
 }
