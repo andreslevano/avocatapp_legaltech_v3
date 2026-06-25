@@ -56,7 +56,7 @@ export default function Sidebar({ userDoc }: SidebarProps) {
       c.ref?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const SidebarContent = () => (
+  const sidebarInner = (
     <aside className="w-[220px] h-full bg-[#1e1c16] border-r border-[#2e2b20] flex flex-col flex-shrink-0">
       <div className="px-4 pt-4 pb-3 border-b border-[#2e2b20]">
         <div className="flex items-center justify-between mb-3">
@@ -131,7 +131,7 @@ export default function Sidebar({ userDoc }: SidebarProps) {
     <>
       {/* Desktop: inline */}
       <div className="hidden md:flex h-full">
-        <SidebarContent />
+        {sidebarInner}
       </div>
 
       {/* Mobile: slide-in overlay */}
@@ -139,7 +139,7 @@ export default function Sidebar({ userDoc }: SidebarProps) {
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/60" onClick={close} />
           <div className="relative z-10 h-full">
-            <SidebarContent />
+            {sidebarInner}
           </div>
         </div>
       )}

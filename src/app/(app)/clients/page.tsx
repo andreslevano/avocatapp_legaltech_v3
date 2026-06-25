@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppAuth } from '@/contexts/AppAuthContext';
-import { getClients, type ClientDoc } from '@/lib/firestore';
+import { getClients, getCases, type ClientDoc, type CaseDoc } from '@/lib/firestore';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import type { Timestamp } from 'firebase/firestore';
@@ -35,6 +35,7 @@ const EMPTY_FORM: NewClientForm = {
 export default function ClientsPage() {
   const { userDoc } = useAppAuth();
   const [clients, setClients] = useState<ClientDoc[]>([]);
+  const [cases,   setCases]   = useState<CaseDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState<ClientDoc | null>(null);
@@ -44,8 +45,8 @@ export default function ClientsPage() {
 
   useEffect(() => {
     if (!userDoc.uid) return;
-    getClients(userDoc.uid)
-      .then(setClients)
+    Promise.all([getClients(userDoc.uid), getCases(userDoc.uid)])
+      .then(([cls, cs]) => { setClients(cls); setCases(cs); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [userDoc.uid]);
@@ -151,6 +152,14 @@ export default function ClientsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
+            {(() => {
+              const activeCasesByClientId = cases.reduce<Record<string, number>>((acc, c) => {
+                if (c.clientId && (c.status === 'active' || c.status === 'urgent')) {
+                  acc[c.clientId] = (acc[c.clientId] ?? 0) + 1;
+                }
+                return acc;
+              }, {});
+              return (
             <table className="w-full text-[12px] font-sans">
               <thead>
                 <tr className="border-b border-[#2e2b20]">
@@ -167,7 +176,7 @@ export default function ClientsPage() {
                       {c.company && <div className="text-[11px] text-[#6b6050]">{c.company}</div>}
                     </td>
                     <td className="px-4 py-3 text-[#6b6050]">{c.email || '—'}</td>
-                    <td className="px-4 py-3 text-[#c8c0ac]">{c.activeCases}</td>
+                    <td className="px-4 py-3 text-[#c8c0ac]">{activeCasesByClientId[c.id] ?? 0}</td>
                     <td className="px-4 py-3 text-[#6b6050]">{formatDate(c.lastCaseDate)}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${c.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-[#252218] text-[#6b6050] border-[#2e2b20]'}`}>
@@ -186,6 +195,8 @@ export default function ClientsPage() {
                 ))}
               </tbody>
             </table>
+              );
+            })()}
           </div>
         )}
       </div>

@@ -42,6 +42,13 @@ export default function DashboardPage() {
   const closedCases   = cases.filter(c => c.status === 'closed').length;
   const activeClients = clients.filter(c => c.status === 'active').length;
 
+  const activeCasesByClientId = cases.reduce<Record<string, number>>((acc, c) => {
+    if (c.clientId && (c.status === 'active' || c.status === 'urgent')) {
+      acc[c.clientId] = (acc[c.clientId] ?? 0) + 1;
+    }
+    return acc;
+  }, {});
+
   return (
     <div className="flex flex-col h-full">
       <AppHeader
@@ -84,7 +91,7 @@ export default function DashboardPage() {
             {/* Bottom row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <DeadlineList cases={cases} />
-              <ClientTable clients={clients} />
+              <ClientTable clients={clients} activeCasesByClientId={activeCasesByClientId} />
             </div>
 
             {cases.length === 0 && !loading && (

@@ -13,9 +13,10 @@ function formatDate(ts: Timestamp | null): string {
 
 interface ClientTableProps {
   clients: ClientDoc[];
+  activeCasesByClientId?: Record<string, number>;
 }
 
-export default function ClientTable({ clients }: ClientTableProps) {
+export default function ClientTable({ clients, activeCasesByClientId = {} }: ClientTableProps) {
   const active = clients.filter(c => c.status === 'active').slice(0, 10);
 
   return (
@@ -50,7 +51,7 @@ export default function ClientTable({ clients }: ClientTableProps) {
                     <p className="font-medium text-[#c8c0ac]">{c.name}</p>
                     <p className="text-[10px] text-[#6b6050] mt-0.5">{c.email}</p>
                   </td>
-                  <td className="px-5 py-3 text-[#c8c0ac]">{c.activeCases}</td>
+                  <td className="px-5 py-3 text-[#c8c0ac]">{activeCasesByClientId[c.id] ?? 0}</td>
                   <td className="px-5 py-3 text-[#6b6050]">{formatDate(c.lastCaseDate)}</td>
                 </tr>
               ))}

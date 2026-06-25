@@ -8,7 +8,7 @@ import {
   getCase, getConversations, updateCase, addCaseComment, getClients,
   type CaseDoc, type ConversationDoc, type ClientDoc,
 } from '@/lib/firestore';
-import { saveDocumentToStorage } from '@/lib/storage-client';
+import { saveDocumentToStorage, getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import type { Timestamp } from 'firebase/firestore';
@@ -118,6 +118,12 @@ export default function CaseDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
 
+  // Doc picker (Mis documentos)
+  const [showDocPicker,    setShowDocPicker]    = useState(false);
+  const [pickerDocs,       setPickerDocs]       = useState<DocumentRecord[]>([]);
+  const [loadingPickerDocs,setLoadingPickerDocs]= useState(false);
+  const [pickerDocSearch,  setPickerDocSearch]  = useState('');
+
   // Client picker
   const [showClientPicker, setShowClientPicker] = useState(false);
   const [clientSearch,     setClientSearch]     = useState('');
@@ -223,6 +229,32 @@ export default function CaseDetailPage() {
       if (fileRef.current) fileRef.current.value = '';
     }
   }, [caseDoc, user, userDoc]);
+
+  const openDocPicker = async () => {
+    setShowDocPicker(true);
+    if (pickerDocs.length) return;
+    setLoadingPickerDocs(true);
+    try { setPickerDocs(await getUserDocuments(userDoc.uid)); }
+    catch { /* ignore */ }
+    setLoadingPickerDocs(false);
+  };
+
+  const handlePickDoc = async (doc: DocumentRecord) => {
+    setShowDocPicker(false);
+    setUploading(true);
+    setUploadMsg('');
+    try {
+      const res  = await fetch(doc.downloadUrl);
+      const blob = await res.blob();
+      const file = new File([blob], doc.name, { type: blob.type || 'application/octet-stream' });
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      await handleFileUpload(dt.files);
+    } catch {
+      setUploadMsg('Error al cargar el documento.');
+      setUploading(false);
+    }
+  };
 
   const handleLinkClient = async (client: ClientDoc) => {
     if (!caseDoc) return;
@@ -414,6 +446,9 @@ export default function CaseDetailPage() {
                   className="hidden"
                   onChange={e => handleFileUpload(e.target.files)}
                 />
+                <button onClick={openDocPicker} className="text-[12px] text-[#6b6050] hover:text-avocat-gold transition-colors">
+                  Mis documentos
+                </button>
                 <Button
                   variant="BtnGold"
                   size="sm"
@@ -570,6 +605,44 @@ export default function CaseDetailPage() {
 
         </div>
       </div>
+
+      {/* ── Mis documentos picker modal ─────────────────────── */}
+      {showDocPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowDocPicker(false)} />
+          <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 w-full max-w-md shadow-xl space-y-3">
+            <h2 className="font-sans font-semibold text-[14px] text-[#e8d4a0]">Mis documentos</h2>
+            <input
+              className={INPUT}
+              placeholder="Buscar..."
+              value={pickerDocSearch}
+              onChange={e => setPickerDocSearch(e.target.value)}
+            />
+            <div className="space-y-1 max-h-72 overflow-y-auto">
+              {loadingPickerDocs && (
+                <div className="py-6 flex justify-center">
+                  <div className="h-5 w-5 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+                </div>
+              )}
+              {!loadingPickerDocs && pickerDocs.filter(d => !pickerDocSearch || d.name.toLowerCase().includes(pickerDocSearch.toLowerCase())).length === 0 && (
+                <p className="text-[12px] text-[#3a3630] py-6 text-center">Sin documentos guardados.</p>
+              )}
+              {pickerDocs
+                .filter(d => !pickerDocSearch || d.name.toLowerCase().includes(pickerDocSearch.toLowerCase()))
+                .map(d => (
+                  <button key={d.id} onClick={() => handlePickDoc(d)}
+                    className="w-full text-left px-3 py-2.5 rounded-lg bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/30 transition-colors">
+                    <p className="text-[12px] font-medium text-[#c8c0ac] truncate">{d.name}</p>
+                    <p className="text-[10px] text-[#3a3630] uppercase mt-0.5">{d.type}</p>
+                  </button>
+                ))}
+            </div>
+            <div className="flex justify-end pt-1">
+              <Button variant="BtnGhost" size="sm" onClick={() => setShowDocPicker(false)}>Cerrar</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
