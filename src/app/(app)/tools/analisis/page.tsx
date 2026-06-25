@@ -247,34 +247,34 @@ export default function AnalisisPage() {
         <div className="max-w-4xl mx-auto space-y-5">
 
           {/* ── Source card ────────────────────────────────── */}
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-6">
-            <h3 className="font-sans font-semibold text-[13px] text-[#e8d4a0] mb-5">Selecciona el documento a analizar</h3>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Local upload */}
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="flex-1 flex flex-col items-center gap-3 border-2 border-dashed border-[#2e2b20] rounded-xl p-6 hover:border-avocat-gold/40 hover:bg-avocat-gold/5 transition-colors text-center"
-              >
-                <span className="text-3xl">📂</span>
-                <div>
-                  <p className="text-[13px] font-medium text-[#c8c0ac]">Subir desde mi equipo</p>
-                  <p className="text-[11px] text-[#6b6050] mt-0.5">PDF, DOCX, TXT</p>
-                </div>
+          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-sans font-semibold text-[13px] text-[#e8d4a0]">Documento a analizar</h3>
+              <button onClick={openPicker} className="text-[12px] text-[#6b6050] hover:text-avocat-gold transition-colors">
+                Mis documentos
               </button>
-              <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" className="hidden" onChange={handleFileChange} />
+            </div>
 
-              {/* Mis documentos */}
-              <button
-                onClick={openPicker}
-                className="flex-1 flex flex-col items-center gap-3 border-2 border-dashed border-[#2e2b20] rounded-xl p-6 hover:border-avocat-gold/40 hover:bg-avocat-gold/5 transition-colors text-center"
-              >
-                <span className="text-3xl">🗂️</span>
-                <div>
-                  <p className="text-[13px] font-medium text-[#c8c0ac]">Desde Mis Documentos</p>
-                  <p className="text-[11px] text-[#6b6050] mt-0.5">Documentos generados y subidos</p>
-                </div>
-              </button>
+            <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" className="hidden" onChange={handleFileChange} />
+
+            {/* Drop zone */}
+            <div
+              onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-avocat-gold/40', 'bg-avocat-gold/5'); }}
+              onDragLeave={e => { e.currentTarget.classList.remove('border-avocat-gold/40', 'bg-avocat-gold/5'); }}
+              onDrop={e => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('border-avocat-gold/40', 'bg-avocat-gold/5');
+                const file = e.dataTransfer.files?.[0];
+                if (file) {
+                  const fakeEvent = { target: { files: e.dataTransfer.files } } as unknown as React.ChangeEvent<HTMLInputElement>;
+                  handleFileChange(fakeEvent);
+                }
+              }}
+              onClick={() => fileRef.current?.click()}
+              className="border-2 border-dashed border-[#2e2b20] rounded-xl py-10 text-center cursor-pointer hover:border-avocat-gold/30 hover:bg-[#252218] transition-colors"
+            >
+              <p className="text-[13px] text-[#6b6050]">Arrastra aquí un PDF, DOCX o TXT</p>
+              <p className="text-[11px] text-[#3a3630] mt-1">o haz clic para seleccionar</p>
             </div>
 
             {/* Status */}

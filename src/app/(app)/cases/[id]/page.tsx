@@ -415,12 +415,12 @@ export default function CaseDetailPage() {
                   onChange={e => handleFileUpload(e.target.files)}
                 />
                 <Button
-                  variant="BtnOutlineDark"
+                  variant="BtnGold"
                   size="sm"
                   loading={uploading}
                   onClick={() => fileRef.current?.click()}
                 >
-                  {uploading ? 'Subiendo...' : '+ Subir documento'}
+                  {uploading ? 'Subiendo...' : '+ Adjuntar'}
                 </Button>
               </div>
             </div>
