@@ -24,14 +24,6 @@ const BINARY_MIMES = new Set([
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ]);
 
-const EXT_MIME: Record<string, string> = {
-  pdf: 'application/pdf',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  doc: 'application/msword',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  xls: 'application/vnd.ms-excel',
-};
-
 function isBinaryDoc(att: MessageAttachment): boolean {
   const ext = att.name.split('.').pop()?.toLowerCase() ?? '';
   return BINARY_MIMES.has(att.mimeType) || ['pdf', 'docx', 'doc', 'xlsx', 'xls'].includes(ext);
@@ -42,32 +34,6 @@ interface SavedToast {
   url: string;
 }
 
-async function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
-async function fetchCaseDocAttachments(docs: DocumentRecord[]): Promise<MessageAttachment[]> {
-  const results: MessageAttachment[] = [];
-  for (const doc of docs.slice(0, 5)) {
-    try {
-      const res = await fetch(doc.downloadUrl);
-      if (!res.ok) continue;
-      const blob = await res.blob();
-      const ext = doc.type.toLowerCase();
-      const mimeType = EXT_MIME[ext] ?? blob.type ?? 'application/octet-stream';
-      const base64 = await blobToBase64(blob);
-      results.push({ name: doc.name, mimeType, base64 });
-    } catch {
-      // skip inaccessible docs
-    }
-  }
-  return results;
-}
 
 export default function AgentChat({ user, userDoc, caseContext, caseDocuments = [] }: AgentChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -75,7 +41,6 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
   const [savedToast, setSavedToast] = useState<SavedToast | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const casDocsInjectedRef = useRef(false);
   const convIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -90,7 +55,6 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
 
   // Reset conversation when case changes
   useEffect(() => {
-    casDocsInjectedRef.current = false;
     convIdRef.current = null;
   }, [caseContext?.id]);
 
@@ -116,19 +80,8 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
         fullMessage += `\n[Imagen adjunta: ${img.name}]`;
       }
 
-      // On first message of a case session, auto-include the case documents
-      let injectedCaseDocs: MessageAttachment[] = [];
-      if (
-        caseContext?.id &&
-        caseDocuments.length > 0 &&
-        messages.length === 0 &&
-        !casDocsInjectedRef.current
-      ) {
-        casDocsInjectedRef.current = true;
-        injectedCaseDocs = await fetchCaseDocAttachments(caseDocuments);
-      }
-
-      const allBinaryDocs = [...binaryDocs, ...injectedCaseDocs.filter(isBinaryDoc)];
+      // Binary docs explicitly uploaded by the user in this message
+      const allBinaryDocs = binaryDocs;
 
       const userMsg: Message = {
         id: `u-${Date.now()}`,
