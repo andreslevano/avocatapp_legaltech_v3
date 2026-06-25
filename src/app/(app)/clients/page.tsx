@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getClients, type ClientDoc } from '@/lib/firestore';
@@ -37,6 +37,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<ClientDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingClient, setEditingClient] = useState<ClientDoc | null>(null);
   const [form, setForm] = useState<NewClientForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -49,45 +50,75 @@ export default function ClientsPage() {
       .finally(() => setLoading(false));
   }, [userDoc.uid]);
 
-  const handleAddClient = async (e: React.FormEvent) => {
+  const openCreate = () => {
+    setEditingClient(null);
+    setForm(EMPTY_FORM);
+    setError('');
+    setShowModal(true);
+  };
+
+  const openEdit = (client: ClientDoc) => {
+    setEditingClient(client);
+    setForm({
+      name: client.name,
+      email: client.email ?? '',
+      phone: client.phone ?? '',
+      company: client.company ?? '',
+      idType: client.idType ?? 'RUT',
+      idNumber: client.idNumber ?? '',
+      representativeCapacity: client.representativeCapacity ?? '',
+      address: client.address ?? '',
+    });
+    setError('');
+    setShowModal(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return setError('El nombre es obligatorio.');
     if (!db) return setError('Base de datos no disponible.');
     setError('');
     setSaving(true);
+
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      company: form.company.trim(),
+      idType: form.idType,
+      idNumber: form.idNumber.trim(),
+      representativeCapacity: form.representativeCapacity.trim(),
+      address: form.address.trim(),
+    };
+
     try {
-      const docRef = await addDoc(collection(db, 'clients'), {
-        userId: userDoc.uid,
-        name: form.name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        company: form.company.trim(),
-        idType: form.idType,
-        idNumber: form.idNumber.trim(),
-        representativeCapacity: form.representativeCapacity.trim(),
-        address: form.address.trim(),
-        activeCases: 0,
-        lastCaseDate: serverTimestamp(),
-        status: 'active',
-        createdAt: serverTimestamp(),
-      });
-      const newClient: ClientDoc = {
-        id: docRef.id,
-        userId: userDoc.uid,
-        name: form.name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        company: form.company.trim(),
-        idType: form.idType,
-        idNumber: form.idNumber.trim(),
-        representativeCapacity: form.representativeCapacity.trim(),
-        address: form.address.trim(),
-        activeCases: 0,
-        lastCaseDate: null as unknown as Timestamp,
-        status: 'active',
-      };
-      setClients(prev => [newClient, ...prev]);
-      setForm(EMPTY_FORM);
+      if (editingClient) {
+        await updateDoc(doc(db, 'clients', editingClient.id), {
+          ...payload,
+          updatedAt: serverTimestamp(),
+        });
+        setClients(prev => prev.map(c =>
+          c.id === editingClient.id ? { ...c, ...payload } : c
+        ));
+      } else {
+        const docRef = await addDoc(collection(db, 'clients'), {
+          userId: userDoc.uid,
+          ...payload,
+          activeCases: 0,
+          lastCaseDate: serverTimestamp(),
+          status: 'active',
+          createdAt: serverTimestamp(),
+        });
+        const newClient: ClientDoc = {
+          id: docRef.id,
+          userId: userDoc.uid,
+          ...payload,
+          activeCases: 0,
+          lastCaseDate: null as unknown as Timestamp,
+          status: 'active',
+        };
+        setClients(prev => [newClient, ...prev]);
+      }
       setShowModal(false);
     } catch {
       setError('Error al guardar el cliente. Intenta de nuevo.');
@@ -102,7 +133,7 @@ export default function ClientsPage() {
         title="Clientes"
         subtitle={`${clients.length} cliente${clients.length !== 1 ? 's' : ''}`}
         actions={
-          <Button variant="BtnGold" size="sm" onClick={() => setShowModal(true)}>
+          <Button variant="BtnGold" size="sm" onClick={openCreate}>
             + Nuevo cliente
           </Button>
         }
@@ -116,22 +147,25 @@ export default function ClientsPage() {
         ) : clients.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-[13px] text-[#6b6050] mb-4">No hay clientes registrados aún.</p>
-            <Button variant="BtnGold" size="md" onClick={() => setShowModal(true)}>Añadir primer cliente</Button>
+            <Button variant="BtnGold" size="md" onClick={openCreate}>Añadir primer cliente</Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-[12px] font-sans">
               <thead>
                 <tr className="border-b border-[#2e2b20]">
-                  {['Cliente', 'Email', 'Casos activos', 'Último caso', 'Estado'].map(h => (
+                  {['Cliente', 'Email', 'Casos activos', 'Último caso', 'Estado', ''].map(h => (
                     <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold tracking-widest uppercase text-[#6b6050]">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#2e2b20]">
                 {clients.map(c => (
-                  <tr key={c.id} className="hover:bg-[#252218] transition-colors">
-                    <td className="px-4 py-3 font-medium text-[#c8c0ac]">{c.name}</td>
+                  <tr key={c.id} className="hover:bg-[#252218] transition-colors group">
+                    <td className="px-4 py-3 font-medium text-[#c8c0ac]">
+                      <div>{c.name}</div>
+                      {c.company && <div className="text-[11px] text-[#6b6050]">{c.company}</div>}
+                    </td>
                     <td className="px-4 py-3 text-[#6b6050]">{c.email || '—'}</td>
                     <td className="px-4 py-3 text-[#c8c0ac]">{c.activeCases}</td>
                     <td className="px-4 py-3 text-[#6b6050]">{formatDate(c.lastCaseDate)}</td>
@@ -139,6 +173,14 @@ export default function ClientsPage() {
                       <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${c.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-[#252218] text-[#6b6050] border-[#2e2b20]'}`}>
                         {c.status === 'active' ? 'Activo' : 'Inactivo'}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => openEdit(c)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-[#6b6050] hover:text-avocat-gold border border-transparent hover:border-avocat-gold/30 px-2.5 py-1 rounded-md"
+                      >
+                        Editar
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -153,8 +195,10 @@ export default function ClientsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowModal(false)} />
           <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-6 w-full max-w-md shadow-elevated">
-            <h2 className="font-display text-h3 text-[#e8d4a0] mb-5">Nuevo cliente</h2>
-            <form onSubmit={handleAddClient} className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+            <h2 className="font-display text-h3 text-[#e8d4a0] mb-5">
+              {editingClient ? 'Editar cliente' : 'Nuevo cliente'}
+            </h2>
+            <form onSubmit={handleSave} className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
               {error && <p className="text-[12px] text-red-400">{error}</p>}
 
               <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6050]">Datos de contacto</p>
@@ -220,7 +264,9 @@ export default function ClientsPage() {
 
               <div className="flex gap-3 pt-2">
                 <Button type="button" variant="BtnGhost" size="md" fullWidth onClick={() => setShowModal(false)}>Cancelar</Button>
-                <Button type="submit" variant="BtnGold" size="md" fullWidth loading={saving}>Guardar</Button>
+                <Button type="submit" variant="BtnGold" size="md" fullWidth loading={saving}>
+                  {editingClient ? 'Guardar cambios' : 'Guardar'}
+                </Button>
               </div>
             </form>
           </div>
