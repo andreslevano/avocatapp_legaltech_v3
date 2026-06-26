@@ -101,9 +101,20 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
   const initials = (user.displayName ?? user.email ?? 'U')
     .split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-  // Position: right of the trigger button (anchor), or fallback fixed bottom-left
-  const panelStyle: React.CSSProperties = anchorRect
+  // Position: right of the trigger (desktop rail) OR above the bottom bar (mobile)
+  const isFromBottomBar = anchorRect && anchorRect.top > window.innerHeight * 0.7;
+  const panelStyle: React.CSSProperties = isFromBottomBar
     ? {
+        // Mobile: float above the bottom bar, pinned to the right
+        position: 'fixed',
+        right:    8,
+        bottom:   window.innerHeight - anchorRect!.top + 8,
+        width:    288,
+        zIndex:   9999,
+      }
+    : anchorRect
+    ? {
+        // Desktop: right of the rail button
         position: 'fixed',
         left:     anchorRect.right + 12,
         bottom:   window.innerHeight - anchorRect.bottom,

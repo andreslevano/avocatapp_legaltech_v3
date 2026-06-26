@@ -53,6 +53,14 @@ const NAV_ABOGADOS = [
   { href: '/documents',  label: 'Documentos',   icon: <IconDocs /> },
 ];
 
+// Mobile bottom bar: 4 priority items (+ Perfil = 5 total)
+const MOBILE_NAV_ABOGADOS = [
+  { href: '/cases',      label: 'Casos',        icon: <IconCases /> },
+  { href: '/agent',      label: 'Agente IA',    icon: <IconAgent /> },
+  { href: '/tools',      label: 'Herramientas', icon: <IconTools /> },
+  { href: '/documents',  label: 'Documentos',   icon: <IconDocs /> },
+];
+
 const NAV_ESTUDIANTES = [
   { href: '/agent',      label: 'Tutor IA',  icon: <IconAgent /> },
   { href: '/tools',      label: 'Escritos',  icon: <IconTools /> },
@@ -110,16 +118,22 @@ interface RailProps {
 export default function Rail({ user, userDoc }: RailProps) {
   const pathname = usePathname();
 
-  const navItems  = getNavItems(userDoc.plan);
-  const homeHref  = getHomeHref(userDoc.plan);
-  const mobileItems = navItems.slice(0, 4);
+  const navItems    = getNavItems(userDoc.plan);
+  const homeHref    = getHomeHref(userDoc.plan);
+  const mobileItems = userDoc.plan === 'Abogados' ? MOBILE_NAV_ABOGADOS : navItems.slice(0, 4);
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [anchorRect,  setAnchorRect]  = useState<DOMRect | null>(null);
-  const avatarBtnRef = useRef<HTMLButtonElement>(null);
+  const avatarBtnRef      = useRef<HTMLButtonElement>(null);
+  const mobileAvatarBtnRef = useRef<HTMLButtonElement>(null);
 
   const openProfile = () => {
     if (avatarBtnRef.current) setAnchorRect(avatarBtnRef.current.getBoundingClientRect());
+    setProfileOpen(v => !v);
+  };
+
+  const openProfileMobile = () => {
+    if (mobileAvatarBtnRef.current) setAnchorRect(mobileAvatarBtnRef.current.getBoundingClientRect());
     setProfileOpen(v => !v);
   };
 
@@ -170,7 +184,7 @@ export default function Rail({ user, userDoc }: RailProps) {
             </Link>
           );
         })}
-        <button onClick={openProfile} className="flex flex-col items-center gap-0.5 flex-1 py-2">
+        <button ref={mobileAvatarBtnRef} onClick={openProfileMobile} className="flex flex-col items-center gap-0.5 flex-1 py-2">
           <div className="w-7 h-7 rounded-full bg-avocat-gold/20 border border-avocat-gold/40 flex items-center justify-center">
             <span className="text-[10px] font-sans font-semibold text-avocat-gold leading-none">{initials}</span>
           </div>
