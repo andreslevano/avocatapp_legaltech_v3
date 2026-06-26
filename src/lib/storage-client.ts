@@ -1,6 +1,7 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import {
-  collection, addDoc, serverTimestamp, query, where, getDocs
+  collection, addDoc, serverTimestamp, query, where, getDocs,
+  updateDoc, deleteDoc, doc as firestoreDoc, getDoc,
 } from 'firebase/firestore';
 import { storage, db } from '@/lib/firebase';
 
@@ -8,6 +9,8 @@ export interface DocumentRecord {
   id: string;
   userId: string;
   caseId: string | null;
+  clientId?: string | null;
+  status?: 'Borrador' | 'Generado' | 'Firmado' | 'Enviado';
   name: string;
   type: string;
   size: number;
@@ -162,4 +165,27 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export async function getDocumentById(docId: string): Promise<DocumentRecord | null> {
+  if (!db) return null;
+  const snap = await getDoc(firestoreDoc(db, 'documents', docId));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as DocumentRecord;
+}
+
+export async function updateDocumentMeta(
+  docId: string,
+  patch: { name?: string; caseId?: string | null; clientId?: string | null; status?: string },
+): Promise<void> {
+  if (!db) return;
+  await updateDoc(firestoreDoc(db, 'documents', docId), patch);
+}
+
+export async function deleteDocumentRecord(docId: string, storagePath: string): Promise<void> {
+  if (!db) return;
+  await Promise.all([
+    deleteDoc(firestoreDoc(db, 'documents', docId)),
+    storage ? deleteObject(ref(storage, storagePath)).catch(() => {}) : Promise.resolve(),
+  ]);
 }

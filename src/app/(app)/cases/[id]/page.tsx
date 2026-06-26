@@ -8,7 +8,10 @@ import {
   getCase, getConversations, updateCase, addCaseComment, getClients,
   type CaseDoc, type ConversationDoc, type ClientDoc,
 } from '@/lib/firestore';
-import { saveDocumentToStorage, getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
+import {
+  saveDocumentToStorage, getUserDocuments, getCaseDocuments, updateDocumentMeta,
+  type DocumentRecord,
+} from '@/lib/storage-client';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import type { Timestamp } from 'firebase/firestore';
@@ -118,6 +121,9 @@ export default function CaseDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
 
+  // Case documents (new documents collection)
+  const [caseDocs, setCaseDocs] = useState<DocumentRecord[]>([]);
+
   // Doc picker (Mis documentos)
   const [showDocPicker,    setShowDocPicker]    = useState(false);
   const [pickerDocs,       setPickerDocs]       = useState<DocumentRecord[]>([]);
@@ -135,12 +141,14 @@ export default function CaseDetailPage() {
       getCase(params.id),
       getConversations(userDoc.uid, params.id),
       getClients(userDoc.uid),
+      getCaseDocuments(userDoc.uid, params.id),
     ])
-      .then(([c, convs, cls]) => {
+      .then(([c, convs, cls, cdocs]) => {
         if (!c || c.userId !== userDoc.uid) { setNotFound(true); return; }
         setCaseDoc(c);
         setConversations(convs);
         setClients(cls);
+        setCaseDocs(cdocs);
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
@@ -214,11 +222,7 @@ export default function CaseDetailPage() {
           }).catch(() => {});
         }
 
-        // Update documentRefs on case
-        const existing = caseDoc.documentRefs ?? [];
-        const newRef = { name: file.name, type: file.name.split('.').pop()?.toLowerCase() ?? '', size: file.size, strategy };
-        await updateCase(caseDoc.id, { documentRefs: [...existing, newRef] });
-        setCaseDoc(prev => prev ? { ...prev, documentRefs: [...(prev.documentRefs ?? []), newRef] } : prev);
+        setCaseDocs(prev => [record, ...prev]);
       }
       setUploadMsg(`${arr.length} archivo${arr.length !== 1 ? 's' : ''} subido${arr.length !== 1 ? 's' : ''}`);
       setTimeout(() => setUploadMsg(''), 4000);
@@ -240,18 +244,18 @@ export default function CaseDetailPage() {
   };
 
   const handlePickDoc = async (doc: DocumentRecord) => {
+    if (!caseDoc) return;
     setShowDocPicker(false);
     setUploading(true);
     setUploadMsg('');
     try {
-      const res  = await fetch(doc.downloadUrl);
-      const blob = await res.blob();
-      const file = new File([blob], doc.name, { type: blob.type || 'application/octet-stream' });
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      await handleFileUpload(dt.files);
+      await updateDocumentMeta(doc.id, { caseId: caseDoc.id });
+      setCaseDocs(prev => [{ ...doc, caseId: caseDoc.id }, ...prev.filter(d => d.id !== doc.id)]);
+      setUploadMsg('Documento vinculado');
+      setTimeout(() => setUploadMsg(''), 4000);
     } catch {
-      setUploadMsg('Error al cargar el documento.');
+      setUploadMsg('Error al vincular el documento.');
+    } finally {
       setUploading(false);
     }
   };
@@ -296,7 +300,7 @@ export default function CaseDetailPage() {
     );
   }
 
-  const { assessment, documentRefs, comments } = caseDoc;
+  const { assessment, comments } = caseDoc;
   const linkedClient = caseDoc.clientId ? clients.find(c => c.id === caseDoc.clientId) : null;
   const filteredClients = clients.filter(c =>
     !clientSearch.trim() ||
@@ -459,30 +463,29 @@ export default function CaseDetailPage() {
                 </Button>
               </div>
             </div>
-            {(!documentRefs || documentRefs.length === 0) ? (
+            {caseDocs.length === 0 ? (
               <div className="px-5 py-6 text-center">
                 <p className="text-[12px] text-[#3a3630]">Sin documentos adjuntos.</p>
               </div>
             ) : (
               <div className="divide-y divide-[#2e2b20]">
-                {documentRefs.map((d, i) => {
-                  const ext = d.name.split('.').pop() ?? '';
+                {caseDocs.map(d => {
+                  const ext = (d.pdfDownloadUrl ? 'pdf' : d.type).toLowerCase();
                   return (
-                    <div key={i} className="flex items-center gap-3 px-5 py-3">
+                    <div key={d.id} className="flex items-center gap-3 px-5 py-3">
                       <span className="text-xl flex-shrink-0">{fileIcon(ext)}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-[12px] font-sans font-medium text-[#c8c0ac] truncate">{d.name}</p>
                         <p className="text-[10px] text-[#6b6050] mt-0.5">
-                          {ext.toUpperCase()} · {formatBytes(d.size)} · {STRATEGY_LABEL[d.strategy] ?? d.strategy}
+                          {ext.toUpperCase()} · {formatBytes(d.size)} · {d.source === 'generated' ? 'Generado' : 'Subido'}
                         </p>
                       </div>
-                      <span className={`flex-shrink-0 px-2 py-0.5 rounded text-[10px] font-sans border ${
-                        d.strategy === 'ocr'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      }`}>
-                        {d.strategy === 'ocr' ? 'OCR' : 'Texto'}
-                      </span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <a href={d.pdfDownloadUrl ?? d.downloadUrl} target="_blank" rel="noopener noreferrer"
+                          className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">↓</a>
+                        <button onClick={() => router.push(`/tools/analisis?docId=${d.id}`)}
+                          className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">IA</button>
+                      </div>
                     </div>
                   );
                 })}
@@ -611,7 +614,8 @@ export default function CaseDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowDocPicker(false)} />
           <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 w-full max-w-md shadow-xl space-y-3">
-            <h2 className="font-sans font-semibold text-[14px] text-[#e8d4a0]">Mis documentos</h2>
+            <h2 className="font-sans font-semibold text-[14px] text-[#e8d4a0]">Vincular documento existente</h2>
+            <p className="text-[11px] text-[#6b6050] -mt-1">El documento se vinculará a este caso sin volver a subirse.</p>
             <input
               className={INPUT}
               placeholder="Buscar..."

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { consumirCredito } from '@/lib/creditos';
-import { getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
+import { getUserDocuments, getDocumentById, type DocumentRecord } from '@/lib/storage-client';
 import { saveAnalysisDocument } from '@/lib/agent-export';
 import { getCases, type CaseDoc } from '@/lib/firestore';
 import type { OcrPdfProgress } from '@/lib/ocr-pdf-client';
@@ -86,7 +87,17 @@ function resultToMarkdown(r: AnalisisResult, fileName: string): string {
 const INPUT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
 
 export default function AnalisisPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" /></div>}>
+      <AnalisisPageContent />
+    </Suspense>
+  );
+}
+
+function AnalisisPageContent() {
   const { user, userDoc } = useAppAuth();
+  const searchParams = useSearchParams();
+  const docId = searchParams.get('docId');
 
   // Source selection
   const [selectedFile, setSelectedFile]   = useState<File | null>(null);
@@ -118,6 +129,26 @@ export default function AnalisisPage() {
   useEffect(() => {
     getCases(userDoc.uid).then(setCases).catch(() => {});
   }, [userDoc.uid]);
+
+  // ── Auto-load from ?docId param ──────────────────────────────────
+
+  useEffect(() => {
+    if (!docId) return;
+    getDocumentById(docId).then(async doc => {
+      if (!doc) return;
+      setSelectedName(doc.name);
+      setExtracting(true);
+      try {
+        const res  = await fetch(doc.downloadUrl);
+        const blob = await res.blob();
+        const file = new File([blob], doc.name, { type: blob.type });
+        setSelectedFile(file);
+        setExtractedText(await extractText(file));
+      } catch { setExtractError('No se pudo cargar el documento.'); }
+      finally  { setExtracting(false); }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docId]);
 
   // ── File from local ──────────────────────────────────────────────
 
