@@ -84,7 +84,7 @@ export default function AppShellClient({ children }: AppShellClientProps) {
   return (
     <AppAuthProvider user={user} userDoc={userDoc}>
       <SidebarProvider>
-        <div className="flex h-screen overflow-hidden bg-[#161410]">
+        <div className="flex h-[100dvh] overflow-hidden bg-[#161410]">
           <Rail user={user} userDoc={userDoc} />
           <Sidebar userDoc={userDoc} />
           <main className="flex-1 overflow-auto flex flex-col min-w-0 pb-16 md:pb-0">

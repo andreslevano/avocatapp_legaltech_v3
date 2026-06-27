@@ -107,7 +107,7 @@ export default function AgentWelcome({ userDoc, onShortcut, caseContext }: Agent
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+    <div className="flex-1 flex flex-col items-center justify-center px-6 py-6 sm:py-12 overflow-y-auto">
       <div className="w-12 h-12 rounded-2xl bg-avocat-gold/15 border border-avocat-gold/30 flex items-center justify-center mb-6">
         <svg
           viewBox="0 0 24 24"
