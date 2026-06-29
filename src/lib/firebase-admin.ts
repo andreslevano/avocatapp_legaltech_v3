@@ -8,10 +8,12 @@ let adminApp: App;
 if (!getApps().length) {
   try {
     // Check if we have Firebase Admin credentials
+    // GCP_SA_* are non-reserved names that can be set via the root .env deploy file.
+    // FIREBASE_* are reserved by Firebase CLI and only available in local .env.local.
     const serviceAccount = {
       projectId: process.env.FIREBASE_PROJECT_ID || "avocat-legaltech-v3",
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      clientEmail: process.env.GCP_SA_EMAIL || process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: (process.env.GCP_SA_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n'),
     };
 
     console.log('🔍 Firebase Admin credentials check:');

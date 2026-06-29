@@ -127,7 +127,12 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
       try {
         const idToken = await user.getIdToken();
 
-        const res = await fetch('/api/agent-v2', {
+        // Call Cloud Run directly to bypass Firebase Hosting's ~60s proxy timeout.
+        // NEXT_PUBLIC_CLOUD_RUN_URL is baked into the bundle at build time.
+        const agentUrl = process.env.NEXT_PUBLIC_CLOUD_RUN_URL
+          ? `${process.env.NEXT_PUBLIC_CLOUD_RUN_URL}/api/agent-v2`
+          : '/api/agent-v2';
+        const res = await fetch(agentUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

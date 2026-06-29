@@ -5,6 +5,20 @@ import { db, authAdmin } from '@/lib/firebase-admin';
 import { buildSystemPrompt } from '@/lib/agent-prompts';
 import { generateEmbedding } from '@/lib/vertex-embeddings';
 
+// ── CORS ─────────────────────────────────────────────────────────────────────
+// agent-v2 is called directly from the browser to the Cloud Run URL (bypassing
+// Firebase Hosting's 60-second proxy timeout). CORS headers are required.
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
 // ── Anthropic client ────────────────────────────────────────────────────────
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -376,7 +390,7 @@ export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('Authorization') ?? '';
   const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!idToken) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS });
   }
 
   let uid: string;
@@ -384,7 +398,7 @@ export async function POST(req: NextRequest) {
     const decoded = await authAdmin().verifyIdToken(idToken);
     uid = decoded.uid;
   } catch {
-    return new Response('Invalid token', { status: 401 });
+    return new Response('Invalid token', { status: 401, headers: CORS_HEADERS });
   }
 
   const { message, caseId, convId, documents } = (await req.json()) as {
@@ -395,7 +409,7 @@ export async function POST(req: NextRequest) {
   };
 
   if (!message?.trim() && !documents?.length) {
-    return new Response('Missing message', { status: 400 });
+    return new Response('Missing message', { status: 400, headers: CORS_HEADERS });
   }
 
   // Extract text from any binary docs sent from the client (PDF/DOCX)
@@ -612,6 +626,11 @@ export async function POST(req: NextRequest) {
   });
 
   return new Response(readable, {
-    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'X-Accel-Buffering': 'no',
+      ...CORS_HEADERS,
+    },
   });
 }
