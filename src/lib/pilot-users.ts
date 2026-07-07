@@ -1,5 +1,6 @@
 export const PILOT_USER_EMAILS: string[] = [
   'asesoria@asesoriapozuelo.com',
+  'geovany.manzap@mobilityforwork.es',
 ];
 
 export function isPilotUser(email?: string | null): boolean {
