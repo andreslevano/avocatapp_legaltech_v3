@@ -100,7 +100,7 @@ export function DeleteConfirmModal({
     <ModalShell title="Confirmar eliminación" onClose={onClose}>
       <p className="text-[13px] text-[#c8c0ac]">
         {names.length === 1
-          ? <>¿Eliminar <span className="text-[#e8d4a0] font-medium">"{names[0]}"</span>? Esta acción no se puede deshacer.</>
+          ? <>¿Eliminar <span className="text-[#e8d4a0] font-medium">&quot;{names[0]}&quot;</span>? Esta acción no se puede deshacer.</>
           : <>¿Eliminar <span className="text-[#e8d4a0] font-medium">{names.length} documentos</span>? Esta acción no se puede deshacer.</>
         }
       </p>
@@ -122,11 +122,14 @@ export function DeleteConfirmModal({
 
 // ── Shared shell ─────────────────────────────────────────────────
 
-function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+export function ModalShell({ title, onClose, children, sheetOnMobile = false }: {
+  title: string; onClose: () => void; children: React.ReactNode;
+  sheetOnMobile?: boolean;   // bottom sheet below md
+}) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className={`fixed inset-0 z-50 flex justify-center ${sheetOnMobile ? 'items-end md:items-center md:p-4' : 'items-center p-4'}`}>
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 w-full max-w-md shadow-xl space-y-3">
+      <div className={`relative bg-[#1e1c16] border border-[#2e2b20] p-5 w-full max-w-md shadow-xl space-y-3 ${sheetOnMobile ? 'rounded-t-2xl md:rounded-2xl max-h-[85vh] flex flex-col' : 'rounded-2xl'}`}>
         <h2 className="font-sans font-semibold text-[14px] text-[#e8d4a0]">{title}</h2>
         {children}
       </div>

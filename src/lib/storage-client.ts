@@ -17,7 +17,14 @@ export interface DocumentRecord {
   storagePath: string;
   downloadUrl: string;
   pdfDownloadUrl?: string;
-  source?: 'generated' | 'uploaded';
+  source?: 'generated' | 'uploaded' | 'microsoft';
+  folderId?: string | null;     // D1: where the document lives (missing/null = root)
+  externalRef?: {               // F1: set on documents imported from Microsoft
+    provider: 'onedrive' | 'sharepoint';
+    webUrl?: string;
+    path?: string;
+  } | null;
+  signatureStatus?: 'pending_owner' | 'sent' | 'delivered' | 'completed' | 'declined' | 'voided' | 'expired' | 'error';
   createdAt: unknown;
 }
 
@@ -92,7 +99,8 @@ export async function saveDocumentToStorage(params: {
 export async function uploadDocument(
   userId: string,
   file: File,
-  caseId?: string | null
+  caseId?: string | null,
+  folderId?: string | null,
 ): Promise<DocumentRecord> {
   if (!storage || !db) throw new Error('Firebase no disponible');
 
@@ -112,6 +120,7 @@ export async function uploadDocument(
     storagePath,
     downloadUrl,
     source: 'uploaded',
+    folderId: folderId ?? null,
     createdAt: serverTimestamp(),
   });
 
@@ -125,7 +134,8 @@ export async function uploadDocument(
     storagePath,
     downloadUrl,
     source: 'uploaded',
-    createdAt: null,
+    folderId: folderId ?? null,
+    createdAt: { seconds: Math.floor(Date.now() / 1000) },
   };
 }
 

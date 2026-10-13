@@ -1,7 +1,9 @@
 'use client';
 
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
-import { DOC_TIPOS, DOC_ESTADOS, EMPTY_FILTERS, activeFilterCount, type DocFilters } from './helpers';
+import { DOC_TIPOS, DOC_ESTADOS, DOC_ORIGENES, EMPTY_FILTERS, activeFilterCount, type DocFilters } from './helpers';
+
+export type SearchScope = 'folder' | 'all';
 
 const SEL = 'bg-[#161410] border border-[#2e2b20] rounded-lg px-2.5 py-1.5 text-[12px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40 cursor-pointer';
 
@@ -10,9 +12,11 @@ interface Props {
   onChange: (f: DocFilters) => void;
   cases: CaseDoc[];
   clients: ClientDoc[];
+  scope?: SearchScope;                       // omitted → no scope toggle (no folders / smart view)
+  onScopeChange?: (s: SearchScope) => void;
 }
 
-export default function DocFiltersBar({ filters, onChange, cases, clients }: Props) {
+export default function DocFiltersBar({ filters, onChange, cases, clients, scope, onScopeChange }: Props) {
   const set = <K extends keyof DocFilters>(k: K, v: DocFilters[K]) => onChange({ ...filters, [k]: v });
   const count = activeFilterCount(filters);
 
@@ -32,6 +36,23 @@ export default function DocFiltersBar({ filters, onChange, cases, clients }: Pro
           className="w-full bg-[#1e1c16] border border-[#2e2b20] rounded-lg pl-8 pr-3 py-1.5 text-[12px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
         />
       </div>
+
+      {/* Scope: current folder vs every folder */}
+      {scope && onScopeChange && (
+        <div role="radiogroup" aria-label="Ámbito de búsqueda" className="flex rounded-lg border border-[#2e2b20] overflow-hidden text-[11px] font-sans">
+          {([['folder', 'En esta carpeta'], ['all', 'En todas las carpetas']] as const).map(([value, label]) => (
+            <button
+              key={value}
+              role="radio"
+              aria-checked={scope === value}
+              onClick={() => onScopeChange(value)}
+              className={`px-2.5 py-1.5 whitespace-nowrap transition-colors ${scope === value ? 'bg-avocat-gold/15 text-avocat-gold' : 'bg-[#1e1c16] text-[#6b6050] hover:text-[#c8c0ac]'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Case */}
       {cases.length > 0 && (
@@ -68,6 +89,12 @@ export default function DocFiltersBar({ filters, onChange, cases, clients }: Pro
       <select className={SEL} value={filters.status} onChange={e => set('status', e.target.value)}>
         <option value="">Todos los estados</option>
         {DOC_ESTADOS.map(s => <option key={s} value={s} className="bg-[#161410]">{s}</option>)}
+      </select>
+
+      {/* Origen */}
+      <select className={SEL} value={filters.origen} onChange={e => set('origen', e.target.value)}>
+        <option value="">Todos los orígenes</option>
+        {DOC_ORIGENES.map(o => <option key={o} value={o} className="bg-[#161410]">{o}</option>)}
       </select>
 
       {/* Clear */}

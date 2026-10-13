@@ -6,9 +6,13 @@ import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 export const DOC_TIPOS = ['NDA','Demanda','Contrato','Recurso','Análisis','Reclamación','Mandato','Extracción','Otro'] as const;
 export type DocTipo = (typeof DOC_TIPOS)[number];
 
+// "nda" must stand alone between separators. \b is not enough: "_" is a word character, so
+// /\bnda\b/ missed names like NDA_MAD_Cloud_Consulting_SL_Nike.doc.
+const NDA_TOKEN = /(^|[^a-z0-9])nda([^a-z0-9]|$)/i;
+
 export function inferDocType(name: string): DocTipo {
   const n = name.toLowerCase();
-  if (/\bnda\b|confidencial/.test(n))      return 'NDA';
+  if (NDA_TOKEN.test(n) || /confidencial/.test(n)) return 'NDA';
   if (/demanda/.test(n))                   return 'Demanda';
   if (/contrato/.test(n))                  return 'Contrato';
   if (/recurso/.test(n))                   return 'Recurso';
@@ -25,6 +29,17 @@ export type DocEstado = (typeof DOC_ESTADOS)[number];
 export function inferStatus(d: DocumentRecord): DocEstado {
   if (d.status) return d.status as DocEstado;
   return d.source === 'generated' ? 'Generado' : 'Borrador';
+}
+
+// ── Origin (where the file came from) ────────────────────────────
+
+export const DOC_ORIGENES = ['Avocat', 'Subido', 'OneDrive', 'SharePoint'] as const;
+export type DocOrigen = (typeof DOC_ORIGENES)[number];
+
+export function inferOrigin(d: Pick<DocumentRecord, 'source' | 'externalRef'>): DocOrigen {
+  if (d.externalRef?.provider === 'sharepoint') return 'SharePoint';
+  if (d.externalRef?.provider === 'onedrive' || d.source === 'microsoft') return 'OneDrive';
+  return d.source === 'generated' ? 'Avocat' : 'Subido';
 }
 
 // ── Styling maps ─────────────────────────────────────────────────
@@ -82,7 +97,7 @@ export function getClientForDoc(d: DocumentRecord, cases: CaseDoc[], clients: Cl
 
 // ── Filtering & sorting ──────────────────────────────────────────
 
-export type SortCol = 'name' | 'tipo' | 'caso' | 'cliente' | 'fecha' | 'status';
+export type SortCol = 'name' | 'tipo' | 'caso' | 'cliente' | 'fecha' | 'status' | 'origen';
 export type SortDir = 'asc' | 'desc';
 
 export interface DocFilters {
@@ -92,14 +107,15 @@ export interface DocFilters {
   tipo:      string;
   dateRange: 'all' | '7d' | '30d' | '90d';
   status:    string;
+  origen:    string;
 }
 
 export const EMPTY_FILTERS: DocFilters = {
-  search: '', caseId: '', clientId: '', tipo: '', dateRange: 'all', status: '',
+  search: '', caseId: '', clientId: '', tipo: '', dateRange: 'all', status: '', origen: '',
 };
 
 export function activeFilterCount(f: DocFilters): number {
-  return [f.search, f.caseId, f.clientId, f.tipo, f.dateRange !== 'all' ? '1' : '', f.status].filter(Boolean).length;
+  return [f.search, f.caseId, f.clientId, f.tipo, f.dateRange !== 'all' ? '1' : '', f.status, f.origen].filter(Boolean).length;
 }
 
 export function applyFilters(
@@ -115,6 +131,7 @@ export function applyFilters(
     if (f.tipo && inferDocType(d.name) !== f.tipo) return false;
     if (f.dateRange !== 'all' && tsSeconds(d.createdAt) < (cutoff[f.dateRange] ?? 0)) return false;
     if (f.status && inferStatus(d) !== f.status) return false;
+    if (f.origen && inferOrigin(d) !== f.origen) return false;
     return true;
   });
 }
@@ -131,6 +148,7 @@ export function sortDocs(
     if (col === 'cliente') { va = (getClientForDoc(a, cases, clients)?.name ?? '').toLowerCase(); vb = (getClientForDoc(b, cases, clients)?.name ?? '').toLowerCase(); }
     if (col === 'fecha')   { va = tsSeconds(a.createdAt);                                      vb = tsSeconds(b.createdAt); }
     if (col === 'status')  { va = inferStatus(a);                                              vb = inferStatus(b); }
+    if (col === 'origen')  { va = inferOrigin(a);                                              vb = inferOrigin(b); }
     if (va < vb) return dir === 'asc' ? -1 : 1;
     if (va > vb) return dir === 'asc' ? 1 : -1;
     return 0;

@@ -5,11 +5,12 @@ import { useSidebar } from '@/contexts/SidebarContext';
 
 interface AppHeaderProps {
   title?: string;
+  titleNode?: ReactNode;   // replaces the plain <h1> title (e.g. /documents breadcrumb)
   subtitle?: string;
   actions?: ReactNode;
 }
 
-export default function AppHeader({ title, subtitle, actions }: AppHeaderProps) {
+export default function AppHeader({ title, titleNode, subtitle, actions }: AppHeaderProps) {
   const { toggle } = useSidebar();
 
   return (
@@ -26,9 +27,9 @@ export default function AppHeader({ title, subtitle, actions }: AppHeaderProps) 
           </svg>
         </button>
 
-        {title ? (
+        {title || titleNode ? (
           <div className="min-w-0">
-            <h1 className="font-sans font-medium text-[14px] text-[#e8d4a0] truncate leading-tight">{title}</h1>
+            {titleNode ?? <h1 className="font-sans font-medium text-[14px] text-[#e8d4a0] truncate leading-tight">{title}</h1>}
             {subtitle && <p className="text-[11px] text-[#6b6050] truncate">{subtitle}</p>}
           </div>
         ) : (

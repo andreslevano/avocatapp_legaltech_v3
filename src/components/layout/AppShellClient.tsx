@@ -9,6 +9,7 @@ import { auth, db } from '@/lib/firebase';
 import type { UserDoc } from '@/lib/auth';
 import { AppAuthProvider } from '@/contexts/AppAuthContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
+import { DocumentsWorkspaceProvider } from '@/contexts/DocumentsWorkspaceContext';
 import Rail from '@/components/layout/Rail';
 import Sidebar from '@/components/layout/Sidebar';
 
@@ -84,13 +85,15 @@ export default function AppShellClient({ children }: AppShellClientProps) {
   return (
     <AppAuthProvider user={user} userDoc={userDoc}>
       <SidebarProvider>
-        <div className="flex h-[100dvh] overflow-hidden bg-[#161410]">
-          <Rail user={user} userDoc={userDoc} />
-          <Sidebar userDoc={userDoc} />
-          <main className="flex-1 overflow-auto flex flex-col min-w-0 pb-16 md:pb-0">
-            {children}
-          </main>
-        </div>
+        <DocumentsWorkspaceProvider>
+          <div className="flex h-[100dvh] overflow-hidden bg-[#161410]">
+            <Rail user={user} userDoc={userDoc} />
+            <Sidebar userDoc={userDoc} />
+            <main className="flex-1 overflow-auto flex flex-col min-w-0 pb-16 md:pb-0">
+              {children}
+            </main>
+          </div>
+        </DocumentsWorkspaceProvider>
       </SidebarProvider>
     </AppAuthProvider>
   );

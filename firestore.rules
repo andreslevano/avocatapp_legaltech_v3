@@ -71,10 +71,63 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-    // documents: owned by the userId field
+    // documents: owned by the userId field. folderId (D1) is optional — missing/null = root;
+    // when set it must point to a folder owned by the same user. userId cannot be reassigned.
+    function ownsFolder(folderId) {
+      return folderId is string
+        && exists(/databases/$(database)/documents/folders/$(folderId))
+        && get(/databases/$(database)/documents/folders/$(folderId)).data.userId == request.auth.uid;
+    }
+
     match /documents/{docId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid
+        && (!('folderId' in request.resource.data) || request.resource.data.folderId == null
+            || ownsFolder(request.resource.data.folderId));
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['folderId'])
+            || request.resource.data.folderId == null
+            || ownsFolder(request.resource.data.folderId));
+    }
+
+    // folders (D1): user-managed tree, metadata only. Clients may create and rename;
+    // moving (parentId/ancestors/depth) and deleting go through /api/folders/* (Admin SDK).
+    function isValidFolderName(n) {
+      return n is string && n.size() > 0 && n.size() <= 120 && n.trim() == n
+        && n != '.' && n != '..'
+        && !n.matches('.*[/\\\\:*?"<>|].*');
+    }
+
+    match /folders/{folderId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['userId', 'name', 'parentId', 'ancestors', 'depth', 'color', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['userId', 'name', 'parentId', 'ancestors', 'depth'])
+        && isValidFolderName(request.resource.data.name)
+        && request.resource.data.ancestors is list
+        && request.resource.data.depth is int
+        && (
+          (request.resource.data.parentId == null
+            && request.resource.data.ancestors.size() == 0
+            && request.resource.data.depth == 1)
+          || (request.resource.data.parentId is string
+            && ownsFolder(request.resource.data.parentId)
+            && request.resource.data.ancestors
+                 == get(/databases/$(database)/documents/folders/$(request.resource.data.parentId)).data.ancestors
+                      .concat([request.resource.data.parentId])
+            && request.resource.data.depth
+                 == get(/databases/$(database)/documents/folders/$(request.resource.data.parentId)).data.depth + 1
+            && request.resource.data.depth <= 8)
+        );
+
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'color', 'updatedAt'])
+        && isValidFolderName(request.resource.data.name);
+
+      allow delete: if false;
     }
 
     // purchases: created and updated server-side by the Stripe webhook (Admin SDK,

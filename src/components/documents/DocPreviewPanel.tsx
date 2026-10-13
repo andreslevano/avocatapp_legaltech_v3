@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import type { DocumentRecord } from '@/lib/storage-client';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 import {
-  fileIcon, formatDate, inferDocType, inferStatus,
+  fileIcon, formatDate, inferDocType, inferOrigin, inferStatus,
   getCaseForDoc, getClientForDoc,
   STATUS_STYLE, TIPO_STYLE,
 } from './helpers';
@@ -16,13 +16,14 @@ interface Props {
   doc: DocumentRecord;
   cases: CaseDoc[];
   clients: ClientDoc[];
+  folderLabel?: string;   // "Mis documentos › …" when folders are enabled
   onClose: () => void;
   onAction: (action: DocAction, doc: DocumentRecord) => void;
 }
 
 const IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
 
-export default function DocPreviewPanel({ doc: d, cases, clients, onClose, onAction }: Props) {
+export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, onClose, onAction }: Props) {
   const caseDoc  = getCaseForDoc(d, cases);
   const client   = getClientForDoc(d, cases, clients);
   const tipo     = inferDocType(d.name);
@@ -90,13 +91,21 @@ export default function DocPreviewPanel({ doc: d, cases, clients, onClose, onAct
           <MetaRow label="Cliente">
             <span className="text-[#c8c0ac] truncate">{client?.name ?? caseDoc?.client ?? '—'}</span>
           </MetaRow>
-          <MetaRow label="Fuente">
-            <span className="text-[#6b6050]">{d.source === 'generated' ? 'Generado' : 'Subido'}</span>
+          <MetaRow label="Origen">
+            <span className="text-[#6b6050]">{inferOrigin(d)}</span>
           </MetaRow>
           <MetaRow label="Fecha">
             <span className="text-[#6b6050]">{formatDate(d.createdAt)}</span>
           </MetaRow>
         </div>
+        {folderLabel && (
+          <div className="text-[11px]">
+            <MetaRow label="Carpeta">
+              <button onClick={() => onAction('move', d)} title="Mover a…"
+                className="text-[#6b6050] hover:text-avocat-gold truncate max-w-full text-left transition-colors">{folderLabel}</button>
+            </MetaRow>
+          </div>
+        )}
       </div>
 
       {/* Actions */}

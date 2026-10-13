@@ -7,6 +7,8 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { UserDoc } from '@/lib/auth';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { useDocumentsWorkspace } from '@/contexts/DocumentsWorkspaceContext';
+import FolderTree from '@/components/documents/FolderTree';
 
 interface CaseItem {
   id: string;
@@ -32,8 +34,11 @@ export default function Sidebar({ userDoc }: SidebarProps) {
   const [search, setSearch] = useState('');
   const pathname = usePathname();
   const { open, close } = useSidebar();
+  const workspace = useDocumentsWorkspace();
 
   const isLawyer = userDoc.plan === 'Abogados';
+  // On /documents the panel shows the folder tree instead of the cases list.
+  const showFolders = workspace.enabled && (pathname === '/documents' || !!pathname?.startsWith('/documents/'));
 
   useEffect(() => {
     if (!isLawyer || !db || !userDoc.uid) return;
@@ -56,8 +61,28 @@ export default function Sidebar({ userDoc }: SidebarProps) {
       c.ref?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const sidebarInner = (
-    <aside className="w-[220px] h-full bg-[#1e1c16] border-r border-[#2e2b20] flex flex-col flex-shrink-0">
+  const folderPanel = (
+    <>
+      <div className="px-4 pt-4 pb-3 border-b border-[#2e2b20]">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-sans font-semibold tracking-widest uppercase text-[#6b6050]">Carpetas</span>
+          <button
+            title="Nueva carpeta (Shift+N)"
+            onClick={() => { close(); workspace.openDialog({ type: 'new-folder', parentId: workspace.currentFolderId }); }}
+            className="w-6 h-6 flex items-center justify-center rounded text-[#6b6050] hover:text-avocat-gold hover:bg-[#252218] transition-colors"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <FolderTree onNavigate={close} />
+    </>
+  );
+
+  const casesPanel = (
+    <>
       <div className="px-4 pt-4 pb-3 border-b border-[#2e2b20]">
         <div className="flex items-center justify-between mb-3">
           <span className="text-[11px] font-sans font-semibold tracking-widest uppercase text-[#6b6050]">Casos</span>
@@ -108,6 +133,12 @@ export default function Sidebar({ userDoc }: SidebarProps) {
           })
         )}
       </div>
+    </>
+  );
+
+  const sidebarInner = (
+    <aside className="w-[220px] h-full bg-[#1e1c16] border-r border-[#2e2b20] flex flex-col flex-shrink-0">
+      {showFolders ? folderPanel : casesPanel}
 
       <div className="px-4 py-3 border-t border-[#2e2b20]">
         <Link
