@@ -90,9 +90,14 @@ export default function DocTable({
   const [dropRowId, setDropRowId] = useState<string | null>(null);
   const renameRef = useRef<HTMLInputElement>(null);
 
+  // Outside-click close by containment (stopPropagation can't stop a listener on `document`,
+  // where the App Router attaches React's own listeners).
+  const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!menu) return;
-    const close = () => setMenu(null);
+    const close = (e: Event) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenu(null);
+    };
     document.addEventListener('mousedown', close);
     document.addEventListener('touchstart', close);
     return () => {
@@ -407,9 +412,8 @@ export default function DocTable({
       {(menuDoc || menuFolder) && (
         <div
           className="fixed z-50 bg-[#1e1c16] border border-[#2e2b20] rounded-xl shadow-2xl py-1 w-52"
+          ref={menuRef}
           style={{ top: menuPos.top, right: menuPos.right }}
-          onMouseDown={e => e.stopPropagation()}
-          onTouchStart={e => e.stopPropagation()}
         >
           {menuDoc && MENU_ITEMS.filter(i => !i.needsMove || canMove).map(({ label, action }) => (
             <button

@@ -166,9 +166,14 @@ function DocumentsView() {
     return () => document.removeEventListener('keydown', onKey);
   }, [enabled, openNewFolder, ws.dialog]);
 
+  // Outside-click close. Checks containment instead of relying on stopPropagation: in the App
+  // Router React listens on `document` itself, so stopPropagation can't stop this listener.
+  const addMenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!addMenu) return;
-    const close = () => setAddMenu(false);
+    const close = (e: MouseEvent) => {
+      if (!addMenuRef.current?.contains(e.target as Node)) setAddMenu(false);
+    };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, [addMenu]);
@@ -502,7 +507,7 @@ function DocumentsView() {
               accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp"
               onChange={handleFileInput} className="hidden" />
             {enabled ? (
-              <div className="relative" onMouseDown={e => e.stopPropagation()}>
+              <div className="relative" ref={addMenuRef}>
                 <Button variant="BtnGold" size="sm" loading={uploading} onClick={() => setAddMenu(o => !o)}>
                   Añadir ▾
                 </Button>

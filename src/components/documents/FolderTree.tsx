@@ -41,9 +41,13 @@ export default function FolderTree({ onNavigate }: { onNavigate?: () => void }) 
     });
   }, [currentFolderId, foldersById]);
 
+  // Outside-click close by containment (see DocTable for why not stopPropagation).
+  const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!menu) return;
-    const close = () => setMenu(null);
+    const close = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenu(null);
+    };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, [menu]);
@@ -191,8 +195,8 @@ export default function FolderTree({ onNavigate }: { onNavigate?: () => void }) 
       {menu && (
         <div
           className="fixed z-[60] bg-[#1e1c16] border border-[#2e2b20] rounded-xl shadow-2xl py-1 w-48"
+          ref={menuRef}
           style={{ top: Math.min(menu.top, window.innerHeight - 200), left: Math.min(menu.left, window.innerWidth - 200) }}
-          onMouseDown={e => e.stopPropagation()}
         >
           {[
             { label: 'Nueva subcarpeta', run: () => ws.openDialog({ type: 'new-folder', parentId: menu.folder.id }) },
