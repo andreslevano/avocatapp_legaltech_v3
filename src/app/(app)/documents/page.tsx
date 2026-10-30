@@ -28,6 +28,9 @@ import {
   childrenOf, effectiveFolderId, folderPathLabel, planAutoOrganize,
 } from '@/lib/folders/tree';
 import { sanitizeFolderName } from '@/lib/folders/types';
+import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
+import { microsoftInfo } from '@/lib/integrations/microsoft/client';
+import MicrosoftImportFlow from '@/components/integrations/MicrosoftImportFlow';
 
 async function triggerEmbed(docId: string, idToken: string) {
   fetch('/api/documents/embed', {
@@ -70,6 +73,33 @@ function DocumentsView() {
   useEffect(() => { setLocation(location); }, [location, setLocation]);
 
   const [error, setError] = useState('');
+
+  // Microsoft import (F1). After sign-in Microsoft returns here with ?ms=connected|cancelled|error.
+  const msEnabled = canUseMicrosoft(userDoc.plan, user.email);
+  const [msImportOpen, setMsImportOpen] = useState(false);
+  const [msError, setMsError] = useState(false);
+  const { notify } = ws;
+  useEffect(() => {
+    const params = new URLSearchParams(searchKey);
+    const ms = params.get('ms');
+    if (!ms) return;
+    const intent = params.get('intent');
+    if (ms === 'connected') {
+      notify({ kind: 'ok', text: `Conectado como ${microsoftInfo(userDoc)?.email ?? 'Microsoft'}` });
+      if (intent === 'import') setMsImportOpen(true);
+    } else if (ms === 'cancelled') {
+      notify({ kind: 'ok', text: 'Conexión cancelada' });
+    } else if (ms === 'admin_granted') {
+      notify({ kind: 'ok', text: 'Avocat ha sido aprobado. Ya puedes conectar tu cuenta.' });
+    } else {
+      setMsError(true);
+    }
+    params.delete('ms'); params.delete('intent');
+    const rest = params.toString();
+    router.replace(`/documents${rest ? `?${rest}` : ''}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per arrival with ?ms
+  }, [searchKey]);
+  const currentHref = `/documents${searchKey ? `?${searchKey}` : ''}`;
 
   // View & sort
   const [sortCol, setSortCol] = useState<SortCol>('fecha');
@@ -482,6 +512,12 @@ function DocumentsView() {
                       className="w-full text-left px-4 py-2.5 text-[12px] text-[#c8c0ac] hover:bg-[#252218] hover:text-[#e8d4a0] transition-colors">
                       Subir desde mi equipo
                     </button>
+                    {msEnabled && (
+                      <button onClick={() => { setAddMenu(false); setMsImportOpen(true); }}
+                        className="w-full text-left px-4 py-2.5 text-[12px] text-[#c8c0ac] hover:bg-[#252218] hover:text-[#e8d4a0] transition-colors">
+                        Importar desde OneDrive / SharePoint
+                      </button>
+                    )}
                     <button onClick={() => { setAddMenu(false); openNewFolder(); }}
                       className="w-full flex items-center justify-between px-4 py-2.5 text-[12px] text-[#c8c0ac] hover:bg-[#252218] hover:text-[#e8d4a0] transition-colors">
                       Nueva carpeta <kbd className="text-[10px] text-[#6b6050] font-sans">⇧N</kbd>
@@ -500,6 +536,16 @@ function DocumentsView() {
 
       {error && (
         <div className="mx-4 mt-3 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2 text-[12px] text-red-400">{error}</div>
+      )}
+
+      {msError && (
+        <div className="mx-4 mt-3 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2 flex items-center justify-between text-[12px] text-red-400">
+          <span>No pudimos conectar con Microsoft</span>
+          <span className="flex gap-3 flex-shrink-0">
+            <button onClick={() => { setMsError(false); setMsImportOpen(true); }} className="text-avocat-gold hover:underline">Reintentar</button>
+            <button onClick={() => setMsError(false)} aria-label="Cerrar">✕</button>
+          </span>
+        </div>
       )}
 
       {/* Workspace notices (moves, folder ops) */}
@@ -658,6 +704,13 @@ function DocumentsView() {
         />
       )}
       {enabled && <FolderDialogs />}
+      {msEnabled && msImportOpen && (
+        <MicrosoftImportFlow
+          returnTo={currentHref}
+          folderId={currentFolderId}
+          onClose={() => setMsImportOpen(false)}
+        />
+      )}
     </div>
   );
 }

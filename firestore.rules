@@ -35,10 +35,12 @@ service cloud.firestore {
     // Admin-SDK-only (mutated by the Stripe webhook and /api/creditos/consumir).
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
+      // `integrations` (connected-account display info, F1) is written only by server routes.
+      allow create: if request.auth != null && request.auth.uid == userId
+        && !('integrations' in request.resource.data);
       allow update: if request.auth != null && request.auth.uid == userId
         && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['creditos_disponibles', 'creditos_consumidos', 'stripe_customer_id']);
+            .hasAny(['creditos_disponibles', 'creditos_consumidos', 'stripe_customer_id', 'integrations']);
     }
 
     // users/{userId}/creditos_log: owner can read for balance history display.
@@ -147,6 +149,9 @@ service cloud.firestore {
     match /legal_chunks/{chunkId} {
       allow read: if true;
     }
+
+    // integration_secrets/{uid}: encrypted OAuth tokens (Microsoft F1, DocuSign D4). Admin SDK only —
+    // intentionally no client rule; covered by the catch-all deny below (tested).
 
     // Everything else is denied by default. Server-side code (Cloud Functions) uses
     // the Admin SDK and is not subject to these rules.
