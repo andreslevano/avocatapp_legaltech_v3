@@ -131,7 +131,7 @@ export default function ConnectDocusignCard() {
             </div>
           ) : (
             <div className="flex gap-2">
-              <Button variant="BtnOutlineDark" size="sm" loading={busy === 'switch'} onClick={() => connect(true)}>
+              <Button variant="BtnOutlineGold" size="sm" loading={busy === 'switch'} onClick={() => connect(true)}>
                 Cambiar de cuenta
               </Button>
               <Button variant="BtnGhost" size="sm" onClick={() => setConfirmDisconnect(true)}>Desconectar</Button>

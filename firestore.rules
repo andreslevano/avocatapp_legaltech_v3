@@ -81,13 +81,20 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/folders/$(folderId)).data.userId == request.auth.uid;
     }
 
+    // DocuSign (D11): signature state on documents is written by /api/signatures only.
+    function signatureFields() {
+      return ['signatureRequestId', 'signatureStatus', 'lockedAt', 'kind', 'signedFromDocumentId'];
+    }
+
     match /documents/{docId} {
       allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid
+        && !request.resource.data.keys().hasAny(signatureFields())
         && (!('folderId' in request.resource.data) || request.resource.data.folderId == null
             || ownsFolder(request.resource.data.folderId));
       allow update: if request.auth != null && resource.data.userId == request.auth.uid
         && request.resource.data.userId == request.auth.uid
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(signatureFields())
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['folderId'])
             || request.resource.data.folderId == null
             || ownsFolder(request.resource.data.folderId));
@@ -148,6 +155,11 @@ service cloud.firestore {
     // Writes are Admin-SDK-only (ingestion script).
     match /legal_chunks/{chunkId} {
       allow read: if true;
+    }
+
+    // signature_requests/{id}: DocuSign envelopes (Phase 2). Owner reads; Admin SDK writes.
+    match /signature_requests/{requestId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
     // integration_secrets/{uid}: encrypted OAuth tokens (Microsoft F1, DocuSign D4). Admin SDK only —

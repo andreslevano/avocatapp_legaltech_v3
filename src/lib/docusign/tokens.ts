@@ -109,7 +109,9 @@ async function loadSecret(uid: string): Promise<DocusignSecret> {
  * the rotated tokens. Throws DocusignReconnectRequired (and flags the profile) when the refresh
  * token is no longer valid.
  */
-export async function getValidAccessToken(uid: string): Promise<{ accessToken: string; accountId: string; baseUri: string }> {
+export interface DocusignCreds { accessToken: string; accountId: string; baseUri: string; userName: string; userEmail: string }
+
+export async function getValidAccessToken(uid: string): Promise<DocusignCreds> {
   const s = await loadSecret(uid);
   try {
     const { accessToken, refreshed } = await resolveAccessToken(
@@ -127,7 +129,7 @@ export async function getValidAccessToken(uid: string): Promise<{ accessToken: s
         },
       }, { merge: true });
     }
-    return { accessToken, accountId: s.accountId, baseUri: s.baseUri };
+    return { accessToken, accountId: s.accountId, baseUri: s.baseUri, userName: s.userName, userEmail: s.userEmail };
   } catch (err) {
     if (err instanceof DocusignReconnectRequired) {
       await userRef(uid).set({ integrations: { docusign: { status: 'reauth_required' } } }, { merge: true });

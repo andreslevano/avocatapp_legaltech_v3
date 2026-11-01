@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authAdmin, db } from '@/lib/firebase-admin';
 import { canUseDocusign } from './config';
+import { DocusignApiError } from './api';
 import { DocusignNotConnected, DocusignReconnectRequired } from './errors';
 
 /** Verifies the Firebase ID token and the plan + preview gate (D10). Returns uid or an error response. */
@@ -23,6 +24,10 @@ export async function requireDocusignUser(req: NextRequest): Promise<string | Ne
 export function docusignErrorResponse(err: unknown): NextResponse {
   if (err instanceof DocusignReconnectRequired || err instanceof DocusignNotConnected) {
     return NextResponse.json({ error: err.message, code: err.code }, { status: 409 });
+  }
+  if (err instanceof DocusignApiError) {
+    const requestId = (err as DocusignApiError & { requestId?: string }).requestId;
+    return NextResponse.json({ error: err.message, code: err.code, ...(requestId ? { requestId } : {}) }, { status: err.status });
   }
   console.error('[docusign]', (err as Error)?.message ?? err);
   return NextResponse.json({ error: 'Error al comunicar con DocuSign', code: 'error' }, { status: 502 });

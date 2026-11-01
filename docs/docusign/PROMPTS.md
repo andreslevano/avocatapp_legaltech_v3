@@ -85,11 +85,13 @@ Update the Progress table and give me a manual test script for the happy path an
 Read CLAUDE.md and docs/docusign/DOCUSIGN_IMPLEMENTATION_PLAN.md. Implement Phase 3 only
 (tracking), following D8–D9.
 
-- Webhook route /api/signatures/webhook/[token]: look up by token hash, ignore the payload
-  content except as a trigger, re-fetch envelope + recipients with the owner's token, update
-  signature_requests (status, recipients, events timeline) and documents.signatureStatus.
+- Webhook route /api/signatures/webhook/[token]: look up by token hash and update
+  signature_requests (status, recipients, events timeline) and documents.signatureStatus FROM THE
+  PAYLOAD (eventData includeData recipients) — no envelope re-fetch (D8/D13b: go-live review fails
+  on repeated envelope GETs). Check envelopeId matches; ignore events older than updatedAt.
   Must be idempotent and respond fast; unknown tokens → 404 without leaking info.
-- GET /api/signatures/[id]/refresh, called on window focus for non-terminal requests.
+- GET /api/signatures/[id]/refresh behind a manual "Actualizar estado" button only, throttled to
+  1 DocuSign call per envelope per 15 min (D9). No on-focus resync, no polling.
 - POST remind, POST void (unlocks the document), PATCH recipients (correct counterparty email).
 - SignatureStatusChip in DocTable, SignatureTimeline + action buttons in DocPreviewPanel,
   "Pendientes de firma" quick filter in /documents. Live updates via onSnapshot.

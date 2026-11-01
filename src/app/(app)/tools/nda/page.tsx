@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { downloadAsWord, downloadAsPdf, buildWordBlob, buildPdfBlob, type DocMeta } from '@/lib/agent-export';
 import { saveDocumentToStorage, getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
 import { getClients, type ClientDoc } from '@/lib/firestore';
+import SignAndSendButton from '@/components/signatures/SignAndSendButton';
+import { takeSignResume } from '@/lib/signatures/client';
 
 type Tipo = 'unilateral' | 'bilateral';
 type Lang = 'es' | 'en';
@@ -19,9 +22,10 @@ interface Parte {
   idType: string;
   idNumber: string;
   address: string;
+  email: string;      // only used for "Firmar y enviar" (not sent to the generator)
 }
 
-const EMPTY_PARTE: Parte = { nombre: '', empresa: '', cargo: '', idType: 'RUT', idNumber: '', address: '' };
+const EMPTY_PARTE: Parte = { nombre: '', empresa: '', cargo: '', idType: 'RUT', idNumber: '', address: '', email: '' };
 
 const DURACIONES = [
   { value: '1 año', label: '1 año / 1 year' },
@@ -32,6 +36,9 @@ const DURACIONES = [
 ];
 
 const ID_TYPES = ['RUT', 'DNI', 'Pasaporte', 'Cédula', 'CUIT', 'NIF', 'Otro'];
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const stripEmail = ({ email, ...rest }: Parte) => rest;
 
 const INPUT_CLS = 'bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
 
@@ -67,12 +74,15 @@ function ParteFields({ label, value, onChange, headerAction }: ParteFieldsProps)
         <input type="text" placeholder="Dirección completa" value={value.address}
           onChange={e => onChange({ ...value, address: e.target.value })} className={INPUT_CLS} />
       </div>
+      <input type="email" placeholder="Email (para enviar a firmar)" value={value.email}
+        onChange={e => onChange({ ...value, email: e.target.value })} className={`${INPUT_CLS} w-full sm:w-1/3`} />
     </div>
   );
 }
 
 export default function NdaPage() {
   const { user, userDoc } = useAppAuth();
+  const router = useRouter();
   const ud = userDoc as Record<string, unknown>;
   const signatureUrl = (ud.signatureUrl as string) || undefined;
   const meta: DocMeta = {
@@ -110,6 +120,28 @@ export default function NdaPage() {
   const [result, setResult]           = useState('');
   const [error, setError]             = useState('');
   const [saved, setSaved]             = useState(false);
+  const [savedDocId, setSavedDocId]   = useState<string | null>(null);
+  const [docTitle, setDocTitle]       = useState('');
+  const [resumeSign, setResumeSign]   = useState(false);
+  const [notice, setNotice]           = useState('');
+
+  // Back from connecting DocuSign (returnTo=/tools/nda): restore the generated NDA and reopen the sheet.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ds = params.get('ds');
+    if (!ds) return;
+    const resume = takeSignResume();
+    if (resume) {
+      setResult(resume.markdown);
+      setSavedDocId(resume.documentId);
+      setSaved(true);
+      setDocTitle(resume.title);
+      setReceptora(r => ({ ...r, nombre: resume.counterparty.name, email: resume.counterparty.email }));
+      setResumeSign(ds === 'connected');
+    }
+    if (ds !== 'connected') setNotice(ds === 'cancelled' ? 'Conexión con DocuSign cancelada.' : 'No pudimos conectar con DocuSign.');
+    router.replace('/tools/nda');
+  }, [router]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -125,6 +157,7 @@ export default function NdaPage() {
       idType: (ud.legalIdType as string) || 'RUT',
       idNumber: (ud.legalIdNumber as string) || '',
       address: (ud.legalAddress as string) || '',
+      email: user?.email || '',
     });
   };
 
@@ -139,6 +172,7 @@ export default function NdaPage() {
       idType: client.idType || 'RUT',
       idNumber: client.idNumber || '',
       address: client.address || '',
+      email: client.email || '',
     });
   };
 
@@ -150,6 +184,10 @@ export default function NdaPage() {
     setError('');
     setResult('');
     setSaved(false);
+    setSavedDocId(null);
+    setResumeSign(false);
+    setNotice('');
+    setDocTitle(ndaTitle);
     setGenerating(true);
 
     try {
@@ -161,7 +199,7 @@ export default function NdaPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({
-          tipo, divulgante, receptora, objeto, duracion, jurisdiccion,
+          tipo, divulgante: stripEmail(divulgante), receptora: stripEmail(receptora), objeto, duracion, jurisdiccion,
           ciudadJurisdiccion: ciudadJurisdiccion || undefined,
           noCompetencia, penalizacion,
           penalizacionMonto: penalizacion ? penalizacionMonto : undefined,
@@ -218,6 +256,7 @@ export default function NdaPage() {
             pdfBlob: pdfBlobResult?.blob ?? undefined,
           });
           setSaved(true);
+          setSavedDocId(record.id);
           user.getIdToken().then(token =>
             fetch('/api/documents/embed', {
               method: 'POST',
@@ -439,6 +478,7 @@ export default function NdaPage() {
             </div>
 
             {error && <p className="text-[12px] text-red-400">{error}</p>}
+            {notice && <p className="text-[12px] text-amber-400">{notice}</p>}
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -470,6 +510,17 @@ export default function NdaPage() {
                   )}
                 </div>
                 <div className="flex gap-2">
+                  {savedDocId && !generating && (
+                    <SignAndSendButton
+                      documentId={savedDocId}
+                      markdown={result}
+                      title={docTitle || ndaTitle}
+                      defaultCounterparty={{ name: receptora.nombre, email: receptora.email }}
+                      language={language}
+                      returnTo="/tools/nda"
+                      autoOpen={resumeSign}
+                    />
+                  )}
                   <Button variant="BtnGhost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>
                     Copiar
                   </Button>

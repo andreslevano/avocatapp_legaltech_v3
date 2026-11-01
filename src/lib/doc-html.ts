@@ -108,7 +108,9 @@ export const dateAnchor = (n: number) => `\\d${n}\\`;
 
 const ANCHOR = (text: string) => `<span style="color:#ffffff;font-size:1pt;">${text}</span>`;
 
-const SIG_BLOCK_RE = /(Firma|Signature):\s*_{4,}/g;
+// Labels may be bold in the model's output ("**Firma:** ____" → "<strong>Firma:</strong> ____").
+const SIG_BLOCK_RE = /(Firma|Signature):(\*\*|<\/strong>)?\s*_{4,}/g;
+const DATE_BLOCK_RE = /(Fecha|Date):(\*\*|<\/strong>)?\s*_{4,}/g;
 
 /** Number of signature lines ("Firma: ____") in the markdown — one per signing party. */
 export function countSignatureBlocks(md: string): number {
@@ -119,8 +121,8 @@ function injectAnchors(html: string): string {
   let date = 0;
   let sig = 0;
   return html
-    .replace(/(Fecha|Date):\s*_{4,}/g, (_m, label: string) => `${label}: ${ANCHOR(dateAnchor(++date))}${DATE_LINE}`)
-    .replace(SIG_BLOCK_RE, (_m, label: string) => `${label}: ${ANCHOR(signatureAnchor(++sig))}${SIG_LINE}`);
+    .replace(DATE_BLOCK_RE, (_m, label: string, close?: string) => `${label}:${close ?? ''} ${ANCHOR(dateAnchor(++date))}${DATE_LINE}`)
+    .replace(SIG_BLOCK_RE, (_m, label: string, close?: string) => `${label}:${close ?? ''} ${ANCHOR(signatureAnchor(++sig))}${SIG_LINE}`);
 }
 
 // ── HTML document template ────────────────────────────────────────────────────
