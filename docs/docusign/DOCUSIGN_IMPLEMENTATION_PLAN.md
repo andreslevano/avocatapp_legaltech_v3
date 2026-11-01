@@ -33,8 +33,9 @@ bulk send, advanced/qualified signatures (IDV), non-DocuSign providers
 | D5 | Signing order | Routing order 1 = the user as **embedded signer** (`clientUserId` = Firebase uid); routing order 2+ = counterparties as remote signers (DocuSign emails them). |
 | D6 | Embedded signing UX | v1: full-page redirect to the recipient view, `returnUrl` = `/signatures/return?rid={requestId}`. Focused View (in-page modal) is Phase 5. |
 | D7 | Document sent to DocuSign | Text-based document (NOT the html2canvas raster PDF). Format chosen in the Phase 0 spike: preferred = the same HTML from `buildDocHtml()` sent with `fileExtension: 'html'` (or a pdfkit-rendered PDF) containing invisible anchor strings `\\s1\\`, `\\d1\\`, `\\s2\\`, `\\d2\\` … for signature/date tabs. The stamped `signatureUrl` image must be omitted in this mode. |
-| D8 | Status updates | Envelope-level `eventNotification` (no admin config needed on the user's account). Webhook URL carries an opaque per-request token; the handler **does not trust the payload** — it re-fetches envelope + recipients from the API with the owner's token and updates Firestore from that. |
-| D9 | Fallback sync | `GET /api/signatures/[id]/refresh` re-syncs on demand (called on page focus for non-terminal requests). |
+| D8 | Status updates | Envelope-level `eventNotification` (Connect webhook; no admin config needed on the user's account) with `eventData: { version: 'restv2.1', format: 'json', includeData: ['recipients'] }`. Webhook URL carries an opaque per-request token (sha256 stored); a valid token authenticates the call and the handler **updates Firestore from the payload** — it does **not** re-fetch the envelope (see D13). It checks the payload's `envelopeId` matches the request and ignores events older than the stored `updatedAt`. Connect HMAC is not used: it needs account-admin setup on each lawyer's account. |
+| D9 | Fallback sync | `GET /api/signatures/[id]/refresh` — **manual only** ("Actualizar estado" button), throttled server-side to 1 call per envelope per 15 min (`lastSyncedAt` on the request; inside the window it returns the stored status without calling DocuSign). **No** on-focus resync, no timers, no polling. |
+| D13 | Go-live constraints | (a) Promoting the key needs a **paid DocuSign production account** (trials don't qualify) where the promoting user is an **admin** — a running cost for Avocat, separate from each lawyer's own DocuSign plan. (b) The go-live review checks the **last 20 API calls**: all must succeed, and none may request the same envelope again within 15 min → status comes from webhooks (D8), refresh is throttled (D9), the return page after embedded signing makes **no** status call, and completion filing downloads the combined PDF + certificate in **one** call (`documents/combined?certificate=true`). (c) Webhooks can't reach `localhost`: dev needs a public HTTPS tunnel (ngrok / Cloudflare Tunnel) in `DOCUSIGN_WEBHOOK_BASE_URL`; if it's unset or not `https://`, the envelope is sent **without** `eventNotification` and the UI shows a dev-only "sin webhook" note. |
 | D10 | Plan gating | Feature visible for `plan === 'Abogados'` only in v1 (constant, easy to extend to Autoservicio). |
 | D11 | Locking | Once an envelope exists, the source document is locked (`lockedAt`). Edit = void + new version. |
 | D12 | Repo hygiene | Ignore Finder duplicates (`* 2.ts`, `* 2.tsx`, `* 2.md`, folders `* 2`). Never edit or import them. |
@@ -56,7 +57,15 @@ Redirect URIs registered in the DocuSign app:
 - `http://localhost:3000/api/integrations/docusign/callback`
 - `https://avocatapp.com/api/integrations/docusign/callback`
 
-Production secrets must be provided to Firebase Hosting SSR **the same way `OPENAI_API_KEY` is today** (verify the mechanism in the repo before adding; do not invent a new one).
+Production secrets must be provided to Firebase Hosting SSR **the same way `OPENAI_API_KEY` is today**.
+**Verified (2026-11-01):** `firebase deploy --only hosting` (web frameworks) copies `.env.local` (and the
+root `.env`) into the SSR function bundle (`.firebase/avocat-legaltech-v3/functions/`), and Next.js loads
+`.env.local` at runtime in production. So: put `DOCUSIGN_INTEGRATION_KEY`, `DOCUSIGN_SECRET_KEY`,
+`DOCUSIGN_OAUTH_BASE` and `DOCUSIGN_WEBHOOK_BASE_URL` in **`.env.local`** (as `OPENAI_API_KEY` is) and redeploy
+hosting. The root `.env` is also parsed by the Firebase CLI, which rejects `FIREBASE_*`/`X_GOOGLE_*`/`EXT_*`
+names. `.env.development.local` is shipped too but Next ignores it in production, so local-only overrides
+(e.g. `NEXT_PUBLIC_APP_URL=http://localhost:3000`) belong there. Separate Cloud Functions in `functions/`
+do not get these values (use `defineSecret`).
 
 ---
 
@@ -174,13 +183,15 @@ and check ownership of `documentId` / `signature_requests/{id}`.
 - `SignAndSendButton` + `SignAndSendSheet` (pre-filled: owner from DocuSign account; counterparty from Parte B; default subject/message; advanced collapsed with defaults: reminder 3/3 days, expire 30 days, language = doc language).
 - If not connected: inline banner → connect → come back with the sheet re-opened.
 - `POST /api/signatures`: save document first if not saved, build envelope (status `sent`, owner routing 1 embedded, counterparty routing 2, eventNotification with token URL), create `signature_requests`, lock document, return recipient view URL → redirect.
-- `/signatures/return`: handle `signing_complete` (refresh + success screen "Firmado por ti. Enviado a X"), `cancel` ("Pendiente de tu firma" + Continuar firma), `decline` (void + unlock), other events.
+- `/signatures/return`: handle `signing_complete` (set `pending_owner → sent` locally from the `event` param, no DocuSign call — D13 + success screen "Firmado por ti. Enviado a X"), `cancel` ("Pendiente de tu firma" + Continuar firma), `decline` (void + unlock), other events.
 - Friendly errors: reconnect required, quota exceeded, invalid email.
 - **Done when:** full happy path works in demo with a real second inbox; counterparty receives the DocuSign email only after the owner signs.
 
 ### Phase 3 — Tracking
-- Webhook route (token lookup by hash → re-fetch from API → update request + document status + timeline). Idempotent; always 200 quickly for known tokens.
-- `refresh` endpoint + on-focus resync for non-terminal requests.
+- Webhook route (token lookup by hash → update request + document status + timeline **from the payload**, no re-fetch — D8/D13). Idempotent; always 200 quickly for known tokens.
+- Manual "Actualizar estado" → `refresh` endpoint, throttled to 1 call / envelope / 15 min (D9). No on-focus resync, no polling.
+- Unit test: the throttle and "no envelope GET from webhook/return paths" (mock fetch, assert call count).
+- Dev setup: tunnel (`ngrok http 3000` or `cloudflared tunnel --url http://localhost:3000`) → its https URL in `DOCUSIGN_WEBHOOK_BASE_URL`.
 - `SignatureStatusChip` in `DocTable`; `SignatureTimeline` + actions (Recordar / Corregir email / Anular / Continuar firma) in `DocPreviewPanel`.
 - "Pendientes de firma" quick filter in `/documents`.
 - **Done when:** statuses update live (onSnapshot) through sent → delivered → completed, and declined/voided paths, tested via tunnel.
@@ -199,7 +210,8 @@ and check ownership of `documentId` / `signature_requests/{id}`.
 - **Done when:** all entry points use the same sheet; Playwright e2e for the sheet (mocked API).
 
 ### Phase 6 — Go-live
-- Run ≥20 successful demo API calls, submit go-live review in DocuSign, promote key.
+- **Prerequisite:** a paid DocuSign production account with the promoting user as admin (D13a) — budget it before starting this phase.
+- Run a clean demo session: ≥20 consecutive **successful** API calls with no repeat request on the same envelope inside 15 min (D13b) — don't run the spike or a failing test right before submitting. Then submit the go-live review and promote the key.
 - Switch `DOCUSIGN_OAUTH_BASE` to production, add prod redirect URI, set prod secrets, `DOCUSIGN_WEBHOOK_BASE_URL=https://avocatapp.com`.
 - Privacy policy update (DocuSign as processor), tooltip on legal validity (SES under eIDAS).
 - Smoke test with a real account.
@@ -213,8 +225,8 @@ Gmail OAuth tokens are currently stored in `users/{uid}` (`gmailAccessToken`, `g
 
 | Phase | Status | Notes |
 |---|---|---|
-| 0 | ☐ | |
-| 1 | ☐ | |
+| 0 | ◐ code ready (2026-11-01) | `buildDocHtml(…, { forSignature: true })` in `src/lib/doc-html.ts` (builder moved out of the client-only `agent-export.ts` so `/api/signatures` can use it): omits the stamped image, emits white 1pt anchors `\sN\`/`\dN\` per signature block in document order (Parte A = 1, Parte B = 2). `scripts/docusign-spike.ts html|pdf` creates a draft envelope + sender view. **Pending:** run with a demo token and record the D7 decision. |
+| 1 | ◐ built, untested against DocuSign (2026-11-01) | `src/lib/docusign/{config,oauth,tokens,token-logic,errors,client,route-helpers}.ts`, `/api/integrations/docusign/{auth,callback,account,disconnect}`, Profile → Integraciones → `ConnectDocusignCard` (account picker, Cambiar de cuenta = `prompt=login`, Desconectar). Shared helpers: `src/lib/integrations/{crypto,signed-state,urls}.ts`. 16 unit tests (refresh <5 min, rotation, invalid_grant → reconnect, account choice, crypto, state, anchors). **Pending:** demo keys in `.env.local` + manual connect/refresh/disconnect test. |
 | 2 | ☐ | |
 | 3 | ☐ | |
 | 4 | ☐ | |

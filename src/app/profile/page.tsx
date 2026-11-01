@@ -5,6 +5,8 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import { useAppAuth } from '@/contexts/AppAuthContext';
+import ConnectDocusignCard from '@/components/integrations/ConnectDocusignCard';
+import { canUseDocusign } from '@/lib/docusign/config';
 
 const COUNTRIES = [
   { label: 'España',    flag: '🇪🇸' },
@@ -501,6 +503,21 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        {/* Integraciones (DocuSign; Microsoft joins here in F1) */}
+        {canUseDocusign(userDoc.plan) && (
+          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 space-y-4 mt-4">
+            <div>
+              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
+                Integraciones
+              </p>
+              <p className="text-[11px] font-sans text-[#3a3630] mt-1">
+                Conecta servicios externos. Avocat guarda las credenciales cifradas y nunca las muestra en el navegador.
+              </p>
+            </div>
+            <ConnectDocusignCard />
+          </div>
+        )}
 
         {/* Save area */}
         <div className="mt-4 flex items-center gap-3">

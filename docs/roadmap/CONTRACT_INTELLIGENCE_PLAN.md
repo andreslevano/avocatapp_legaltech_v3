@@ -402,8 +402,8 @@ notifications only for affected contracts.
 |---|---|---|
 | F0 Foundation | ☐ | |
 | F3 Expiry alerts | ☐ | |
-| D1 Folders in /documents | ☑ (2026-10-13, rules/indexes not deployed) | `folders` + `documents.folderId`, rules + 47 emulator tests (`npm run test:rules`), 35 unit tests (`npm run test:node`: tree planner, `inferDocType` NDA fix). Routes `POST /api/folders/[id]/move` · `/delete`. Sidebar tree + smart views (Por caso / Por cliente; Microsoft & Pendientes de firma auto-hide until data exists; Contratos por vencer waits for F0/F3). Gated to Abogados via `FOLDERS_PLAN`. Generated docs still land in root (no "Mover a carpeta" toast in tools yet). |
-| F1 Microsoft connector | ☐ | |
+| D1 Folders in /documents | ☑ (2026-10-13; rules + indexes + hosting deployed) | `folders` + `documents.folderId`, rules + 47 emulator tests (`npm run test:rules`), 35 unit tests (`npm run test:node`: tree planner, `inferDocType` NDA fix). Routes `POST /api/folders/[id]/move` · `/delete`. Sidebar tree + smart views (Por caso / Por cliente; Microsoft & Pendientes de firma auto-hide until data exists; Contratos por vencer waits for F0/F3). Gated to Abogados via `FOLDERS_PLAN`. Generated docs still land in root (no "Mover a carpeta" toast in tools yet). |
+| F1 Microsoft connector | ◐ connect + picker live in prod as preview (`MICROSOFT_PREVIEW_EMAILS`) | Done: OAuth (PKCE, `.default`, read-only scope guard), encrypted tokens in `integration_secrets/{uid}.microsoft`, `/api/integrations/microsoft/{auth,callback,token,disconnect}`, admin-consent screen, File Picker v8 (personal + work), "Importar desde OneDrive / SharePoint" in `/documents`. **Pending:** verify admin-consent path (AADSTS65004 currently maps to "cancelled"), import options sheet, `import_jobs` + Cloud Function, progress UI, source card, case/empty-state entry points, Integraciones Microsoft card, provider abstraction, publisher verification before removing the email allow-list. |
 | F1b Resync (read-only, optional) | ☐ | |
 | F2a Legal review on demand | ☐ | |
 | F2b Continuous monitoring | ☐ | |
