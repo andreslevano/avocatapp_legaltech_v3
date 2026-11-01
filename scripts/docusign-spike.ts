@@ -14,6 +14,8 @@
  * Usage:
  *   npx ts-node -P tsconfig.scripts.json scripts/docusign-spike.ts html   # HTML document (preferred)
  *   npx ts-node -P tsconfig.scripts.json scripts/docusign-spike.ts pdf    # text PDF via pdfkit
+ *   … spike.ts html you@example.com   # easier: reuse the connection made in Perfil → Integraciones
+ *                                      # (no DOCUSIGN_SPIKE_* vars needed)
  *
  * Plain fetch against eSignature REST v2.1 (no docusign-esign SDK). Demo only.
  */
@@ -96,11 +98,31 @@ async function renderPdf(md: string): Promise<Buffer> {
   return done;
 }
 
+// Credentials: either the DocuSign connection an Avocat user made in Perfil → Integraciones
+// (pass their email as the 2nd arg — uses firebase-admin + the same token store as the app),
+// or a manual token from DOCUSIGN_SPIKE_* env vars.
+async function resolveCredentials(email?: string): Promise<{ token: string; accountId: string; baseUri: string }> {
+  if (email) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded lazily, after path aliases are registered
+    require('tsconfig-paths').register({ baseUrl: join(__dirname, '..'), paths: { '@/*': ['src/*'] } });
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded lazily, after path aliases are registered
+    const { authAdmin } = require('../src/lib/firebase-admin');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded lazily, after path aliases are registered
+    const { getValidAccessToken } = require('../src/lib/docusign/tokens');
+    const user = await authAdmin().getUserByEmail(email);
+    const c = await getValidAccessToken(user.uid);
+    return { token: c.accessToken, accountId: c.accountId, baseUri: c.baseUri };
+  }
+  return {
+    token: env('DOCUSIGN_SPIKE_ACCESS_TOKEN'),
+    accountId: env('DOCUSIGN_SPIKE_ACCOUNT_ID'),
+    baseUri: env('DOCUSIGN_SPIKE_BASE_URI').replace(/\/+$/, '').replace(/\/restapi$/, ''),
+  };
+}
+
 async function main() {
   const variant = (process.argv[2] ?? 'html') as 'html' | 'pdf';
-  const token = env('DOCUSIGN_SPIKE_ACCESS_TOKEN');
-  const accountId = env('DOCUSIGN_SPIKE_ACCOUNT_ID');
-  const baseUri = env('DOCUSIGN_SPIKE_BASE_URI').replace(/\/+$/, '').replace(/\/restapi$/, '');
+  const { token, accountId, baseUri } = await resolveCredentials(process.argv[3]);
   const api = `${baseUri}/restapi/v2.1/accounts/${accountId}`;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 

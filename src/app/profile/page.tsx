@@ -505,7 +505,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Integraciones (DocuSign; Microsoft joins here in F1) */}
-        {canUseDocusign(userDoc.plan) && (
+        {canUseDocusign(userDoc.plan, user?.email) && (
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 space-y-4 mt-4">
             <div>
               <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">

@@ -38,7 +38,7 @@ export default function ConnectDocusignCard() {
     router.replace(`${window.location.pathname}${params.toString() ? `?${params}` : ''}`);
   }, [router]);
 
-  if (!canUseDocusign(userDoc.plan)) return null;
+  if (!canUseDocusign(userDoc.plan, user?.email)) return null;
 
   const run = async (kind: typeof busy, fn: () => Promise<unknown>) => {
     setBusy(kind); setNotice(null);

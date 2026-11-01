@@ -2,7 +2,14 @@
 // Pure module: client-safe except dsServerConfig(), which reads server-only env vars.
 
 export const DOCUSIGN_PLAN = 'Abogados';   // D10 — feature gating (single constant)
-export const canUseDocusign = (plan: string | null | undefined) => plan === DOCUSIGN_PLAN;
+/** Preview allow-list while the integration key is still a demo key (pre go-live). Empty = all Abogados. */
+export const DOCUSIGN_PREVIEW_EMAILS: string[] = ['andres.levano@mobilityforwork.es'];
+
+export function canUseDocusign(plan: string | null | undefined, email: string | null | undefined): boolean {
+  if (plan !== DOCUSIGN_PLAN) return false;
+  if (DOCUSIGN_PREVIEW_EMAILS.length === 0) return true;
+  return !!email && DOCUSIGN_PREVIEW_EMAILS.includes(email.trim().toLowerCase());
+}
 
 /** D1 — `signature` to send envelopes, `extended` for long-lived (rolling) refresh tokens. */
 export const DOCUSIGN_SCOPES = 'signature extended';

@@ -3,19 +3,20 @@ import { authAdmin, db } from '@/lib/firebase-admin';
 import { canUseDocusign } from './config';
 import { DocusignNotConnected, DocusignReconnectRequired } from './errors';
 
-/** Verifies the Firebase ID token and the plan gate (D10). Returns uid or an error response. */
+/** Verifies the Firebase ID token and the plan + preview gate (D10). Returns uid or an error response. */
 export async function requireDocusignUser(req: NextRequest): Promise<string | NextResponse> {
   const authHeader = req.headers.get('Authorization') ?? '';
   const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!idToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   let uid: string;
+  let email: string | undefined;
   try {
-    uid = (await authAdmin().verifyIdToken(idToken)).uid;
+    ({ uid, email } = await authAdmin().verifyIdToken(idToken));
   } catch {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
   const plan = (await db().collection('users').doc(uid).get()).get('plan') as string | undefined;
-  if (!canUseDocusign(plan)) return NextResponse.json({ error: 'No disponible en tu plan' }, { status: 403 });
+  if (!canUseDocusign(plan, email)) return NextResponse.json({ error: 'No disponible en tu plan' }, { status: 403 });
   return uid;
 }
 
