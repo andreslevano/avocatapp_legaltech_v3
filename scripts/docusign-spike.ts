@@ -148,8 +148,8 @@ async function main() {
     name,
     email,
     tabs: {
-      signHereTabs: [{ anchorString: signatureAnchor(n), anchorUnits: 'pixels', anchorXOffset: '20', anchorYOffset: '-10', anchorIgnoreIfNotPresent: 'false' }],
-      dateSignedTabs: [{ anchorString: dateAnchor(n), anchorUnits: 'pixels', anchorXOffset: '20', anchorYOffset: '-4', anchorIgnoreIfNotPresent: 'false' }],
+      signHereTabs: [{ anchorString: signatureAnchor(n), anchorUnits: 'pixels', anchorXOffset: '20', anchorYOffset: '16', anchorIgnoreIfNotPresent: 'false' }],
+      dateSignedTabs: [{ anchorString: dateAnchor(n), anchorUnits: 'pixels', anchorXOffset: '20', anchorYOffset: '6', anchorIgnoreIfNotPresent: 'false' }],
     },
   });
 
