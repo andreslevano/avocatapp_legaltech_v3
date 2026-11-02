@@ -17,7 +17,9 @@ export interface DocumentRecord {
   storagePath: string;
   downloadUrl: string;
   pdfDownloadUrl?: string;
-  source?: 'generated' | 'uploaded' | 'microsoft';
+  source?: 'generated' | 'uploaded' | 'microsoft' | 'docusign';
+  kind?: 'original' | 'signed' | 'certificate';
+  signedFromDocumentId?: string;  // on the signed PDF filed from DocuSign (Phase 4)
   folderId?: string | null;     // D1: where the document lives (missing/null = root)
   externalRef?: {               // F1: set on documents imported from Microsoft
     provider: 'onedrive' | 'sharepoint';

@@ -2,14 +2,16 @@
 //   signature_requests/{id} — owner read-only (rules); all writes here.
 //   documents/{id}          — signatureRequestId / signatureStatus / lockedAt / kind set here only (D11).
 
+import { randomUUID } from 'crypto';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '@/lib/firebase-admin';
+import { db, storage } from '@/lib/firebase-admin';
 import { buildDocHtml, countSignatureBlocks, type DocMeta } from '@/lib/doc-html';
 import { randomToken, sha256Base64Url } from '@/lib/integrations/crypto';
 import { dsServerConfig } from '@/lib/docusign/config';
 import { buildEnvelopeDefinition, webhookUrlFor } from '@/lib/docusign/envelope';
 import {
-  createEnvelope, createRecipientView, DocusignApiError, getEnvelopeWithRecipients, updateSignerAndResend, voidEnvelope,
+  createEnvelope, createRecipientView, DocusignApiError, downloadCombinedPdf, getEnvelopeWithRecipients,
+  updateSignerAndResend, voidEnvelope,
 } from '@/lib/docusign/api';
 import { getValidAccessToken } from '@/lib/docusign/tokens';
 import {
@@ -19,6 +21,7 @@ import {
 import {
   deriveSync, refreshAvailableAt, REFRESH_WINDOW_MS, REMIND_WINDOW_MS, summaryFromConnect, type DsEnvelopeSummary,
 } from './sync';
+import { FILING_LEASE_MS, firebaseDownloadUrl, signedFileName, signedStoragePath } from './filing';
 
 const requests = () => db().collection('signature_requests');
 const documents = () => db().collection('documents');
@@ -192,8 +195,84 @@ export async function handleConnectWebhook(tokenHash: string, body: unknown): Pr
   const hit = await requests().where('webhookTokenHash', '==', tokenHash).limit(1).get();
   if (hit.empty) return false;
   const summary = summaryFromConnect(body);
-  if (summary) await applySummary(hit.docs[0].id, summary);
+  if (!summary) return true;
+  const status = await applySummary(hit.docs[0].id, summary);
+  // Filed inline (not after responding): the SSR function may be frozen once the response is sent.
+  // A failure here is recorded on the request and retried from "Actualizar estado".
+  if (status === 'completed') await fileSignedDocument(hit.docs[0].id);
   return true;
+}
+
+/**
+ * Phase 4 — files the signed PDF (documents + Certificate of Completion, one combined download,
+ * D13b) next to the original and links it. Exactly once: a lease in a transaction prevents two
+ * concurrent webhook deliveries from filing twice; `signedDocumentId` makes later calls no-ops.
+ * Never throws — errors are stored in `filingError` for the panel.
+ */
+export async function fileSignedDocument(requestId: string): Promise<string | null> {
+  const ref = requests().doc(requestId);
+  const r = await db().runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return null;
+    const cur = { id: snap.id, ...(snap.data() as Omit<SignatureRequest, 'id'>) };
+    if (cur.status !== 'completed' || cur.signedDocumentId) return null;
+    const started = cur.filingStartedAt ? Date.parse(cur.filingStartedAt) : 0;
+    if (Date.now() - started < FILING_LEASE_MS) return null;      // another delivery is filing
+    tx.update(ref, { filingStartedAt: now(), filingError: FieldValue.delete() });
+    return cur;
+  });
+  if (!r) return null;
+
+  try {
+    const creds = await getValidAccessToken(r.userId);
+    const pdf = await downloadCombinedPdf(creds, r.envelopeId);
+
+    const original = (await documents().doc(r.documentId).get()).data() ?? {};
+    const name = signedFileName((original.name as string) || 'Documento');
+    const path = signedStoragePath(original.storagePath as string | undefined, r.userId, Date.now(), name);
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'avocat-legaltech-v3.firebasestorage.app';
+    const token = randomUUID();
+    await storage().bucket(bucketName).file(path).save(pdf, {
+      resumable: false,
+      contentType: 'application/pdf',
+      metadata: { metadata: { firebaseStorageDownloadTokens: token } },
+    });
+
+    const signedRef = documents().doc();
+    const at = now();
+    const batch = db().batch();
+    batch.set(signedRef, {
+      userId: r.userId,
+      caseId: (original.caseId as string | null) ?? r.caseId ?? null,
+      clientId: (original.clientId as string | null) ?? r.clientId ?? null,
+      folderId: (original.folderId as string | null) ?? null,
+      name,
+      type: 'pdf',
+      size: pdf.length,
+      storagePath: path,
+      downloadUrl: firebaseDownloadUrl(bucketName, path, token),
+      source: 'docusign',
+      status: 'Firmado',
+      kind: 'signed',
+      signedFromDocumentId: r.documentId,
+      signatureRequestId: r.id,
+      signatureStatus: 'completed',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    batch.update(ref, {
+      signedDocumentId: signedRef.id,
+      filingStartedAt: FieldValue.delete(),
+      events: FieldValue.arrayUnion({ type: 'filed', at }),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
+    return signedRef.id;
+  } catch (err) {
+    const msg = (err as Error)?.message ?? String(err);
+    console.error('[signatures] filing failed', r.id, msg);
+    await ref.update({ filingStartedAt: FieldValue.delete(), filingError: msg.slice(0, 300) }).catch(() => {});
+    return null;
+  }
 }
 
 /**
@@ -202,7 +281,8 @@ export async function handleConnectWebhook(tokenHash: string, body: unknown): Pr
  */
 export async function refreshSignatureRequest(uid: string, requestId: string) {
   const r = await loadOwnedRequest(uid, requestId);
-  if (!isActiveStatus(r.status)) return { status: r.status, nextRefreshAt: null, throttled: false };
+  const needsFiling = r.status === 'completed' && !r.signedDocumentId;
+  if (!isActiveStatus(r.status) && !needsFiling) return { status: r.status, nextRefreshAt: null, throttled: false };
 
   const ref = requests().doc(r.id);
   const blockedUntil = await db().runTransaction(async tx => {
@@ -213,9 +293,15 @@ export async function refreshSignatureRequest(uid: string, requestId: string) {
   });
   if (blockedUntil) return { status: r.status, nextRefreshAt: new Date(blockedUntil).toISOString(), throttled: true };
 
+  // Completed but the signed PDF isn't filed yet (failed or pre-Phase 4): retry the filing only.
+  if (needsFiling) {
+    await fileSignedDocument(r.id);
+    return { status: r.status, nextRefreshAt: new Date(Date.now() + REFRESH_WINDOW_MS).toISOString(), throttled: false };
+  }
   const creds = await getValidAccessToken(uid);
   const envelope = await getEnvelopeWithRecipients(creds, r.envelopeId);
   const status = (await applySummary(r.id, envelope)) ?? r.status;
+  if (status === 'completed') await fileSignedDocument(r.id);
   return { status, nextRefreshAt: new Date(Date.now() + REFRESH_WINDOW_MS).toISOString(), throttled: false };
 }
 

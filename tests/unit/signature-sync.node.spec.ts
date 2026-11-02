@@ -4,6 +4,7 @@ import { join } from 'path';
 import { deriveSync, refreshAvailableAt, REFRESH_WINDOW_MS, summaryFromConnect } from '@/lib/signatures/sync';
 import type { SignatureRecipient, SignatureRequest } from '@/lib/signatures/types';
 import { buildDocHtml } from '@/lib/doc-html';
+import { firebaseDownloadUrl, signedFileName, signedStoragePath } from '@/lib/signatures/filing';
 
 const NOW = '2026-11-02T10:00:00.000Z';
 const owner = (status: SignatureRecipient['status']): SignatureRecipient =>
@@ -109,5 +110,29 @@ test.describe('signature layout', () => {
     const html = buildDocHtml(md, 'NDA', undefined, undefined, { forSignature: true });
     expect(html).toContain('.sig-section p { page-break-inside: avoid; break-inside: avoid; }');
     expect(html.match(/Firma: <span class="ds-sig">/g)).toHaveLength(2);
+  });
+});
+
+test.describe('signed PDF filing (Phase 4)', () => {
+  test('name and path next to the original', () => {
+    expect(signedFileName('NDA_MFW_MDC.doc')).toBe('NDA_MFW_MDC_firmado.pdf');
+    expect(signedFileName('Contrato.v2.docx')).toBe('Contrato.v2_firmado.pdf');
+    expect(signedFileName('X_firmado.pdf')).toBe('X_firmado.pdf');
+    expect(signedStoragePath('users/u1/abogado/casos/c9/1746_NDA.doc', 'u1', 5, 'NDA_firmado.pdf'))
+      .toBe('users/u1/abogado/casos/c9/5_NDA_firmado.pdf');
+    // Never write outside the owner's folder (rules: users/{uid}/**)
+    expect(signedStoragePath('users/other/x/1_NDA.doc', 'u1', 5, 'a.pdf')).toBe('users/u1/documents/5_a.pdf');
+    expect(signedStoragePath(undefined, 'u1', 5, 'a.pdf')).toBe('users/u1/documents/5_a.pdf');
+    expect(firebaseDownloadUrl('b.app', 'users/u1/a b.pdf', 't')).toBe('https://firebasestorage.googleapis.com/v0/b/b.app/o/users%2Fu1%2Fa%20b.pdf?alt=media&token=t');
+  });
+
+  test('combined download is only reached through fileSignedDocument', () => {
+    const src = readFileSync(join(__dirname, '../../src/lib/signatures/server.ts'), 'utf8');
+    const calls = [...src.matchAll(/downloadCombinedPdf\(/g)].map(m => m.index!);
+    expect(calls).toHaveLength(1);
+    const owner = src.lastIndexOf('export async function', calls[0]);
+    expect(src.slice(owner, owner + 60)).toContain('fileSignedDocument');
+    // Exactly once: guarded by signedDocumentId + a lease in a transaction.
+    expect(src).toMatch(/cur\.signedDocumentId\) return null/);
   });
 });

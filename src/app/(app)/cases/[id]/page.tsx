@@ -16,6 +16,8 @@ import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import type { Timestamp } from 'firebase/firestore';
 import type { OcrPdfProgress } from '@/lib/ocr-pdf-client';
+import SignaturePanel from '@/components/signatures/SignaturePanel';
+import { statusChip } from '@/components/documents/helpers';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -123,6 +125,7 @@ export default function CaseDetailPage() {
 
   // Case documents (new documents collection)
   const [caseDocs, setCaseDocs] = useState<DocumentRecord[]>([]);
+  const [sigOpen, setSigOpen] = useState<string | null>(null);
 
   // Doc picker (Mis documentos)
   const [showDocPicker,    setShowDocPicker]    = useState(false);
@@ -472,10 +475,19 @@ export default function CaseDetailPage() {
                 {caseDocs.map(d => {
                   const ext = (d.pdfDownloadUrl ? 'pdf' : d.type).toLowerCase();
                   return (
-                    <div key={d.id} className="flex items-center gap-3 px-5 py-3">
+                    <div key={d.id}>
+                    <div className="flex items-center gap-3 px-5 py-3">
                       <span className="text-xl flex-shrink-0">{fileIcon(ext)}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-sans font-medium text-[#c8c0ac] truncate">{d.name}</p>
+                        <p className="text-[12px] font-sans font-medium text-[#c8c0ac] truncate">
+                          {d.name}
+                          {d.signatureStatus && (
+                            <button onClick={() => setSigOpen(o => o === d.id ? null : d.id)} title="Ver firma"
+                              className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium border align-middle ${statusChip(d).className}`}>
+                              {statusChip(d).label}
+                            </button>
+                          )}
+                        </p>
                         <p className="text-[10px] text-[#6b6050] mt-0.5">
                           {ext.toUpperCase()} · {formatBytes(d.size)} · {d.source === 'generated' ? 'Generado' : 'Subido'}
                         </p>
@@ -486,6 +498,8 @@ export default function CaseDetailPage() {
                         <button onClick={() => router.push(`/tools/analisis?docId=${d.id}`)}
                           className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">IA</button>
                       </div>
+                    </div>
+                    {sigOpen === d.id && d.signatureRequestId && <SignaturePanel requestId={d.signatureRequestId} />}
                     </div>
                   );
                 })}

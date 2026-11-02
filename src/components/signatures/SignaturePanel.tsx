@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAppAuth } from '@/contexts/AppAuthContext';
+import { getDocumentById } from '@/lib/storage-client';
 import { Button } from '@/components/ui/Button';
 import {
   correctSignatureEmail, getSigningUrl, refreshSignature, remindSignature, voidSignature, watchSignatureRequest,
@@ -23,7 +24,7 @@ const fmt = (iso: string) => {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 };
 
-type Busy = null | 'refresh' | 'remind' | 'void' | 'email' | 'sign';
+type Busy = null | 'refresh' | 'remind' | 'void' | 'email' | 'sign' | 'open';
 
 export default function SignaturePanel({ requestId }: { requestId: string }) {
   const { user } = useAppAuth();
@@ -40,6 +41,7 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
   const active = isActiveStatus(r.status);
   const waitingOnOther = r.status === 'sent' || r.status === 'delivered';
   const counterparty = r.recipients.find(x => x.role === 'signer');
+  const needsFiling = r.status === 'completed' && !r.signedDocumentId;
 
   const run = async (kind: Exclude<Busy, null>, fn: () => Promise<string | void>) => {
     if (!user) return;
@@ -60,7 +62,14 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
       const mins = Math.max(1, Math.ceil((Date.parse(res.nextRefreshAt) - Date.now()) / 60000));
       return `Estado consultado hace poco. Podrás volver a consultarlo en ${mins} min (los cambios llegan solos).`;
     }
-    return `Estado actualizado: ${SIGNATURE_STATUS_LABEL[res.status]}.`;
+    return needsFiling ? 'Reintentando guardar el PDF firmado…' : `Estado actualizado: ${SIGNATURE_STATUS_LABEL[res.status]}.`;
+  });
+  const onOpenSigned = () => run('open', async () => {
+    // Open the tab synchronously (popup blockers), then point it at the file.
+    const w = window.open('', '_blank');
+    const rec = r.signedDocumentId ? await getDocumentById(r.signedDocumentId) : null;
+    if (!rec) { w?.close(); throw new Error('No encontramos el PDF firmado.'); }
+    if (w) w.location.href = rec.downloadUrl; else window.location.href = rec.downloadUrl;
   });
   const onRemind = () => run('remind', async () => {
     await remindSignature(user!, r.id);
@@ -89,7 +98,7 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
     <div className="border-t border-[#2e2b20] px-4 py-3 flex-shrink-0 bg-[#1a1812] space-y-2.5 max-h-[45vh] overflow-y-auto">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[#3a3630] uppercase tracking-widest font-semibold text-[9px]">Firma DocuSign</p>
-        {active && (
+        {(active || needsFiling) && (
           <button onClick={onRefresh} disabled={busy !== null}
             className="text-[10px] text-[#6b6050] hover:text-avocat-gold disabled:opacity-50 transition-colors">
             {busy === 'refresh' ? 'Consultando…' : 'Actualizar estado'}
@@ -112,6 +121,18 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
       </ul>
 
       {/* Actions */}
+      {r.status === 'completed' && r.signedDocumentId && (
+        <Button variant="BtnGold" size="sm" fullWidth disabled={busy !== null} onClick={onOpenSigned}>
+          {busy === 'open' ? 'Abriendo…' : 'Abrir PDF firmado'}
+        </Button>
+      )}
+      {needsFiling && (
+        <p className="text-[11px] text-[#6b6050]">
+          {r.filingError
+            ? 'No se pudo guardar el PDF firmado en Avocat. Pulsa «Actualizar estado» para reintentarlo (DocuSign ya te lo envió por email).'
+            : 'Guardando el PDF firmado en tus documentos…'}
+        </p>
+      )}
       {r.status === 'pending_owner' && (
         <Button variant="BtnGold" size="sm" fullWidth disabled={busy !== null} onClick={onSign}>
           {busy === 'sign' ? 'Abriendo DocuSign…' : 'Continuar firma'}

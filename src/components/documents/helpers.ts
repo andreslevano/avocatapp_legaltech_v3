@@ -37,10 +37,11 @@ export function inferStatus(d: DocumentRecord): DocEstado {
 
 // ── Origin (where the file came from) ────────────────────────────
 
-export const DOC_ORIGENES = ['Avocat', 'Subido', 'OneDrive', 'SharePoint'] as const;
+export const DOC_ORIGENES = ['Avocat', 'Subido', 'OneDrive', 'SharePoint', 'DocuSign'] as const;
 export type DocOrigen = (typeof DOC_ORIGENES)[number];
 
 export function inferOrigin(d: Pick<DocumentRecord, 'source' | 'externalRef'>): DocOrigen {
+  if (d.source === 'docusign') return 'DocuSign';
   if (d.externalRef?.provider === 'sharepoint') return 'SharePoint';
   if (d.externalRef?.provider === 'onedrive' || d.source === 'microsoft') return 'OneDrive';
   return d.source === 'generated' ? 'Avocat' : 'Subido';

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { useDocumentsWorkspace } from '@/contexts/DocumentsWorkspaceContext';
 import {
-  uploadDocument, updateDocumentMeta, deleteDocumentRecord,
+  uploadDocument, updateDocumentMeta, deleteDocumentRecord, getDocumentById,
   type DocumentRecord,
 } from '@/lib/storage-client';
 import AppHeader from '@/components/layout/AppHeader';
@@ -32,7 +32,7 @@ import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 import { microsoftInfo } from '@/lib/integrations/microsoft/client';
 import MicrosoftImportFlow from '@/components/integrations/MicrosoftImportFlow';
 import { canUseDocusign } from '@/lib/docusign/config';
-import { watchSignatureStatuses } from '@/lib/signatures/client';
+import { watchSignatureStatuses, type LiveSignature } from '@/lib/signatures/client';
 
 async function triggerEmbed(docId: string, idToken: string) {
   fetch('/api/documents/embed', {
@@ -78,7 +78,8 @@ function DocumentsView() {
 
   // Live DocuSign status (Phase 3): the webhook updates signature_requests; chips follow it here.
   const docusignOn = canUseDocusign(userDoc.plan, user.email);
-  const [sigMap, setSigMap] = useState<Map<string, { status: NonNullable<DocumentRecord['signatureStatus']>; requestId: string }> | null>(null);
+  const [sigMap, setSigMap] = useState<Map<string, LiveSignature> | null>(null);
+  const fetchedSigned = useRef(new Set<string>());
   useEffect(() => {
     if (!docusignOn) return;
     return watchSignatureStatuses(user.uid, setSigMap);
@@ -89,11 +90,22 @@ function DocumentsView() {
       const s = sigMap.get(d.id);
       return !!s && (s.status !== d.signatureStatus || s.requestId !== d.signatureRequestId);
     };
-    if (!docs.some(differs)) return;
-    setDocs(prev => prev.map(d => {
-      const s = sigMap.get(d.id);
-      return s ? { ...d, signatureStatus: s.status, signatureRequestId: s.requestId } : d;
-    }));
+    if (docs.some(differs)) {
+      setDocs(prev => prev.map(d => {
+        const s = sigMap.get(d.id);
+        return s ? { ...d, signatureStatus: s.status, signatureRequestId: s.requestId } : d;
+      }));
+    }
+    // Phase 4: the signed PDF is created server-side — add it to the list as soon as it's filed.
+    const known = new Set(docs.map(d => d.id));
+    sigMap.forEach(s => {
+      const id = s.signedDocumentId;
+      if (!id || known.has(id) || fetchedSigned.current.has(id)) return;
+      fetchedSigned.current.add(id);
+      getDocumentById(id).then(rec => {
+        if (rec) setDocs(prev => prev.some(d => d.id === rec.id) ? prev : [rec, ...prev]);
+      }).catch(() => fetchedSigned.current.delete(id));
+    });
   }, [sigMap, docs, setDocs]);
 
   // Microsoft import (F1). After sign-in Microsoft returns here with ?ms=connected|cancelled|error.

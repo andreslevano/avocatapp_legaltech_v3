@@ -12,6 +12,7 @@ import { SidebarProvider } from '@/contexts/SidebarContext';
 import { DocumentsWorkspaceProvider } from '@/contexts/DocumentsWorkspaceContext';
 import Rail from '@/components/layout/Rail';
 import Sidebar from '@/components/layout/Sidebar';
+import SignatureNotifier from '@/components/signatures/SignatureNotifier';
 
 const LAWYER_ONLY_PATHS = ['/dashboard', '/cases'];
 
@@ -93,6 +94,7 @@ export default function AppShellClient({ children }: AppShellClientProps) {
               {children}
             </main>
           </div>
+          <SignatureNotifier />
         </DocumentsWorkspaceProvider>
       </SidebarProvider>
     </AppAuthProvider>

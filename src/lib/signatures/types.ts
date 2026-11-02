@@ -56,6 +56,7 @@ export function signatureEventLabel(e: SignatureEvent): string {
     case 'declined': return 'Firma rechazada';
     case 'voided': return 'Solicitud anulada';
     case 'expired': return 'Solicitud caducada';
+    case 'filed': return 'PDF firmado guardado en Documentos';
     default: return e.type;
   }
 }
@@ -78,6 +79,9 @@ export interface SignatureRequest {
   webhookTokenHash: string | null;
   lastSyncedAt?: string;          // last DocuSign status call (manual refresh, D9)
   lastRemindedAt?: string;
+  signedDocumentId?: string;      // documents/{id} of the signed PDF (+ certificate) — Phase 4
+  filingStartedAt?: string;       // lease while downloading/uploading the signed PDF
+  filingError?: string;
   createdAt?: unknown;
   updatedAt?: unknown;
 }

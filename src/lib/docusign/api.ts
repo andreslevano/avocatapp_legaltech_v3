@@ -73,5 +73,21 @@ export const updateSignerAndResend = (creds: DsCreds, envelopeId: string, signer
     signers: [signer],
   });
 
-export const voidEnvelope =(creds: DsCreds, envelopeId: string, reason: string) =>
+/**
+ * Signed documents + Certificate of Completion as ONE PDF, in ONE call (D13b). Called once per
+ * envelope when it completes (Phase 4 filing).
+ */
+export async function downloadCombinedPdf(creds: DsCreds, envelopeId: string): Promise<Buffer> {
+  const url = `${creds.baseUri.replace(/\/+$/, '')}/restapi/v2.1/accounts/${creds.accountId}/envelopes/${envelopeId}/documents/combined?certificate=true`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${creds.accessToken}`, Accept: 'application/pdf' } });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { errorCode?: string; message?: string };
+    console.warn('[docusign/api] GET combined', res.status, data.errorCode, data.message);
+    if (res.status === 401) throw new DocusignReconnectRequired();
+    throw friendlyDocusignError(res.status, data.errorCode);
+  }
+  return Buffer.from(await res.arrayBuffer());
+}
+
+export const voidEnvelope = (creds: DsCreds, envelopeId: string, reason: string) =>
   call<Record<string, unknown>>(creds, 'PUT', `/envelopes/${envelopeId}`, { status: 'voided', voidedReason: reason.slice(0, 200) });

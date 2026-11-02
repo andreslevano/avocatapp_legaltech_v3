@@ -54,17 +54,27 @@ export function watchSignatureRequest(requestId: string, cb: (r: SignatureReques
 }
 
 /** Live documentId → status for the user's latest requests (drives the /documents chips). */
-export function watchSignatureStatuses(uid: string, cb: (m: Map<string, { status: SignatureStatus; requestId: string }>) => void) {
+export interface LiveSignature { status: SignatureStatus; requestId: string; signedDocumentId?: string }
+
+export function watchSignatureStatuses(uid: string, cb: (m: Map<string, LiveSignature>) => void) {
   const q = query(collection(db as Firestore, 'signature_requests'), where('userId', '==', uid), orderBy('updatedAt', 'desc'), limit(200));
   return onSnapshot(q, snap => {
-    const m = new Map<string, { status: SignatureStatus; requestId: string }>();
+    const m = new Map<string, LiveSignature>();
     // Newest first: the first request seen for a document is its current one.
     snap.docs.forEach(d => {
       const docId = d.get('documentId') as string;
-      if (docId && !m.has(docId)) m.set(docId, { status: d.get('status') as SignatureStatus, requestId: d.id });
+      if (docId && !m.has(docId)) {
+        m.set(docId, { status: d.get('status') as SignatureStatus, requestId: d.id, signedDocumentId: d.get('signedDocumentId') as string | undefined });
+      }
     });
     cb(m);
   }, () => { /* index building / offline — chips fall back to the stored document fields */ });
+}
+
+/** Raw request changes for the in-app notifier (counterparty viewed / signed / declined). */
+export function watchSignatureRequests(uid: string, cb: (rs: SignatureRequest[]) => void) {
+  const q = query(collection(db as Firestore, 'signature_requests'), where('userId', '==', uid), orderBy('updatedAt', 'desc'), limit(50));
+  return onSnapshot(q, snap => cb(snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<SignatureRequest, 'id'>) }))), () => {});
 }
 
 // The OAuth round-trip to DocuSign is a full-page redirect, so the sheet's context is parked in
