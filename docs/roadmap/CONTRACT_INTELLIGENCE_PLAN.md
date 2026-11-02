@@ -24,10 +24,10 @@ features sit on top.
 ```
 
 Recommended order (after DocuSign Phases 0–2):
-**F0 → F3 → D1 (folders) → F1 → F1b (optional, read-only) → F2a (on-upload review) → F2b (continuous monitoring)**.
+**F0 → F3 → D1 (folders) → F1 → F1b (optional, read-only) → F2 (legal-change monitoring + NDA check)**.
 D1 → F1 can also run first and on their own (F1 skips "Analizar como contrato" until F0 exists).
 F3 is the quickest win; D1 is a prerequisite of F1 (imports must be able to keep the source
-folder structure); F2b is the hardest and most legally sensitive.
+folder structure); F2 is the hardest and most legally sensitive.
 
 ## Shared rules (all phases)
 
@@ -303,75 +303,75 @@ Still read-only: it only **reads** from Microsoft and updates the copy **inside 
 
 ---
 
-## F2 — NDA legal-update review
+## F2 — Legal-change monitoring & NDA check (redesigned 2026-11-02)
 
-Two parts. **F2a** is review on demand/upload against a curated, versioned rule base.
-**F2b** is continuous monitoring of official sources, with human validation, that re-checks
-existing NDAs when a relevant change is approved.
+**One feature, not two.** There is no separate "legal review on demand": Avocat monitors legal
+changes, and the user checks **one, a selection, or all** NDAs against them. (Replaces the earlier
+F2a review-on-upload / F2b monitoring split.)
 
-### Knowledge model (the core of F2 — lawyer-curated, AI-assisted)
+### Decisions (owner, 2026-11-02)
+| # | Decision |
+|---|---|
+| L1 | **Admin approves** every detected change before it is used to check NDAs (AI detects + drafts; never auto-approved). |
+| L2 | **Baseline = changes + key current law:** each NDA is checked against approved changes in force after its effective date **plus** a short fixed list of current requirements (e.g. whistleblower carve-out, personal data), so already non-compliant NDAs are caught too. |
+| L3 | **Jurisdictions:** Spain (BOE) and EU (EUR-Lex) first. Chile (BCN) later. |
+| L4 | Re-checks are **user-triggered** (cost control); new approved changes only **flag** affected NDAs + notify. |
+
+### Knowledge model
 ```ts
-// legal_rules/{id}  — admin-managed, versioned; this is the "checklist" the review applies
-{ jurisdiction: 'ES'|'EU'|'CL'|'CO'|..., contractTypes: ['nda'],
-  topic: 'trade_secrets'|'personal_data'|'whistleblowing'|'employment'|'ai'|'data_act'|...,
-  title, requirement,            // what a compliant NDA must / must not contain
-  clauseKeys: ClauseKey[],       // which clauses it concerns
+// legal_changes/{id} — detected from official feeds (or added manually), triaged by AI, approved by an admin
+{ source: 'boe'|'eurlex'|'manual', externalId, url, title, publishedAt, effectiveFrom?,
+  jurisdiction: 'ES'|'EU', topics: ('trade_secrets'|'personal_data'|'whistleblowing'|'employment'|'ai'|'data_act'|…)[],
+  clauseKeys: ClauseKey[],          // F0 clause keys it concerns
+  aiTriage: { relevant, rationale, confidence, model },
+  summary,                          // what changed, plain Spanish
+  requirement,                      // what an NDA must / must not contain now
   severity: 'critical'|'important'|'recommended',
-  sources: [{ label, url, articleRef }],   // BOE / EUR-Lex / BCN links
-  effectiveFrom: Timestamp, effectiveUntil?: Timestamp,
-  suggestedClause?: { es: string, en?: string },
-  version, status: 'draft'|'approved'|'retired', approvedBy, approvedAt }
+  suggestedClause?: { es, en? },
+  status: 'new'|'approved'|'dismissed', approvedBy?, approvedAt? }
 
-// legal_updates/{id} — detected changes awaiting/after admin triage (F2b)
-{ source: 'boe'|'eurlex'|'bcn'|'manual', externalId, title, url, publishedAt,
-  jurisdiction, aiTriage: { relevant: boolean, topics: [], rationale, confidence },
-  status: 'new'|'relevant'|'dismissed'|'converted', ruleIds?: string[] }
+// legal_baseline/{id} — the short fixed list of current requirements (same shape as an approved change,
+// source 'baseline'), lawyer-validated before go-live.
 
-// contract_reviews/{id}
-{ userId, contractId, documentId, rulesVersionHash, ranAt,
-  findings: [{ ruleId, status: 'ok'|'missing'|'conflict'|'outdated', severity,
-               explanation, excerpt?, suggestedRedline?, sources[] }],
-  summary: { critical, important, recommended }, model }
+// nda_checks/{id} — one result per NDA per run
+{ userId, contractId, documentId, runId, ranAt, model,
+  changeIds: string[],              // approved changes + baseline items applied (versioning)
+  verdict: 'ok'|'review'|'outdated',
+  findings: [{ changeId, status: 'ok'|'missing'|'conflict', severity, explanation, excerpt?, suggestedClause?, sourceUrl }] }
+
+// nda_check_runs/{id} — a user-triggered run over 1..N NDAs (progress)
+{ userId, contractIds, total, done, failed, status: 'running'|'done'|'error', createdAt }
+
+// contracts/{id}.legal = { verdict, checkedAt, lastCheckId, flaggedByChangeIds[] }  (server-written)
 ```
 
-Seed rule examples (to be validated by a lawyer before `approved`):
-- **ES** — Ley 1/2019 de Secretos Empresariales (definition, permitted uses); RGPD + LOPDGDD
-  3/2018 when personal data is exchanged; Ley 2/2023 (protección de informantes): NDA must not
-  prevent protected reporting; employment NDAs with post-contract non-compete (Estatuto de los
-  Trabajadores art. 21).
-- **EU** — Directive (EU) 2016/943 trade secrets; Data Act (Reg. (EU) 2023/2854) for data-sharing
-  NDAs; AI Act / internal policy: use of confidential info in AI tools.
-- **CL** — Ley 21.719 (new personal-data law replacing Ley 19.628; check exact entry-into-force date)
-  → NDAs with personal-data clauses may need updating.
-- **CO** — Ley 1581 de 2012 (habeas data).
+### Monitoring (daily)
+- Scheduled trigger (same pattern as F3: thin function → Next route with a shared secret).
+- **BOE:** daily summary via the open-data API (sections I / III), keyword prefilter, then AI triage.
+- **EUR-Lex:** new regulations / directives (Official Journal L series), same prefilter + triage.
+- Relevant items → `legal_changes` (`new`) with AI summary, topics, clause keys, suggested clause.
+- **Admin page `/admin/legal-changes`** (`users.isAdmin`): review, edit, **Aprobar** / **Descartar**;
+  add a change manually (URL + text).
+- On approval: flag affected NDAs (confirmed contracts with matching jurisdiction — ES contracts also
+  get EU changes — and clause keys, lifecycle active/expiring, effective date before the change) →
+  `contracts.legal.flaggedByChangeIds`, F3 notification per user ("Cambio normativo: 4 NDAs pueden
+  requerir actualización"), and a "Afectado por cambio legal" chip in `/documents`.
 
-### F2a — Review on upload / on demand
-- Action **"Revisar vigencia legal"** on a contract (and automatic after F0 confirmation, toggle).
-- Pipeline: approved rules for the contract's jurisdiction(s) + type → for each rule, LLM checks
-  the NDA text (clause excerpts from F0 + full text), with retrieval from the existing
-  `legal_chunks` corpus (Vertex embeddings) for citations → JSON findings, validated.
-- **UI:** review panel: traffic-light summary, findings grouped by severity, each with the
-  explanation, the excerpt from the NDA, the legal source link, and a suggested clause.
-  Actions: *Generar versión actualizada* (agent/generator drafts an amendment or new version
-  using the suggested clauses → new document → optional DocuSign), *Ignorar con motivo*,
-  *Exportar informe* (PDF).
-- Disclaimer on every report: assistance tool, requires professional review; show rules-base
-  version/date.
+### NDA check (user-triggered)
+- **One:** "Revisar cambios legales" in the contract card. **Several:** bulk bar in `/documents`.
+  **All:** button on the user's "Cambios legales" page (list of approved changes + "Revisar todos mis NDAs").
+- NDAs without a confirmed contract record are skipped with a hint ("Confirma los datos del contrato").
+- Per NDA: approved changes for its jurisdiction in force after its effective date + baseline → one
+  LLM call with the NDA text (F0 `documentText`) → JSON-schema-validated findings → `nda_checks`.
+  Runs in batches with progress (`nda_check_runs`); results stream into the UI.
+- **Result:** traffic light per NDA (✅ Al día / 🟡 Revisar / 🔴 Desactualizado), findings with the
+  affected excerpt, the official link and a suggested clause; **Generar versión actualizada** opens
+  `/tools/nda` (or the agent for uploaded NDAs) with the fixes → new document → Firmar y enviar.
+- Disclaimer on every result: assistance tool, needs professional review; shows the changes applied.
 
-### F2b — Continuous monitoring
-- Daily scheduled function fetching official feeds: **BOE** daily summary (open data API),
-  **EUR-Lex** (new acts), later **BCN Ley Chile**. Keyword + AI triage → `legal_updates` (`new`).
-- **Admin console** `/admin/legal-updates`: review triaged items, mark relevant, create/update
-  `legal_rules` (AI can draft the rule; a human approves). Uses the existing `isAdmin` helpers.
-- When a rule is approved/changed: find affected contracts (jurisdiction + type + clauseKeys +
-  active lifecycle), re-run F2a for them, and notify users through F3's `notifications`
-  ("Cambio normativo: 4 NDAs pueden requerir actualización").
-- Never auto-approve a rule from AI output.
-
-**Done when (F2a):** a seeded NDA missing a whistleblower carve-out and a personal-data clause
-(ES) gets the right findings with sources, and "Generar versión actualizada" produces a new draft.
-**Done when (F2b):** a manual `legal_update` converted into an approved rule triggers re-review and
-notifications only for affected contracts.
+**Done when:** a manually added change, once approved, flags only the affected NDAs and notifies their
+owners; checking 1 / several / all NDAs returns validated findings with sources; a seeded ES NDA
+without a whistleblower carve-out is flagged by the baseline; dismissed changes never affect results.
 
 ---
 
@@ -382,7 +382,7 @@ notifications only for affected contracts.
 | F0 | 3–5 real (anonymised) NDAs per jurisdiction for testing extraction; confirm jurisdictions in scope (ES, EU, CL, CO…?) |
 | F3 | Default thresholds & channels; confirm SMTP sender used for digest; Firebase Blaze plan allows Cloud Scheduler (already have Functions) |
 | F1 | Microsoft Entra app registration (see below); a work/school test tenant + a personal Microsoft account; publisher verification (Microsoft Partner ID) before public launch |
-| F2 | **Lawyer validation of the rule base** (the seed list above is a starting point, not legal advice); who is admin/approver; disclaimers text; sources per jurisdiction |
+| F2 | **Lawyer validation of the baseline list** (not legal advice); who approves changes (`users.isAdmin`); disclaimer text |
 
 **Microsoft Entra app registration (Azure portal → App registrations → New):**
 - Supported account types: *Accounts in any organizational directory and personal Microsoft accounts*.
@@ -405,5 +405,4 @@ notifications only for affected contracts.
 | D1 Folders in /documents | ☑ (2026-10-13; rules + indexes + hosting deployed) | `folders` + `documents.folderId`, rules + 47 emulator tests (`npm run test:rules`), 35 unit tests (`npm run test:node`: tree planner, `inferDocType` NDA fix). Routes `POST /api/folders/[id]/move` · `/delete`. Sidebar tree + smart views (Por caso / Por cliente; Microsoft & Pendientes de firma auto-hide until data exists; Contratos por vencer waits for F0/F3). Gated to Abogados via `FOLDERS_PLAN`. Generated docs still land in root (no "Mover a carpeta" toast in tools yet). |
 | F1 Microsoft connector | ◐ connect + picker live in prod as preview (`MICROSOFT_PREVIEW_EMAILS`) | Done: OAuth (PKCE, `.default`, read-only scope guard), encrypted tokens in `integration_secrets/{uid}.microsoft`, `/api/integrations/microsoft/{auth,callback,token,disconnect}`, admin-consent screen, File Picker v8 (personal + work), "Importar desde OneDrive / SharePoint" in `/documents`. **Pending:** verify admin-consent path (AADSTS65004 currently maps to "cancelled"), import options sheet, `import_jobs` + Cloud Function, progress UI, source card, case/empty-state entry points, Integraciones Microsoft card, provider abstraction, publisher verification before removing the email allow-list. |
 | F1b Resync (read-only, optional) | ☐ | |
-| F2a Legal review on demand | ☐ | |
-| F2b Continuous monitoring | ☐ | |
+| F2 Legal-change monitoring + NDA check | ☐ (redesigned 2026-11-02: decisions L1–L4) | |
