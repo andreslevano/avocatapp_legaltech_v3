@@ -68,6 +68,10 @@ function buildPrompt(body: NdaBody, referenceContext?: string): string {
   const lang = body.language === 'en' ? 'en' : 'es';
   const penMonto = body.penalizacionMonto?.trim() || '5.000';
   const ciudad   = body.ciudadJurisdiccion?.trim() || jurisdiccion;
+  // The model otherwise leaves "a ____ de ____ de 2025" blanks (and guesses the year).
+  const today    = new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : 'es-ES', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Madrid',
+  });
 
   if (lang === 'en') {
     const tipoLabel = tipo === 'bilateral' ? 'BILATERAL (Mutual)' : 'UNILATERAL';
@@ -108,6 +112,7 @@ PARTIES:
 
 PURPOSE / SUBJECT MATTER: ${objeto}
 DURATION: ${duracion}
+DATE OF THE AGREEMENT: **${today}** — use exactly this date in the opening line (e.g. "${ciudad}, **${today}**."). Never leave date blanks and never use another year.
 JURISDICTION / GOVERNING LAW: ${jurisdiccion} — courts of **${ciudad}**
 ${extras ? `ADDITIONAL CLAUSES:\n${extras}` : ''}
 
@@ -156,6 +161,7 @@ PARTES:
 
 OBJETO: ${objeto}
 DURACIÓN: ${duracion}
+FECHA DEL ACUERDO: **${today}** — úsala tal cual en la primera línea ("En **${ciudad}**, a **${today}**."). No dejes huecos para la fecha ni uses otro año.
 JURISDICCIÓN: ${jurisdiccion} — tribunales de **${ciudad}**
 ${extras ? `CLÁUSULAS ADICIONALES:\n${extras}` : ''}
 

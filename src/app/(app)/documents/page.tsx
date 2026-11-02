@@ -31,6 +31,8 @@ import { sanitizeFolderName } from '@/lib/folders/types';
 import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 import { microsoftInfo } from '@/lib/integrations/microsoft/client';
 import MicrosoftImportFlow from '@/components/integrations/MicrosoftImportFlow';
+import { canUseDocusign } from '@/lib/docusign/config';
+import { watchSignatureStatuses } from '@/lib/signatures/client';
 
 async function triggerEmbed(docId: string, idToken: string) {
   fetch('/api/documents/embed', {
@@ -73,6 +75,26 @@ function DocumentsView() {
   useEffect(() => { setLocation(location); }, [location, setLocation]);
 
   const [error, setError] = useState('');
+
+  // Live DocuSign status (Phase 3): the webhook updates signature_requests; chips follow it here.
+  const docusignOn = canUseDocusign(userDoc.plan, user.email);
+  const [sigMap, setSigMap] = useState<Map<string, { status: NonNullable<DocumentRecord['signatureStatus']>; requestId: string }> | null>(null);
+  useEffect(() => {
+    if (!docusignOn) return;
+    return watchSignatureStatuses(user.uid, setSigMap);
+  }, [docusignOn, user.uid]);
+  useEffect(() => {
+    if (!sigMap) return;
+    const differs = (d: DocumentRecord) => {
+      const s = sigMap.get(d.id);
+      return !!s && (s.status !== d.signatureStatus || s.requestId !== d.signatureRequestId);
+    };
+    if (!docs.some(differs)) return;
+    setDocs(prev => prev.map(d => {
+      const s = sigMap.get(d.id);
+      return s ? { ...d, signatureStatus: s.status, signatureRequestId: s.requestId } : d;
+    }));
+  }, [sigMap, docs, setDocs]);
 
   // Microsoft import (F1). After sign-in Microsoft returns here with ?ms=connected|cancelled|error.
   const msEnabled = canUseMicrosoft(userDoc.plan, user.email);

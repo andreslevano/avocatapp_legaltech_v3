@@ -8,12 +8,17 @@ import { buildDocHtml, countSignatureBlocks, type DocMeta } from '@/lib/doc-html
 import { randomToken, sha256Base64Url } from '@/lib/integrations/crypto';
 import { dsServerConfig } from '@/lib/docusign/config';
 import { buildEnvelopeDefinition, webhookUrlFor } from '@/lib/docusign/envelope';
-import { createEnvelope, createRecipientView, DocusignApiError, voidEnvelope } from '@/lib/docusign/api';
+import {
+  createEnvelope, createRecipientView, DocusignApiError, getEnvelopeWithRecipients, updateSignerAndResend, voidEnvelope,
+} from '@/lib/docusign/api';
 import { getValidAccessToken } from '@/lib/docusign/tokens';
 import {
-  DEFAULT_SIGNATURE_OPTIONS, isActiveStatus,
+  DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, isActiveStatus,
   type CreateSignatureInput, type SignatureRequest, type SignatureStatus,
 } from './types';
+import {
+  deriveSync, refreshAvailableAt, REFRESH_WINDOW_MS, REMIND_WINDOW_MS, summaryFromConnect, type DsEnvelopeSummary,
+} from './sync';
 
 const requests = () => db().collection('signature_requests');
 const documents = () => db().collection('documents');
@@ -135,18 +140,148 @@ export async function resumeOwnerSigning(uid: string, requestId: string) {
   return { signingUrl: url };
 }
 
-async function setStatus(r: SignatureRequest, status: SignatureStatus, patch: Partial<SignatureRequest>, event: string, unlock = false) {
-  const batch = db().batch();
-  batch.update(requests().doc(r.id), {
-    ...patch,
-    status,
-    events: FieldValue.arrayUnion({ type: event, at: now() }),
+const docPatch = (status: SignatureStatus, unlock: boolean) =>
+  unlock ? { signatureStatus: status, lockedAt: FieldValue.delete() } : { signatureStatus: status };
+
+async function setStatus(r: SignatureRequest, status: SignatureStatus, patch: Partial<SignatureRequest>, event: string, unlock = false, by?: string) {
+  await db().runTransaction(async tx => {
+    const docRef = documents().doc(r.documentId);
+    const docSnap = await tx.get(docRef);               // the document may have been deleted meanwhile
+    tx.update(requests().doc(r.id), {
+      ...patch,
+      status,
+      events: FieldValue.arrayUnion({ type: event, at: now(), ...(by ? { by } : {}) }),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    if (docSnap.exists) tx.update(docRef, docPatch(status, unlock));
+  });
+}
+
+/**
+ * Merges DocuSign's view of the envelope into the request + document (monotonic, idempotent).
+ * Returns the resulting status, or null if the request is unknown / for another envelope.
+ */
+async function applySummary(requestId: string, s: DsEnvelopeSummary): Promise<SignatureStatus | null> {
+  return db().runTransaction(async tx => {
+    const ref = requests().doc(requestId);
+    const snap = await tx.get(ref);
+    if (!snap.exists) return null;
+    const r = { id: snap.id, ...(snap.data() as Omit<SignatureRequest, 'id'>) };
+    if (s.envelopeId && s.envelopeId !== r.envelopeId) return null;
+    const res = deriveSync(r, s, now());
+    if (!res) return r.status;
+    const docRef = documents().doc(r.documentId);
+    const docSnap = await tx.get(docRef);
+    tx.update(ref, {
+      status: res.status,
+      recipients: res.recipients,
+      ...(res.events.length ? { events: FieldValue.arrayUnion(...res.events) } : {}),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    if (docSnap.exists) tx.update(docRef, docPatch(res.status, res.unlock));
+    return res.status;
+  });
+}
+
+/**
+ * POST /api/signatures/webhook/[token] — DocuSign Connect (D8). The token authenticates the call;
+ * Firestore is updated FROM THE PAYLOAD, never by re-fetching the envelope (D13b).
+ * Returns false for unknown tokens.
+ */
+export async function handleConnectWebhook(tokenHash: string, body: unknown): Promise<boolean> {
+  const hit = await requests().where('webhookTokenHash', '==', tokenHash).limit(1).get();
+  if (hit.empty) return false;
+  const summary = summaryFromConnect(body);
+  if (summary) await applySummary(hit.docs[0].id, summary);
+  return true;
+}
+
+/**
+ * POST /api/signatures/[id]/refresh — manual "Actualizar estado" only (D9). At most one DocuSign
+ * call per envelope per 15 min; inside the window it answers from Firestore.
+ */
+export async function refreshSignatureRequest(uid: string, requestId: string) {
+  const r = await loadOwnedRequest(uid, requestId);
+  if (!isActiveStatus(r.status)) return { status: r.status, nextRefreshAt: null, throttled: false };
+
+  const ref = requests().doc(r.id);
+  const blockedUntil = await db().runTransaction(async tx => {
+    const until = refreshAvailableAt((await tx.get(ref)).get('lastSyncedAt') as string | undefined);
+    if (Date.now() < until) return until;
+    tx.update(ref, { lastSyncedAt: now() });            // claim the slot before calling DocuSign
+    return 0;
+  });
+  if (blockedUntil) return { status: r.status, nextRefreshAt: new Date(blockedUntil).toISOString(), throttled: true };
+
+  const creds = await getValidAccessToken(uid);
+  const envelope = await getEnvelopeWithRecipients(creds, r.envelopeId);
+  const status = (await applySummary(r.id, envelope)) ?? r.status;
+  return { status, nextRefreshAt: new Date(Date.now() + REFRESH_WINDOW_MS).toISOString(), throttled: false };
+}
+
+function counterpartyOf(r: SignatureRequest) {
+  const c = r.recipients.find(x => x.role === 'signer');
+  if (!c) throw fail('Solicitud de firma no válida.', 'invalid', 500);
+  return c;
+}
+
+function requireWaitingOnCounterparty(r: SignatureRequest) {
+  if (r.status !== 'sent' && r.status !== 'delivered') {
+    throw fail(r.status === 'pending_owner'
+      ? 'Primero tienes que firmar tú.'
+      : 'Esta solicitud ya no está pendiente.', 'not_pending', 409);
+  }
+  const c = counterpartyOf(r);
+  if (c.status === 'completed' || c.status === 'declined') throw fail('La otra parte ya ha respondido.', 'not_pending', 409);
+  return c;
+}
+
+/** POST /api/signatures/[id]/remind — re-sends DocuSign's email to the counterparty (max 1/hour). */
+export async function remindCounterparty(uid: string, requestId: string) {
+  const r = await loadOwnedRequest(uid, requestId);
+  const c = requireWaitingOnCounterparty(r);
+  const last = r.lastRemindedAt ? Date.parse(r.lastRemindedAt) : 0;
+  if (Date.now() - last < REMIND_WINDOW_MS) {
+    throw fail('Ya enviaste un recordatorio hace menos de una hora.', 'throttled', 429);
+  }
+  const creds = await getValidAccessToken(uid);
+  await updateSignerAndResend(creds, r.envelopeId, { recipientId: String(c.routingOrder), name: c.name, email: c.email });
+  const at = now();
+  await requests().doc(r.id).update({
+    lastRemindedAt: at,
+    events: FieldValue.arrayUnion({ type: 'reminded', at, by: c.email }),
     updatedAt: FieldValue.serverTimestamp(),
   });
-  batch.update(documents().doc(r.documentId), unlock
-    ? { signatureStatus: status, lockedAt: FieldValue.delete() }
-    : { signatureStatus: status });
-  await batch.commit();
+  return { ok: true };
+}
+
+/** PATCH /api/signatures/[id]/recipients — corrects the counterparty email and re-sends. */
+export async function correctCounterpartyEmail(uid: string, requestId: string, email: string, name?: string) {
+  const clean = (email ?? '').trim();
+  if (!EMAIL_RE.test(clean)) throw fail('El email no es válido.', 'invalid_email', 422);
+  const r = await loadOwnedRequest(uid, requestId);
+  const c = requireWaitingOnCounterparty(r);
+  const owner = r.recipients.find(x => x.role === 'owner');
+  if (owner && owner.email.toLowerCase() === clean.toLowerCase()) {
+    throw fail('El email de la otra parte no puede ser el tuyo.', 'invalid_email', 422);
+  }
+  const newName = (name ?? '').trim() || c.name;
+  const creds = await getValidAccessToken(uid);
+  await updateSignerAndResend(creds, r.envelopeId, { recipientId: String(c.routingOrder), name: newName, email: clean });
+  const at = now();
+  const recipients = r.recipients.map(x => x === c ? { ...x, email: clean, name: newName, status: 'sent' as const } : x);
+  await setStatus(r, 'sent', { recipients, lastRemindedAt: at }, 'email_corrected', false, clean);
+  return { ok: true };
+}
+
+/** POST /api/signatures/[id]/void — cancels the envelope and unlocks the document (D11). */
+export async function voidSignatureRequest(uid: string, requestId: string) {
+  const r = await loadOwnedRequest(uid, requestId);
+  if (!isActiveStatus(r.status)) throw fail('Esta solicitud ya no está activa.', 'not_pending', 409);
+  const creds = await getValidAccessToken(uid);
+  await voidEnvelope(creds, r.envelopeId, 'Anulado por el remitente desde Avocat');
+  await setStatus(r, 'voided', {}, 'voided', true);
+  return { ok: true };
 }
 
 /**

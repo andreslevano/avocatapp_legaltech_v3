@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/Button';
 import type { DocumentRecord } from '@/lib/storage-client';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 import {
-  fileIcon, formatDate, inferDocType, inferOrigin, inferStatus,
+  fileIcon, formatDate, inferDocType, inferOrigin, statusChip,
   getCaseForDoc, getClientForDoc,
-  STATUS_STYLE, TIPO_STYLE,
+  TIPO_STYLE,
 } from './helpers';
 import { formatBytes } from '@/lib/storage-client';
 import type { DocAction } from './DocTable';
+import SignaturePanel from '@/components/signatures/SignaturePanel';
 
 interface Props {
   doc: DocumentRecord;
@@ -27,7 +28,6 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
   const caseDoc  = getCaseForDoc(d, cases);
   const client   = getClientForDoc(d, cases, clients);
   const tipo     = inferDocType(d.name);
-  const status   = inferStatus(d);
   const previewUrl = d.pdfDownloadUrl ?? d.downloadUrl;
   const ext      = (d.pdfDownloadUrl ? 'pdf' : d.type).toLowerCase();
   const isPdf    = ext === 'pdf';
@@ -83,7 +83,7 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
             <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${TIPO_STYLE[tipo] ?? TIPO_STYLE.Otro}`}>{tipo}</span>
           </MetaRow>
           <MetaRow label="Estado">
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${STATUS_STYLE[status] ?? STATUS_STYLE.Borrador}`}>{status}</span>
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${statusChip(d).className}`}>{statusChip(d).label}</span>
           </MetaRow>
           <MetaRow label="Caso">
             <span className="text-[#c8c0ac] truncate">{caseDoc?.title ?? '—'}</span>
@@ -107,6 +107,8 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
           </div>
         )}
       </div>
+
+      {d.signatureRequestId && <SignaturePanel requestId={d.signatureRequestId} />}
 
       {/* Actions */}
       <div className="border-t border-[#2e2b20] px-4 py-3 flex flex-col gap-2 flex-shrink-0">

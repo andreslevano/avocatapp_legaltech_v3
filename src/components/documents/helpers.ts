@@ -1,4 +1,5 @@
 import type { DocumentRecord } from '@/lib/storage-client';
+import { SIGNATURE_STATUS_LABEL } from '@/lib/signatures/types';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 
 // ── Doc type inference ────────────────────────────────────────────
@@ -27,6 +28,9 @@ export const DOC_ESTADOS = ['Borrador','Generado','Firmado','Enviado'] as const;
 export type DocEstado = (typeof DOC_ESTADOS)[number];
 
 export function inferStatus(d: DocumentRecord): DocEstado {
+  // A DocuSign request wins over the stored estado (the chip shows the detailed label).
+  if (d.signatureStatus === 'completed') return 'Firmado';
+  if (d.signatureStatus === 'pending_owner' || d.signatureStatus === 'sent' || d.signatureStatus === 'delivered') return 'Enviado';
   if (d.status) return d.status as DocEstado;
   return d.source === 'generated' ? 'Generado' : 'Borrador';
 }
@@ -50,6 +54,26 @@ export const STATUS_STYLE: Record<string, string> = {
   Firmado:  'bg-blue-500/10 text-blue-400 border-blue-500/20',
   Enviado:  'bg-purple-500/10 text-purple-400 border-purple-500/20',
 };
+
+const SIGNATURE_STYLE: Record<NonNullable<DocumentRecord['signatureStatus']>, string> = {
+  pending_owner: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  sent:          'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  delivered:     'bg-indigo-500/10 text-indigo-300 border-indigo-500/20',
+  completed:     'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  declined:      'bg-red-500/10 text-red-400 border-red-500/20',
+  voided:        'bg-[#252218] text-[#6b6050] border-[#2e2b20]',
+  expired:       'bg-[#252218] text-[#6b6050] border-[#2e2b20]',
+  error:         'bg-red-500/10 text-red-400 border-red-500/20',
+};
+
+/** Chip for the Estado column: signature status when there is a request, else the estado. */
+export function statusChip(d: DocumentRecord): { label: string; className: string } {
+  if (d.signatureStatus && d.signatureStatus in SIGNATURE_STYLE) {
+    return { label: SIGNATURE_STATUS_LABEL[d.signatureStatus], className: SIGNATURE_STYLE[d.signatureStatus] };
+  }
+  const s = inferStatus(d);
+  return { label: s, className: STATUS_STYLE[s] ?? STATUS_STYLE.Borrador };
+}
 
 export const TIPO_STYLE: Record<string, string> = {
   NDA:         'bg-amber-500/10 text-amber-400 border-amber-500/20',

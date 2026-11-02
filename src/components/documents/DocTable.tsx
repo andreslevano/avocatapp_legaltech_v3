@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import type { DocumentRecord } from '@/lib/storage-client';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 import {
-  inferDocType, inferOrigin, inferStatus, fileIcon, formatDate,
+  inferDocType, inferOrigin, statusChip, fileIcon, formatDate,
   getCaseForDoc, getClientForDoc,
-  STATUS_STYLE, TIPO_STYLE,
+  TIPO_STYLE,
   type SortCol, type SortDir,
 } from './helpers';
 import { formatBytes } from '@/lib/storage-client';
@@ -240,7 +240,6 @@ export default function DocTable({
         ))}
         {docs.map(d => {
           const tipo       = inferDocType(d.name);
-          const status     = inferStatus(d);
           const displayExt = (d.pdfDownloadUrl ? 'pdf' : d.type).toLowerCase();
           const caseDoc    = getCaseForDoc(d, cases);
           const isActive   = previewDocId === d.id;
@@ -268,7 +267,7 @@ export default function DocTable({
                 {path && <p className="text-[10px] text-[#6b6050] truncate">{path}</p>}
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${TIPO_STYLE[tipo] ?? TIPO_STYLE.Otro}`}>{tipo}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${STATUS_STYLE[status] ?? STATUS_STYLE.Borrador}`}>{status}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${statusChip(d).className}`}>{statusChip(d).label}</span>
                   {caseDoc && <span className="text-[10px] text-[#6b6050] truncate max-w-[100px]">{caseDoc.title}</span>}
                 </div>
                 <p className="text-[10px] text-[#3a3630] mt-0.5">{formatDate(d.createdAt)} · {inferOrigin(d)}</p>
@@ -342,7 +341,6 @@ export default function DocTable({
               const caseDoc    = getCaseForDoc(d, cases);
               const client     = getClientForDoc(d, cases, clients);
               const tipo       = inferDocType(d.name);
-              const status     = inferStatus(d);
               const origen     = inferOrigin(d);
               const displayExt = (d.pdfDownloadUrl ? 'pdf' : d.type).toLowerCase();
               const isActive   = previewDocId === d.id;
@@ -388,7 +386,7 @@ export default function DocTable({
                   <td className={`${TD} text-[#6b6050] whitespace-nowrap`}>{formatDate(d.createdAt)}</td>
 
                   <td className={TD}>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${STATUS_STYLE[status] ?? STATUS_STYLE.Borrador}`}>{status}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${statusChip(d).className}`}>{statusChip(d).label}</span>
                   </td>
 
                   <td className={`${TD} hidden lg:table-cell whitespace-nowrap ${ORIGEN_STYLE[origen] ?? ''}`}>{origen}</td>

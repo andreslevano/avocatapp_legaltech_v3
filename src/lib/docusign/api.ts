@@ -1,7 +1,8 @@
 // eSignature REST v2.1 calls (D2: plain fetch, no SDK). Server-only.
-// Go-live (D13b): no envelope GETs here — status comes from webhooks in Phase 3.
+// Go-live (D13b): status comes from webhooks; the single envelope GET is the throttled refresh.
 
 import { DocusignReconnectRequired } from './errors';
+import type { DsEnvelopeSummary } from '@/lib/signatures/sync';
 
 export interface DsCreds { accessToken: string; accountId: string; baseUri: string }
 
@@ -59,5 +60,18 @@ export const createRecipientView = (creds: DsCreds, envelopeId: string, v: {
   userName: v.name, email: v.email, clientUserId: v.clientUserId, recipientId: '1',
 });
 
-export const voidEnvelope = (creds: DsCreds, envelopeId: string, reason: string) =>
+/**
+ * Envelope + recipients. ONLY for the manual, throttled "Actualizar estado" (D9) — never from the
+ * webhook, the return page or a timer (D13b: the go-live review rejects repeated envelope GETs).
+ */
+export const getEnvelopeWithRecipients = (creds: DsCreds, envelopeId: string) =>
+  call<DsEnvelopeSummary>(creds, 'GET', `/envelopes/${envelopeId}?include=recipients`);
+
+/** Updates a remote signer and re-sends the envelope email (reminder / corrected email). */
+export const updateSignerAndResend = (creds: DsCreds, envelopeId: string, signer: { recipientId: string; name: string; email: string }) =>
+  call<Record<string, unknown>>(creds, 'PUT', `/envelopes/${envelopeId}/recipients?resend_envelope=true`, {
+    signers: [signer],
+  });
+
+export const voidEnvelope =(creds: DsCreds, envelopeId: string, reason: string) =>
   call<Record<string, unknown>>(creds, 'PUT', `/envelopes/${envelopeId}`, { status: 'voided', voidedReason: reason.slice(0, 200) });

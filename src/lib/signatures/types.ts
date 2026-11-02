@@ -40,6 +40,26 @@ export const DEFAULT_SIGNATURE_OPTIONS: SignatureOptions = {
 
 export interface SignatureEvent { type: string; at: string; by?: string }
 
+/** Timeline copy for the /documents panel. */
+export function signatureEventLabel(e: SignatureEvent): string {
+  const who = e.by ? ` ${e.by}` : '';
+  switch (e.type) {
+    case 'created': return 'Solicitud creada';
+    case 'owner_signed': return 'Firmado por ti y enviado';
+    case 'owner_declined': return 'Rechazaste firmar';
+    case 'recipient_delivered': return `Abierto por${who}`;
+    case 'recipient_completed': return `Firmado por${who}`;
+    case 'recipient_declined': return `Rechazado por${who}`;
+    case 'reminded': return `Recordatorio enviado a${who}`;
+    case 'email_corrected': return `Email corregido:${who}`;
+    case 'completed': return 'Completado: todas las partes han firmado';
+    case 'declined': return 'Firma rechazada';
+    case 'voided': return 'Solicitud anulada';
+    case 'expired': return 'Solicitud caducada';
+    default: return e.type;
+  }
+}
+
 export interface SignatureRequest {
   id: string;
   userId: string;
@@ -56,6 +76,8 @@ export interface SignatureRequest {
   options: SignatureOptions;
   events: SignatureEvent[];
   webhookTokenHash: string | null;
+  lastSyncedAt?: string;          // last DocuSign status call (manual refresh, D9)
+  lastRemindedAt?: string;
   createdAt?: unknown;
   updatedAt?: unknown;
 }

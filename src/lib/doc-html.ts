@@ -122,7 +122,10 @@ function injectAnchors(html: string): string {
   let sig = 0;
   return html
     .replace(DATE_BLOCK_RE, (_m, label: string, close?: string) => `${label}:${close ?? ''} ${ANCHOR(dateAnchor(++date))}${DATE_LINE}`)
-    .replace(SIG_BLOCK_RE, (_m, label: string, close?: string) => `${label}:${close ?? ''} ${ANCHOR(signatureAnchor(++sig))}${SIG_LINE}`);
+    // .ds-sig (after the label, so bold labels stay well-formed) makes the whole line taller:
+    // DocuSign's adopted-signature frame is taller than one text line and overlapped the date.
+    .replace(SIG_BLOCK_RE, (_m, label: string, close?: string) =>
+      `${label}:${close ?? ''} <span class="ds-sig">${ANCHOR(signatureAnchor(++sig))}${SIG_LINE}</span>`);
 }
 
 // ── HTML document template ────────────────────────────────────────────────────
@@ -254,6 +257,9 @@ export function buildDocHtml(
     text-align: left;
     word-spacing: normal;
   }
+  /* One party's block (name … Firma) never splits across pages */
+  .sig-section p { page-break-inside: avoid; break-inside: avoid; }
+  .ds-sig { display: inline-block; margin-top: 16pt; }
 
   /* ── Footer ── */
   .doc-footer {

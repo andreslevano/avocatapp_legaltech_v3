@@ -9,6 +9,7 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { downloadAsWord, downloadAsPdf, buildWordBlob, buildPdfBlob, type DocMeta } from '@/lib/agent-export';
 import { saveDocumentToStorage, getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
 import { getClients, type ClientDoc } from '@/lib/firestore';
+import { buildDocHtml } from '@/lib/doc-html';
 import SignAndSendButton from '@/components/signatures/SignAndSendButton';
 import { takeSignResume } from '@/lib/signatures/client';
 
@@ -532,12 +533,23 @@ export default function NdaPage() {
                   </Button>
                 </div>
               </div>
-              <pre className="px-5 py-4 text-[12px] font-sans text-[#c8c0ac] whitespace-pre-wrap leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto">
-                {result}
-                {generating && (
+              {generating ? (
+                <pre className="px-5 py-4 text-[12px] font-sans text-[#c8c0ac] whitespace-pre-wrap leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto">
+                  {result}
                   <span className="inline-block w-1 h-3 bg-avocat-gold animate-pulse ml-0.5 align-middle" />
-                )}
-              </pre>
+                </pre>
+              ) : (
+                // Same HTML as the Word/PDF downloads — what the lawyer sees is what gets sent.
+                <div className="bg-[#161410] p-3 sm:p-5">
+                  <iframe
+                    title={ndaTitle}
+                    srcDoc={buildDocHtml(result, ndaTitle, signatureUrl, meta)
+                      .replace('</head>', '<style>body{margin:0;padding:1.5cm 1.8cm}</style></head>')}
+                    sandbox=""
+                    className="w-full h-[600px] rounded-lg bg-white border-0"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

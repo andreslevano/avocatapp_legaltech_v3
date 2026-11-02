@@ -24,6 +24,7 @@ export interface DocumentRecord {
     webUrl?: string;
     path?: string;
   } | null;
+  signatureRequestId?: string;
   signatureStatus?: 'pending_owner' | 'sent' | 'delivered' | 'completed' | 'declined' | 'voided' | 'expired' | 'error';
   createdAt: unknown;
 }
