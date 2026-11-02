@@ -228,7 +228,10 @@ export async function fileSignedDocument(requestId: string): Promise<string | nu
     const pdf = await downloadCombinedPdf(creds, r.envelopeId);
 
     const original = (await documents().doc(r.documentId).get()).data() ?? {};
-    const name = signedFileName((original.name as string) || 'Documento');
+    // Stamp with the moment the envelope completed (not the filing retry time).
+    const completedAt = [...(r.events ?? [])].reverse().find(e => e.type === 'completed')?.at;
+    const signedAt = completedAt && Number.isFinite(Date.parse(completedAt)) ? new Date(completedAt) : new Date();
+    const name = signedFileName((original.name as string) || 'Documento', signedAt);
     const path = signedStoragePath(original.storagePath as string | undefined, r.userId, Date.now(), name);
     const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'avocat-legaltech-v3.firebasestorage.app';
     const token = randomUUID();

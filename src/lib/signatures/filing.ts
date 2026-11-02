@@ -1,9 +1,17 @@
 // Where and under which name the signed PDF is filed (Phase 4). Pure — unit tested.
 
-/** "NDA_MFW_MDC.doc" → "NDA_MFW_MDC_firmado.pdf" */
-export function signedFileName(originalName: string): string {
-  const base = (originalName || 'Documento').replace(/\.[^./\\]+$/, '').replace(/_firmado$/i, '');
-  return `${base}_firmado.pdf`;
+/** "YYYY-MM-DD_HH-MM" in Madrid time — no colons, so the name is valid on every OS. */
+export function signedStamp(at: Date): string {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(at).map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}_${p.hour}-${p.minute}`;
+}
+
+/** "NDA_MFW_MDC.doc" + signed at → "NDA_MFW_MDC_firmado_2026-11-02_15-34.pdf" (date avoids confusion between versions). */
+export function signedFileName(originalName: string, signedAt: Date): string {
+  const base = (originalName || 'Documento').replace(/\.[^./\\]+$/, '').replace(/_firmado(_\d{4}-\d{2}-\d{2}_\d{2}-\d{2})?$/i, '');
+  return `${base}_firmado_${signedStamp(signedAt)}.pdf`;
 }
 
 /** Next to the original (same Storage folder, so case documents stay under casos/{caseId}). */

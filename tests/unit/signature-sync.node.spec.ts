@@ -46,6 +46,12 @@ test.describe('deriveSync — monotonic merge', () => {
     expect(r.recipients[1].status).toBe('sent');
     expect(r.events).toEqual([{ type: 'recipient_completed', at: '2026-11-02T09:00:00Z', by: 'ana@bufete.es' }]);
   });
+  test('owner opening the embedded signing adds no timeline entry', () => {
+    const r = deriveSync(req('pending_owner', 'sent', 'created'), env('sent', 'delivered', 'created'), NOW)!;
+    expect(r.status).toBe('pending_owner');
+    expect(r.recipients[0].status).toBe('delivered');
+    expect(r.events).toEqual([]);
+  });
   test('counterparty opened → delivered', () => {
     const r = deriveSync(req('sent', 'completed', 'sent'), env('sent', 'completed', 'delivered'), NOW)!;
     expect(r.status).toBe('delivered');
@@ -115,9 +121,12 @@ test.describe('signature layout', () => {
 
 test.describe('signed PDF filing (Phase 4)', () => {
   test('name and path next to the original', () => {
-    expect(signedFileName('NDA_MFW_MDC.doc')).toBe('NDA_MFW_MDC_firmado.pdf');
-    expect(signedFileName('Contrato.v2.docx')).toBe('Contrato.v2_firmado.pdf');
-    expect(signedFileName('X_firmado.pdf')).toBe('X_firmado.pdf');
+    const at = new Date('2026-11-02T14:34:00Z');                    // 15:34 in Madrid (CET)
+    expect(signedFileName('NDA_MFW_MDC.doc', at)).toBe('NDA_MFW_MDC_firmado_2026-11-02_15-34.pdf');
+    expect(signedFileName('Contrato.v2.docx', at)).toBe('Contrato.v2_firmado_2026-11-02_15-34.pdf');
+    expect(signedFileName('X_firmado.pdf', at)).toBe('X_firmado_2026-11-02_15-34.pdf');
+    expect(signedFileName('X_firmado_2026-10-01_09-00.pdf', at)).toBe('X_firmado_2026-11-02_15-34.pdf');
+    expect(signedFileName('Y.doc', new Date('2026-07-01T22:30:00Z'))).toBe('Y_firmado_2026-07-02_00-30.pdf'); // CEST
     expect(signedStoragePath('users/u1/abogado/casos/c9/1746_NDA.doc', 'u1', 5, 'NDA_firmado.pdf'))
       .toBe('users/u1/abogado/casos/c9/5_NDA_firmado.pdf');
     // Never write outside the owner's folder (rules: users/{uid}/**)
