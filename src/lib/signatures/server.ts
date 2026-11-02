@@ -23,6 +23,7 @@ import {
 } from './sync';
 import { FILING_LEASE_MS, firebaseDownloadUrl, signedFileName, signedStoragePath } from './filing';
 import { planRecipients, recipientKey } from './recipients';
+import { startContractOnSigning } from '@/lib/contracts/server';
 
 const requests = () => db().collection('signature_requests');
 const documents = () => db().collection('documents');
@@ -316,6 +317,9 @@ export async function fileSignedDocument(requestId: string): Promise<string | nu
       updatedAt: FieldValue.serverTimestamp(),
     });
     await batch.commit();
+    // F0: a generated NDA's term runs from the signing day, not the drafting day.
+    await startContractOnSigning(r.userId, r.documentId, signedAt.toISOString())
+      .catch(err => console.warn('[signatures] contract start', r.id, (err as Error).message));
     return signedRef.id;
   } catch (err) {
     const msg = (err as Error)?.message ?? String(err);

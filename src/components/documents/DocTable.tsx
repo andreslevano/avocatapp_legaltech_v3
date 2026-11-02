@@ -12,8 +12,9 @@ import {
 import { formatBytes } from '@/lib/storage-client';
 import { IconFolder } from './FolderTree';
 import { isItemDrag, readDragPayload, setDragPayload, type DragPayload } from './workspace';
+import { formatContractDate } from '@/lib/contracts/dates';
 
-export type DocAction = 'preview' | 'sign' | 'link-case' | 'link-client' | 'rename' | 'move' | 'download' | 'analyze' | 'delete';
+export type DocAction = 'preview' | 'sign' | 'contract' | 'link-case' | 'link-client' | 'rename' | 'move' | 'download' | 'analyze' | 'delete';
 export type FolderAction = 'open' | 'rename' | 'move' | 'delete';
 
 /** A row listed before the files: a real folder, or a virtual group in a smart view. */
@@ -43,6 +44,8 @@ interface Props {
   canMove?: boolean;
   /** DocuSign (Phase 5a): whether "Firmar y enviar" is offered for this document. */
   canSign?: (d: DocumentRecord) => boolean;
+  /** F0: whether "Analizar como contrato" / "Ver contrato" is offered for this document. */
+  canContract?: (d: DocumentRecord) => boolean;
   docPath?: (d: DocumentRecord) => string | null;
   onOpenFolder?: (row: FolderRow) => void;
   onFolderAction?: (action: FolderAction, row: FolderRow) => void;
@@ -54,9 +57,10 @@ interface Props {
 const TH = 'px-3 py-2.5 text-left text-[10px] font-semibold tracking-widest uppercase text-[#6b6050] cursor-pointer select-none whitespace-nowrap hover:text-[#c8c0ac] transition-colors';
 const TD = 'px-3 py-2.5 text-[12px]';
 
-const MENU_ITEMS: { label: string; action: DocAction; needsMove?: boolean; needsSign?: boolean }[] = [
+const MENU_ITEMS: { label: string; action: DocAction; needsMove?: boolean; needsSign?: boolean; needsContract?: boolean }[] = [
   { label: 'Ver / previsualizar',  action: 'preview'     },
   { label: 'Firmar y enviar',      action: 'sign', needsSign: true },
+  { label: 'Analizar como contrato', action: 'contract', needsContract: true },
   { label: 'Mover a…',             action: 'move', needsMove: true },
   { label: 'Vincular a caso',      action: 'link-case'   },
   { label: 'Vincular a cliente',   action: 'link-client' },
@@ -83,7 +87,7 @@ const itemsLabel = (n: number) => `${n} elemento${n !== 1 ? 's' : ''}`;
 export default function DocTable({
   docs, folderRows = [], cases, clients, selected, onToggleSelect, onSelectAll,
   sortCol, sortDir, onSort, previewDocId, onAction,
-  canMove = false, canSign, docPath, onOpenFolder, onFolderAction, onRenameFolder, onDropOnFolder, emptyState,
+  canMove = false, canSign, canContract, docPath, onOpenFolder, onFolderAction, onRenameFolder, onDropOnFolder, emptyState,
 }: Props) {
   const [menu, setMenu] = useState<{ kind: 'doc' | 'folder'; id: string } | null>(null);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
@@ -271,6 +275,7 @@ export default function DocTable({
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${TIPO_STYLE[tipo] ?? TIPO_STYLE.Otro}`}>{tipo}</span>
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${statusChip(d).className}`}>{statusChip(d).label}</span>
+                  <ContractChip d={d} />
                   {caseDoc && <span className="text-[10px] text-[#6b6050] truncate max-w-[100px]">{caseDoc.title}</span>}
                 </div>
                 <p className="text-[10px] text-[#3a3630] mt-0.5">{formatDate(d.createdAt)} · {inferOrigin(d)}</p>
@@ -370,6 +375,7 @@ export default function DocTable({
                       {isRenaming ? renameInput(() => commitRename(d)) : (
                         <span className="truncate text-[#c8c0ac] group-hover:text-[#e8d4a0] font-medium">{d.name}</span>
                       )}
+                      {!isRenaming && <ContractChip d={d} />}
                     </div>
                     <p className="text-[10px] text-[#3a3630] mt-0.5 ml-7 truncate">
                       {path ? <span className="text-[#6b6050]">{path}</span> : formatBytes(d.size)}
@@ -418,7 +424,7 @@ export default function DocTable({
           ref={menuRef}
           style={{ top: menuPos.top, right: menuPos.right }}
         >
-          {menuDoc && MENU_ITEMS.filter(i => (!i.needsMove || canMove) && (!i.needsSign || !!canSign?.(menuDoc))).map(({ label, action }) => (
+          {menuDoc && MENU_ITEMS.filter(i => (!i.needsMove || canMove) && (!i.needsSign || !!canSign?.(menuDoc)) && (!i.needsContract || !!canContract?.(menuDoc))).map(({ label, action }) => (
             <button
               key={action}
               onClick={() => {
@@ -428,7 +434,7 @@ export default function DocTable({
               }}
               className="w-full text-left px-4 py-2.5 text-[12px] text-[#c8c0ac] hover:bg-[#252218] hover:text-[#e8d4a0] active:bg-[#252218] transition-colors"
             >
-              {label}
+              {action === 'contract' && menuDoc.contractId ? 'Ver datos del contrato' : label}
             </button>
           ))}
           {menuFolder && FOLDER_MENU.map(({ label, action }) => (
@@ -460,5 +466,21 @@ export default function DocTable({
         </div>
       )}
     </>
+  );
+}
+
+/** F0: "Contrato" chip; amber when the next date is close, red once expired. Title shows the date. */
+function ContractChip({ d }: { d: DocumentRecord }) {
+  if (!d.contractId) return null;
+  const tone = d.contractLifecycle === 'expired' ? 'text-red-400 border-red-400/30'
+    : d.contractLifecycle === 'expiring' ? 'text-amber-400 border-amber-400/30'
+    : !d.contractConfirmed ? 'text-[#6b6050] border-[#2e2b20]'
+    : 'text-emerald-400/80 border-emerald-400/20';
+  const title = !d.contractConfirmed ? 'Contrato sin confirmar'
+    : d.contractNextDate ? `Contrato · próxima fecha ${formatContractDate(d.contractNextDate)}` : 'Contrato';
+  return (
+    <span title={title} className={`px-1.5 py-0.5 rounded text-[9px] font-medium border flex-shrink-0 ${tone}`}>
+      {d.contractLifecycle === 'expiring' && d.contractNextDate ? `Vence ${formatContractDate(d.contractNextDate)}` : 'Contrato'}
+    </span>
   );
 }

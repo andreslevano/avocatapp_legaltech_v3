@@ -83,7 +83,9 @@ service cloud.firestore {
 
     // DocuSign (D11): signature state on documents is written by /api/signatures only.
     function signatureFields() {
-      return ['signatureRequestId', 'signatureStatus', 'lockedAt', 'kind', 'signedFromDocumentId'];
+      return ['signatureRequestId', 'signatureStatus', 'lockedAt', 'kind', 'signedFromDocumentId',
+              // contract summary (F0), denormalized by the server from contracts/{id}
+              'contractId', 'contractConfirmed', 'contractNextDate', 'contractLifecycle'];
     }
 
     match /documents/{docId} {
@@ -160,6 +162,22 @@ service cloud.firestore {
     // signature_requests/{id}: DocuSign envelopes (Phase 2). Owner reads; Admin SDK writes.
     match /signature_requests/{requestId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // contracts/{id}: structured contract data (F0). Owner reads; every write goes through
+    // /api/contracts (Admin SDK) so dates are always computed server-side.
+    match /contracts/{contractId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // notifications/{id}: expiry alerts (F3), created by the scan (Admin SDK). The owner reads them
+    // and may only mark them as read. contract_alerts/{key} and system/{doc} are server-only
+    // (catch-all deny).
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt'])
+        && request.resource.data.readAt is string;
     }
 
     // integration_secrets/{uid}: encrypted OAuth tokens (Microsoft F1, DocuSign D4). Admin SDK only —

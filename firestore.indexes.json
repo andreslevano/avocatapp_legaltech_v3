@@ -83,6 +83,31 @@
       "fields": [
         { "fieldPath": "embedding", "vectorConfig": { "dimension": 768, "flat": {} } }
       ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "contracts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "confirmedByUser", "order": "ASCENDING" },
+        { "fieldPath": "lifecycle", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "contracts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "confirmedByUser", "order": "ASCENDING" },
+        { "fieldPath": "lifecycle", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

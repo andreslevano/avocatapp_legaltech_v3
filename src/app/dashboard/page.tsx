@@ -14,6 +14,9 @@ import ClientTable from '@/components/dashboard/ClientTable';
 import { canUseDocusign } from '@/lib/docusign/config';
 import { watchSignatureStatuses } from '@/lib/signatures/client';
 import { isActiveStatus } from '@/lib/signatures/types';
+import { canUseContracts } from '@/lib/contracts/config';
+import { watchContracts } from '@/lib/contracts/client';
+import type { Contract } from '@/lib/contracts/types';
 
 export default function DashboardPage() {
   const { user, userDoc } = useAppAuth();
@@ -30,6 +33,14 @@ export default function DashboardPage() {
       setAwaitingSignature(n);
     });
   }, [docusignOn, user]);
+
+  // F3: contract dates join "Próximos vencimientos" (live).
+  const contractsOn = canUseContracts(userDoc.plan, user?.email);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  useEffect(() => {
+    if (!contractsOn || !user) return;
+    return watchContracts(user.uid, setContracts);
+  }, [contractsOn, user]);
 
   const [cases, setCases] = useState<CaseDoc[]>([]);
   const [clients, setClients] = useState<ClientDoc[]>([]);
@@ -111,7 +122,7 @@ export default function DashboardPage() {
 
             {/* Bottom row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <DeadlineList cases={cases} />
+              <DeadlineList cases={cases} contracts={contracts} />
               <ClientTable clients={clients} activeCasesByClientId={activeCasesByClientId} />
             </div>
 

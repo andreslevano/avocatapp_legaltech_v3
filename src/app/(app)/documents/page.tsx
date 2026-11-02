@@ -35,6 +35,12 @@ import { canUseDocusign } from '@/lib/docusign/config';
 import { takeSignResume, watchSignatureStatuses, type LiveSignature } from '@/lib/signatures/client';
 import { canSendForSignature } from '@/lib/signatures/eligibility';
 import SignDocumentSheet from '@/components/signatures/SignDocumentSheet';
+import ContractConfirmSheet from '@/components/contracts/ContractConfirmSheet';
+import { ANALYZABLE_TYPES } from '@/components/contracts/ContractCard';
+import { canUseContracts } from '@/lib/contracts/config';
+import { analyzeAsContract, watchContract } from '@/lib/contracts/client';
+import { madridToday, nextContractEvent } from '@/lib/contracts/dates';
+import type { Contract } from '@/lib/contracts/types';
 
 async function triggerEmbed(docId: string, idToken: string) {
   fetch('/api/documents/embed', {
@@ -115,6 +121,35 @@ function DocumentsView() {
   type Party = { name: string; email: string };
   const [signTarget, setSignTarget] = useState<{ doc: DocumentRecord; counterparty?: Party; signers?: Party[]; cc?: Party[] } | null>(null);
   const canSign = useCallback((d: DocumentRecord) => docusignOn && canSendForSignature(d), [docusignOn]);
+
+  // F0: contracts — "Analizar como contrato" and the confirmation sheet.
+  const contractsOn = canUseContracts(userDoc.plan, user.email);
+  const [contractSheet, setContractSheet] = useState<Contract | null>(null);
+  const [contractNotice, setContractNotice] = useState<{ docId: string; text: string } | null>(null);
+  const canContract = useCallback((d: DocumentRecord) =>
+    contractsOn && d.kind !== 'certificate' && !d.signedFromDocumentId && ANALYZABLE_TYPES.has((d.type ?? '').toLowerCase()), [contractsOn]);
+  /** Reflect a saved contract on the local row (badge, "Contratos por vencer") without a reload. */
+  const applyContract = useCallback((c: Contract) => {
+    setDocs(prev => prev.map(d => d.id !== c.documentId ? d : {
+      ...d, contractId: c.id, contractConfirmed: c.confirmedByUser, contractLifecycle: c.lifecycle,
+      contractNextDate: nextContractEvent(c.dates, madridToday())?.date ?? null,
+    }));
+  }, [setDocs]);
+  const openContract = useCallback(async (doc: DocumentRecord) => {
+    if (!user) return;
+    setContractNotice({ docId: doc.id, text: doc.contractId ? 'Abriendo el contrato…' : 'Leyendo el contrato…' });
+    try {
+      const c = doc.contractId
+        ? await new Promise<Contract | null>(res => { const off = watchContract(doc.contractId!, x => { off(); res(x); }); })
+        : null;
+      const contract = c ?? await analyzeAsContract(user, doc.id);
+      applyContract(contract);
+      setContractSheet(contract);
+      setContractNotice(null);
+    } catch (e) {
+      setContractNotice({ docId: doc.id, text: (e as Error).message || 'No se pudo analizar el documento.' });
+    }
+  }, [user, applyContract]);
   useEffect(() => {
     const ds = new URLSearchParams(searchKey).get('ds');
     if (!ds) return;
@@ -129,6 +164,15 @@ function DocumentsView() {
     router.replace('/documents');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchKey]);
+
+  // F3 "Ver documento" from /notifications: /documents?doc=<id> opens its preview once loaded.
+  useEffect(() => {
+    const id = new URLSearchParams(searchKey).get('doc');
+    if (!id || loading) return;
+    if (docs.some(d => d.id === id)) setPreviewId(id);
+    router.replace('/documents');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchKey, loading]);
 
   // Microsoft import (F1). After sign-in Microsoft returns here with ?ms=connected|cancelled|error.
   const msEnabled = canUseMicrosoft(userDoc.plan, user.email);
@@ -387,6 +431,9 @@ function DocumentsView() {
     switch (action) {
       case 'sign':
         setSignTarget({ doc });
+        break;
+      case 'contract':
+        openContract(doc);
         break;
       case 'preview':
         setPreviewId(prev => prev === doc.id ? null : doc.id);
@@ -688,6 +735,7 @@ function DocumentsView() {
               onAction={handleAction}
               canMove={enabled}
               canSign={canSign}
+              canContract={canContract}
               docPath={docPath}
               onOpenFolder={openRow}
               onFolderAction={handleFolderAction}
@@ -710,6 +758,7 @@ function DocumentsView() {
                 onClose={() => setPreviewId(null)}
                 onAction={handleAction}
                 canSign={canSign(previewDoc)}
+                onContract={contractsOn ? c => { applyContract(c); setContractSheet(c); } : undefined}
               />
             </div>
             {/* Mobile: full overlay */}
@@ -724,6 +773,7 @@ function DocumentsView() {
                   onClose={() => setPreviewId(null)}
                   onAction={handleAction}
                   canSign={canSign(previewDoc)}
+                  onContract={contractsOn ? c => { applyContract(c); setContractSheet(c); } : undefined}
                 />
               </div>
             </div>
@@ -749,6 +799,16 @@ function DocumentsView() {
         <SignDocumentSheet doc={signTarget.doc} clients={clients} cases={cases}
           counterparty={signTarget.counterparty} signers={signTarget.signers} cc={signTarget.cc}
           onClose={() => setSignTarget(null)} />
+      )}
+
+      {contractSheet && (
+        <ContractConfirmSheet contract={contractSheet} onClose={() => setContractSheet(null)} onSaved={applyContract} />
+      )}
+      {contractNotice && (
+        <div className="fixed z-[60] left-1/2 -translate-x-1/2 bottom-20 md:bottom-6 bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-4 py-2.5 shadow-lg flex items-center gap-3 max-w-[calc(100vw-32px)]" role="status">
+          <p className="text-[12px] text-[#c8c0ac]">{contractNotice.text}</p>
+          <button onClick={() => setContractNotice(null)} aria-label="Cerrar" className="text-[#6b6050] hover:text-[#c8c0ac] text-[14px] leading-none">×</button>
+        </div>
       )}
 
       {/* Modals */}

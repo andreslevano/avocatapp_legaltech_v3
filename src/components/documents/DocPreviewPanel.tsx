@@ -12,6 +12,8 @@ import {
 import { formatBytes } from '@/lib/storage-client';
 import type { DocAction } from './DocTable';
 import SignaturePanel from '@/components/signatures/SignaturePanel';
+import ContractCard from '@/components/contracts/ContractCard';
+import type { Contract } from '@/lib/contracts/types';
 
 interface Props {
   doc: DocumentRecord;
@@ -21,11 +23,13 @@ interface Props {
   onClose: () => void;
   onAction: (action: DocAction, doc: DocumentRecord) => void;
   canSign?: boolean;
+  /** F0: contract summary / "Analizar como contrato"; opens the confirmation sheet. */
+  onContract?: (c: Contract) => void;
 }
 
 const IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
 
-export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, onClose, onAction, canSign = false }: Props) {
+export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, onClose, onAction, canSign = false, onContract }: Props) {
   const caseDoc  = getCaseForDoc(d, cases);
   const client   = getClientForDoc(d, cases, clients);
   const tipo     = inferDocType(d.name);
@@ -108,6 +112,8 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
           </div>
         )}
       </div>
+
+      {onContract && d.kind !== 'certificate' && !d.signedFromDocumentId && <ContractCard documentId={d.id} documentType={d.type} onOpenSheet={onContract} />}
 
       {d.signatureRequestId && <SignaturePanel requestId={d.signatureRequestId} />}
 

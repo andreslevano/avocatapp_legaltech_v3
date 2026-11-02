@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useSidebar } from '@/contexts/SidebarContext';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 interface AppHeaderProps {
   title?: string;
@@ -37,9 +38,10 @@ export default function AppHeader({ title, titleNode, subtitle, actions }: AppHe
         )}
       </div>
 
-      {actions && (
-        <div className="flex items-center gap-2 flex-shrink-0 ml-3">{actions}</div>
-      )}
+      <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+        {actions}
+        <NotificationBell />
+      </div>
     </header>
   );
 }

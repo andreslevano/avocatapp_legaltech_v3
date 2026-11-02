@@ -1,11 +1,12 @@
 // /documents navigation model, smart views and drag-and-drop payloads.
 import type { DocumentRecord } from '@/lib/storage-client';
+import { daysBetween, madridToday } from '@/lib/contracts/dates';
 
 // ── Location (URL ⇄ state) ───────────────────────────────────────
 
 // Smart views are virtual: computed from document fields, nothing is moved.
-// "Contratos por vencer" joins this list with F0/F3 (contracts collection), not before.
-export type SmartView = 'casos' | 'clientes' | 'microsoft' | 'firma';
+// "Contratos por vencer" (F0/F3) reads the contract summary the server keeps on each document.
+export type SmartView = 'casos' | 'clientes' | 'microsoft' | 'firma' | 'contratos';
 
 export type DocsLocation =
   | { kind: 'folder'; folderId: string | null }
@@ -40,7 +41,15 @@ export const SMART_VIEWS: {
   { id: 'clientes',  label: 'Por cliente',             grouped: true },
   { id: 'microsoft', label: 'Importados de Microsoft', grouped: false, match: d => !!d.externalRef || d.source === 'microsoft' },
   { id: 'firma',     label: 'Pendientes de firma',     grouped: false, match: d => !!d.signatureStatus && PENDING_SIGNATURE.has(d.signatureStatus) },
+  { id: 'contratos', label: 'Contratos por vencer',    grouped: false, match: isContractDueSoon },
 ];
+
+/** Confirmed contract that is expiring, expired, or has a date within the next 90 days. */
+export function isContractDueSoon(d: DocumentRecord, today = madridToday()): boolean {
+  if (!d.contractConfirmed) return false;
+  if (d.contractLifecycle === 'expiring' || d.contractLifecycle === 'expired') return true;
+  return !!d.contractNextDate && daysBetween(today, d.contractNextDate) <= 90;
+}
 
 /** Views whose data exists for this user (the others stay hidden). */
 export function availableViews(docs: DocumentRecord[], hasCaseDocs: boolean, hasClientDocs: boolean) {

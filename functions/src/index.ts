@@ -4114,3 +4114,6 @@ export const stripeWebhook = functions.https.onRequest({
   timeoutSeconds: 540,
   memory: '512MiB' // Increase memory for document generation
 }, webhookApp);
+
+// F3: hourly trigger for contract expiry alerts (logic in the Next.js app).
+export { contractAlertsHourly } from "./contract-alerts";

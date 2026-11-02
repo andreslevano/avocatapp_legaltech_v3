@@ -29,6 +29,11 @@ export interface DocumentRecord {
   } | null;
   signatureRequestId?: string;
   signatureStatus?: 'pending_owner' | 'sent' | 'delivered' | 'completed' | 'declined' | 'voided' | 'expired' | 'error';
+  // F0: contract summary, written by the server from contracts/{contractId}
+  contractId?: string;
+  contractConfirmed?: boolean;
+  contractNextDate?: string | null;     // YYYY-MM-DD of the next notice / end / survival date
+  contractLifecycle?: string;
   createdAt: unknown;
 }
 

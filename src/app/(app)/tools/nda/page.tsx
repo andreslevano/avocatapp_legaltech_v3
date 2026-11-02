@@ -12,6 +12,9 @@ import { getClients, type ClientDoc } from '@/lib/firestore';
 import { buildDocHtml } from '@/lib/doc-html';
 import SignAndSendButton from '@/components/signatures/SignAndSendButton';
 import { takeSignResume } from '@/lib/signatures/client';
+import { canUseContracts } from '@/lib/contracts/config';
+import { createNdaContract, watchContract } from '@/lib/contracts/client';
+import { COUNTRIES } from '@/lib/contracts/types';
 
 type Tipo = 'unilateral' | 'bilateral';
 type Lang = 'es' | 'en';
@@ -144,6 +147,33 @@ export default function NdaPage() {
     router.replace('/tools/nda');
   }, [router]);
 
+  // F3 "Renovar": /tools/nda?renew=<contractId> prefills the parties, term and jurisdiction of the
+  // expiring NDA; the new contract record replaces it (old one → "Renovado").
+  const contractsOn = canUseContracts(userDoc.plan, user?.email);
+  const [renewsContractId, setRenewsContractId] = useState<string | null>(null);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('renew');
+    if (!id || !contractsOn) return;
+    return watchContract(id, c => {
+      if (!c) return;
+      setRenewsContractId(c.id);
+      if (c.ndaKind) setTipo(c.ndaKind);
+      setLanguage(c.language);
+      const toParte = (i: number): Parte => {
+        const p = c.parties[i];
+        return p ? { ...EMPTY_PARTE, nombre: p.name, empresa: p.company ?? '', idType: p.idType || EMPTY_PARTE.idType, idNumber: p.idNumber ?? '', email: p.email ?? '' } : EMPTY_PARTE;
+      };
+      setDivulgante(toParte(0));
+      setReceptora(toParte(1));
+      if (c.term?.durationText && DURACIONES.some(d => d.value === c.term.durationText)) setDuracion(c.term.durationText);
+      if (c.governingLaw) setJurisdiccion(c.governingLaw);
+      else if (c.jurisdiction?.country) setJurisdiccion(COUNTRIES.find(x => x.code === c.jurisdiction.country)?.label ?? jurisdiccion);
+      if (c.jurisdiction?.region) setCiudadJurisdiccion(c.jurisdiction.region);
+      setNotice(`Renovación de «${c.title}». Revisa los datos y genera el nuevo NDA.`);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contractsOn]);
+
   useEffect(() => {
     if (!user?.uid) return;
     getUserDocuments(user.uid).then(setUserDocs).catch(() => {});
@@ -258,6 +288,15 @@ export default function NdaPage() {
           });
           setSaved(true);
           setSavedDocId(record.id);
+          // F0: structured contract record from the form (dates, parties) for expiry alerts.
+          if (contractsOn) {
+            createNdaContract(user, {
+              documentId: record.id, title: ndaTitle, tipo, language,
+              divulgante: stripEmail(divulgante), receptora: { ...stripEmail(receptora), email: receptora.email },
+              duracion, jurisdiccion, ciudadJurisdiccion: ciudadJurisdiccion || undefined,
+              noCompetencia, penalizacion, clientId: selectedClientId || null, renewsContractId,
+            }).catch(err => console.warn('[nda] contract record', (err as Error).message));
+          }
           user.getIdToken().then(token =>
             fetch('/api/documents/embed', {
               method: 'POST',

@@ -7,6 +7,8 @@ import { db, storage } from '@/lib/firebase';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import ConnectDocusignCard from '@/components/integrations/ConnectDocusignCard';
 import { canUseDocusign } from '@/lib/docusign/config';
+import NotificationSettingsCard from '@/components/notifications/NotificationSettingsCard';
+import { canUseContracts } from '@/lib/contracts/config';
 
 const COUNTRIES = [
   { label: 'España',    flag: '🇪🇸' },
@@ -518,6 +520,9 @@ export default function ProfilePage() {
             <ConnectDocusignCard />
           </div>
         )}
+
+        {/* Notificaciones (F3: contract expiry alerts) */}
+        {canUseContracts(userDoc.plan, user?.email) && <NotificationSettingsCard />}
 
         {/* Save area */}
         <div className="mt-4 flex items-center gap-3">
