@@ -20,6 +20,7 @@ export interface NdaFormInput {
   language: 'es' | 'en';
   divulgante: NdaFormParty;
   receptora: NdaFormParty;
+  objeto?: string;
   duracion: string;
   jurisdiccion: string;
   ciudadJurisdiccion?: string;
@@ -27,6 +28,8 @@ export interface NdaFormInput {
   penalizacion?: boolean;
   clientId?: string | null;
   renewsContractId?: string | null;
+  /** F2: an updated version after a legal check replaces the old one ("Sustituido", not "Renovado"). */
+  supersedes?: boolean;
 }
 
 const clean = (s: unknown, max = 200) => (typeof s === 'string' ? s.trim().slice(0, max) : '');
@@ -52,6 +55,7 @@ export function contractFromNdaForm(f: NdaFormInput, uid: string, today: string)
     clientId: f.clientId ?? null,
     type: 'nda',
     title: clean(f.title, 160) || 'NDA',
+    purpose: clean(f.objeto, 1000) || null,
     language: f.language === 'en' ? 'en' : 'es',
     jurisdiction: { country: countryCode(f.jurisdiccion), region: clean(f.ciudadJurisdiccion, 80) || null },
     governingLaw: clean(f.jurisdiccion, 80) || null,

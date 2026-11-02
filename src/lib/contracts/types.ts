@@ -60,6 +60,8 @@ export interface Contract {
   clientId: string | null;
   type: ContractType;
   title: string;
+  /** What the confidential information is about (NDA "objeto"); reused when renewing. */
+  purpose?: string | null;
   language: 'es' | 'en';
   jurisdiction: { country: string | null; region?: string | null };
   governingLaw?: string | null;
@@ -78,7 +80,7 @@ export interface Contract {
   renewedByContractId?: string | null;
   renewsContractId?: string | null;
   /** F2: approved legal changes that may affect it (server-written). */
-  legal?: { flaggedByChangeIds?: string[]; flaggedAt?: string };
+  legal?: { flaggedByChangeIds?: string[]; flaggedAt?: string; verdict?: string; checkedAt?: string; lastCheckId?: string };
   createdAt: string;
   updatedAt: string;
 }

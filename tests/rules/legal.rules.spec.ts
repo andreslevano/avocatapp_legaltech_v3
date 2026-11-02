@@ -28,7 +28,9 @@ test.beforeEach(async () => {
     await setDoc(doc(db, 'legal_changes/ok'), { status: 'approved', title: 'Ley X' });
     await setDoc(doc(db, 'legal_changes/q'), { status: 'new', title: 'Ley Y' });
     await setDoc(doc(db, 'legal_seen/boe_1'), { relevant: false });
-    await setDoc(doc(db, 'documents/d1'), { userId: 'alice', name: 'NDA.doc', caseId: null, contractLegalFlag: true });
+    await setDoc(doc(db, 'documents/d1'), { userId: 'alice', name: 'NDA.doc', caseId: null, contractLegalFlag: true, contractLegalVerdict: 'review' });
+    await setDoc(doc(db, 'nda_checks/k1'), { userId: 'alice', contractId: 'c1', verdict: 'review', findings: [] });
+    await setDoc(doc(db, 'legal_baseline/b1'), { title: 'Ley 2/2023', active: true });
   });
 });
 
@@ -66,6 +68,22 @@ test.describe('isAdmin cannot be self-granted', () => {
 test.describe('legal flag on documents', () => {
   test('server-only', async () => {
     await assertFails(updateDoc(doc(as('alice'), 'documents/d1'), { contractLegalFlag: false }));
+    await assertFails(updateDoc(doc(as('alice'), 'documents/d1'), { contractLegalVerdict: 'ok' }));
     await assertSucceeds(updateDoc(doc(as('alice'), 'documents/d1'), { name: 'NDA 2.doc' }));
+  });
+});
+
+test.describe('nda_checks and legal_baseline (step 2)', () => {
+  test('check results: owner reads, nobody writes', async () => {
+    await assertSucceeds(getDoc(doc(as('alice'), 'nda_checks/k1')));
+    await assertSucceeds(getDocs(query(collection(as('alice'), 'nda_checks'), where('userId', '==', 'alice'))));
+    await assertFails(getDoc(doc(as('bob'), 'nda_checks/k1')));
+    await assertFails(updateDoc(doc(as('alice'), 'nda_checks/k1'), { verdict: 'ok' }));
+    await assertFails(setDoc(doc(as('alice'), 'nda_checks/k2'), { userId: 'alice', verdict: 'ok' }));
+  });
+  test('baseline: signed-in read, no client writes (admins included)', async () => {
+    await assertSucceeds(getDoc(doc(as('alice'), 'legal_baseline/b1')));
+    await assertFails(getDoc(doc(as(null), 'legal_baseline/b1')));
+    await assertFails(updateDoc(doc(as('admin'), 'legal_baseline/b1'), { active: false }));
   });
 });

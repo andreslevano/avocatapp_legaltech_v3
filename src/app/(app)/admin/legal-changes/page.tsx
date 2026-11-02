@@ -9,6 +9,9 @@ import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { addManualChange, reviewChange, runMonitorNow, watchChanges } from '@/lib/legal/client';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { BaselineItem } from '@/lib/legal/baseline';
 import { formatContractDate } from '@/lib/contracts/dates';
 import {
   LEGAL_TOPICS, SEVERITY_LABEL, TOPIC_LABEL,
@@ -17,8 +20,10 @@ import {
 
 const FIELD = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[12px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
 const LABEL = 'block text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1';
-const TABS: { id: ChangeStatus; label: string }[] = [
+type Tab = ChangeStatus | 'baseline';
+const TABS: { id: Tab; label: string }[] = [
   { id: 'new', label: 'Pendientes' }, { id: 'approved', label: 'Aprobados' }, { id: 'dismissed', label: 'Descartados' },
+  { id: 'baseline', label: 'Requisitos base' },
 ];
 const SEVERITY_STYLE: Record<ChangeSeverity, string> = {
   critical: 'text-red-400 border-red-400/30', important: 'text-amber-400 border-amber-400/30', recommended: 'text-[#6b6050] border-[#2e2b20]',
@@ -28,14 +33,14 @@ const SOURCE_LABEL = { boe: 'BOE', eurlex: 'DOUE', manual: 'Manual' } as const;
 export default function LegalChangesAdminPage() {
   const { user, userDoc } = useAppAuth();
   const isAdmin = (userDoc as unknown as { isAdmin?: boolean }).isAdmin === true;
-  const [tab, setTab] = useState<ChangeStatus>('new');
+  const [tab, setTab] = useState<Tab>('new');
   const [items, setItems] = useState<LegalChange[] | null>(null);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin || tab === 'baseline') return;
     setItems(null);
     return watchChanges(tab, setItems);
   }, [tab, isAdmin]);
@@ -92,7 +97,8 @@ export default function LegalChangesAdminPage() {
 
           {notice && <p className={`text-[12px] ${notice.kind === 'ok' ? 'text-emerald-400' : 'text-red-400'}`}>{notice.text}</p>}
 
-          {items === null ? <p className="text-[12px] text-[#6b6050]">Cargando…</p>
+          {tab === 'baseline' ? <BaselineAdmin onNotice={setNotice} />
+            : items === null ? <p className="text-[12px] text-[#6b6050]">Cargando…</p>
             : items.length === 0 ? (
               <p className="text-[12px] text-[#6b6050] py-6 text-center">
                 {tab === 'new' ? 'No hay cambios pendientes de revisar.' : tab === 'approved' ? 'Aún no hay cambios aprobados.' : 'No hay cambios descartados.'}
@@ -241,6 +247,95 @@ function ManualForm({ onDone }: { onDone: (msg: string) => void }) {
       <Button variant="BtnGold" size="sm" loading={busy} disabled={!title.trim() || text.trim().length < 200} onClick={submit}>
         {busy ? 'Analizando…' : 'Analizar y añadir'}
       </Button>
+    </div>
+  );
+}
+
+/** "Requisitos base" (L2): the key current law every NDA is checked against. Lawyer validation is a tick here. */
+function BaselineAdmin({ onNotice }: { onNotice: (n: { kind: 'ok' | 'err'; text: string } | null) => void }) {
+  const { user } = useAppAuth();
+  const [items, setItems] = useState<BaselineItem[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!db) return;
+    return onSnapshot(collection(db, 'legal_baseline'),
+      s => setItems(s.docs.map(d => ({ id: d.id, ...d.data() } as BaselineItem)).sort((a, b) => a.id.localeCompare(b.id))),
+      () => setItems([]));
+  }, []);
+
+  const post = async (key: string, body: unknown, ok: string) => {
+    if (!user) return;
+    setBusy(key); onNotice(null);
+    try {
+      const res = await fetch('/api/admin/legal-baseline', {
+        method: 'POST', headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({})) as { error?: string; created?: number };
+      if (!res.ok) throw new Error(data.error ?? 'Error');
+      onNotice({ kind: 'ok', text: ok.replace('{n}', String(data.created ?? '')) });
+    } catch (e) {
+      onNotice({ kind: 'err', text: (e as Error).message });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  if (items === null) return <p className="text-[12px] text-[#6b6050]">Cargando…</p>;
+  return (
+    <div className="space-y-3">
+      <p className="text-[11px] text-[#6b6050]">
+        Cada NDA se revisa frente a estos requisitos además de los cambios aprobados. Son un punto de partida: un abogado debe validarlos
+        (mientras no lo estén, los resultados lo indican).
+      </p>
+      {items.length === 0 ? (
+        <Button variant="BtnGold" size="sm" loading={busy === 'seed'} onClick={() => post('seed', { action: 'seed' }, 'Cargados {n} requisitos iniciales.')}>
+          Cargar requisitos iniciales
+        </Button>
+      ) : items.map(b => <BaselineCard key={b.id} b={b} busy={busy} onSave={(patch, msg) => post(b.id, { action: 'save', id: b.id, patch }, msg)} />)}
+    </div>
+  );
+}
+
+function BaselineCard({ b, busy, onSave }: { b: BaselineItem; busy: string | null; onSave: (patch: Record<string, unknown>, msg: string) => void }) {
+  const [requirement, setRequirement] = useState(b.requirement);
+  const [clause, setClause] = useState(b.suggestedClause ?? '');
+  const [severity, setSeverity] = useState<ChangeSeverity>(b.severity);
+  const dirty = requirement !== b.requirement || clause !== (b.suggestedClause ?? '') || severity !== b.severity;
+  return (
+    <div className={`bg-[#1e1c16] border rounded-xl px-4 py-3 space-y-2 ${b.active ? 'border-[#2e2b20]' : 'border-[#2e2b20] opacity-60'}`}>
+      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+        <span className="px-1.5 py-0.5 rounded border border-[#2e2b20] text-[#c8c0ac]">{b.jurisdiction === 'EU' ? 'UE' : 'España'}</span>
+        <span className={`px-1.5 py-0.5 rounded border ${SEVERITY_STYLE[b.severity]}`}>{SEVERITY_LABEL[b.severity]}</span>
+        {b.validatedByLawyer ? <span className="text-emerald-400">Validado por abogado</span> : <span className="text-amber-400">Pendiente de validación</span>}
+        {!b.active && <span className="text-[#6b6050]">· Desactivado</span>}
+      </div>
+      <p className="text-[12px] text-[#e8d4a0] leading-snug">{b.url ? <a href={b.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{b.title} ↗</a> : b.title}</p>
+      <div>
+        <label className={LABEL}>Requisito</label>
+        <textarea className={FIELD} rows={2} value={requirement} onChange={e => setRequirement(e.target.value)} />
+      </div>
+      <div>
+        <label className={LABEL}>Cláusula sugerida</label>
+        <textarea className={FIELD} rows={3} value={clause} placeholder="(ninguna)" onChange={e => setClause(e.target.value)} />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <select className={`${FIELD} max-w-[160px]`} value={severity} onChange={e => setSeverity(e.target.value as ChangeSeverity)}>
+          {(Object.keys(SEVERITY_LABEL) as ChangeSeverity[]).map(s => <option key={s} value={s} className="bg-[#161410]">{SEVERITY_LABEL[s]}</option>)}
+        </select>
+        {dirty && (
+          <Button variant="BtnGold" size="sm" disabled={!!busy} loading={busy === b.id}
+            onClick={() => onSave({ requirement, suggestedClause: clause.trim() || null, severity }, 'Requisito guardado.')}>Guardar</Button>
+        )}
+        <Button variant="BtnOutlineDark" size="sm" disabled={!!busy}
+          onClick={() => onSave({ validatedByLawyer: !b.validatedByLawyer }, b.validatedByLawyer ? 'Validación retirada.' : 'Marcado como validado.')}>
+          {b.validatedByLawyer ? 'Quitar validación' : 'Marcar como validado'}
+        </Button>
+        <Button variant="BtnGhost" size="sm" disabled={!!busy}
+          onClick={() => onSave({ active: !b.active }, b.active ? 'Requisito desactivado.' : 'Requisito activado.')}>
+          {b.active ? 'Desactivar' : 'Activar'}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserPlan } from '@/lib/auth';
 import { useAppAuth } from '@/contexts/AppAuthContext';
+import { canUseContracts } from '@/lib/contracts/config';
 
 // ── Plan metadata ──────────────────────────────────────────────────
 
@@ -230,6 +231,19 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
           Ver perfil completo
         </Link>
 
+        {canUseContracts(userDoc.plan, user?.email) && (
+          <Link
+            href="/legal-changes"
+            onClick={onClose}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-[12px] font-sans text-[#c8c0ac] hover:text-[#e8d4a0] hover:bg-[#252218] transition-colors"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 flex-shrink-0">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
+            Cambios legales
+          </Link>
+        )}
+
         {(userDoc as unknown as { isAdmin?: boolean }).isAdmin === true && (
           <Link
             href="/admin/legal-changes"
@@ -239,7 +253,7 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 flex-shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.031.352 5.988 5.988 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971z" />
             </svg>
-            Cambios legales <span className="ml-auto text-[9px] uppercase tracking-widest text-[#6b6050]">Admin</span>
+            Revisión legal <span className="ml-auto text-[9px] uppercase tracking-widest text-[#6b6050]">Admin</span>
           </Link>
         )}
 

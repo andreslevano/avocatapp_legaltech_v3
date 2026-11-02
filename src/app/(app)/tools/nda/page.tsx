@@ -15,6 +15,8 @@ import { takeSignResume } from '@/lib/signatures/client';
 import { canUseContracts } from '@/lib/contracts/config';
 import { createNdaContract, watchContract } from '@/lib/contracts/client';
 import { COUNTRIES } from '@/lib/contracts/types';
+import { getNdaCheck } from '@/lib/legal/check-client';
+import { updateInstructions } from '@/lib/legal/check';
 
 type Tipo = 'unilateral' | 'bilateral';
 type Lang = 'es' | 'en';
@@ -151,6 +153,13 @@ export default function NdaPage() {
   // expiring NDA; the new contract record replaces it (old one → "Renovado").
   const contractsOn = canUseContracts(userDoc.plan, user?.email);
   const [renewsContractId, setRenewsContractId] = useState<string | null>(null);
+  // F2 "Generar versión actualizada": ?renew=<contractId>&check=<checkId> also carries the legal fixes.
+  const [legalUpdates, setLegalUpdates] = useState<string[]>([]);
+  useEffect(() => {
+    const checkId = new URLSearchParams(window.location.search).get('check');
+    if (!checkId || !contractsOn) return;
+    getNdaCheck(checkId).then(ch => { if (ch) setLegalUpdates(updateInstructions(ch.findings)); }).catch(() => {});
+  }, [contractsOn]);
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('renew');
     if (!id || !contractsOn) return;
@@ -169,7 +178,10 @@ export default function NdaPage() {
       if (c.governingLaw) setJurisdiccion(c.governingLaw);
       else if (c.jurisdiction?.country) setJurisdiccion(COUNTRIES.find(x => x.code === c.jurisdiction.country)?.label ?? jurisdiccion);
       if (c.jurisdiction?.region) setCiudadJurisdiccion(c.jurisdiction.region);
-      setNotice(`Renovación de «${c.title}». Revisa los datos y genera el nuevo NDA.`);
+      if (c.purpose) setObjeto(c.purpose);
+      setNotice(new URLSearchParams(window.location.search).get('check')
+        ? `Nueva versión de «${c.title}» con los ajustes legales. Revisa los datos y genera el NDA.`
+        : `Renovación de «${c.title}». Revisa los datos y genera el nuevo NDA.`);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contractsOn]);
@@ -237,6 +249,7 @@ export default function NdaPage() {
           language,
           referenceDocUrl: selectedDoc?.downloadUrl || undefined,
           referenceDocName: selectedDoc?.name || undefined,
+          legalUpdates: legalUpdates.length ? legalUpdates : undefined,
         }),
       });
 
@@ -291,10 +304,11 @@ export default function NdaPage() {
           // F0: structured contract record from the form (dates, parties) for expiry alerts.
           if (contractsOn) {
             createNdaContract(user, {
-              documentId: record.id, title: ndaTitle, tipo, language,
+              documentId: record.id, title: ndaTitle, tipo, language, objeto,
               divulgante: stripEmail(divulgante), receptora: { ...stripEmail(receptora), email: receptora.email },
               duracion, jurisdiccion, ciudadJurisdiccion: ciudadJurisdiccion || undefined,
               noCompetencia, penalizacion, clientId: selectedClientId || null, renewsContractId,
+              supersedes: legalUpdates.length > 0,
             }).catch(err => console.warn('[nda] contract record', (err as Error).message));
           }
           user.getIdToken().then(token =>
@@ -519,6 +533,14 @@ export default function NdaPage() {
 
             {error && <p className="text-[12px] text-red-400">{error}</p>}
             {notice && <p className="text-[12px] text-amber-400">{notice}</p>}
+            {legalUpdates.length > 0 && (
+              <div className="rounded-lg border border-sky-400/20 bg-sky-400/5 px-3 py-2 space-y-1">
+                <p className="text-[11px] text-sky-400 font-medium">Versión actualizada: se incluirán {legalUpdates.length} {legalUpdates.length === 1 ? 'ajuste legal' : 'ajustes legales'}</p>
+                <ul className="text-[11px] text-[#c8c0ac] list-disc pl-4 space-y-0.5">
+                  {legalUpdates.map((u, i) => <li key={i} className="line-clamp-2">{u}</li>)}
+                </ul>
+              </div>
+            )}
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">

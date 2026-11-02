@@ -13,6 +13,10 @@ import { formatContractDate, madridToday, nextContractEvent } from '@/lib/contra
 import { CONTRACT_TYPE_LABEL, DATE_KIND_LABEL, LIFECYCLE_LABEL, type Contract } from '@/lib/contracts/types';
 import { getChanges } from '@/lib/legal/client';
 import type { LegalChange } from '@/lib/legal/types';
+import { getNdaCheck, type NdaCheckResult } from '@/lib/legal/check-client';
+import { VERDICT_LABEL, type CheckVerdict } from '@/lib/legal/check';
+import LegalCheckRunner from '@/components/legal/LegalCheckRunner';
+import NdaCheckSheet, { VERDICT_ICON, VERDICT_STYLE } from '@/components/legal/NdaCheckSheet';
 
 export const LIFECYCLE_STYLE: Record<string, string> = {
   active: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/5',
@@ -37,6 +41,8 @@ export default function ContractCard({ documentId, documentType, onOpenSheet }: 
   const [c, setC] = useState<Contract | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [checking, setChecking] = useState(false);
+  const [result, setResult] = useState<NdaCheckResult | null>(null);
 
   useEffect(() => {
     setError('');
@@ -110,6 +116,20 @@ export default function ContractCard({ documentId, documentType, onOpenSheet }: 
           Avisos desactivados. <button onClick={reactivate} disabled={busy} className="text-avocat-gold hover:underline">Reactivar</button>
         </p>
       )}
+      {c.confirmedByUser && (
+        <div className="flex items-center gap-2">
+          <Button variant="BtnOutlineDark" size="sm" fullWidth onClick={() => setChecking(true)}>Revisar cambios legales</Button>
+          {c.legal?.verdict && c.legal.lastCheckId && (
+            <button title={`Última revisión: ${formatContractDate(c.legal.checkedAt?.slice(0, 10))}`}
+              onClick={() => getNdaCheck(c.legal!.lastCheckId!).then(r => r && setResult(r)).catch(() => {})}
+              className={`px-2 py-1 rounded border text-[10px] font-medium flex-shrink-0 hover:opacity-80 ${VERDICT_STYLE[c.legal.verdict as CheckVerdict]}`}>
+              {VERDICT_ICON[c.legal.verdict as CheckVerdict]} {VERDICT_LABEL[c.legal.verdict as CheckVerdict]}
+            </button>
+          )}
+        </div>
+      )}
+      {checking && <LegalCheckRunner targets={[{ contractId: c.id, title: c.title }]} onClose={() => setChecking(false)} />}
+      {result && <NdaCheckSheet check={result} onClose={() => setResult(null)} onRecheck={() => { setResult(null); setChecking(true); }} />}
       {c.confirmedByUser ? (
         <button onClick={() => onOpenSheet(c)} className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">Editar datos del contrato</button>
       ) : (

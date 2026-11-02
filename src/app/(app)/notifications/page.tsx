@@ -175,7 +175,7 @@ function LegalChangeItem({ n, onOpen }: { n: AppNotification; onOpen: (n: AppNot
         )}
       </div>
       <div className="flex flex-wrap gap-2 pl-[18px]">
-        <Button variant="BtnGold" size="sm" onClick={() => onOpen(n, '/documents?view=legal')}>Ver NDAs afectados</Button>
+        <Button variant="BtnGold" size="sm" onClick={() => onOpen(n, '/legal-changes')}>Ver NDAs afectados</Button>
         {n.url && (
           <a href={n.url} target="_blank" rel="noopener noreferrer" onClick={() => { if (!n.readAt) markNotificationsRead([n.id]).catch(() => {}); }}>
             <Button variant="BtnGhost" size="sm">Texto oficial ↗</Button>

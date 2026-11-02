@@ -472,6 +472,14 @@ export default function DocTable({
 /** F0: "Contrato" chip; amber when the next date is close, red once expired. Title shows the date. */
 function ContractChip({ d }: { d: DocumentRecord }) {
   if (!d.contractId) return null;
+  if (!d.contractLegalFlag && (d.contractLegalVerdict === 'outdated' || d.contractLegalVerdict === 'review')) {
+    const outdated = d.contractLegalVerdict === 'outdated';
+    return (
+      <span title="Resultado de la última revisión de cambios legales" className={`px-1.5 py-0.5 rounded text-[9px] font-medium border flex-shrink-0 ${outdated ? 'text-red-400 border-red-400/30' : 'text-amber-400 border-amber-400/30'}`}>
+        {outdated ? 'Desactualizado' : 'Revisar'}
+      </span>
+    );
+  }
   if (d.contractLegalFlag) {
     return (
       <span title="Un cambio legal aprobado puede afectar a este contrato" className="px-1.5 py-0.5 rounded text-[9px] font-medium border flex-shrink-0 text-sky-400 border-sky-400/30">

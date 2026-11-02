@@ -53,6 +53,14 @@ interface NdaBody {
   language?: 'es' | 'en';
   referenceDocUrl?: string;
   referenceDocName?: string;
+  /** F2 "Generar versión actualizada": fixes from a legal check (validated in sanitizeUpdates). */
+  legalUpdates?: string[];
+}
+
+/** At most 10 short strings — they go verbatim into the prompt. */
+function sanitizeUpdates(v: unknown): string[] {
+  return (Array.isArray(v) ? v : []).filter((x): x is string => typeof x === 'string' && !!x.trim())
+    .slice(0, 10).map(x => x.trim().slice(0, 800));
 }
 
 function parteLabel(p: Parte, lang: 'es' | 'en'): string {
@@ -61,6 +69,15 @@ function parteLabel(p: Parte, lang: 'es' | 'en'): string {
   const id = p.idType && p.idNumber ? `${p.idType} ${p.idNumber}` : '';
   const addr = p.address || '';
   return [base, id, addr].filter(Boolean).join(' | ');
+}
+
+function updatesBlock(body: NdaBody, lang: 'es' | 'en'): string {
+  const u = sanitizeUpdates(body.legalUpdates);
+  if (!u.length) return '';
+  return (lang === 'en'
+    ? 'MANDATORY LEGAL UPDATES — this is an updated version; the agreement MUST address each point (translate clauses into English):\n'
+    : 'ACTUALIZACIONES LEGALES OBLIGATORIAS — es una versión actualizada; el acuerdo DEBE recoger cada punto:\n')
+    + u.map(x => `- ${x}`).join('\n');
 }
 
 function buildPrompt(body: NdaBody, referenceContext?: string): string {
@@ -115,6 +132,7 @@ DURATION: ${duracion}
 DATE OF THE AGREEMENT: **${today}** — use exactly this date in the opening line (e.g. "${ciudad}, **${today}**."). Never leave date blanks and never use another year.
 JURISDICTION / GOVERNING LAW: ${jurisdiccion} — courts of **${ciudad}**
 ${extras ? `ADDITIONAL CLAUSES:\n${extras}` : ''}
+${updatesBlock(body, 'en')}
 
 Include: definition of confidential information, obligations of the receiving party, exclusions, permitted use, term, return/destruction of information, no license granted, indemnification${noCompetencia ? ', non-compete' : ''}${penalizacion ? `, liquidated damages (€${penMonto} per breach)` : ''}, general provisions, and the signature block below.
 Adapt all legal references to the laws of ${jurisdiccion}. Do NOT use [TO BE COMPLETED] placeholders — all amounts and jurisdiction details are provided above.
@@ -164,6 +182,7 @@ DURACIÓN: ${duracion}
 FECHA DEL ACUERDO: **${today}** — úsala tal cual en la primera línea ("En **${ciudad}**, a **${today}**."). No dejes huecos para la fecha ni uses otro año.
 JURISDICCIÓN: ${jurisdiccion} — tribunales de **${ciudad}**
 ${extras ? `CLÁUSULAS ADICIONALES:\n${extras}` : ''}
+${updatesBlock(body, 'es')}
 
 Incluye: definición de información confidencial, obligaciones, exclusiones, limitación de uso, vigencia, devolución/destrucción de información, ausencia de licencia, indemnización${noCompetencia ? ', no competencia' : ''}${penalizacion ? `, cláusula penal (€${penMonto} por infracción)` : ''}, disposiciones generales y el bloque de firmas indicado a continuación.
 Adapta referencias legales a la jurisdicción de ${jurisdiccion}. NO uses marcadores [COMPLETAR] — todos los importes y la ciudad de tribunales están indicados arriba.

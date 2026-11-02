@@ -87,8 +87,9 @@ export async function createContractFromNda(uid: string, input: NdaFormInput): P
   const c = await save(null, data);
 
   if (renews) {
-    await contracts().doc(renews.id).update({ lifecycle: 'renewed', renewedByContractId: c.id, updatedAt: now() });
-    await syncDocument({ ...renews, lifecycle: 'renewed' });
+    const lifecycle: Lifecycle = input.supersedes ? 'superseded' : 'renewed';
+    await contracts().doc(renews.id).update({ lifecycle, renewedByContractId: c.id, updatedAt: now() });
+    await syncDocument({ ...renews, lifecycle });
     await resolveNotifications(uid, renews.id);
   }
   return c;

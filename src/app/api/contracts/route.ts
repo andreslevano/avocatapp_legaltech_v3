@@ -20,11 +20,12 @@ export async function POST(req: NextRequest) {
       title: String(b.title ?? 'NDA'),
       tipo: b.tipo === 'bilateral' ? 'bilateral' : 'unilateral',
       language: b.language === 'en' ? 'en' : 'es',
-      divulgante: b.divulgante, receptora: b.receptora,
+      divulgante: b.divulgante, receptora: b.receptora, objeto: typeof b.objeto === 'string' ? b.objeto : undefined,
       duracion: b.duracion, jurisdiccion: String(b.jurisdiccion ?? ''), ciudadJurisdiccion: b.ciudadJurisdiccion,
       noCompetencia: !!b.noCompetencia, penalizacion: !!b.penalizacion,
       clientId: typeof b.clientId === 'string' ? b.clientId : null,
       renewsContractId: typeof b.renewsContractId === 'string' ? b.renewsContractId : null,
+      supersedes: b.supersedes === true,
     });
     return NextResponse.json({ contract });
   } catch (err) {

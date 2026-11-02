@@ -90,7 +90,7 @@ service cloud.firestore {
               // contract summary (F0), denormalized by the server from contracts/{id}
               'contractId', 'contractConfirmed', 'contractNextDate', 'contractLifecycle',
               // legal-change flag (F2), set when an approved change may affect the contract
-              'contractLegalFlag'];
+              'contractLegalFlag', 'contractLegalVerdict'];
     }
 
     match /documents/{docId} {
@@ -194,6 +194,15 @@ service cloud.firestore {
     }
     match /legal_changes/{changeId} {
       allow read: if request.auth != null && (resource.data.status == 'approved' || isAdminUser());
+    }
+
+    // legal_baseline/{id}: key current law (F2, L2) — readable by signed-in users, admin-managed via
+    // /api/admin/legal-baseline. nda_checks/{id}: check results, owner read-only (server-written).
+    match /legal_baseline/{itemId} {
+      allow read: if request.auth != null;
+    }
+    match /nda_checks/{checkId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
     // integration_secrets/{uid}: encrypted OAuth tokens (Microsoft F1, DocuSign D4). Admin SDK only —

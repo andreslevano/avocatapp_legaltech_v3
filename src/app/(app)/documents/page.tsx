@@ -41,6 +41,7 @@ import { canUseContracts } from '@/lib/contracts/config';
 import { analyzeAsContract, watchContract } from '@/lib/contracts/client';
 import { madridToday, nextContractEvent } from '@/lib/contracts/dates';
 import type { Contract } from '@/lib/contracts/types';
+import LegalCheckRunner, { type CheckTarget } from '@/components/legal/LegalCheckRunner';
 
 async function triggerEmbed(docId: string, idToken: string) {
   fetch('/api/documents/embed', {
@@ -135,6 +136,8 @@ function DocumentsView() {
       contractNextDate: nextContractEvent(c.dates, madridToday())?.date ?? null,
     }));
   }, [setDocs]);
+  // F2: "Revisar cambios legales" for the selected NDAs (confirmed contracts only).
+  const [legalTargets, setLegalTargets] = useState<CheckTarget[] | null>(null);
   const openContract = useCallback(async (doc: DocumentRecord) => {
     if (!user) return;
     setContractNotice({ docId: doc.id, text: doc.contractId ? 'Abriendo el contrato…' : 'Leyendo el contrato…' });
@@ -788,6 +791,13 @@ function DocumentsView() {
           {enabled && <Button variant="BtnOutlineDark" size="sm" onClick={handleBulkMove}>Mover a…</Button>}
           <Button variant="BtnOutlineDark" size="sm" onClick={handleBulkLinkCase}>Vincular a caso</Button>
           <Button variant="BtnOutlineDark" size="sm" onClick={handleBulkZip}>Descargar ZIP</Button>
+          {contractsOn && (
+            <Button variant="BtnOutlineDark" size="sm" onClick={() => {
+              const t = selectedDocs.filter(d => d.contractId && d.contractConfirmed).map(d => ({ contractId: d.contractId!, title: d.name.replace(/\.[^.]+$/, '') }));
+              if (t.length) setLegalTargets(t);
+              else ws.notify({ kind: 'ok', text: 'Ninguno de los seleccionados tiene datos de contrato confirmados. Usa «Analizar como contrato» primero.' });
+            }}>Revisar cambios legales</Button>
+          )}
           <Button variant="BtnOutlineDark" size="sm" onClick={handleBulkDelete}>Eliminar</Button>
           <button onClick={() => setSelected(new Set())} className="ml-auto text-[11px] text-[#6b6050] hover:text-[#c8c0ac] transition-colors">
             Deseleccionar todo
@@ -801,6 +811,7 @@ function DocumentsView() {
           onClose={() => setSignTarget(null)} />
       )}
 
+      {legalTargets && <LegalCheckRunner targets={legalTargets} onClose={() => setLegalTargets(null)} />}
       {contractSheet && (
         <ContractConfirmSheet contract={contractSheet} onClose={() => setContractSheet(null)} onSaved={applyContract} />
       )}
