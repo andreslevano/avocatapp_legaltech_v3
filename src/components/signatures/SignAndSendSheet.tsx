@@ -13,7 +13,7 @@ import { DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, type SignatureOptions } from '@/li
 
 export interface SignAndSendSheetProps {
   documentId: string;
-  markdown: string;
+  markdown?: string;              // omitted → the server signs the saved .doc
   title: string;
   defaultCounterparty: { name: string; email: string };
   language: 'es' | 'en';

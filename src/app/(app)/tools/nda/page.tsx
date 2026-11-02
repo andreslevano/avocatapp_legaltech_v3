@@ -132,7 +132,7 @@ export default function NdaPage() {
     const ds = params.get('ds');
     if (!ds) return;
     const resume = takeSignResume();
-    if (resume) {
+    if (resume?.markdown) {
       setResult(resume.markdown);
       setSavedDocId(resume.documentId);
       setSaved(true);

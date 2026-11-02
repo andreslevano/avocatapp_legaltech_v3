@@ -5,7 +5,7 @@
 import { randomUUID } from 'crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, storage } from '@/lib/firebase-admin';
-import { buildDocHtml, countSignatureBlocks, type DocMeta } from '@/lib/doc-html';
+import { buildDocHtml, signingHtmlFromSaved, withSignatureBlocks, type DocMeta } from '@/lib/doc-html';
 import { randomToken, sha256Base64Url } from '@/lib/integrations/crypto';
 import { dsServerConfig } from '@/lib/docusign/config';
 import { buildEnvelopeDefinition, webhookUrlFor } from '@/lib/docusign/envelope';
@@ -48,6 +48,19 @@ async function loadOwnedRequest(uid: string, requestId: string): Promise<Signatu
   return { id: snap.id, ...(snap.data() as Omit<SignatureRequest, 'id'>) };
 }
 
+const documentsBucket = () => process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'avocat-legaltech-v3.firebasestorage.app';
+
+/** The saved .doc (Avocat's Word HTML) as text; '' when it isn't one (PDF, upload, too big). */
+async function readSavedDoc(d: FirebaseFirestore.DocumentData): Promise<string> {
+  const path = d.storagePath as string | undefined;
+  if (d.type !== 'doc' || d.source === 'uploaded' || !path) return '';
+  const file = storage().bucket(documentsBucket()).file(path);
+  const [meta] = await file.getMetadata();
+  if (Number(meta.size ?? 0) > 2_000_000) return '';
+  const [buf] = await file.download();
+  return buf.toString('utf8');
+}
+
 /**
  * POST /api/signatures — creates the envelope (owner = embedded signer 1, counterparty = remote
  * signer 2), stores the request, locks the document and returns the owner's signing URL.
@@ -63,19 +76,24 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
     (e as DocusignApiError & { requestId?: string }).requestId = existingId;
     throw e;
   }
-  if (countSignatureBlocks(input.markdown) < 2) {
-    throw fail('No encontramos los dos bloques de firma ("Firma: ____") en el documento.', 'no_signature_blocks', 422);
-  }
 
   const creds = await getValidAccessToken(uid);
   if (!creds.userEmail) throw fail('Reconecta tu cuenta de DocuSign.', 'reconnect_required', 409);
   const owner = { name: creds.userName || creds.userEmail, email: creds.userEmail, clientUserId: uid };
   const options = { ...DEFAULT_SIGNATURE_OPTIONS, ...input.options };
 
+  // Missing "Firma:" blocks (owner = 1, counterparty = 2) are appended at the end (Phase 5a).
+  const names = { owner: owner.name, counterparty: input.counterparty.name.trim() };
+  const html = input.markdown
+    ? buildDocHtml(withSignatureBlocks(input.markdown, names, options.language), input.title, undefined, await ownerMeta(uid), { forSignature: true })
+    : signingHtmlFromSaved(await readSavedDoc(docSnap.data() ?? {}), names, options.language);
+  if (!html) {
+    throw fail('Por ahora solo se pueden enviar a firma documentos generados en Avocat (Word). Los PDF y archivos subidos llegarán más adelante.', 'unsupported_format', 422);
+  }
+
   const reqRef = requests().doc();
   const webhookToken = randomToken(32);
   const webhookUrl = webhookUrlFor(process.env.DOCUSIGN_WEBHOOK_BASE_URL, webhookToken);
-  const html = buildDocHtml(input.markdown, input.title, undefined, await ownerMeta(uid), { forSignature: true });
 
   const { envelopeId } = await createEnvelope(creds, buildEnvelopeDefinition({
     html,
@@ -233,7 +251,7 @@ export async function fileSignedDocument(requestId: string): Promise<string | nu
     const signedAt = completedAt && Number.isFinite(Date.parse(completedAt)) ? new Date(completedAt) : new Date();
     const name = signedFileName((original.name as string) || 'Documento', signedAt);
     const path = signedStoragePath(original.storagePath as string | undefined, r.userId, Date.now(), name);
-    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'avocat-legaltech-v3.firebasestorage.app';
+    const bucketName = documentsBucket();
     const token = randomUUID();
     await storage().bucket(bucketName).file(path).save(pdf, {
       resumable: false,

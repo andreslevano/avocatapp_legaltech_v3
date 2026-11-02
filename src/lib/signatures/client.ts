@@ -83,7 +83,7 @@ const RESUME_KEY = 'avocat.signResume';
 
 export interface SignResumeState {
   documentId: string;
-  markdown: string;
+  markdown?: string;            // NDA flow only; elsewhere the saved document is used
   title: string;
   counterparty: { name: string; email: string };
 }

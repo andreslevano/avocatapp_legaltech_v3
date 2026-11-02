@@ -8,6 +8,8 @@ import AgentInput from './AgentInput';
 import AgentWelcome, { type CaseContext } from './AgentWelcome';
 import { isLegalDocument, buildWordBlob, buildPdfBlob } from '@/lib/agent-export';
 import { saveDocumentToStorage, type DocumentRecord } from '@/lib/storage-client';
+import { canUseDocusign } from '@/lib/docusign/config';
+import SignDocumentSheet from '@/components/signatures/SignDocumentSheet';
 
 interface AgentChatProps {
   user: User;
@@ -32,6 +34,7 @@ function isBinaryDoc(att: MessageAttachment): boolean {
 interface SavedToast {
   name: string;
   url: string;
+  doc: DocumentRecord;
 }
 
 
@@ -39,6 +42,8 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [savedToast, setSavedToast] = useState<SavedToast | null>(null);
+  const [signDoc, setSignDoc] = useState<DocumentRecord | null>(null);
+  const docusignOn = canUseDocusign(userDoc.plan, user.email);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const convIdRef = useRef<string | null>(null);
@@ -58,10 +63,10 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
     convIdRef.current = null;
   }, [caseContext?.id]);
 
-  function showDocSavedToast(name: string, url: string) {
-    setSavedToast({ name, url });
+  function showDocSavedToast(name: string, url: string, doc: DocumentRecord) {
+    setSavedToast({ name, url, doc });
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setSavedToast(null), 5000);
+    toastTimerRef.current = setTimeout(() => setSavedToast(null), docusignOn ? 10000 : 5000);
   }
 
   const sendMessage = useCallback(
@@ -217,7 +222,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
               source: 'generated',
               pdfBlob: pdfBlobResult?.blob ?? undefined,
             });
-            showDocSavedToast(filename, record.downloadUrl);
+            showDocSavedToast(filename, record.downloadUrl, record);
             // Trigger vector embedding with the text we already have (fire-and-forget)
             user.getIdToken().then(token =>
               fetch('/api/documents/embed', {
@@ -264,6 +269,12 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
           >
             Descargar
           </a>
+          {docusignOn && (
+            <button onClick={() => { setSignDoc(savedToast.doc); setSavedToast(null); }}
+              className="text-[11px] text-avocat-gold hover:underline">
+              Firmar y enviar
+            </button>
+          )}
           <button
             onClick={() => setSavedToast(null)}
             className="text-[#6b6050] hover:text-[#c8c0ac] ml-1"
@@ -274,6 +285,8 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
           </button>
         </div>
       )}
+
+      {signDoc && <SignDocumentSheet doc={signDoc} onClose={() => setSignDoc(null)} />}
 
       {showWelcome ? (
         <>

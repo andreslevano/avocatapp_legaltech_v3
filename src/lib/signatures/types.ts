@@ -89,7 +89,8 @@ export interface SignatureRequest {
 /** Body of POST /api/signatures. */
 export interface CreateSignatureInput {
   documentId: string;
-  markdown: string;
+  /** The generated text, when the page has it (NDA, generación). Without it the saved .doc is used. */
+  markdown?: string;
   title: string;
   counterparty: { name: string; email: string };
   subject: string;
@@ -120,8 +121,10 @@ export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 /** Validates and clamps the user-supplied sheet input. Returns an error message or null. */
 export function validateSignatureInput(i: Partial<CreateSignatureInput>): string | null {
   if (!i.documentId || typeof i.documentId !== 'string') return 'Falta el documento.';
-  if (!i.markdown || typeof i.markdown !== 'string' || i.markdown.length < 200) return 'El documento está vacío.';
-  if (i.markdown.length > 200_000) return 'El documento es demasiado largo.';
+  if (i.markdown !== undefined) {
+    if (typeof i.markdown !== 'string' || i.markdown.length < 200) return 'El documento está vacío.';
+    if (i.markdown.length > 200_000) return 'El documento es demasiado largo.';
+  }
   if (!i.counterparty?.name?.trim()) return 'Indica el nombre de la otra parte.';
   if (!EMAIL_RE.test(i.counterparty?.email?.trim() ?? '')) return 'El email de la otra parte no es válido.';
   if (!i.subject?.trim()) return 'Indica el asunto del email.';

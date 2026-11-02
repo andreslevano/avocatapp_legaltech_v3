@@ -17,6 +17,9 @@ import { Button } from '@/components/ui/Button';
 import type { Timestamp } from 'firebase/firestore';
 import type { OcrPdfProgress } from '@/lib/ocr-pdf-client';
 import SignaturePanel from '@/components/signatures/SignaturePanel';
+import SignDocumentSheet from '@/components/signatures/SignDocumentSheet';
+import { canSendForSignature } from '@/lib/signatures/eligibility';
+import { canUseDocusign } from '@/lib/docusign/config';
 import { statusChip } from '@/components/documents/helpers';
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -126,6 +129,7 @@ export default function CaseDetailPage() {
   // Case documents (new documents collection)
   const [caseDocs, setCaseDocs] = useState<DocumentRecord[]>([]);
   const [sigOpen, setSigOpen] = useState<string | null>(null);
+  const [signDoc, setSignDoc] = useState<DocumentRecord | null>(null);
 
   // Doc picker (Mis documentos)
   const [showDocPicker,    setShowDocPicker]    = useState(false);
@@ -497,6 +501,10 @@ export default function CaseDetailPage() {
                           className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">↓</a>
                         <button onClick={() => router.push(`/tools/analisis?docId=${d.id}`)}
                           className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">IA</button>
+                        {canUseDocusign(userDoc.plan, user?.email) && canSendForSignature(d) && (
+                          <button onClick={() => setSignDoc(d)} title="Firmar y enviar con DocuSign"
+                            className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">Firmar</button>
+                        )}
                       </div>
                     </div>
                     {sigOpen === d.id && d.signatureRequestId && <SignaturePanel requestId={d.signatureRequestId} />}
@@ -506,6 +514,10 @@ export default function CaseDetailPage() {
               </div>
             )}
           </div>
+
+          {signDoc && (
+            <SignDocumentSheet doc={signDoc} clients={clients} cases={caseDoc ? [caseDoc] : []} onClose={() => setSignDoc(null)} />
+          )}
 
           {/* ── Comments ──────────────────────────────────── */}
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">

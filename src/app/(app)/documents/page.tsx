@@ -32,7 +32,9 @@ import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 import { microsoftInfo } from '@/lib/integrations/microsoft/client';
 import MicrosoftImportFlow from '@/components/integrations/MicrosoftImportFlow';
 import { canUseDocusign } from '@/lib/docusign/config';
-import { watchSignatureStatuses, type LiveSignature } from '@/lib/signatures/client';
+import { takeSignResume, watchSignatureStatuses, type LiveSignature } from '@/lib/signatures/client';
+import { canSendForSignature } from '@/lib/signatures/eligibility';
+import SignDocumentSheet from '@/components/signatures/SignDocumentSheet';
 
 async function triggerEmbed(docId: string, idToken: string) {
   fetch('/api/documents/embed', {
@@ -107,6 +109,25 @@ function DocumentsView() {
       }).catch(() => fetchedSigned.current.delete(id));
     });
   }, [sigMap, docs, setDocs]);
+
+  // Phase 5a: "Firmar y enviar" for saved documents. Back from connecting DocuSign (?ds=…), the
+  // sheet reopens for the document parked by SignAndSendSheet.
+  const [signTarget, setSignTarget] = useState<{ doc: DocumentRecord; counterparty?: { name: string; email: string } } | null>(null);
+  const canSign = useCallback((d: DocumentRecord) => docusignOn && canSendForSignature(d), [docusignOn]);
+  useEffect(() => {
+    const ds = new URLSearchParams(searchKey).get('ds');
+    if (!ds) return;
+    const resume = takeSignResume();
+    if (ds === 'connected' && resume) {
+      getDocumentById(resume.documentId).then(rec => {
+        if (rec) setSignTarget({ doc: rec, counterparty: resume.counterparty });
+      }).catch(() => {});
+    } else if (ds !== 'connected') {
+      ws.notify({ kind: 'ok', text: ds === 'cancelled' ? 'Conexión con DocuSign cancelada' : 'No pudimos conectar con DocuSign' });
+    }
+    router.replace('/documents');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchKey]);
 
   // Microsoft import (F1). After sign-in Microsoft returns here with ?ms=connected|cancelled|error.
   const msEnabled = canUseMicrosoft(userDoc.plan, user.email);
@@ -363,6 +384,9 @@ function DocumentsView() {
 
   const handleAction = (action: DocAction, doc: DocumentRecord) => {
     switch (action) {
+      case 'sign':
+        setSignTarget({ doc });
+        break;
       case 'preview':
         setPreviewId(prev => prev === doc.id ? null : doc.id);
         break;
@@ -662,6 +686,7 @@ function DocumentsView() {
               previewDocId={previewDoc?.id ?? null}
               onAction={handleAction}
               canMove={enabled}
+              canSign={canSign}
               docPath={docPath}
               onOpenFolder={openRow}
               onFolderAction={handleFolderAction}
@@ -683,6 +708,7 @@ function DocumentsView() {
                 folderLabel={enabled ? folderPathLabel(docFolder(previewDoc), foldersById) : undefined}
                 onClose={() => setPreviewId(null)}
                 onAction={handleAction}
+                canSign={canSign(previewDoc)}
               />
             </div>
             {/* Mobile: full overlay */}
@@ -696,6 +722,7 @@ function DocumentsView() {
                   folderLabel={enabled ? folderPathLabel(docFolder(previewDoc), foldersById) : undefined}
                   onClose={() => setPreviewId(null)}
                   onAction={handleAction}
+                  canSign={canSign(previewDoc)}
                 />
               </div>
             </div>
@@ -715,6 +742,11 @@ function DocumentsView() {
             Deseleccionar todo
           </button>
         </div>
+      )}
+
+      {signTarget && (
+        <SignDocumentSheet doc={signTarget.doc} clients={clients} cases={cases}
+          counterparty={signTarget.counterparty} onClose={() => setSignTarget(null)} />
       )}
 
       {/* Modals */}

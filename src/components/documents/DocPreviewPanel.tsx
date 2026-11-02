@@ -20,11 +20,12 @@ interface Props {
   folderLabel?: string;   // "Mis documentos › …" when folders are enabled
   onClose: () => void;
   onAction: (action: DocAction, doc: DocumentRecord) => void;
+  canSign?: boolean;
 }
 
 const IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
 
-export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, onClose, onAction }: Props) {
+export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, onClose, onAction, canSign = false }: Props) {
   const caseDoc  = getCaseForDoc(d, cases);
   const client   = getClientForDoc(d, cases, clients);
   const tipo     = inferDocType(d.name);
@@ -112,6 +113,9 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
 
       {/* Actions */}
       <div className="border-t border-[#2e2b20] px-4 py-3 flex flex-col gap-2 flex-shrink-0">
+        {canSign && (
+          <Button variant="BtnGold" size="sm" fullWidth onClick={() => onAction('sign', d)}>Firmar y enviar</Button>
+        )}
         {/* Download row */}
         <div className="flex gap-2">
           {d.pdfDownloadUrl ? (

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { saveAnalysisDocument, downloadAsWord, downloadAsPdf } from '@/lib/agent-export';
 import { consumirCredito } from '@/lib/creditos';
+import SignAndSendButton from '@/components/signatures/SignAndSendButton';
 import { getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -157,6 +158,12 @@ function buildPrompt(
     '- Formato Markdown: # título principal, ## secciones, **negrita** para datos clave.',
     '- Lenguaje jurídico formal y preciso. Cita artículos y leyes aplicables del ordenamiento jurídico español.',
     '- Incluye: encabezado, identificación de partes, hechos, fundamentos de derecho, petición y otrosí/firma.',
+    '- Termina SIEMPRE con una sección "## FIRMAS" con un bloque por cada persona que deba firmar (para contratos y acuerdos, cada parte; para escritos judiciales, quien lo suscribe), exactamente con este formato:',
+    '**[NOMBRE DE QUIEN FIRMA]**',
+    'Nombre: [NOMBRE]',
+    'Cargo / Calidad: [EN CALIDAD DE]',
+    'Fecha: ____________',
+    'Firma: ________________________',
   );
   return lines.join('\n');
 }
@@ -233,6 +240,7 @@ export default function GeneracionPage() {
   const [result,     setResult]     = useState('');
   const [error,      setError]      = useState('');
   const [autoSaved,  setAutoSaved]  = useState(false);
+  const [savedDocId, setSavedDocId] = useState<string | null>(null);
 
   // ── Handlers ──────────────────────────────────────────────────
 
@@ -285,6 +293,7 @@ export default function GeneracionPage() {
     setGenerating(true);
     setResult('');
     setAutoSaved(false);
+    setSavedDocId(null);
     setStep('result');
 
     const idToken = await user.getIdToken();
@@ -323,7 +332,7 @@ export default function GeneracionPage() {
           userId:  userDoc.uid,
           plan:    userDoc.plan ?? 'Abogados',
           caseId:  null,
-        }).then(() => setAutoSaved(true)).catch(() => {});
+        }).then(rec => { setAutoSaved(true); setSavedDocId(rec.id); }).catch(() => {});
       }
     } catch {
       setError('Error al generar el documento. Intenta de nuevo.');
@@ -586,6 +595,16 @@ export default function GeneracionPage() {
                   )}
                   {result && !generating && (
                     <>
+                      {savedDocId && (
+                        <SignAndSendButton
+                          documentId={savedDocId}
+                          markdown={result}
+                          title={docLabel}
+                          defaultCounterparty={{ name: parties.filter(p => p.name.trim())[1]?.name.trim() ?? '', email: '' }}
+                          language="es"
+                          returnTo="/documents"
+                        />
+                      )}
                       <Button variant="BtnGhost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>Copiar</Button>
                       <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsWord(result, docLabel)}>Word</Button>
                       <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsPdf(result, docLabel)}>PDF</Button>
@@ -614,7 +633,7 @@ export default function GeneracionPage() {
               {/* Post-generation actions */}
               {!generating && result && (
                 <div className="flex gap-3 justify-end">
-                  <Button variant="BtnGhost" size="sm" onClick={() => { setResult(''); setError(''); setAutoSaved(false); setStep('form'); }}>
+                  <Button variant="BtnGhost" size="sm" onClick={() => { setResult(''); setError(''); setAutoSaved(false); setSavedDocId(null); setStep('form'); }}>
                     Regenerar con cambios
                   </Button>
                   <Link href="/documents">

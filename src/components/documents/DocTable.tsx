@@ -13,7 +13,7 @@ import { formatBytes } from '@/lib/storage-client';
 import { IconFolder } from './FolderTree';
 import { isItemDrag, readDragPayload, setDragPayload, type DragPayload } from './workspace';
 
-export type DocAction = 'preview' | 'link-case' | 'link-client' | 'rename' | 'move' | 'download' | 'analyze' | 'delete';
+export type DocAction = 'preview' | 'sign' | 'link-case' | 'link-client' | 'rename' | 'move' | 'download' | 'analyze' | 'delete';
 export type FolderAction = 'open' | 'rename' | 'move' | 'delete';
 
 /** A row listed before the files: a real folder, or a virtual group in a smart view. */
@@ -41,6 +41,8 @@ interface Props {
   onAction: (action: DocAction, doc: DocumentRecord) => void;
   // Folders (D1) — all optional so the table still works without folders.
   canMove?: boolean;
+  /** DocuSign (Phase 5a): whether "Firmar y enviar" is offered for this document. */
+  canSign?: (d: DocumentRecord) => boolean;
   docPath?: (d: DocumentRecord) => string | null;
   onOpenFolder?: (row: FolderRow) => void;
   onFolderAction?: (action: FolderAction, row: FolderRow) => void;
@@ -52,8 +54,9 @@ interface Props {
 const TH = 'px-3 py-2.5 text-left text-[10px] font-semibold tracking-widest uppercase text-[#6b6050] cursor-pointer select-none whitespace-nowrap hover:text-[#c8c0ac] transition-colors';
 const TD = 'px-3 py-2.5 text-[12px]';
 
-const MENU_ITEMS: { label: string; action: DocAction; needsMove?: boolean }[] = [
+const MENU_ITEMS: { label: string; action: DocAction; needsMove?: boolean; needsSign?: boolean }[] = [
   { label: 'Ver / previsualizar',  action: 'preview'     },
+  { label: 'Firmar y enviar',      action: 'sign', needsSign: true },
   { label: 'Mover a…',             action: 'move', needsMove: true },
   { label: 'Vincular a caso',      action: 'link-case'   },
   { label: 'Vincular a cliente',   action: 'link-client' },
@@ -80,7 +83,7 @@ const itemsLabel = (n: number) => `${n} elemento${n !== 1 ? 's' : ''}`;
 export default function DocTable({
   docs, folderRows = [], cases, clients, selected, onToggleSelect, onSelectAll,
   sortCol, sortDir, onSort, previewDocId, onAction,
-  canMove = false, docPath, onOpenFolder, onFolderAction, onRenameFolder, onDropOnFolder, emptyState,
+  canMove = false, canSign, docPath, onOpenFolder, onFolderAction, onRenameFolder, onDropOnFolder, emptyState,
 }: Props) {
   const [menu, setMenu] = useState<{ kind: 'doc' | 'folder'; id: string } | null>(null);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
@@ -413,7 +416,7 @@ export default function DocTable({
           ref={menuRef}
           style={{ top: menuPos.top, right: menuPos.right }}
         >
-          {menuDoc && MENU_ITEMS.filter(i => !i.needsMove || canMove).map(({ label, action }) => (
+          {menuDoc && MENU_ITEMS.filter(i => (!i.needsMove || canMove) && (!i.needsSign || !!canSign?.(menuDoc))).map(({ label, action }) => (
             <button
               key={action}
               onClick={() => {
