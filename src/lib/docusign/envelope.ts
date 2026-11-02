@@ -2,6 +2,7 @@
 
 import { dateAnchor, signatureAnchor } from '@/lib/doc-html';
 import type { SignatureOptions } from '@/lib/signatures/types';
+import { planRecipients, type SigningOrder } from '@/lib/signatures/recipients';
 
 /** Anchor offsets calibrated in DocuSign's tagger in Phase 0 (Sign on "Firma:", Date on "Fecha:"). */
 export const TAB_OFFSETS = {
@@ -17,7 +18,9 @@ export interface EnvelopeInput {
   subject: string;
   message: string;
   owner: EnvelopeParty & { clientUserId: string };   // embedded signer, routing 1
-  counterparty: EnvelopeParty;                        // remote signer, routing 2 (DocuSign emails them)
+  signers: (EnvelopeParty & { accessCode?: string })[];  // remote signers (DocuSign emails them) — planRecipients
+  cc?: EnvelopeParty[];
+  signingOrder?: SigningOrder;
   options: SignatureOptions;
   requestId: string;
   webhookUrl: string | null;    // null in dev without a public HTTPS tunnel (D13c)
@@ -45,6 +48,13 @@ export function webhookUrlFor(base: string | undefined, token: string): string |
 
 export function buildEnvelopeDefinition(i: EnvelopeInput) {
   const lang = i.options.language;
+  const cc = i.cc ?? [];
+  const plan = planRecipients(i.signers.length, cc.length, i.signingOrder ?? 'sequential');
+  const notice = {
+    emailSubject: i.subject.trim().slice(0, 100),
+    emailBody: i.message.trim().slice(0, 2000),
+    supportedLanguage: lang,
+  };
   const def: Record<string, unknown> = {
     status: 'sent',
     emailSubject: i.subject.trim().slice(0, 100),
@@ -63,17 +73,19 @@ export function buildEnvelopeDefinition(i: EnvelopeInput) {
           clientUserId: i.owner.clientUserId,           // embedded: DocuSign doesn't email the owner
           tabs: tabsFor(1),
         },
-        {
-          recipientId: '2', routingOrder: '2',
-          name: i.counterparty.name.trim(), email: i.counterparty.email.trim(),
-          tabs: tabsFor(2),
-          emailNotification: {
-            emailSubject: i.subject.trim().slice(0, 100),
-            emailBody: i.message.trim().slice(0, 2000),
-            supportedLanguage: lang,
-          },
-        },
+        ...i.signers.map((p, k) => ({
+          recipientId: String(plan.signers[k].recipientId), routingOrder: String(plan.signers[k].routingOrder),
+          name: p.name.trim(), email: p.email.trim(),
+          tabs: tabsFor(plan.signers[k].recipientId),
+          ...(p.accessCode ? { accessCode: p.accessCode } : {}),
+          emailNotification: notice,
+        })),
       ],
+      carbonCopies: cc.map((p, j) => ({
+        recipientId: String(plan.cc[j].recipientId), routingOrder: String(plan.cc[j].routingOrder),
+        name: p.name.trim() || p.email.trim(), email: p.email.trim(),
+        emailNotification: notice,
+      })),
     },
     notification: {
       useAccountDefaults: 'false',

@@ -28,7 +28,7 @@ export const getSigningUrl = (user: User, requestId: string) =>
   post<{ signingUrl: string }>(user, `/api/signatures/${encodeURIComponent(requestId)}/signing-url`, {});
 
 export const reportSigningReturn = (user: User, requestId: string, event: string) =>
-  post<{ status: SignatureStatus; counterparty: SignatureRecipient | null; documentId: string }>(
+  post<{ status: SignatureStatus; counterparty: SignatureRecipient | null; counterparties?: SignatureRecipient[]; documentId: string }>(
     user, `/api/signatures/${encodeURIComponent(requestId)}/return`, { event });
 
 const rid = (id: string) => `/api/signatures/${encodeURIComponent(id)}`;
@@ -38,13 +38,13 @@ export const refreshSignature = (user: User, requestId: string) =>
   post<{ status: SignatureStatus; nextRefreshAt: string | null; throttled: boolean }>(user, `${rid(requestId)}/refresh`, {});
 
 export const remindSignature = (user: User, requestId: string) =>
-  post<{ ok: true }>(user, `${rid(requestId)}/remind`, {});
+  post<{ ok: true; reminded?: string[] }>(user, `${rid(requestId)}/remind`, {});
 
 export const voidSignature = (user: User, requestId: string) =>
   post<{ ok: true }>(user, `${rid(requestId)}/void`, {});
 
-export const correctSignatureEmail = (user: User, requestId: string, email: string, name?: string) =>
-  post<{ ok: true }>(user, `${rid(requestId)}/recipients`, { email, name }, 'PATCH');
+export const correctSignatureEmail = (user: User, requestId: string, email: string, recipientId?: number, name?: string) =>
+  post<{ ok: true }>(user, `${rid(requestId)}/recipients`, { email, name, recipientId }, 'PATCH');
 
 /** Live request (owner read-only by rules). */
 export function watchSignatureRequest(requestId: string, cb: (r: SignatureRequest | null) => void) {
@@ -85,7 +85,9 @@ export interface SignResumeState {
   documentId: string;
   markdown?: string;            // NDA flow only; elsewhere the saved document is used
   title: string;
-  counterparty: { name: string; email: string };
+  counterparty: { name: string; email: string };   // the first signer
+  signers?: { name: string; email: string }[];      // 5b — access codes are not parked
+  cc?: { name: string; email: string }[];
 }
 
 export function saveSignResume(s: SignResumeState) {

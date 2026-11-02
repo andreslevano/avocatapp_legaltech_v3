@@ -10,13 +10,14 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { canUseDocusign } from '@/lib/docusign/config';
 import { watchSignatureRequests } from '@/lib/signatures/client';
 import type { SignatureRequest } from '@/lib/signatures/types';
+import { recipientKey } from '@/lib/signatures/recipients';
 
 interface Toast { id: string; text: string; tone: 'ok' | 'info' | 'err' }
 
 const snapshotOf = (r: SignatureRequest) => ({
   status: r.status,
   filed: !!r.signedDocumentId,
-  signers: Object.fromEntries(r.recipients.filter(x => x.role === 'signer').map(x => [x.routingOrder, x.status])),
+  signers: Object.fromEntries(r.recipients.filter(x => x.role === 'signer').map(x => [recipientKey(x), x.status])),
 });
 
 export default function SignatureNotifier() {
@@ -39,11 +40,12 @@ export default function SignatureNotifier() {
         if (!before) continue;
         const what = `«${r.subject.replace(/^Firma solicitada:\s*/i, '')}»`;
         for (const x of r.recipients.filter(y => y.role === 'signer')) {
-          const was = before.signers[x.routingOrder];
+          const k = recipientKey(x);
+          const was = before.signers[k];
           if (was === x.status) continue;
-          if (x.status === 'delivered') fresh.push({ id: `${r.id}-${x.routingOrder}-d`, tone: 'info', text: `${x.name} ha abierto ${what}` });
-          if (x.status === 'completed') fresh.push({ id: `${r.id}-${x.routingOrder}-c`, tone: 'ok', text: `${x.name} ha firmado ${what}` });
-          if (x.status === 'declined') fresh.push({ id: `${r.id}-${x.routingOrder}-x`, tone: 'err', text: `${x.name} ha rechazado firmar ${what}` });
+          if (x.status === 'delivered') fresh.push({ id: `${r.id}-${k}-d`, tone: 'info', text: `${x.name} ha abierto ${what}` });
+          if (x.status === 'completed') fresh.push({ id: `${r.id}-${k}-c`, tone: 'ok', text: `${x.name} ha firmado ${what}` });
+          if (x.status === 'declined') fresh.push({ id: `${r.id}-${k}-x`, tone: 'err', text: `${x.name} ha rechazado firmar ${what}` });
         }
         if (!before.filed && r.signedDocumentId) {
           fresh.push({ id: `${r.id}-filed`, tone: 'ok', text: `PDF firmado de ${what} guardado en Documentos` });

@@ -20,7 +20,7 @@ function ReturnInner() {
   const rid = params?.get('rid') ?? '';
   const event = params?.get('event') ?? '';
   const [view, setView] = useState<View>('loading');
-  const [counterparty, setCounterparty] = useState<SignatureRecipient | null>(null);
+  const [others, setOthers] = useState<SignatureRecipient[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const once = useRef(false);
@@ -30,7 +30,7 @@ function ReturnInner() {
     once.current = true;
     reportSigningReturn(user, rid, event)
       .then(r => {
-        setCounterparty(r.counterparty);
+        setOthers(r.counterparties ?? (r.counterparty ? [r.counterparty] : []));
         const s: SignatureStatus = r.status;
         if (s === 'pending_owner') {
           const o = outcomeForEvent(event);
@@ -48,11 +48,15 @@ function ReturnInner() {
     catch (e) { setError((e as Error).message); setBusy(false); }
   };
 
-  const who = counterparty ? `${counterparty.name} (${counterparty.email})` : 'la otra parte';
+  const many = others.length > 1;
+  const who = others.length === 1 ? `${others[0].name} (${others[0].email})`
+    : many ? others.map(o => o.name).join(', ') : 'la otra parte';
 
   const content: Record<Exclude<View, 'loading'>, { icon: string; title: string; text: string; resume?: boolean }> = {
     signed:   { icon: '✓', title: `Firmado por ti. Enviado a ${who}.`,
-                text: 'DocuSign le ha enviado un email para firmar. Cuando firme, el documento quedará firmado por ambas partes.' },
+                text: many
+                  ? 'DocuSign les enviará un email para firmar (por turnos o a la vez, según elegiste). Cuando firmen todos, el documento quedará firmado.'
+                  : 'DocuSign le ha enviado un email para firmar. Cuando firme, el documento quedará firmado por ambas partes.' },
     pending:  { icon: '⏸', title: 'Pendiente de tu firma',
                 text: 'Has salido sin firmar. La otra parte todavía no ha recibido nada: puedes continuar cuando quieras.', resume: true },
     expired:  { icon: '⏱', title: 'La sesión de firma caducó',

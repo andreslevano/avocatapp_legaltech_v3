@@ -1,7 +1,8 @@
 'use client';
 
-// "Firmar y enviar" review sheet (Phase 2). The owner signs first inside Avocat (embedded,
-// routing 1); DocuSign emails the counterparty (routing 2) only after that.
+// "Firmar y enviar" review sheet (Phase 2, 5b). The owner signs first inside Avocat (embedded,
+// routing 1); DocuSign emails the other signers only after that — one after another or all at
+// once — and copies the CC recipients.
 
 import { useState } from 'react';
 import { useAppAuth } from '@/contexts/AppAuthContext';
@@ -10,16 +11,25 @@ import { ModalShell } from '@/components/documents/modals';
 import { docusignInfo, startDocusignConnect } from '@/lib/docusign/client';
 import { createSignatureRequest, getSigningUrl, saveSignResume, SignatureClientError } from '@/lib/signatures/client';
 import { DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, type SignatureOptions } from '@/lib/signatures/types';
+import { ACCESS_CODE_RE, MAX_CC, MAX_SIGNERS, type SigningOrder } from '@/lib/signatures/recipients';
 
 export interface SignAndSendSheetProps {
   documentId: string;
   markdown?: string;              // omitted → the server signs the saved .doc
   title: string;
   defaultCounterparty: { name: string; email: string };
+  /** 5b: several signers / CC prefilled (e.g. back from connecting DocuSign). */
+  defaultSigners?: { name: string; email: string }[];
+  defaultCc?: { name: string; email: string }[];
   language: 'es' | 'en';
   returnTo: string;               // page to come back to after connecting DocuSign
   onClose: () => void;
 }
+
+interface SignerRow { key: number; name: string; email: string; code: string; useCode: boolean }
+interface CcRow { key: number; name: string; email: string }
+let keySeq = 0;
+const nextKey = () => ++keySeq;
 
 const FIELD = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
 const LABEL = 'block text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1';
@@ -41,8 +51,10 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
   const connected = !!info && info.status !== 'reauth_required';
   const ownerName = info?.name || info?.email || '';
 
-  const [name, setName] = useState(p.defaultCounterparty.name);
-  const [email, setEmail] = useState(p.defaultCounterparty.email);
+  const [signers, setSigners] = useState<SignerRow[]>(() =>
+    (p.defaultSigners?.length ? p.defaultSigners : [p.defaultCounterparty]).map(x => ({ key: nextKey(), name: x.name, email: x.email, code: '', useCode: false })));
+  const [cc, setCc] = useState<CcRow[]>(() => (p.defaultCc ?? []).map(x => ({ key: nextKey(), ...x })));
+  const [order, setOrder] = useState<SigningOrder>('sequential');
   const [subject, setSubject] = useState(defaultSubject(p.title, p.language));
   const [message, setMessage] = useState(defaultMessage(p.title, p.defaultCounterparty.name, ownerName, p.language));
   const [advanced, setAdvanced] = useState(false);
@@ -53,25 +65,46 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
 
   const setOpt = (k: keyof SignatureOptions, v: number | string) => setOptions(o => ({ ...o, [k]: v }));
 
+  const setSigner = (key: number, patch: Partial<SignerRow>) => setSigners(rs => rs.map(r => r.key === key ? { ...r, ...patch } : r));
+  const setCcRow = (key: number, patch: Partial<CcRow>) => setCc(rs => rs.map(r => r.key === key ? { ...r, ...patch } : r));
+  const parties = (rows: { name: string; email: string }[]) => rows.map(r => ({ name: r.name.trim(), email: r.email.trim() }));
+
   const connect = async () => {
     setBusy('connect'); setError('');
-    saveSignResume({ documentId: p.documentId, markdown: p.markdown, title: p.title, counterparty: { name, email } });
+    saveSignResume({
+      documentId: p.documentId, markdown: p.markdown, title: p.title,
+      counterparty: parties(signers)[0], signers: parties(signers), cc: parties(cc),
+    });
     try { await startDocusignConnect(user, { returnTo: p.returnTo }); }
     catch (e) { setError((e as Error).message); setBusy(''); }
   };
 
+  const invalid = (): string => {
+    for (const r of signers) {
+      if (!r.name.trim()) return 'Indica el nombre de cada firmante.';
+      if (!EMAIL_RE.test(r.email.trim())) return `El email de ${r.name.trim()} no es válido.`;
+      if (r.useCode && !ACCESS_CODE_RE.test(r.code)) return `El código de acceso de ${r.name.trim()} debe tener entre 4 y 20 letras o números.`;
+    }
+    for (const r of cc) if (!EMAIL_RE.test(r.email.trim())) return 'Revisa los emails en copia.';
+    const emails = [...signers, ...cc].map(r => r.email.trim().toLowerCase());
+    if (info?.email && emails.includes(info.email.toLowerCase())) {
+      return 'Tú ya firmas el primero: no te añadas como firmante ni en copia.';
+    }
+    if (new Set(emails).size !== emails.length) return 'Cada persona debe tener un email distinto.';
+    return '';
+  };
+
   const send = async () => {
     setError('');
-    if (!name.trim()) return setError('Indica el nombre de la otra parte.');
-    if (!EMAIL_RE.test(email.trim())) return setError('El email de la otra parte no es válido.');
-    if (info?.email && email.trim().toLowerCase() === info.email.toLowerCase()) {
-      return setError('El email de la otra parte es el tuyo. Indica el email de quien debe firmar.');
-    }
+    const msg = invalid();
+    if (msg) return setError(msg);
     setBusy('send');
     try {
       const { signingUrl } = await createSignatureRequest(user, {
         documentId: p.documentId, markdown: p.markdown, title: p.title,
-        counterparty: { name: name.trim(), email: email.trim() },
+        signers: signers.map(r => ({ name: r.name.trim(), email: r.email.trim(), ...(r.useCode ? { accessCode: r.code } : {}) })),
+        cc: cc.map(r => ({ name: r.name.trim(), email: r.email.trim() })),
+        signingOrder: order,
         subject: subject.trim(), message, options,
       });
       window.location.assign(signingUrl);           // embedded signing (D6: full-page redirect)
@@ -118,10 +151,75 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
             </section>
 
             <section className="space-y-2">
-              <p className={LABEL}>2 · Después firma</p>
-              <input className={FIELD} placeholder="Nombre completo" value={name} onChange={e => setName(e.target.value)} />
-              <input className={FIELD} type="email" placeholder="email@empresa.com" value={email} onChange={e => setEmail(e.target.value)} />
-              <p className="text-[11px] text-[#6b6050]">Recibirá un email de DocuSign cuando hayas firmado. No necesita cuenta.</p>
+              <p className={LABEL}>2 · Después {signers.length > 1 ? 'firman' : 'firma'}</p>
+              {signers.map((r, i) => (
+                <div key={r.key} className="space-y-1.5 rounded-lg border border-[#2e2b20] p-2">
+                  <div className="flex items-center gap-2">
+                    {signers.length > 1 && <span className="text-[11px] text-[#6b6050] w-4 flex-shrink-0">{order === 'sequential' ? `${i + 2}.` : '·'}</span>}
+                    <input className={FIELD} placeholder="Nombre completo" value={r.name} onChange={e => setSigner(r.key, { name: e.target.value })} />
+                    {signers.length > 1 && (
+                      <button type="button" aria-label="Quitar firmante" onClick={() => setSigners(rs => rs.filter(x => x.key !== r.key))}
+                        className="text-[#6b6050] hover:text-red-400 text-[16px] leading-none px-1">×</button>
+                    )}
+                  </div>
+                  <input className={FIELD} type="email" placeholder="email@empresa.com" value={r.email} onChange={e => setSigner(r.key, { email: e.target.value })} />
+                  {r.useCode ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <input className={FIELD} placeholder="Código de acceso (4–20 letras o números)" value={r.code} maxLength={20}
+                          autoComplete="off" onChange={e => setSigner(r.key, { code: e.target.value.replace(/\s/g, '') })} />
+                        <button type="button" onClick={() => setSigner(r.key, { useCode: false, code: '' })}
+                          className="text-[11px] text-[#6b6050] hover:text-[#c8c0ac] whitespace-nowrap">Quitar</button>
+                      </div>
+                      <p className="text-[11px] text-[#6b6050]">DocuSign se lo pedirá antes de abrir el documento. Compártelo por otro canal (teléfono, WhatsApp); Avocat no lo guarda.</p>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setSigner(r.key, { useCode: true })}
+                      className="text-[11px] text-avocat-gold/70 hover:text-avocat-gold">🔒 Pedir código de acceso</button>
+                  )}
+                </div>
+              ))}
+              {signers.length < MAX_SIGNERS && (
+                <button type="button" onClick={() => setSigners(rs => [...rs, { key: nextKey(), name: '', email: '', code: '', useCode: false }])}
+                  className="text-[11px] text-avocat-gold/70 hover:text-avocat-gold">+ Añadir firmante</button>
+              )}
+              {signers.length > 1 && (
+                <div className="space-y-1">
+                  <div className="inline-flex rounded-lg border border-[#2e2b20] overflow-hidden text-[11px]">
+                    {(['sequential', 'parallel'] as const).map(o => (
+                      <button key={o} type="button" onClick={() => setOrder(o)}
+                        className={`px-3 py-1.5 ${order === o ? 'bg-avocat-gold/15 text-avocat-gold' : 'text-[#6b6050] hover:text-[#c8c0ac]'}`}>
+                        {o === 'sequential' ? 'En orden' : 'A la vez'}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-[#6b6050]">
+                    {order === 'sequential'
+                      ? 'Cada firmante recibe el email cuando firma el anterior, en el orden de la lista.'
+                      : 'Todos reciben el email a la vez, en cuanto firmes tú.'}
+                  </p>
+                </div>
+              )}
+              <p className="text-[11px] text-[#6b6050]">
+                {signers.length === 1 ? 'Recibirá un email de DocuSign cuando hayas firmado. No necesita cuenta.' : 'No necesitan cuenta de DocuSign.'}
+                {' '}Si el documento no tiene un bloque «Firma:» para cada persona, lo añadimos al final.
+              </p>
+            </section>
+
+            <section className="space-y-2">
+              <p className={LABEL}>En copia <span className="normal-case tracking-normal font-normal">(opcional — reciben el documento firmado)</span></p>
+              {cc.map(r => (
+                <div key={r.key} className="flex items-center gap-2">
+                  <input className={FIELD} placeholder="Nombre" value={r.name} onChange={e => setCcRow(r.key, { name: e.target.value })} />
+                  <input className={FIELD} type="email" placeholder="email@empresa.com" value={r.email} onChange={e => setCcRow(r.key, { email: e.target.value })} />
+                  <button type="button" aria-label="Quitar copia" onClick={() => setCc(rs => rs.filter(x => x.key !== r.key))}
+                    className="text-[#6b6050] hover:text-red-400 text-[16px] leading-none px-1">×</button>
+                </div>
+              ))}
+              {cc.length < MAX_CC && (
+                <button type="button" onClick={() => setCc(rs => [...rs, { key: nextKey(), name: '', email: '' }])}
+                  className="text-[11px] text-avocat-gold/70 hover:text-avocat-gold">+ Añadir en copia</button>
+              )}
             </section>
 
             <section className="space-y-2">

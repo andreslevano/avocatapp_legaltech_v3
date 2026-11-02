@@ -14,6 +14,7 @@ import {
   EMAIL_RE, isActiveStatus, signatureEventLabel, SIGNATURE_STATUS_LABEL,
   type SignatureRecipient, type SignatureRequest,
 } from '@/lib/signatures/types';
+import { recipientKey } from '@/lib/signatures/recipients';
 
 const RECIPIENT_LABEL: Record<SignatureRecipient['status'], string> = {
   created: 'En espera', sent: 'Enviado', delivered: 'Abierto', completed: 'Firmado', declined: 'Rechazado',
@@ -31,16 +32,17 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
   const [r, setR] = useState<SignatureRequest | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
-  const [editEmail, setEditEmail] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ key: number; email: string } | null>(null);
   const [confirmVoid, setConfirmVoid] = useState(false);
 
   useEffect(() => watchSignatureRequest(requestId, setR), [requestId]);
-  useEffect(() => { setNotice(null); setEditEmail(null); setConfirmVoid(false); }, [requestId]);
+  useEffect(() => { setNotice(null); setEditing(null); setConfirmVoid(false); }, [requestId]);
 
   if (!r) return null;
   const active = isActiveStatus(r.status);
   const waitingOnOther = r.status === 'sent' || r.status === 'delivered';
-  const counterparty = r.recipients.find(x => x.role === 'signer');
+  const pending = r.recipients.filter(x => x.role === 'signer' && (x.status === 'sent' || x.status === 'delivered'));
+  const canCorrect = (x: SignatureRecipient) => waitingOnOther && x.role === 'signer' && x.status !== 'completed' && x.status !== 'declined';
   const needsFiling = r.status === 'completed' && !r.signedDocumentId;
 
   const run = async (kind: Exclude<Busy, null>, fn: () => Promise<string | void>) => {
@@ -72,8 +74,8 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
     if (w) w.location.href = rec.downloadUrl; else window.location.href = rec.downloadUrl;
   });
   const onRemind = () => run('remind', async () => {
-    await remindSignature(user!, r.id);
-    return `Recordatorio enviado a ${counterparty?.email}.`;
+    const res = await remindSignature(user!, r.id);
+    return `Recordatorio enviado a ${(res.reminded ?? pending.map(x => x.email)).join(', ')}.`;
   });
   const onVoid = () => run('void', async () => {
     await voidSignature(user!, r.id);
@@ -81,11 +83,12 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
     return 'Solicitud anulada. El documento vuelve a ser editable.';
   });
   const onEmail = () => run('email', async () => {
-    const email = (editEmail ?? '').trim();
+    if (!editing) return;
+    const email = editing.email.trim();
     if (!EMAIL_RE.test(email)) throw new Error('El email no es válido.');
-    await correctSignatureEmail(user!, r.id, email);
-    setEditEmail(null);
-    return `Email corregido. DocuSign ha reenviado la solicitud a ${email}.`;
+    await correctSignatureEmail(user!, r.id, email, editing.key);
+    setEditing(null);
+    return `Email corregido. DocuSign enviará la solicitud a ${email}.`;
   });
   const onSign = () => run('sign', async () => {
     const { signingUrl } = await getSigningUrl(user!, r.id);
@@ -106,18 +109,43 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
         )}
       </div>
 
-      {/* Signers */}
+      {/* Signers + CC */}
       <ul className="space-y-1">
-        {r.recipients.filter(x => x.role !== 'cc').map(x => (
-          <li key={x.routingOrder} className="flex items-center justify-between gap-2 text-[11px]">
-            <span className="min-w-0 truncate text-[#c8c0ac]" title={x.email}>
-              {x.routingOrder}. {x.role === 'owner' ? 'Tú' : x.name} <span className="text-[#6b6050]">· {x.email}</span>
-            </span>
-            <span className={`flex-shrink-0 text-[10px] ${x.status === 'completed' ? 'text-blue-400' : x.status === 'declined' ? 'text-red-400' : 'text-[#6b6050]'}`}>
-              {RECIPIENT_LABEL[x.status]}
-            </span>
-          </li>
-        ))}
+        {r.recipients.map(x => {
+          const k = recipientKey(x);
+          if (editing?.key === k) {
+            return (
+              <li key={`${x.role}-${k}`} className="space-y-1.5">
+                <input type="email" value={editing.email} onChange={e => setEditing({ key: k, email: e.target.value })} autoFocus
+                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-2.5 py-1.5 text-[12px] text-[#c8c0ac] focus:outline-none focus:border-avocat-gold" />
+                <div className="flex gap-2">
+                  <Button variant="BtnGold" size="sm" fullWidth disabled={busy !== null} onClick={onEmail}>
+                    {busy === 'email' ? 'Reenviando…' : 'Guardar y reenviar'}
+                  </Button>
+                  <Button variant="BtnGhost" size="sm" disabled={busy !== null} onClick={() => setEditing(null)}>Cancelar</Button>
+                </div>
+              </li>
+            );
+          }
+          return (
+            <li key={`${x.role}-${k}`} className="flex items-center justify-between gap-2 text-[11px]">
+              <span className="min-w-0 truncate text-[#c8c0ac]" title={x.email}>
+                {x.role === 'cc' ? 'CC' : `${x.routingOrder}.`} {x.role === 'owner' ? 'Tú' : x.name}
+                {x.accessCode && <span title="Con código de acceso"> 🔒</span>}
+                <span className="text-[#6b6050]"> · {x.email}</span>
+              </span>
+              <span className="flex-shrink-0 flex items-center gap-2">
+                {canCorrect(x) && editing === null && (
+                  <button onClick={() => setEditing({ key: k, email: x.email })} disabled={busy !== null}
+                    className="text-[10px] text-[#3a3630] hover:text-avocat-gold transition-colors">Corregir</button>
+                )}
+                <span className={`text-[10px] ${x.status === 'completed' ? 'text-blue-400' : x.status === 'declined' ? 'text-red-400' : 'text-[#6b6050]'}`}>
+                  {x.role === 'cc' ? 'En copia' : RECIPIENT_LABEL[x.status]}
+                </span>
+              </span>
+            </li>
+          );
+        })}
       </ul>
 
       {/* Actions */}
@@ -138,27 +166,10 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
           {busy === 'sign' ? 'Abriendo DocuSign…' : 'Continuar firma'}
         </Button>
       )}
-      {waitingOnOther && editEmail === null && (
-        <div className="flex gap-2">
-          <Button variant="BtnOutlineDark" size="sm" fullWidth disabled={busy !== null} onClick={onRemind}>
-            {busy === 'remind' ? 'Enviando…' : 'Recordar'}
-          </Button>
-          <Button variant="BtnOutlineDark" size="sm" fullWidth disabled={busy !== null} onClick={() => setEditEmail(counterparty?.email ?? '')}>
-            Corregir email
-          </Button>
-        </div>
-      )}
-      {editEmail !== null && (
-        <div className="space-y-1.5">
-          <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} autoFocus
-            className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-2.5 py-1.5 text-[12px] text-[#c8c0ac] focus:outline-none focus:border-avocat-gold" />
-          <div className="flex gap-2">
-            <Button variant="BtnGold" size="sm" fullWidth disabled={busy !== null} onClick={onEmail}>
-              {busy === 'email' ? 'Reenviando…' : 'Guardar y reenviar'}
-            </Button>
-            <Button variant="BtnGhost" size="sm" disabled={busy !== null} onClick={() => setEditEmail(null)}>Cancelar</Button>
-          </div>
-        </div>
+      {waitingOnOther && pending.length > 0 && editing === null && (
+        <Button variant="BtnOutlineDark" size="sm" fullWidth disabled={busy !== null} onClick={onRemind}>
+          {busy === 'remind' ? 'Enviando…' : pending.length > 1 ? `Recordar (${pending.length})` : 'Recordar'}
+        </Button>
       )}
       {active && (confirmVoid ? (
         <div className="flex items-center gap-2 text-[11px]">

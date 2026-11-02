@@ -14,10 +14,12 @@ interface Props {
   clients?: ClientDoc[];
   cases?: CaseDoc[];
   counterparty?: { name: string; email: string };
+  signers?: { name: string; email: string }[];
+  cc?: { name: string; email: string }[];
   onClose: () => void;
 }
 
-export default function SignDocumentSheet({ doc, clients = [], cases = [], counterparty, onClose }: Props) {
+export default function SignDocumentSheet({ doc, clients = [], cases = [], counterparty, signers, cc, onClose }: Props) {
   const clientId = doc.clientId ?? cases.find(c => c.id === doc.caseId)?.clientId;
   const client = clientId ? clients.find(c => c.id === clientId) : undefined;
   return (
@@ -25,6 +27,8 @@ export default function SignDocumentSheet({ doc, clients = [], cases = [], count
       documentId={doc.id}
       title={signatureTitleFromName(doc.name)}
       defaultCounterparty={counterparty ?? { name: client?.name ?? '', email: client?.email ?? '' }}
+      defaultSigners={signers}
+      defaultCc={cc}
       language="es"
       returnTo="/documents"
       onClose={onClose}

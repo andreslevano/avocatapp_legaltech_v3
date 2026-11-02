@@ -67,11 +67,9 @@ export const createRecipientView = (creds: DsCreds, envelopeId: string, v: {
 export const getEnvelopeWithRecipients = (creds: DsCreds, envelopeId: string) =>
   call<DsEnvelopeSummary>(creds, 'GET', `/envelopes/${envelopeId}?include=recipients`);
 
-/** Updates a remote signer and re-sends the envelope email (reminder / corrected email). */
-export const updateSignerAndResend = (creds: DsCreds, envelopeId: string, signer: { recipientId: string; name: string; email: string }) =>
-  call<Record<string, unknown>>(creds, 'PUT', `/envelopes/${envelopeId}/recipients?resend_envelope=true`, {
-    signers: [signer],
-  });
+/** Updates remote signers and re-sends the envelope email to them (reminder / corrected email) — one call. */
+export const updateSignerAndResend = (creds: DsCreds, envelopeId: string, signers: { recipientId: string; name: string; email: string }[]) =>
+  call<Record<string, unknown>>(creds, 'PUT', `/envelopes/${envelopeId}/recipients?resend_envelope=true`, { signers });
 
 /**
  * Signed documents + Certificate of Completion as ONE PDF, in ONE call (D13b). Called once per

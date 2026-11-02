@@ -9,7 +9,7 @@ import {
 const base = {
   html: '<html>NDA</html>', documentName: 'NDA — ACME / NIKE', subject: 'Firma solicitada: NDA', message: 'Hola',
   owner: { name: 'Ana Abogada', email: 'ana@bufete.es', clientUserId: 'uid-1' },
-  counterparty: { name: ' Juan García ', email: ' juan@nike.com ' },
+  signers: [{ name: ' Juan García ', email: ' juan@nike.com ' }],
   options: DEFAULT_SIGNATURE_OPTIONS, requestId: 'req-1', webhookUrl: null,
 };
 type Signer = { routingOrder: string; email: string; name: string; clientUserId?: string;
@@ -59,12 +59,12 @@ test.describe('envelope definition (D5/D7)', () => {
 test.describe('signature input & events', () => {
   const ok: CreateSignatureInput = {
     documentId: 'd1', markdown: 'x'.repeat(300), title: 'NDA',
-    counterparty: { name: 'Juan', email: 'juan@nike.com' }, subject: 'Firma', message: '', options: DEFAULT_SIGNATURE_OPTIONS,
+    signers: [{ name: 'Juan', email: 'juan@nike.com' }], subject: 'Firma', message: '', options: DEFAULT_SIGNATURE_OPTIONS,
   };
   test('valid input passes', () => expect(validateSignatureInput(ok)).toBeNull());
   test('rejects bad email, empty name, long subject, bad options', () => {
-    expect(validateSignatureInput({ ...ok, counterparty: { name: 'J', email: 'juan@' } })).toMatch(/email/);
-    expect(validateSignatureInput({ ...ok, counterparty: { name: ' ', email: 'j@n.com' } })).toMatch(/nombre/);
+    expect(validateSignatureInput({ ...ok, signers: [{ name: 'J', email: 'juan@' }] })).toMatch(/email/);
+    expect(validateSignatureInput({ ...ok, signers: [{ name: ' ', email: 'j@n.com' }] })).toMatch(/nombre/);
     expect(validateSignatureInput({ ...ok, subject: 'x'.repeat(101) })).toMatch(/100/);
     expect(validateSignatureInput({ ...ok, options: { ...ok.options, expireAfterDays: 0 } })).toMatch(/caducidad/);
   });

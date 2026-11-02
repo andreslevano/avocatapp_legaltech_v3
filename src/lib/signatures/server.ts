@@ -22,6 +22,7 @@ import {
   deriveSync, refreshAvailableAt, REFRESH_WINDOW_MS, REMIND_WINDOW_MS, summaryFromConnect, type DsEnvelopeSummary,
 } from './sync';
 import { FILING_LEASE_MS, firebaseDownloadUrl, signedFileName, signedStoragePath } from './filing';
+import { planRecipients, recipientKey } from './recipients';
 
 const requests = () => db().collection('signature_requests');
 const documents = () => db().collection('documents');
@@ -81,9 +82,15 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
   if (!creds.userEmail) throw fail('Reconecta tu cuenta de DocuSign.', 'reconnect_required', 409);
   const owner = { name: creds.userName || creds.userEmail, email: creds.userEmail, clientUserId: uid };
   const options = { ...DEFAULT_SIGNATURE_OPTIONS, ...input.options };
+  const signers = input.signers.map(p => ({ name: p.name.trim(), email: p.email.trim(), accessCode: p.accessCode || undefined }));
+  const cc = (input.cc ?? []).map(p => ({ name: p.name.trim(), email: p.email.trim() }));
+  const signingOrder = input.signingOrder ?? 'sequential';
+  if ([...signers, ...cc].some(p => p.email.toLowerCase() === owner.email.toLowerCase())) {
+    throw fail('Tú ya firmas el primero: no te añadas como firmante ni en copia.', 'invalid_email', 422);
+  }
 
-  // Missing "Firma:" blocks (owner = 1, counterparty = 2) are appended at the end (Phase 5a).
-  const names = { owner: owner.name, counterparty: input.counterparty.name.trim() };
+  // Missing "Firma:" blocks (owner = 1, then each signer) are appended at the end (Phase 5a/5b).
+  const names = [owner.name, ...signers.map(p => p.name)];
   const html = input.markdown
     ? buildDocHtml(withSignatureBlocks(input.markdown, names, options.language), input.title, undefined, await ownerMeta(uid), { forSignature: true })
     : signingHtmlFromSaved(await readSavedDoc(docSnap.data() ?? {}), names, options.language);
@@ -101,13 +108,16 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
     subject: input.subject,
     message: input.message,
     owner,
-    counterparty: input.counterparty,
+    signers,
+    cc,
+    signingOrder,
     options,
     requestId: reqRef.id,
     webhookUrl,
   }));
 
   const at = now();
+  const plan = planRecipients(signers.length, cc.length, signingOrder);
   const record: Omit<SignatureRequest, 'id'> = {
     userId: uid,
     documentId: input.documentId,
@@ -118,9 +128,14 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
     envelopeId,
     status: 'pending_owner',
     recipients: [
-      { role: 'owner', name: owner.name, email: owner.email, routingOrder: 1, status: 'sent' },
-      { role: 'signer', name: input.counterparty.name.trim(), email: input.counterparty.email.trim(), routingOrder: 2, status: 'created' },
+      { role: 'owner', name: owner.name, email: owner.email, recipientId: 1, routingOrder: 1, status: 'sent' },
+      ...signers.map((p, k) => ({
+        role: 'signer' as const, name: p.name, email: p.email, ...plan.signers[k], status: 'created' as const,
+        ...(p.accessCode ? { accessCode: true } : {}),
+      })),
+      ...cc.map((p, j) => ({ role: 'cc' as const, name: p.name || p.email, email: p.email, ...plan.cc[j], status: 'created' as const })),
     ],
+    signingOrder,
     subject: input.subject.trim(),
     message: input.message.trim(),
     options,
@@ -326,58 +341,65 @@ export async function refreshSignatureRequest(uid: string, requestId: string) {
   return { status, nextRefreshAt: new Date(Date.now() + REFRESH_WINDOW_MS).toISOString(), throttled: false };
 }
 
-function counterpartyOf(r: SignatureRequest) {
-  const c = r.recipients.find(x => x.role === 'signer');
-  if (!c) throw fail('Solicitud de firma no válida.', 'invalid', 500);
-  return c;
+/** Counterparties DocuSign is currently waiting on (their turn has come, not answered yet). */
+function pendingSigners(r: SignatureRequest) {
+  return r.recipients.filter(x => x.role === 'signer' && (x.status === 'sent' || x.status === 'delivered'));
 }
 
-function requireWaitingOnCounterparty(r: SignatureRequest) {
+function requireWaitingOnOthers(r: SignatureRequest) {
   if (r.status !== 'sent' && r.status !== 'delivered') {
     throw fail(r.status === 'pending_owner'
       ? 'Primero tienes que firmar tú.'
       : 'Esta solicitud ya no está pendiente.', 'not_pending', 409);
   }
-  const c = counterpartyOf(r);
-  if (c.status === 'completed' || c.status === 'declined') throw fail('La otra parte ya ha respondido.', 'not_pending', 409);
-  return c;
 }
 
-/** POST /api/signatures/[id]/remind — re-sends DocuSign's email to the counterparty (max 1/hour). */
+/** POST /api/signatures/[id]/remind — re-sends DocuSign's email to everyone whose turn it is (max 1/hour). */
 export async function remindCounterparty(uid: string, requestId: string) {
   const r = await loadOwnedRequest(uid, requestId);
-  const c = requireWaitingOnCounterparty(r);
+  requireWaitingOnOthers(r);
+  const pending = pendingSigners(r);
+  if (!pending.length) throw fail('No hay nadie pendiente de firmar ahora mismo.', 'not_pending', 409);
   const last = r.lastRemindedAt ? Date.parse(r.lastRemindedAt) : 0;
   if (Date.now() - last < REMIND_WINDOW_MS) {
     throw fail('Ya enviaste un recordatorio hace menos de una hora.', 'throttled', 429);
   }
   const creds = await getValidAccessToken(uid);
-  await updateSignerAndResend(creds, r.envelopeId, { recipientId: String(c.routingOrder), name: c.name, email: c.email });
+  await updateSignerAndResend(creds, r.envelopeId,
+    pending.map(c => ({ recipientId: String(recipientKey(c)), name: c.name, email: c.email })));
   const at = now();
   await requests().doc(r.id).update({
     lastRemindedAt: at,
-    events: FieldValue.arrayUnion({ type: 'reminded', at, by: c.email }),
+    events: FieldValue.arrayUnion(...pending.map(c => ({ type: 'reminded', at, by: c.email }))),
     updatedAt: FieldValue.serverTimestamp(),
   });
-  return { ok: true };
+  return { ok: true, reminded: pending.map(c => c.email) };
 }
 
-/** PATCH /api/signatures/[id]/recipients — corrects the counterparty email and re-sends. */
-export async function correctCounterpartyEmail(uid: string, requestId: string, email: string, name?: string) {
+/**
+ * PATCH /api/signatures/[id]/recipients — corrects one signer's email and re-sends.
+ * `recipientId` picks the signer (defaults to the first counterparty, as before 5b).
+ */
+export async function correctCounterpartyEmail(uid: string, requestId: string, email: string, name?: string, recipientId?: number) {
   const clean = (email ?? '').trim();
   if (!EMAIL_RE.test(clean)) throw fail('El email no es válido.', 'invalid_email', 422);
   const r = await loadOwnedRequest(uid, requestId);
-  const c = requireWaitingOnCounterparty(r);
-  const owner = r.recipients.find(x => x.role === 'owner');
-  if (owner && owner.email.toLowerCase() === clean.toLowerCase()) {
-    throw fail('El email de la otra parte no puede ser el tuyo.', 'invalid_email', 422);
+  requireWaitingOnOthers(r);
+  const c = r.recipients.find(x => x.role === 'signer' && (recipientId === undefined || recipientKey(x) === recipientId));
+  if (!c) throw fail('Firmante no encontrado.', 'not_found', 404);
+  if (c.status === 'completed' || c.status === 'declined') throw fail('Esta persona ya ha respondido.', 'not_pending', 409);
+  if (r.recipients.some(x => x !== c && x.email.toLowerCase() === clean.toLowerCase())) {
+    throw fail(r.recipients.find(x => x.role === 'owner')?.email.toLowerCase() === clean.toLowerCase()
+      ? 'El email de la otra parte no puede ser el tuyo.'
+      : 'Ese email ya está en esta solicitud.', 'invalid_email', 422);
   }
   const newName = (name ?? '').trim() || c.name;
   const creds = await getValidAccessToken(uid);
-  await updateSignerAndResend(creds, r.envelopeId, { recipientId: String(c.routingOrder), name: newName, email: clean });
+  await updateSignerAndResend(creds, r.envelopeId, [{ recipientId: String(recipientKey(c)), name: newName, email: clean }]);
   const at = now();
-  const recipients = r.recipients.map(x => x === c ? { ...x, email: clean, name: newName, status: 'sent' as const } : x);
-  await setStatus(r, 'sent', { recipients, lastRemindedAt: at }, 'email_corrected', false, clean);
+  // A signer whose turn hasn't come yet stays "created"; DocuSign emails them when it does.
+  const recipients = r.recipients.map(x => x === c ? { ...x, email: clean, name: newName, status: c.status === 'created' ? 'created' as const : 'sent' as const } : x);
+  await setStatus(r, r.status === 'delivered' ? 'sent' : r.status, { recipients, lastRemindedAt: at }, 'email_corrected', false, clean);
   return { ok: true };
 }
 
@@ -399,14 +421,15 @@ export async function voidSignatureRequest(uid: string, requestId: string) {
 export async function recordOwnerReturn(uid: string, requestId: string, event: string) {
   const r = await loadOwnedRequest(uid, requestId);
   const counterparty = r.recipients.find(x => x.role === 'signer') ?? null;
-  const summary = { status: r.status, counterparty, documentId: r.documentId };
+  const counterparties = r.recipients.filter(x => x.role === 'signer');
+  const summary = { status: r.status, counterparty, counterparties, documentId: r.documentId };
 
   if (r.status !== 'pending_owner') return summary;            // reload / back button — idempotent
 
   if (event === 'signing_complete') {
     const recipients = r.recipients.map(x =>
       x.role === 'owner' ? { ...x, status: 'completed' as const, signedAt: now() }
-      : x.routingOrder === 2 ? { ...x, status: 'sent' as const } : x);
+      : x.role === 'signer' && x.routingOrder === 2 ? { ...x, status: 'sent' as const } : x);   // first in line (all, if parallel)
     await setStatus(r, 'sent', { recipients }, 'owner_signed');
     return { ...summary, status: 'sent' as const };
   }

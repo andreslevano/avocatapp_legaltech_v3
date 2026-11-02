@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { docusignErrorResponse, requireDocusignUser } from '@/lib/docusign/route-helpers';
 import { startSignatureRequest } from '@/lib/signatures/server';
-import { DEFAULT_SIGNATURE_OPTIONS, validateSignatureInput, type CreateSignatureInput } from '@/lib/signatures/types';
+import { DEFAULT_SIGNATURE_OPTIONS, validateSignatureInput, type CreateSignatureInput, type PartyInput } from '@/lib/signatures/types';
 
 export const dynamic = 'force-dynamic';
 
 // POST /api/signatures — "Firmar y enviar": create the envelope, lock the document and return the
-// owner's embedded signing URL. Body: CreateSignatureInput.
+// owner's embedded signing URL. Body: CreateSignatureInput (or the pre-5b { counterparty }).
 export async function POST(req: NextRequest) {
   const uid = await requireDocusignUser(req);
   if (typeof uid !== 'string') return uid;
 
-  const body = await req.json().catch(() => null) as Partial<CreateSignatureInput> | null;
+  const body = await req.json().catch(() => null) as (Partial<CreateSignatureInput> & { counterparty?: PartyInput }) | null;
+  const { counterparty, ...rest } = body ?? {};
   const input: Partial<CreateSignatureInput> = {
-    ...body,
+    ...rest,
+    // Pre-5b body shape: a single counterparty.
+    signers: rest.signers ?? (counterparty ? [counterparty] : []),
     title: (body?.title ?? '').toString().trim().slice(0, 120) || 'Documento',
     message: (body?.message ?? '').toString(),
     options: { ...DEFAULT_SIGNATURE_OPTIONS, ...(body?.options ?? {}) },

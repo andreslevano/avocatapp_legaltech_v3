@@ -112,7 +112,8 @@ function DocumentsView() {
 
   // Phase 5a: "Firmar y enviar" for saved documents. Back from connecting DocuSign (?ds=…), the
   // sheet reopens for the document parked by SignAndSendSheet.
-  const [signTarget, setSignTarget] = useState<{ doc: DocumentRecord; counterparty?: { name: string; email: string } } | null>(null);
+  type Party = { name: string; email: string };
+  const [signTarget, setSignTarget] = useState<{ doc: DocumentRecord; counterparty?: Party; signers?: Party[]; cc?: Party[] } | null>(null);
   const canSign = useCallback((d: DocumentRecord) => docusignOn && canSendForSignature(d), [docusignOn]);
   useEffect(() => {
     const ds = new URLSearchParams(searchKey).get('ds');
@@ -120,7 +121,7 @@ function DocumentsView() {
     const resume = takeSignResume();
     if (ds === 'connected' && resume) {
       getDocumentById(resume.documentId).then(rec => {
-        if (rec) setSignTarget({ doc: rec, counterparty: resume.counterparty });
+        if (rec) setSignTarget({ doc: rec, counterparty: resume.counterparty, signers: resume.signers, cc: resume.cc });
       }).catch(() => {});
     } else if (ds !== 'connected') {
       ws.notify({ kind: 'ok', text: ds === 'cancelled' ? 'Conexión con DocuSign cancelada' : 'No pudimos conectar con DocuSign' });
@@ -746,7 +747,8 @@ function DocumentsView() {
 
       {signTarget && (
         <SignDocumentSheet doc={signTarget.doc} clients={clients} cases={cases}
-          counterparty={signTarget.counterparty} onClose={() => setSignTarget(null)} />
+          counterparty={signTarget.counterparty} signers={signTarget.signers} cc={signTarget.cc}
+          onClose={() => setSignTarget(null)} />
       )}
 
       {/* Modals */}

@@ -128,30 +128,28 @@ function injectAnchors(html: string): string {
       `${label}:${close ?? ''} <span class="ds-sig">${ANCHOR(signatureAnchor(++sig))}${SIG_LINE}</span>`);
 }
 
-// ── Documents without signature blocks (Phase 5a) ──────────────────────────
-// DocuSign needs one "Firma: ____" line per signer (1 = owner, 2 = counterparty). Generated
-// documents of any type — or older ones — may have fewer, so the missing blocks are appended.
-
-export interface SignerNames { owner: string; counterparty: string }
+// ── Documents without enough signature blocks (Phase 5a/5b) ─────────────────
+// DocuSign needs one "Firma: ____" line per signer, in order: block 1 = owner, block k = the
+// (k-1)th counterparty. Generated documents of any type — or older ones — may have fewer, so the
+// missing blocks are appended at the end.
 
 const LABELS = {
   es: { heading: 'FIRMAS', date: 'Fecha', sign: 'Firma' },
   en: { heading: 'SIGNATURES', date: 'Date', sign: 'Signature' },
 };
 
-/** Markdown for the signature blocks a document lacks ('' when it already has two). */
-export function missingSignatureBlocksMd(existing: number, names: SignerNames, lang: 'es' | 'en' = 'es'): string {
-  const need = Math.max(0, 2 - existing);
-  if (!need) return '';
+/** Markdown for the blocks a document lacks, for `signers` = [owner, ...counterparties] ('' if none). */
+export function missingSignatureBlocksMd(existing: number, signers: string[], lang: 'es' | 'en' = 'es'): string {
+  if (existing >= signers.length) return '';
   const L = LABELS[lang] ?? LABELS.es;
   const clean = (n: string) => n.replace(/[*_#`<>]/g, '').trim() || '—';
-  const blocks = [names.owner, names.counterparty].slice(2 - need)
+  const blocks = signers.slice(existing)
     .map(n => `**${clean(n)}**\n${L.date}: ____________\n${L.sign}: ________________________`);
   return (existing === 0 ? `## ${L.heading}\n\n` : '') + blocks.join('\n\n');
 }
 
-export function withSignatureBlocks(md: string, names: SignerNames, lang: 'es' | 'en' = 'es'): string {
-  const extra = missingSignatureBlocksMd(countSignatureBlocks(md), names, lang);
+export function withSignatureBlocks(md: string, signers: string[], lang: 'es' | 'en' = 'es'): string {
+  const extra = missingSignatureBlocksMd(countSignatureBlocks(md), signers, lang);
   return extra ? `${md.trimEnd()}\n\n${extra}\n` : md;
 }
 
@@ -164,7 +162,7 @@ const SIGNING_CSS = `
  * DocuSign-ready HTML from a .doc Avocat saved earlier (it is buildDocHtml output, so no markdown
  * is needed). Returns null for files Avocat didn't build (uploads, other formats).
  */
-export function signingHtmlFromSaved(saved: string, names: SignerNames, lang: 'es' | 'en' = 'es'): string | null {
+export function signingHtmlFromSaved(saved: string, signers: string[], lang: 'es' | 'en' = 'es'): string | null {
   let html = saved.replace(/^﻿/, '');
   if (!html.includes('<div class="doc-footer">')) return null;
   // Back to the "Label: ____" form injectAnchors understands (stamped image / drawn lines).
@@ -172,7 +170,7 @@ export function signingHtmlFromSaved(saved: string, names: SignerNames, lang: 'e
     .replace(/<img[^>]*alt="Firma"[^>]*>/g, '________')
     .replace(/<span style="display:inline-block;width:\d+px;border-bottom:[^"]*"><\/span>/g, ' ________');
   const existing = (html.match(SIG_BLOCK_RE) ?? []).length;
-  const extra = missingSignatureBlocksMd(existing, names, lang);
+  const extra = missingSignatureBlocksMd(existing, signers, lang);
   if (extra) {
     const block = existing === 0 ? `<div class="sig-section">${mdToHtml(extra)}</div>` : mdToHtml(extra);
     html = html.replace('<div class="doc-footer">', `${block}\n<div class="doc-footer">`);

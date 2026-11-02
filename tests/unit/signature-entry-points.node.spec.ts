@@ -3,7 +3,7 @@ import { buildDocHtml, countSignatureBlocks, missingSignatureBlocksMd, signingHt
 import { canSendForSignature, signatureTitleFromName } from '@/lib/signatures/eligibility';
 import { validateSignatureInput, DEFAULT_SIGNATURE_OPTIONS } from '@/lib/signatures/types';
 
-const names = { owner: 'Ana Ruiz', counterparty: 'Juan Gil' };
+const names = ['Ana Ruiz', 'Juan Gil'];
 const body = '# CONTRATO\n\n' + 'Cláusula de prueba con texto suficiente. '.repeat(10);
 const twoBlocks = `${body}\n\n## FIRMAS\n\n**A**\nFecha: ____\nFirma: ________\n\n**B**\nFecha: ____\nFirma: ________`;
 
@@ -23,7 +23,7 @@ test.describe('signature blocks fallback (5a)', () => {
   test('leaves complete documents untouched; English labels', () => {
     expect(withSignatureBlocks(twoBlocks, names)).toBe(twoBlocks);
     expect(missingSignatureBlocksMd(0, names, 'en')).toContain('## SIGNATURES');
-    expect(missingSignatureBlocksMd(0, { owner: '**x**', counterparty: '' })).toContain('**x**\n');
+    expect(missingSignatureBlocksMd(0, ['**x**', ''])).toContain('**x**\n');
   });
 });
 
@@ -77,7 +77,7 @@ test.describe('eligibility (5a)', () => {
     expect(signatureTitleFromName('1746000000_Contrato.doc')).toBe('Contrato');
   });
   test('markdown is optional in the request body', () => {
-    const base = { documentId: 'd1', title: 'X', counterparty: { name: 'J', email: 'j@x.com' }, subject: 'S', message: '', options: DEFAULT_SIGNATURE_OPTIONS };
+    const base = { documentId: 'd1', title: 'X', signers: [{ name: 'J', email: 'j@x.com' }], subject: 'S', message: '', options: DEFAULT_SIGNATURE_OPTIONS };
     expect(validateSignatureInput(base)).toBeNull();
     expect(validateSignatureInput({ ...base, markdown: 'short' })).toBe('El documento está vacío.');
   });

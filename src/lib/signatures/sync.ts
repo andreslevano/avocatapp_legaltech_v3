@@ -5,6 +5,7 @@
 
 import type { SignatureEvent, SignatureRecipient, SignatureRequest, SignatureStatus } from './types';
 import { TERMINAL_STATUSES } from './types';
+import { recipientKey } from './recipients';
 
 /** The subset of a DocuSign envelope (REST v2.1 / Connect envelopeSummary) we read. */
 export interface DsSigner {
@@ -70,7 +71,9 @@ export function deriveSync(current: Pick<SignatureRequest, 'status' | 'recipient
   const events: SignatureEvent[] = [];
   const signers = s.recipients?.signers ?? [];
   const recipients = current.recipients.map(r => {
-    const ds = signers.find(x => String(x.routingOrder ?? x.recipientId) === String(r.routingOrder));
+    // Matched by recipientId (5b: parallel signers share a routing order). Older records have no
+    // recipientId — theirs equalled the routing order.
+    const ds = signers.find(x => String(x.recipientId ?? x.routingOrder) === String(recipientKey(r)));
     if (!ds) return r;
     const next = recipientStatus(ds.status);
     let out: SignatureRecipient = r;

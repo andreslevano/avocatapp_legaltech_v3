@@ -1,5 +1,8 @@
 // Signature requests (DocuSign "Firmar y enviar") — types shared by browser and server.
 
+import { ACCESS_CODE_RE, MAX_CC, MAX_SIGNERS, type PartyInput, type SignerInput, type SigningOrder } from './recipients';
+export type { PartyInput, SignerInput, SigningOrder };
+
 export type SignatureStatus =
   | 'pending_owner' | 'sent' | 'delivered' | 'completed' | 'declined' | 'voided' | 'expired' | 'error';
 
@@ -22,7 +25,9 @@ export interface SignatureRecipient {
   role: 'owner' | 'signer' | 'cc';
   name: string;
   email: string;
+  recipientId?: number;           // DocuSign recipientId (5b); absent on older records = routingOrder
   routingOrder: number;
+  accessCode?: boolean;           // an access code is required (the code itself is never stored)
   status: 'created' | 'sent' | 'delivered' | 'completed' | 'declined';
   signedAt?: string;
 }
@@ -77,6 +82,7 @@ export interface SignatureRequest {
   options: SignatureOptions;
   events: SignatureEvent[];
   webhookTokenHash: string | null;
+  signingOrder?: SigningOrder;    // 5b; older records: one counterparty
   lastSyncedAt?: string;          // last DocuSign status call (manual refresh, D9)
   lastRemindedAt?: string;
   signedDocumentId?: string;      // documents/{id} of the signed PDF (+ certificate) — Phase 4
@@ -92,7 +98,10 @@ export interface CreateSignatureInput {
   /** The generated text, when the page has it (NDA, generación). Without it the saved .doc is used. */
   markdown?: string;
   title: string;
-  counterparty: { name: string; email: string };
+  /** Who signs after the owner (5b: 1–5). */
+  signers: SignerInput[];
+  cc?: PartyInput[];
+  signingOrder?: SigningOrder;
   subject: string;
   message: string;
   options: SignatureOptions;
@@ -125,8 +134,24 @@ export function validateSignatureInput(i: Partial<CreateSignatureInput>): string
     if (typeof i.markdown !== 'string' || i.markdown.length < 200) return 'El documento está vacío.';
     if (i.markdown.length > 200_000) return 'El documento es demasiado largo.';
   }
-  if (!i.counterparty?.name?.trim()) return 'Indica el nombre de la otra parte.';
-  if (!EMAIL_RE.test(i.counterparty?.email?.trim() ?? '')) return 'El email de la otra parte no es válido.';
+  const signers = Array.isArray(i.signers) ? i.signers : [];
+  const cc = Array.isArray(i.cc) ? i.cc : [];
+  if (!signers.length) return 'Indica quién debe firmar.';
+  if (signers.length > MAX_SIGNERS) return `Máximo ${MAX_SIGNERS} firmantes.`;
+  if (cc.length > MAX_CC) return `Máximo ${MAX_CC} personas en copia.`;
+  for (const p of signers) {
+    if (!p?.name?.trim()) return 'Indica el nombre de cada firmante.';
+    if (!EMAIL_RE.test(p.email?.trim() ?? '')) return `El email de ${p.name.trim()} no es válido.`;
+    if (p.accessCode !== undefined && p.accessCode !== '' && !ACCESS_CODE_RE.test(p.accessCode)) {
+      return 'El código de acceso debe tener entre 4 y 20 letras o números.';
+    }
+  }
+  for (const p of cc) {
+    if (!EMAIL_RE.test(p?.email?.trim() ?? '')) return 'Un email en copia no es válido.';
+  }
+  const emails = [...signers, ...cc].map(p => p.email.trim().toLowerCase());
+  if (new Set(emails).size !== emails.length) return 'Cada persona debe tener un email distinto.';
+  if (i.signingOrder !== undefined && i.signingOrder !== 'sequential' && i.signingOrder !== 'parallel') return 'Orden de firma no válido.';
   if (!i.subject?.trim()) return 'Indica el asunto del email.';
   if (i.subject.trim().length > 100) return 'El asunto no puede superar 100 caracteres.';
   if ((i.message ?? '').length > 2000) return 'El mensaje no puede superar 2000 caracteres.';
