@@ -100,3 +100,20 @@ test.describe('webhook merge with parallel signers (5b)', () => {
     expect(r.events.filter(e => e.type === 'recipient_completed')).toHaveLength(2);
   });
 });
+
+import { allowedEmbedOrigin, focusedViewHosts } from '@/lib/docusign/config';
+
+test.describe('Focused View config (5c)', () => {
+  test('demo vs production hosts', () => {
+    expect(focusedViewHosts('https://account-d.docusign.com')).toEqual({
+      bundleUrl: 'https://js-d.docusign.com/bundle.js', messageOrigin: 'https://apps-d.docusign.com',
+    });
+    expect(focusedViewHosts('https://account.docusign.com').messageOrigin).toBe('https://apps.docusign.com');
+  });
+  test('only our own origin may host the signing frame', () => {
+    expect(allowedEmbedOrigin('https://avocatapp.com', 'https://avocatapp.com')).toBe('https://avocatapp.com');
+    expect(allowedEmbedOrigin('https://evil.example', 'https://avocatapp.com')).toBeNull();
+    expect(allowedEmbedOrigin('https://avocat-legaltech-v3.web.app', 'https://avocatapp.com')).toBeNull();
+    expect(allowedEmbedOrigin(undefined, 'https://avocatapp.com')).toBeNull();
+  });
+});

@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
   const uid = await requireDocusignUser(req);
   if (typeof uid !== 'string') return uid;
 
-  const body = await req.json().catch(() => null) as (Partial<CreateSignatureInput> & { counterparty?: PartyInput }) | null;
-  const { counterparty, ...rest } = body ?? {};
+  const body = await req.json().catch(() => null) as (Partial<CreateSignatureInput> & { counterparty?: PartyInput; embedOrigin?: string }) | null;
+  const { counterparty, embedOrigin, ...rest } = body ?? {};
   const input: Partial<CreateSignatureInput> = {
     ...rest,
     // Pre-5b body shape: a single counterparty.
@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
   if (invalid) return NextResponse.json({ error: invalid, code: 'invalid_input' }, { status: 400 });
 
   try {
-    return NextResponse.json(await startSignatureRequest(uid, input as CreateSignatureInput));
+    // embedOrigin: the page asks for Focused View (5c, desktop); the server checks the origin.
+    return NextResponse.json(await startSignatureRequest(uid, input as CreateSignatureInput, typeof embedOrigin === 'string' ? embedOrigin : null));
   } catch (err) {
     return docusignErrorResponse(err);
   }

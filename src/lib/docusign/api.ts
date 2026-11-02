@@ -55,9 +55,12 @@ export const createEnvelope = (creds: DsCreds, definition: unknown) =>
 /** Embedded signing URL for the owner (D5/D6). Valid ~5 min, single use. */
 export const createRecipientView = (creds: DsCreds, envelopeId: string, v: {
   returnUrl: string; name: string; email: string; clientUserId: string;
+  /** Focused View (5c): [page origin, DocuSign app origin] / [DocuSign app origin]. */
+  frameAncestors?: string[]; messageOrigins?: string[];
 }) => call<{ url: string }>(creds, 'POST', `/envelopes/${envelopeId}/views/recipient`, {
   returnUrl: v.returnUrl, authenticationMethod: 'none',
   userName: v.name, email: v.email, clientUserId: v.clientUserId, recipientId: '1',
+  ...(v.frameAncestors ? { frameAncestors: v.frameAncestors, messageOrigins: v.messageOrigins } : {}),
 });
 
 /**

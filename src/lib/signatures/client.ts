@@ -3,7 +3,7 @@
 import type { User } from 'firebase/auth';
 import { collection, doc, limit, onSnapshot, orderBy, query, where, type Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { CreateSignatureInput, SignatureRecipient, SignatureRequest, SignatureStatus } from './types';
+import type { CreateSignatureInput, FocusedViewInfo, SignatureRecipient, SignatureRequest, SignatureStatus, SigningTarget } from './types';
 
 export class SignatureClientError extends Error {
   constructor(message: string, public code: string, public requestId?: string) { super(message); }
@@ -21,11 +21,35 @@ async function post<T>(user: User, path: string, body: unknown, method = 'POST')
   return data;
 }
 
-export const createSignatureRequest = (user: User, input: CreateSignatureInput) =>
-  post<{ requestId: string; signingUrl: string }>(user, '/api/signatures', input);
+// ── Owner signing: Focused View on desktop (5c), full-page redirect elsewhere ──
 
-export const getSigningUrl = (user: User, requestId: string) =>
-  post<{ signingUrl: string }>(user, `/api/signatures/${encodeURIComponent(requestId)}/signing-url`, {});
+/** Desktop with a precise pointer asks for Focused View; phones/tablets keep the redirect. */
+export function embedOriginForThisDevice(): string | undefined {
+  if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+  return window.matchMedia('(min-width: 768px) and (pointer: fine)').matches ? window.location.origin : undefined;
+}
+
+export const FOCUSED_SIGNING_EVENT = 'avocat:focused-signing';
+export interface FocusedSigningDetail extends FocusedViewInfo { requestId: string; url: string }
+
+/** Opens the owner's signing session: the app-wide Focused View modal, or DocuSign's page. */
+export function openOwnerSigning(requestId: string, t: SigningTarget) {
+  if (t.focused) {
+    window.dispatchEvent(new CustomEvent<FocusedSigningDetail>(FOCUSED_SIGNING_EVENT, {
+      detail: { requestId, url: t.signingUrl, ...t.focused },
+    }));
+  } else {
+    window.location.assign(t.signingUrl);
+  }
+}
+
+export const createSignatureRequest = (user: User, input: CreateSignatureInput) =>
+  post<SigningTarget & { requestId: string }>(user, '/api/signatures', { ...input, embedOrigin: embedOriginForThisDevice() });
+
+/** `plain`: always a redirect URL (fallback when Focused View can't load). */
+export const getSigningUrl = (user: User, requestId: string, opts: { plain?: boolean } = {}) =>
+  post<SigningTarget>(user, `/api/signatures/${encodeURIComponent(requestId)}/signing-url`,
+    { embedOrigin: opts.plain ? undefined : embedOriginForThisDevice() });
 
 export const reportSigningReturn = (user: User, requestId: string, event: string) =>
   post<{ status: SignatureStatus; counterparty: SignatureRecipient | null; counterparties?: SignatureRecipient[]; documentId: string }>(

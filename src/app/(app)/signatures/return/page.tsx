@@ -9,7 +9,7 @@ import { useSearchParams } from 'next/navigation';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
-import { getSigningUrl, reportSigningReturn } from '@/lib/signatures/client';
+import { getSigningUrl, openOwnerSigning, reportSigningReturn } from '@/lib/signatures/client';
 import { outcomeForEvent, type SignatureRecipient, type SignatureStatus } from '@/lib/signatures/types';
 
 type View = 'loading' | 'signed' | 'pending' | 'expired' | 'declined' | 'error' | 'done';
@@ -44,7 +44,11 @@ function ReturnInner() {
 
   const resume = async () => {
     setBusy(true); setError('');
-    try { window.location.assign((await getSigningUrl(user, rid)).signingUrl); }
+    try {
+      const target = await getSigningUrl(user, rid);
+      openOwnerSigning(rid, target);
+      if (target.focused) setBusy(false);
+    }
     catch (e) { setError((e as Error).message); setBusy(false); }
   };
 

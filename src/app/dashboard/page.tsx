@@ -11,10 +11,25 @@ import CasesChart from '@/components/dashboard/CasesChart';
 import StatusDonut from '@/components/dashboard/StatusDonut';
 import DeadlineList from '@/components/dashboard/DeadlineList';
 import ClientTable from '@/components/dashboard/ClientTable';
+import { canUseDocusign } from '@/lib/docusign/config';
+import { watchSignatureStatuses } from '@/lib/signatures/client';
+import { isActiveStatus } from '@/lib/signatures/types';
 
 export default function DashboardPage() {
-  const { userDoc } = useAppAuth();
+  const { user, userDoc } = useAppAuth();
   const router = useRouter();
+
+  // Phase 5c: documents waiting for a signature (latest request per document, live).
+  const docusignOn = canUseDocusign(userDoc.plan, user?.email);
+  const [awaitingSignature, setAwaitingSignature] = useState<number | null>(null);
+  useEffect(() => {
+    if (!docusignOn || !user) return;
+    return watchSignatureStatuses(user.uid, m => {
+      let n = 0;
+      m.forEach(s => { if (isActiveStatus(s.status)) n++; });
+      setAwaitingSignature(n);
+    });
+  }, [docusignOn, user]);
 
   const [cases, setCases] = useState<CaseDoc[]>([]);
   const [clients, setClients] = useState<ClientDoc[]>([]);
@@ -75,11 +90,17 @@ export default function DashboardPage() {
         ) : (
           <div className="max-w-6xl mx-auto space-y-6">
             {/* KPI row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className={`grid grid-cols-2 gap-4 ${docusignOn ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
               <KPICard label="Casos totales" value={cases.length} />
               <KPICard label="Activos" value={activeCases} accent />
               <KPICard label="Urgentes" value={urgentCases} />
               <KPICard label="Clientes activos" value={activeClients} />
+              {docusignOn && (
+                <Link href="/documents?view=firma" title="Ver documentos pendientes de firma"
+                  className="rounded-xl transition-opacity hover:opacity-80 col-span-2 lg:col-span-1">
+                  <KPICard label="Esperando firma" value={awaitingSignature ?? '—'} />
+                </Link>
+              )}
             </div>
 
             {/* Charts row */}

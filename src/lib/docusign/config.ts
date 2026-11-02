@@ -49,3 +49,25 @@ export function chooseAccount(accounts: DsAccount[], requestedId?: string | null
     ?? accounts.find(a => a.isDefault)
     ?? accounts[0];
 }
+
+/**
+ * Focused View (Phase 5c): DocuSign's signing UI inside an Avocat modal (desktop). The recipient
+ * view must name the page's origin (frameAncestors) and DocuSign's app origin (messageOrigins);
+ * the JS bundle and app origin differ between demo and production.
+ */
+export function focusedViewHosts(oauthBase: string) {
+  const demo = /account-d\./.test(oauthBase);
+  return {
+    bundleUrl: demo ? 'https://js-d.docusign.com/bundle.js' : 'https://js.docusign.com/bundle.js',
+    messageOrigin: demo ? 'https://apps-d.docusign.com' : 'https://apps.docusign.com',
+  };
+}
+
+/** The page origin may host Focused View only if it's our app (or local dev). */
+export function allowedEmbedOrigin(origin: string | null | undefined, appUrl: string): string | null {
+  if (!origin) return null;
+  const o = origin.replace(/\/+$/, '');
+  if (o === appUrl.replace(/\/+$/, '')) return o;
+  if (/^http:\/\/localhost:\d+$/.test(o) && process.env.NODE_ENV !== 'production') return o;
+  return null;
+}

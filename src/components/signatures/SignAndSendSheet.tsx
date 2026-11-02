@@ -9,7 +9,7 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { Button } from '@/components/ui/Button';
 import { ModalShell } from '@/components/documents/modals';
 import { docusignInfo, startDocusignConnect } from '@/lib/docusign/client';
-import { createSignatureRequest, getSigningUrl, saveSignResume, SignatureClientError } from '@/lib/signatures/client';
+import { createSignatureRequest, getSigningUrl, openOwnerSigning, saveSignResume, SignatureClientError } from '@/lib/signatures/client';
 import { DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, type SignatureOptions } from '@/lib/signatures/types';
 import { ACCESS_CODE_RE, MAX_CC, MAX_SIGNERS, type SigningOrder } from '@/lib/signatures/recipients';
 
@@ -100,14 +100,15 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
     if (msg) return setError(msg);
     setBusy('send');
     try {
-      const { signingUrl } = await createSignatureRequest(user, {
+      const target = await createSignatureRequest(user, {
         documentId: p.documentId, markdown: p.markdown, title: p.title,
         signers: signers.map(r => ({ name: r.name.trim(), email: r.email.trim(), ...(r.useCode ? { accessCode: r.code } : {}) })),
         cc: cc.map(r => ({ name: r.name.trim(), email: r.email.trim() })),
         signingOrder: order,
         subject: subject.trim(), message, options,
       });
-      window.location.assign(signingUrl);           // embedded signing (D6: full-page redirect)
+      openOwnerSigning(target.requestId, target);   // Focused View (desktop) or full-page redirect
+      if (target.focused) p.onClose();
     } catch (e) {
       const err = e as SignatureClientError;
       if (err.code === 'already_in_signature' && err.requestId) setResumeId(err.requestId);
@@ -123,7 +124,11 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
   const resume = async () => {
     if (!resumeId) return;
     setBusy('resume'); setError('');
-    try { window.location.assign((await getSigningUrl(user, resumeId)).signingUrl); }
+    try {
+      const target = await getSigningUrl(user, resumeId);
+      openOwnerSigning(resumeId, target);
+      if (target.focused) p.onClose();
+    }
     catch (e) { setError((e as Error).message); setBusy(''); }
   };
 

@@ -13,6 +13,7 @@ import { DocumentsWorkspaceProvider } from '@/contexts/DocumentsWorkspaceContext
 import Rail from '@/components/layout/Rail';
 import Sidebar from '@/components/layout/Sidebar';
 import SignatureNotifier from '@/components/signatures/SignatureNotifier';
+import FocusedSigningHost from '@/components/signatures/FocusedSigningHost';
 
 const LAWYER_ONLY_PATHS = ['/dashboard', '/cases'];
 
@@ -95,6 +96,7 @@ export default function AppShellClient({ children }: AppShellClientProps) {
             </main>
           </div>
           <SignatureNotifier />
+          <FocusedSigningHost />
         </DocumentsWorkspaceProvider>
       </SidebarProvider>
     </AppAuthProvider>

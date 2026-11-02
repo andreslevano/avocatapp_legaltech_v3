@@ -7,7 +7,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { db, storage } from '@/lib/firebase-admin';
 import { buildDocHtml, signingHtmlFromSaved, withSignatureBlocks, type DocMeta } from '@/lib/doc-html';
 import { randomToken, sha256Base64Url } from '@/lib/integrations/crypto';
-import { dsServerConfig } from '@/lib/docusign/config';
+import { allowedEmbedOrigin, dsServerConfig, focusedViewHosts } from '@/lib/docusign/config';
 import { buildEnvelopeDefinition, webhookUrlFor } from '@/lib/docusign/envelope';
 import {
   createEnvelope, createRecipientView, DocusignApiError, downloadCombinedPdf, getEnvelopeWithRecipients,
@@ -16,7 +16,7 @@ import {
 import { getValidAccessToken } from '@/lib/docusign/tokens';
 import {
   DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, isActiveStatus,
-  type CreateSignatureInput, type SignatureRequest, type SignatureStatus,
+  type CreateSignatureInput, type FocusedViewInfo, type SignatureRequest, type SignatureStatus,
 } from './types';
 import {
   deriveSync, refreshAvailableAt, REFRESH_WINDOW_MS, REMIND_WINDOW_MS, summaryFromConnect, type DsEnvelopeSummary,
@@ -29,6 +29,18 @@ const documents = () => db().collection('documents');
 const now = () => new Date().toISOString();
 
 const fail = (message: string, code: string, status: number) => new DocusignApiError(message, code, status);
+
+/** Recipient-view extras for Focused View when the page asked for it from an allowed origin. */
+function focusedOptions(embedOrigin?: string | null) {
+  const cfg = dsServerConfig();
+  const origin = allowedEmbedOrigin(embedOrigin, cfg.appUrl);
+  if (!origin) return { view: {}, focused: null as FocusedViewInfo | null };
+  const hosts = focusedViewHosts(cfg.oauthBase);
+  return {
+    view: { frameAncestors: [origin, hosts.messageOrigin], messageOrigins: [hosts.messageOrigin] },
+    focused: { integrationKey: cfg.integrationKey, bundleUrl: hosts.bundleUrl },
+  };
+}
 
 function returnUrl(requestId: string): string {
   return `${dsServerConfig().appUrl}/signatures/return?rid=${encodeURIComponent(requestId)}`;
@@ -66,7 +78,7 @@ async function readSavedDoc(d: FirebaseFirestore.DocumentData): Promise<string> 
  * POST /api/signatures — creates the envelope (owner = embedded signer 1, counterparty = remote
  * signer 2), stores the request, locks the document and returns the owner's signing URL.
  */
-export async function startSignatureRequest(uid: string, input: CreateSignatureInput) {
+export async function startSignatureRequest(uid: string, input: CreateSignatureInput, embedOrigin?: string | null) {
   const docRef = documents().doc(input.documentId);
   const docSnap = await docRef.get();
   if (!docSnap.exists || docSnap.get('userId') !== uid) throw fail('Documento no encontrado.', 'not_found', 404);
@@ -159,21 +171,23 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
     throw err;
   }
 
-  const { url } = await createRecipientView(creds, envelopeId, { ...owner, returnUrl: returnUrl(reqRef.id) });
-  return { requestId: reqRef.id, signingUrl: url };
+  const fv = focusedOptions(embedOrigin);
+  const { url } = await createRecipientView(creds, envelopeId, { ...owner, returnUrl: returnUrl(reqRef.id), ...fv.view });
+  return { requestId: reqRef.id, signingUrl: url, focused: fv.focused };
 }
 
 /** POST /api/signatures/[id]/signing-url — "Continuar firma" (fresh single-use view). */
-export async function resumeOwnerSigning(uid: string, requestId: string) {
+export async function resumeOwnerSigning(uid: string, requestId: string, embedOrigin?: string | null) {
   const r = await loadOwnedRequest(uid, requestId);
   if (r.status !== 'pending_owner') throw fail('Ya no hay nada que firmar en esta solicitud.', 'not_pending', 409);
   const creds = await getValidAccessToken(uid);
   const owner = r.recipients.find(x => x.role === 'owner');
   if (!owner) throw fail('Solicitud de firma no válida.', 'invalid', 500);
+  const fv = focusedOptions(embedOrigin);
   const { url } = await createRecipientView(creds, r.envelopeId, {
-    name: owner.name, email: owner.email, clientUserId: uid, returnUrl: returnUrl(r.id),
+    name: owner.name, email: owner.email, clientUserId: uid, returnUrl: returnUrl(r.id), ...fv.view,
   });
-  return { signingUrl: url };
+  return { signingUrl: url, focused: fv.focused };
 }
 
 const docPatch = (status: SignatureStatus, unlock: boolean) =>

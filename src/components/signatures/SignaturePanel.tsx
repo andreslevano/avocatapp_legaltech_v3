@@ -8,7 +8,7 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getDocumentById } from '@/lib/storage-client';
 import { Button } from '@/components/ui/Button';
 import {
-  correctSignatureEmail, getSigningUrl, refreshSignature, remindSignature, voidSignature, watchSignatureRequest,
+  correctSignatureEmail, getSigningUrl, openOwnerSigning, refreshSignature, remindSignature, voidSignature, watchSignatureRequest,
 } from '@/lib/signatures/client';
 import {
   EMAIL_RE, isActiveStatus, signatureEventLabel, SIGNATURE_STATUS_LABEL,
@@ -91,8 +91,7 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
     return `Email corregido. DocuSign enviará la solicitud a ${email}.`;
   });
   const onSign = () => run('sign', async () => {
-    const { signingUrl } = await getSigningUrl(user!, r.id);
-    window.location.href = signingUrl;
+    openOwnerSigning(r.id, await getSigningUrl(user!, r.id));
   });
 
   const events = [...(r.events ?? [])].sort((a, b) => b.at.localeCompare(a.at));

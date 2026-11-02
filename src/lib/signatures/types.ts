@@ -92,6 +92,12 @@ export interface SignatureRequest {
   updatedAt?: unknown;
 }
 
+/** What the browser needs to open Focused View (5c); null → full-page redirect. */
+export interface FocusedViewInfo { integrationKey: string; bundleUrl: string }
+
+/** Owner signing session returned by POST /api/signatures and …/signing-url. */
+export interface SigningTarget { signingUrl: string; focused?: FocusedViewInfo | null }
+
 /** Body of POST /api/signatures. */
 export interface CreateSignatureInput {
   documentId: string;
