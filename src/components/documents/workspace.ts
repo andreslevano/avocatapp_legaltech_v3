@@ -6,7 +6,7 @@ import { daysBetween, madridToday } from '@/lib/contracts/dates';
 
 // Smart views are virtual: computed from document fields, nothing is moved.
 // "Contratos por vencer" (F0/F3) reads the contract summary the server keeps on each document.
-export type SmartView = 'casos' | 'clientes' | 'microsoft' | 'firma' | 'contratos';
+export type SmartView = 'casos' | 'clientes' | 'microsoft' | 'firma' | 'contratos' | 'legal';
 
 export type DocsLocation =
   | { kind: 'folder'; folderId: string | null }
@@ -42,6 +42,7 @@ export const SMART_VIEWS: {
   { id: 'microsoft', label: 'Importados de Microsoft', grouped: false, match: d => !!d.externalRef || d.source === 'microsoft' },
   { id: 'firma',     label: 'Pendientes de firma',     grouped: false, match: d => !!d.signatureStatus && PENDING_SIGNATURE.has(d.signatureStatus) },
   { id: 'contratos', label: 'Contratos por vencer',    grouped: false, match: isContractDueSoon },
+  { id: 'legal',     label: 'Afectados por cambios legales', grouped: false, match: d => !!d.contractLegalFlag },
 ];
 
 /** Confirmed contract that is expiring, expired, or has a date within the next 90 days. */

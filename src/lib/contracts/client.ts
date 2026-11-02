@@ -59,11 +59,16 @@ export function watchContracts(uid: string, cb: (cs: Contract[]) => void): () =>
 export interface AppNotification {
   id: string;
   userId: string;
-  type: 'contract_expiry';
+  type: 'contract_expiry' | 'legal_change';
+  // contract_expiry (F3)
   contractId: string;
   documentId: string;
   kind: DateKind;
   threshold: number;
+  // legal_change (F2): the approved change and the user's NDAs it may affect
+  changeId?: string;
+  contractIds?: string[];
+  url?: string | null;
   dueDate: string;
   severity: AlertSeverity;
   title: string;

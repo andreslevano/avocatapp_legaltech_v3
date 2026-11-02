@@ -472,6 +472,13 @@ export default function DocTable({
 /** F0: "Contrato" chip; amber when the next date is close, red once expired. Title shows the date. */
 function ContractChip({ d }: { d: DocumentRecord }) {
   if (!d.contractId) return null;
+  if (d.contractLegalFlag) {
+    return (
+      <span title="Un cambio legal aprobado puede afectar a este contrato" className="px-1.5 py-0.5 rounded text-[9px] font-medium border flex-shrink-0 text-sky-400 border-sky-400/30">
+        Cambio legal
+      </span>
+    );
+  }
   const tone = d.contractLifecycle === 'expired' ? 'text-red-400 border-red-400/30'
     : d.contractLifecycle === 'expiring' ? 'text-amber-400 border-amber-400/30'
     : !d.contractConfirmed ? 'text-[#6b6050] border-[#2e2b20]'

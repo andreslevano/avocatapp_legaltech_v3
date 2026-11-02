@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/Button';
 import { analyzeAsContract, contractAction } from '@/lib/contracts/client';
 import { formatContractDate, madridToday, nextContractEvent } from '@/lib/contracts/dates';
 import { CONTRACT_TYPE_LABEL, DATE_KIND_LABEL, LIFECYCLE_LABEL, type Contract } from '@/lib/contracts/types';
+import { getChanges } from '@/lib/legal/client';
+import type { LegalChange } from '@/lib/legal/types';
 
 export const LIFECYCLE_STYLE: Record<string, string> = {
   active: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/5',
@@ -102,6 +104,7 @@ export default function ContractCard({ documentId, documentType, onOpenSheet }: 
       {c.confirmedByUser && next && (
         <p className="text-[10px] text-[#6b6050]">Próximo aviso: {DATE_KIND_LABEL[next.kind].toLowerCase()} · {formatContractDate(next.date)}</p>
       )}
+      {!!c.legal?.flaggedByChangeIds?.length && <LegalFlags ids={c.legal.flaggedByChangeIds} />}
       {c.alertsMuted && (
         <p className="text-[10px] text-[#6b6050]">
           Avisos desactivados. <button onClick={reactivate} disabled={busy} className="text-avocat-gold hover:underline">Reactivar</button>
@@ -113,6 +116,31 @@ export default function ContractCard({ documentId, documentType, onOpenSheet }: 
         <Button variant="BtnGold" size="sm" fullWidth onClick={() => onOpenSheet(c)}>Revisar y confirmar</Button>
       )}
       {error && <p className="text-[11px] text-red-400">{error}</p>}
+    </div>
+  );
+}
+
+/** F2: approved legal changes that may affect this contract. */
+function LegalFlags({ ids }: { ids: string[] }) {
+  const [list, setList] = useState<LegalChange[] | null>(null);
+  const key = ids.join(',');
+  useEffect(() => {
+    let live = true;
+    getChanges(key.split(',')).then(cs => { if (live) setList(cs); }).catch(() => { if (live) setList([]); });
+    return () => { live = false; };
+  }, [key]);
+  if (!list?.length) return null;
+  return (
+    <div className="rounded-lg border border-sky-400/20 bg-sky-400/5 px-2.5 py-2 space-y-1.5">
+      <p className="text-[10px] text-sky-400 font-medium">Puede verse afectado por {list.length === 1 ? 'un cambio legal' : `${list.length} cambios legales`}</p>
+      {list.map(ch => (
+        <div key={ch.id} className="text-[11px] leading-snug">
+          <p className="text-[#c8c0ac]">{ch.requirement}</p>
+          <p className="text-[10px] text-[#6b6050] truncate" title={ch.title}>
+            {ch.url ? <a href={ch.url} target="_blank" rel="noopener noreferrer" className="hover:text-avocat-gold">{ch.title} ↗</a> : ch.title}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }

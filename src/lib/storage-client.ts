@@ -34,6 +34,7 @@ export interface DocumentRecord {
   contractConfirmed?: boolean;
   contractNextDate?: string | null;     // YYYY-MM-DD of the next notice / end / survival date
   contractLifecycle?: string;
+  contractLegalFlag?: boolean;          // F2: an approved legal change may affect it
   createdAt: unknown;
 }
 

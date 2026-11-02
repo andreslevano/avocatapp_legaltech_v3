@@ -1,6 +1,8 @@
 import { timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { runAlertScan, sendDigests } from '@/lib/contracts/server-alerts';
+import { runLegalMonitor } from '@/lib/legal/server';
+import { madridHour } from '@/lib/contracts/dates';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -20,9 +22,13 @@ export async function POST(req: NextRequest) {
   }
   try {
     const scan = await runAlertScan();
+    // F2: legal-change monitor once a day from 09:00 Madrid (after the BOE's morning issue).
+    // Isolated so a feed outage never blocks alerts or digests.
+    let legal: unknown = null;
+    if (madridHour() >= 9) legal = await runLegalMonitor().catch(e => ({ error: (e as Error).message }));
     const digests = await sendDigests();
-    console.log('[contract-alerts] cron', JSON.stringify({ scan, digests }));
-    return NextResponse.json({ scan, digests });
+    console.log('[contract-alerts] cron', JSON.stringify({ scan, legal, digests }));
+    return NextResponse.json({ scan, legal, digests });
   } catch (err) {
     console.error('[contract-alerts] cron', (err as Error).message);
     return NextResponse.json({ error: 'scan_failed' }, { status: 500 });

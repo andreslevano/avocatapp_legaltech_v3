@@ -77,6 +77,8 @@ export interface Contract {
   alertsMuted?: boolean;
   renewedByContractId?: string | null;
   renewsContractId?: string | null;
+  /** F2: approved legal changes that may affect it (server-written). */
+  legal?: { flaggedByChangeIds?: string[]; flaggedAt?: string };
   createdAt: string;
   updatedAt: string;
 }

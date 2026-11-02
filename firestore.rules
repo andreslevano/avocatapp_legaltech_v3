@@ -36,11 +36,14 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       // `integrations` (connected-account display info, F1) is written only by server routes.
+      // `isAdmin` gates server-side admin actions (F2 legal-change approval): a user can never grant it
+      // to themselves (signup writes isAdmin: false).
       allow create: if request.auth != null && request.auth.uid == userId
-        && !('integrations' in request.resource.data);
+        && !('integrations' in request.resource.data)
+        && (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false);
       allow update: if request.auth != null && request.auth.uid == userId
         && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['creditos_disponibles', 'creditos_consumidos', 'stripe_customer_id', 'integrations']);
+            .hasAny(['creditos_disponibles', 'creditos_consumidos', 'stripe_customer_id', 'integrations', 'isAdmin']);
     }
 
     // users/{userId}/creditos_log: owner can read for balance history display.
@@ -85,7 +88,9 @@ service cloud.firestore {
     function signatureFields() {
       return ['signatureRequestId', 'signatureStatus', 'lockedAt', 'kind', 'signedFromDocumentId',
               // contract summary (F0), denormalized by the server from contracts/{id}
-              'contractId', 'contractConfirmed', 'contractNextDate', 'contractLifecycle'];
+              'contractId', 'contractConfirmed', 'contractNextDate', 'contractLifecycle',
+              // legal-change flag (F2), set when an approved change may affect the contract
+              'contractLegalFlag'];
     }
 
     match /documents/{docId} {
@@ -178,6 +183,17 @@ service cloud.firestore {
       allow update: if request.auth != null && resource.data.userId == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt'])
         && request.resource.data.readAt is string;
+    }
+
+    // legal_changes/{id}: legal-change monitoring (F2). Admins read everything (review queue);
+    // other signed-in users only approved changes. All writes via /api/admin/legal-changes (Admin SDK).
+    // legal_seen/{id} (triage dedup) is server-only (catch-all deny).
+    function isAdminUser() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
+    match /legal_changes/{changeId} {
+      allow read: if request.auth != null && (resource.data.status == 'approved' || isAdminUser());
     }
 
     // integration_secrets/{uid}: encrypted OAuth tokens (Microsoft F1, DocuSign D4). Admin SDK only —

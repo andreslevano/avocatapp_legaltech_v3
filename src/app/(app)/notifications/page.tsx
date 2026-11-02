@@ -107,6 +107,7 @@ export default function NotificationsPage() {
               </p>
             </div>
           ) : items.map(n => {
+            if (n.type === 'legal_change') return <LegalChangeItem key={n.id} n={n} onOpen={open} />;
             const c = contracts.get(n.contractId);
             const closed = c && (c.lifecycle === 'terminated' || c.lifecycle === 'renewed' || c.lifecycle === 'superseded');
             return (
@@ -141,12 +142,45 @@ export default function NotificationsPage() {
           })}
 
           <div className="pt-4 flex items-center justify-between gap-3 text-[11px] text-[#3a3630]">
-            <Link href="/profile#notificaciones" className="hover:text-avocat-gold">Configurar avisos</Link>
+            <span className="flex gap-4">
+              <Link href="/profile#notificaciones" className="hover:text-avocat-gold">Configurar avisos</Link>
+              {(userDoc as unknown as { isAdmin?: boolean }).isAdmin === true && (
+                <Link href="/admin/legal-changes" className="hover:text-avocat-gold">Revisar cambios legales (admin)</Link>
+              )}
+            </span>
             <button onClick={testNow} disabled={!!busy} className="hover:text-avocat-gold disabled:opacity-50">
               {busy === 'test' ? 'Revisando…' : 'Revisar ahora'}
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** F2: "Cambio normativo: N NDAs pueden requerir actualización". */
+function LegalChangeItem({ n, onOpen }: { n: AppNotification; onOpen: (n: AppNotification, href: string) => void }) {
+  return (
+    <div className={`bg-[#1e1c16] border rounded-xl px-4 py-3 space-y-2 ${n.readAt ? 'border-[#2e2b20]' : 'border-avocat-gold/30'}`}>
+      <div className="flex items-start gap-2.5">
+        <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${SEVERITY_DOT[n.severity] ?? SEVERITY_DOT.low}`} />
+        <div className="flex-1 min-w-0">
+          <p className={`text-[13px] leading-snug ${n.readAt ? 'text-[#c8c0ac]' : 'text-[#e8d4a0] font-medium'}`}>{n.title}</p>
+          <p className="text-[12px] text-[#6b6050] mt-0.5">{n.body}</p>
+          <p className="text-[10px] text-[#3a3630] mt-1">Cambio legal · en vigor {formatContractDate(n.dueDate)}</p>
+        </div>
+        {!n.readAt && (
+          <button onClick={() => markNotificationsRead([n.id])} title="Marcar como leído"
+            className="text-[10px] text-[#6b6050] hover:text-[#c8c0ac] flex-shrink-0">Leído</button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2 pl-[18px]">
+        <Button variant="BtnGold" size="sm" onClick={() => onOpen(n, '/documents?view=legal')}>Ver NDAs afectados</Button>
+        {n.url && (
+          <a href={n.url} target="_blank" rel="noopener noreferrer" onClick={() => { if (!n.readAt) markNotificationsRead([n.id]).catch(() => {}); }}>
+            <Button variant="BtnGhost" size="sm">Texto oficial ↗</Button>
+          </a>
+        )}
       </div>
     </div>
   );
