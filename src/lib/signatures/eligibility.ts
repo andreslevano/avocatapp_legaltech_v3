@@ -2,6 +2,7 @@
 // Only Word documents Avocat generated (the server rebuilds the signing HTML from the saved .doc);
 // PDFs and uploads come later. Not while a request is active, and not once signed.
 
+import { STAMP_SUFFIX_RE } from '@/lib/file-stamp';
 import { isActiveStatus, type SignatureStatus } from './types';
 
 export interface SignableDoc {
@@ -20,5 +21,5 @@ export function canSendForSignature(d: SignableDoc): boolean {
 
 /** "NDA_MFW_MDC.doc" → "NDA MFW MDC" — envelope title / email subject. */
 export function signatureTitleFromName(name: string): string {
-  return (name || 'Documento').replace(/\.[^./\\]+$/, '').replace(/^\d{10,}_/, '').replace(/_/g, ' ').trim() || 'Documento';
+  return (name || 'Documento').replace(/\.[^./\\]+$/, '').replace(/^\d{10,}_/, '').replace(STAMP_SUFFIX_RE, '').replace(/_/g, ' ').trim() || 'Documento';
 }

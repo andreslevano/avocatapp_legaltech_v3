@@ -4,6 +4,7 @@ import {
   updateDoc, deleteDoc, doc as firestoreDoc, getDoc,
 } from 'firebase/firestore';
 import { storage, db } from '@/lib/firebase';
+import { stampedFileName } from '@/lib/file-stamp';
 
 export interface DocumentRecord {
   id: string;
@@ -46,7 +47,10 @@ export async function saveDocumentToStorage(params: {
   source?: 'generated' | 'uploaded';
   pdfBlob?: Blob;
 }): Promise<DocumentRecord> {
-  const { userId, plan, blob, name, caseId, source = 'generated', pdfBlob } = params;
+  const { userId, plan, blob, caseId, source = 'generated', pdfBlob } = params;
+  // Generated documents carry their creation date-time in the name, so regenerations of the same
+  // document are told apart. Uploads keep the user's own file name.
+  const name = source === 'generated' ? stampedFileName(params.name, new Date()) : params.name;
   if (!storage || !db) throw new Error('Firebase no disponible');
 
   const userType = PLAN_FOLDER[plan] ?? 'autoservicio';

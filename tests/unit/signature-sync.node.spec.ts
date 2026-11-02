@@ -5,6 +5,8 @@ import { deriveSync, refreshAvailableAt, REFRESH_WINDOW_MS, summaryFromConnect }
 import type { SignatureRecipient, SignatureRequest } from '@/lib/signatures/types';
 import { buildDocHtml } from '@/lib/doc-html';
 import { firebaseDownloadUrl, signedFileName, signedStoragePath } from '@/lib/signatures/filing';
+import { stampedFileName } from '@/lib/file-stamp';
+import { signatureTitleFromName } from '@/lib/signatures/eligibility';
 
 const NOW = '2026-11-02T10:00:00.000Z';
 const owner = (status: SignatureRecipient['status']): SignatureRecipient =>
@@ -127,6 +129,8 @@ test.describe('signed PDF filing (Phase 4)', () => {
     expect(signedFileName('X_firmado.pdf', at)).toBe('X_firmado_2026-11-02_15-34.pdf');
     expect(signedFileName('X_firmado_2026-10-01_09-00.pdf', at)).toBe('X_firmado_2026-11-02_15-34.pdf');
     expect(signedFileName('Y.doc', new Date('2026-07-01T22:30:00Z'))).toBe('Y_firmado_2026-07-02_00-30.pdf'); // CEST
+    // The generated document's stamp is replaced by the signing one, not repeated.
+    expect(signedFileName('NDA_MFW_MCC_2026-11-02_21-40.doc', at)).toBe('NDA_MFW_MCC_firmado_2026-11-02_15-34.pdf');
     expect(signedStoragePath('users/u1/abogado/casos/c9/1746_NDA.doc', 'u1', 5, 'NDA_firmado.pdf'))
       .toBe('users/u1/abogado/casos/c9/5_NDA_firmado.pdf');
     // Never write outside the owner's folder (rules: users/{uid}/**)
@@ -143,5 +147,22 @@ test.describe('signed PDF filing (Phase 4)', () => {
     expect(src.slice(owner, owner + 60)).toContain('fileSignedDocument');
     // Exactly once: guarded by signedDocumentId + a lease in a transaction.
     expect(src).toMatch(/cur\.signedDocumentId\) return null/);
+  });
+});
+
+test.describe('generated document names', () => {
+  const at = new Date('2026-11-02T20:40:00Z');                       // 21:40 in Madrid
+  test('stamped with the creation date-time', () => {
+    expect(stampedFileName('NDA_MFW_MCC.doc', at)).toBe('NDA_MFW_MCC_2026-11-02_21-40.doc');
+    expect(stampedFileName('Contrato.v2.doc', at)).toBe('Contrato.v2_2026-11-02_21-40.doc');
+    expect(stampedFileName('NDA_MFW_MCC_2026-10-01_09-00.doc', at)).toBe('NDA_MFW_MCC_2026-11-02_21-40.doc');
+    expect(stampedFileName('Sin_extension', at)).toBe('Sin_extension_2026-11-02_21-40');
+  });
+  test('the stamp stays out of the DocuSign subject', () => {
+    expect(signatureTitleFromName('NDA_MFW_MCC_2026-11-02_21-40.doc')).toBe('NDA MFW MCC');
+  });
+  test('only generated documents are stamped on save', () => {
+    const src = readFileSync(join(__dirname, '../../src/lib/storage-client.ts'), 'utf8');
+    expect(src).toMatch(/source === 'generated' \? stampedFileName\(/);
   });
 });

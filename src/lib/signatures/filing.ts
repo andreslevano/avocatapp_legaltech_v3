@@ -1,17 +1,12 @@
 // Where and under which name the signed PDF is filed (Phase 4). Pure — unit tested.
 
-/** "YYYY-MM-DD_HH-MM" in Madrid time — no colons, so the name is valid on every OS. */
-export function signedStamp(at: Date): string {
-  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-  }).formatToParts(at).map(x => [x.type, x.value]));
-  return `${p.year}-${p.month}-${p.day}_${p.hour}-${p.minute}`;
-}
+import { fileStamp } from '@/lib/file-stamp';
 
-/** "NDA_MFW_MDC.doc" + signed at → "NDA_MFW_MDC_firmado_2026-11-02_15-34.pdf" (date avoids confusion between versions). */
+/** "NDA_MFW_MDC.doc" + signed at → "NDA_MFW_MDC_firmado_2026-11-02_15-34.pdf" (date avoids confusion between versions).
+ *  The generated document's own stamp ("NDA_2026-11-02_21-40.doc") is dropped, not repeated. */
 export function signedFileName(originalName: string, signedAt: Date): string {
-  const base = (originalName || 'Documento').replace(/\.[^./\\]+$/, '').replace(/_firmado(_\d{4}-\d{2}-\d{2}_\d{2}-\d{2})?$/i, '');
-  return `${base}_firmado_${signedStamp(signedAt)}.pdf`;
+  const base = (originalName || 'Documento').replace(/\.[^./\\]+$/, '').replace(/(_firmado)?(_\d{4}-\d{2}-\d{2}_\d{2}-\d{2})?$/i, '');
+  return `${base}_firmado_${fileStamp(signedAt)}.pdf`;
 }
 
 /** Next to the original (same Storage folder, so case documents stay under casos/{caseId}). */

@@ -222,7 +222,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
               source: 'generated',
               pdfBlob: pdfBlobResult?.blob ?? undefined,
             });
-            showDocSavedToast(filename, record.downloadUrl, record);
+            showDocSavedToast(record.name, record.downloadUrl, record);
             // Trigger vector embedding with the text we already have (fire-and-forget)
             user.getIdToken().then(token =>
               fetch('/api/documents/embed', {
