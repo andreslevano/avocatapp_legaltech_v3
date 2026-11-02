@@ -358,7 +358,9 @@ export default function DocTable({
                   className={`group transition-colors cursor-pointer ${isActive ? 'bg-avocat-gold/5' : 'hover:bg-[#252218]'}`}
                 >
                   <td className={TD} onClick={e => { e.stopPropagation(); onToggleSelect(d.id); }}>
+                    {/* The cell toggles (bigger hit area); the input's own click must not reach it or it toggles twice. */}
                     <input type="checkbox" checked={selected.has(d.id)} onChange={() => onToggleSelect(d.id)}
+                      onClick={e => e.stopPropagation()}
                       className="rounded border-[#2e2b20] bg-[#161410] accent-avocat-gold cursor-pointer" />
                   </td>
 
