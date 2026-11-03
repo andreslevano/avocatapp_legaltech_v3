@@ -15,13 +15,14 @@ export function classifyAuthError(
       || /admin(istrator)? (approval|consent)|needs? (admin|permission to access resources in your organization)/i.test(desc)) {
     return 'admin_consent';
   }
-  // AADSTS65004: consent declined. That is also what Microsoft returns when the user leaves the
-  // "Se necesita la aprobación del administrador" screen ("Volver a la aplicación sin dar el
-  // consentimiento"), so it goes to the admin-approval page, not to "cancelado".
+  // Consent declined (AADSTS65004), or a bare access_denied: that is what Microsoft returns when the
+  // user leaves the "Se necesita la aprobación del administrador" screen ("Volver a la aplicación sin
+  // dar el consentimiento" — seen in production with no description, 2026-11-03). Both go to the
+  // admin-approval page, whose copy also covers a user who simply cancelled (→ «Reintentar»).
   if (desc.includes('AADSTS65004')) return 'consent_declined';
-  // subcode=cancel without a consent error: the user closed / backed out of sign-in.
-  if (subcode === 'cancel' || (error === 'access_denied' && !desc)) return 'cancelled';
-  if (error === 'access_denied' && /cancel|declined/i.test(desc)) return 'cancelled';
+  if (error === 'access_denied' && (!desc || /cancel|declined/i.test(desc))) return 'consent_declined';
+  // Backed out of sign-in with a non-consent error code.
+  if (subcode === 'cancel') return 'cancelled';
   return 'error';
 }
 

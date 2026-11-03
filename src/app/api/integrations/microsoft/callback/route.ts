@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const error = q.get('error');
   if (error) {
     const outcome = classifyAuthError(error, q.get('error_description'), q.get('error_subcode'));
-    console.warn('[microsoft/callback]', error, (q.get('error_description') ?? '').split('\r\n')[0]);
+    console.warn('[microsoft/callback]', error, `subcode=${q.get('error_subcode') ?? '-'}`, `→ ${outcome}`, (q.get('error_description') ?? '').split('\r\n')[0]);
     if (outcome === 'admin_consent' || outcome === 'consent_declined') {
       const tid = (q.get('error_description') ?? '').match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
       const page = new URL(`${appUrl}/integrations/microsoft/admin-consent`);
