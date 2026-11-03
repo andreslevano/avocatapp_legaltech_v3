@@ -464,7 +464,7 @@ export default function GeneracionPage() {
                     </div>
                     <div className="col-span-1 flex justify-center pt-2">
                       {parties.length > 1 && (
-                        <button onClick={() => setParties(prev => prev.filter(x => x.id !== p.id))} className="text-[#3a3630] hover:text-red-400 transition-colors text-[13px]">×</button>
+                        <button onClick={() => setParties(prev => prev.filter(x => x.id !== p.id))} className="text-[#8a7f68] hover:text-red-400 transition-colors text-[13px]">×</button>
                       )}
                     </div>
                   </div>
@@ -487,7 +487,7 @@ export default function GeneracionPage() {
                   <div key={d.id} className="flex gap-2 items-center">
                     <input className={`${INPUT} flex-1`} placeholder="Descripción (ej: Fecha del contrato)" value={d.label} onChange={e => setKeyDates(prev => prev.map(x => x.id === d.id ? { ...x, label: e.target.value } : x))} />
                     <input type="date" className={`${INPUT} w-40`} value={d.date} onChange={e => setKeyDates(prev => prev.map(x => x.id === d.id ? { ...x, date: e.target.value } : x))} />
-                    {keyDates.length > 1 && <button onClick={() => setKeyDates(prev => prev.filter(x => x.id !== d.id))} className="text-[#3a3630] hover:text-red-400 transition-colors text-[13px] flex-shrink-0">×</button>}
+                    {keyDates.length > 1 && <button onClick={() => setKeyDates(prev => prev.filter(x => x.id !== d.id))} className="text-[#8a7f68] hover:text-red-400 transition-colors text-[13px] flex-shrink-0">×</button>}
                   </div>
                 ))}
               </div>
@@ -536,10 +536,10 @@ export default function GeneracionPage() {
                       }
                       <span className="text-[12px] text-[#c8c0ac] truncate">{refDocName}</span>
                     </div>
-                    <button onClick={() => { setRefDocName(''); setRefDocText(''); }} className="text-[11px] text-[#3a3630] hover:text-red-400 transition-colors flex-shrink-0">Quitar</button>
+                    <button onClick={() => { setRefDocName(''); setRefDocText(''); }} className="text-[11px] text-[#8a7f68] hover:text-red-400 transition-colors flex-shrink-0">Quitar</button>
                   </div>
                 ) : (
-                  <button onClick={() => refFileRef.current?.click()} className="w-full border border-dashed border-[#2e2b20] rounded-lg py-4 text-center text-[12px] text-[#3a3630] hover:border-avocat-gold/30 hover:text-[#6b6050] transition-colors">
+                  <button onClick={() => refFileRef.current?.click()} className="w-full border border-dashed border-[#2e2b20] rounded-lg py-4 text-center text-[12px] text-[#8a7f68] hover:border-avocat-gold/30 hover:text-[#6b6050] transition-colors">
                     Subir PDF, DOCX o TXT como referencia
                   </button>
                 )}

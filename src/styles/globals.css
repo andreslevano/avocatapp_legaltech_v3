@@ -82,3 +82,32 @@
 zapier-interfaces-chatbot-embed {
   --zapier-primary: var(--color-gold) !important;
 }
+
+/* ── Dark app surface ───────────────────────────────────────────────
+   Button variants BtnOutlineDark / BtnGhost / BtnDark were designed for the light public pages
+   (dark text on cream). Inside the app (dark surfaces) they were nearly invisible. AppShellClient
+   adds `app-surface` to <body> (so portaled modals are covered too); public pages are unaffected. */
+body.app-surface .btn-BtnOutlineDark {
+  color: #e8d4a0;
+  border-color: rgba(232, 212, 160, 0.35);
+  background-color: rgba(232, 212, 160, 0.04);
+}
+body.app-surface .btn-BtnOutlineDark:hover:not(:disabled) {
+  color: #f3e3b8;
+  border-color: #B8882A;
+  background-color: rgba(184, 136, 42, 0.16);
+}
+body.app-surface .btn-BtnGhost {
+  color: #c8c0ac;
+}
+body.app-surface .btn-BtnGhost:hover:not(:disabled) {
+  color: #e8d4a0;
+  background-color: #252218;
+}
+body.app-surface .btn-BtnDark {
+  color: #e8d4a0;
+  background-color: #2e2b20;
+}
+body.app-surface .btn-BtnDark:hover:not(:disabled) {
+  background-color: #3a3528;
+}

@@ -149,7 +149,7 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
           <Button variant="BtnOutlineDark" size="sm" fullWidth onClick={() => onAction('link-case', d)}>Vincular caso</Button>
           <Button variant="BtnOutlineDark" size="sm" fullWidth onClick={() => onAction('analyze', d)}>Analizar con IA</Button>
         </div>
-        <button onClick={() => onAction('delete', d)} className="text-[11px] text-[#3a3630] hover:text-red-400 transition-colors text-center pt-1">
+        <button onClick={() => onAction('delete', d)} className="text-[11px] text-[#8a7f68] hover:text-red-400 transition-colors text-center pt-1">
           Eliminar documento
         </button>
       </div>

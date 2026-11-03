@@ -74,6 +74,12 @@ export default function AppShellClient({ children }: AppShellClientProps) {
     };
   }, [router]);
 
+  // Dark-surface button styles (globals.css) for the app and its portaled modals.
+  useEffect(() => {
+    document.body.classList.add('app-surface');
+    return () => document.body.classList.remove('app-surface');
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#161410] flex items-center justify-center">

@@ -136,7 +136,7 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
               <span className="flex-shrink-0 flex items-center gap-2">
                 {canCorrect(x) && editing === null && (
                   <button onClick={() => setEditing({ key: k, email: x.email })} disabled={busy !== null}
-                    className="text-[10px] text-[#3a3630] hover:text-avocat-gold transition-colors">Corregir</button>
+                    className="text-[10px] text-[#8a7f68] hover:text-avocat-gold transition-colors">Corregir</button>
                 )}
                 <span className={`text-[10px] ${x.status === 'completed' ? 'text-blue-400' : x.status === 'declined' ? 'text-red-400' : 'text-[#6b6050]'}`}>
                   {x.role === 'cc' ? 'En copia' : RECIPIENT_LABEL[x.status]}
@@ -180,7 +180,7 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
         </div>
       ) : (
         <button onClick={() => setConfirmVoid(true)} disabled={busy !== null}
-          className="block text-[10px] text-[#3a3630] hover:text-red-400 transition-colors">
+          className="block text-[10px] text-[#8a7f68] hover:text-red-400 transition-colors">
           Anular solicitud de firma
         </button>
       ))}

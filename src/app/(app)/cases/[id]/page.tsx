@@ -384,7 +384,7 @@ export default function CaseDetailPage() {
                     {linkedClient ? '↔ cambiar' : '+ vincular'}
                   </button>
                   {linkedClient && (
-                    <button onClick={handleUnlinkClient} className="text-[10px] text-[#3a3630] hover:text-red-400 transition-colors">desvincular</button>
+                    <button onClick={handleUnlinkClient} className="text-[10px] text-[#8a7f68] hover:text-red-400 transition-colors">desvincular</button>
                   )}
                 </div>
               </div>

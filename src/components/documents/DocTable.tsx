@@ -80,6 +80,7 @@ const ORIGEN_STYLE: Record<string, string> = {
   Subido:     'text-[#6b6050]',
   OneDrive:   'text-sky-400',
   SharePoint: 'text-teal-400',
+  DocuSign:   'text-sky-400/80',
 };
 
 const itemsLabel = (n: number) => `${n} elemento${n !== 1 ? 's' : ''}`;
@@ -400,7 +401,7 @@ export default function DocTable({
                     <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${statusChip(d).className}`}>{statusChip(d).label}</span>
                   </td>
 
-                  <td className={`${TD} hidden lg:table-cell whitespace-nowrap ${ORIGEN_STYLE[origen] ?? ''}`}>{origen}</td>
+                  <td className={`${TD} hidden lg:table-cell whitespace-nowrap ${ORIGEN_STYLE[origen] ?? 'text-[#9a8f78]'}`}>{origen}</td>
 
                   <td className={TD} onClick={e => e.stopPropagation()}>
                     <button

@@ -268,7 +268,7 @@ ${text.slice(0, 12000)}`;
                   <div key={f.name} className="flex items-center justify-between px-3 py-1.5 bg-[#161410] border border-[#2e2b20] rounded-lg">
                     <span className="text-[12px] text-[#c8c0ac] truncate">{f.name}</span>
                     <button onClick={() => { setFiles(p => p.filter(x => x.name !== f.name)); setResults([]); setSaved(false); }}
-                      className="text-[#3a3630] hover:text-red-400 ml-2 shrink-0">×</button>
+                      className="text-[#8a7f68] hover:text-red-400 ml-2 shrink-0">×</button>
                   </div>
                 ))}
               </div>

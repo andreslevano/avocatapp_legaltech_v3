@@ -55,6 +55,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-avocat-gold focus-visible:ring-offset-2',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           VARIANT_CLASSES[variant],
+          `btn-${variant}`,          // hook for the dark app surface (globals.css → body.app-surface)
           SIZE_CLASSES[size],
           fullWidth ? 'w-full' : '',
           className,
