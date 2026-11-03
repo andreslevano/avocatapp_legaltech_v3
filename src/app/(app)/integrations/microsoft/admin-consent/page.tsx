@@ -3,7 +3,7 @@ import AdminConsentView from './AdminConsentView';
 
 // Shown when the user's organisation blocks user consent (AADSTS65001 / 90094 …).
 // The admin-consent URL grants the app's registered read-only permissions for the whole tenant.
-export default function AdminConsentPage({ searchParams }: { searchParams: { tid?: string; returnTo?: string } }) {
+export default function AdminConsentPage({ searchParams }: { searchParams: { tid?: string; returnTo?: string; reason?: string } }) {
   const cfg = msServerConfig();
   const tid = searchParams.tid && /^[0-9a-f-]{36}$/i.test(searchParams.tid) ? searchParams.tid : 'organizations';
   const url = new URL(`${authorityHost(cfg.authority)}/${tid}/v2.0/adminconsent`);
@@ -13,5 +13,5 @@ export default function AdminConsentPage({ searchParams }: { searchParams: { tid
     redirect_uri: cfg.redirectUri,
     state: 'admin',
   }).toString();
-  return <AdminConsentView adminConsentUrl={url.toString()} returnTo={sanitizeReturnTo(searchParams.returnTo)} />;
+  return <AdminConsentView adminConsentUrl={url.toString()} returnTo={sanitizeReturnTo(searchParams.returnTo)} declined={searchParams.reason === 'declined'} />;
 }

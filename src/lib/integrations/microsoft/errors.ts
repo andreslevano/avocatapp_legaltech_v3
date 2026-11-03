@@ -1,7 +1,7 @@
 // Maps Microsoft identity platform errors to the F1 outcome screens.
 // Documented in docs/roadmap/CONTRACT_INTELLIGENCE_PLAN.md (F1 → "Microsoft error mapping").
 
-export type ConnectOutcome = 'admin_consent' | 'cancelled' | 'error';
+export type ConnectOutcome = 'admin_consent' | 'consent_declined' | 'cancelled' | 'error';
 
 const ADMIN_CONSENT_CODES = ['AADSTS65001', 'AADSTS90094', 'AADSTS90008', 'AADSTS900941'];
 
@@ -15,8 +15,12 @@ export function classifyAuthError(
       || /admin(istrator)? (approval|consent)|needs? (admin|permission to access resources in your organization)/i.test(desc)) {
     return 'admin_consent';
   }
-  // AADSTS65004: user declined consent. subcode=cancel: user closed/backed out of sign-in.
-  if (subcode === 'cancel' || desc.includes('AADSTS65004') || (error === 'access_denied' && !desc)) return 'cancelled';
+  // AADSTS65004: consent declined. That is also what Microsoft returns when the user leaves the
+  // "Se necesita la aprobación del administrador" screen ("Volver a la aplicación sin dar el
+  // consentimiento"), so it goes to the admin-approval page, not to "cancelado".
+  if (desc.includes('AADSTS65004')) return 'consent_declined';
+  // subcode=cancel without a consent error: the user closed / backed out of sign-in.
+  if (subcode === 'cancel' || (error === 'access_denied' && !desc)) return 'cancelled';
   if (error === 'access_denied' && /cancel|declined/i.test(desc)) return 'cancelled';
   return 'error';
 }

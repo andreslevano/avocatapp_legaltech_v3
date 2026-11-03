@@ -29,7 +29,9 @@ function mailBody(url: string) {
   ].join('\n');
 }
 
-export default function AdminConsentView({ adminConsentUrl, returnTo }: { adminConsentUrl: string; returnTo: string }) {
+/** declined: Microsoft returned "consent declined" (AADSTS65004) — either the admin-approval screen was
+ *  left, or the user said no to the permissions. The page covers both. */
+export default function AdminConsentView({ adminConsentUrl, returnTo, declined = false }: { adminConsentUrl: string; returnTo: string; declined?: boolean }) {
   const { user } = useAppAuth();
   const [copied, setCopied] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -53,12 +55,23 @@ export default function AdminConsentView({ adminConsentUrl, returnTo }: { adminC
       <div className="flex-1 overflow-y-auto flex items-start md:items-center justify-center p-4">
         <div className="w-full max-w-lg bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-6 space-y-4">
           <h2 className="font-display text-[22px] text-[#e8d4a0] leading-tight">
-            Tu organización requiere que un administrador apruebe Avocat.
+            {declined ? '¿Microsoft te pidió la aprobación de un administrador?' : 'Tu organización requiere que un administrador apruebe Avocat.'}
           </h2>
+          {declined && (
+            <p className="text-[13px] text-[#c8c0ac] leading-relaxed">
+              Si viste «Se necesita la aprobación del administrador», tu organización no permite que cada usuario
+              autorice aplicaciones: un administrador de Microsoft 365 debe aprobar Avocat una sola vez para todos.
+            </p>
+          )}
           <p className="text-[13px] text-[#c8c0ac] leading-relaxed">
             Envía este enlace a la persona que administra Microsoft 365 en tu organización. Cuando lo apruebe,
             vuelve aquí y pulsa «Reintentar».
           </p>
+          {declined && (
+            <p className="text-[12px] text-[#6b6050] leading-relaxed">
+              Si solo cancelaste los permisos, pulsa «Reintentar» y acéptalos.
+            </p>
+          )}
           <p className="text-[11px] text-[#6b6050] leading-relaxed">
             Avocat solo pide permisos de lectura y nunca modifica ni borra nada en OneDrive o SharePoint.
           </p>
