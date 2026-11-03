@@ -98,6 +98,9 @@ export function fileIcon(ext: string): string { return FILE_ICON[ext?.toLowerCas
 
 export function tsSeconds(ts: unknown): number {
   if (ts && typeof ts === 'object' && 'seconds' in ts) return (ts as { seconds: number }).seconds;
+  // Records added locally right after a server write (e.g. Microsoft import) carry an ISO string.
+  if (typeof ts === 'string') { const ms = Date.parse(ts); return Number.isFinite(ms) ? Math.floor(ms / 1000) : 0; }
+  if (ts instanceof Date) return Math.floor(ts.getTime() / 1000);
   return 0;
 }
 

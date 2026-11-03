@@ -852,6 +852,13 @@ function DocumentsView() {
         <MicrosoftImportFlow
           returnTo={currentHref}
           folderId={currentFolderId}
+          folderLabel={enabled ? folderPathLabel(currentFolderId, foldersById) : undefined}
+          cases={cases}
+          clients={clients}
+          onImported={imported => {
+            setDocs(prev => [...imported, ...prev.filter(d => !imported.some(x => x.id === d.id))]);
+            ws.notify({ kind: 'ok', text: `${imported.length} ${imported.length === 1 ? 'archivo importado' : 'archivos importados'} de Microsoft` });
+          }}
           onClose={() => setMsImportOpen(false)}
         />
       )}

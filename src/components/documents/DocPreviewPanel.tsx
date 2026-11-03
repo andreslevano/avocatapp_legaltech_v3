@@ -103,6 +103,21 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
             <span className="text-[#6b6050]">{formatDate(d.createdAt)}</span>
           </MetaRow>
         </div>
+        {d.externalRef && (
+          <div className="rounded-lg border border-sky-400/20 bg-sky-400/5 px-2.5 py-2 space-y-0.5 text-[11px]">
+            <p className="text-sky-300">
+              ☁️ Importado de {d.externalRef.provider === 'sharepoint' ? 'SharePoint' : 'OneDrive'}
+              {d.externalRef.importedAt ? ` · ${formatDate(d.externalRef.importedAt)}` : ''}
+            </p>
+            {d.externalRef.path && <p className="text-[#c8c0ac] truncate" title={d.externalRef.path}>{d.externalRef.path}</p>}
+            {d.externalRef.webUrl && (
+              <a href={d.externalRef.webUrl} target="_blank" rel="noopener noreferrer" className="text-avocat-gold hover:underline">
+                Abrir en {d.externalRef.provider === 'sharepoint' ? 'SharePoint' : 'OneDrive'} ↗
+              </a>
+            )}
+            <p className="text-[10px] text-[#6b6050]">Avocat guarda una copia. Los cambios en el original no se reflejan automáticamente.</p>
+          </div>
+        )}
         {folderLabel && (
           <div className="text-[11px]">
             <MetaRow label="Carpeta">

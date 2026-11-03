@@ -93,3 +93,20 @@ export async function graphGet<T>(accessToken: string, path: string): Promise<T>
   if (!res.ok) throw new Error(`Graph ${path} → ${res.status}`);
   return res.json() as Promise<T>;
 }
+
+/** File content (GET only). Graph answers with a redirect to a pre-authenticated URL; fetch follows it
+ *  and drops the Authorization header on the cross-origin hop, as it should. */
+export async function graphDownload(accessToken: string, path: string, maxBytes: number): Promise<Buffer> {
+  const res = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    redirect: 'follow',
+  });
+  if (res.status === 401) throw new ReconnectRequiredError();
+  if (!res.ok) throw new Error(`Graph ${path} → ${res.status}`);
+  const len = Number(res.headers.get('content-length') ?? 0);
+  if (len > maxBytes) throw new Error('too_large');
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length > maxBytes) throw new Error('too_large');
+  return buf;
+}

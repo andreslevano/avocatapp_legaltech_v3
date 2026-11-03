@@ -10,6 +10,9 @@ import { decodeState, encodeState } from '@/lib/integrations/microsoft/state';
 import { decryptString, encryptString } from '@/lib/integrations/crypto';
 import { adminConsentEmail } from '@/lib/integrations/microsoft/consent-email';
 import { adminConsentUrl } from '@/lib/integrations/microsoft/config';
+import { checkItem, CONTRACT_NAME_RE, providerOf, readablePath, storageFileName, validIds } from '@/lib/integrations/microsoft/import';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 test.describe('read-only scope guard (M2)', () => {
   test('accepts the registered read-only grants', () => {
@@ -131,5 +134,35 @@ test.describe('admin approval request email', () => {
     expect(m.html).toContain('Ana &lt;b&gt;');
     expect(m.html).toContain(url.replace(/&/g, '&amp;'));
     expect(m.html).not.toMatch(/ReadWrite/);
+  });
+});
+
+test.describe('import (files)', () => {
+  test('what can be imported', () => {
+    expect(checkItem(null)).toBe('not_found');
+    expect(checkItem({ id: '1', name: 'Carpeta', folder: { childCount: 3 } })).toBe('folder');
+    expect(checkItem({ id: '1', name: 'NDA.pdf', size: 1000, file: {} })).toBe('ok');
+    expect(checkItem({ id: '1', name: 'Contrato.DOCX', size: 1000, file: {} })).toBe('ok');
+    expect(checkItem({ id: '1', name: 'video.mp4', size: 1000, file: {} })).toBe('unsupported');
+    expect(checkItem({ id: '1', name: 'big.pdf', size: 26 * 1024 * 1024, file: {} })).toBe('too_large');
+  });
+  test('provider, path, names, ids', () => {
+    expect(providerOf({ parentReference: { driveType: 'documentLibrary' } })).toBe('sharepoint');
+    expect(providerOf({ parentReference: { driveType: 'business' }, webUrl: 'https://felixdia-my.sharepoint.com/personal/x' })).toBe('onedrive');
+    expect(providerOf({ webUrl: 'https://acme.sharepoint.com/sites/Legal/Shared%20Documents/a.pdf' })).toBe('sharepoint');
+    expect(readablePath('/drives/b!abc/root:/Contratos/2026%20Q1')).toBe('Contratos / 2026 Q1');
+    expect(readablePath('/drive/root:')).toBe('');
+    expect(storageFileName('a/b:c?.pdf')).toBe('a_b_c_.pdf');
+    expect(validIds('b!AbC-123_x', '01ABCDEF')).toBe(true);
+    expect(validIds('../x', '1')).toBe(false);
+    expect(validIds('b!x', 'a/b')).toBe(false);
+    expect(CONTRACT_NAME_RE.test('NDA_Acme.pdf')).toBe(true);
+    expect(CONTRACT_NAME_RE.test('Contrato de servicios.docx')).toBe(true);
+    expect(CONTRACT_NAME_RE.test('SIMPL_OP2021.pdf')).toBe(false);
+  });
+  test('the import only reads from Microsoft (M2)', () => {
+    const src = ['import-server.ts', 'oauth.ts'].map(f => readFileSync(join(__dirname, '../../src/lib/integrations/microsoft', f), 'utf8')).join('\n');
+    expect(src).not.toMatch(/method:\s*'(POST|PUT|PATCH|DELETE)'[\s\S]{0,80}graph\.microsoft/);
+    expect(src).not.toMatch(/graph\.microsoft\.com[^`'"]*`,\s*\{\s*method:\s*'(POST|PUT|PATCH|DELETE)'/);
   });
 });

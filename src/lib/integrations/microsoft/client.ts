@@ -55,3 +55,26 @@ export function getPickerToken(user: User, resource: string): Promise<{ token: s
 export function disconnectMicrosoft(user: User): Promise<{ ok: true }> {
   return authed(user, '/api/integrations/microsoft/disconnect', { method: 'POST', body: '{}' });
 }
+
+// ── Import (F1, files) ───────────────────────────────────────────
+
+export interface ImportPreviewRow {
+  driveId: string;
+  itemId: string;
+  name: string;
+  size: number;
+  provider: 'onedrive' | 'sharepoint';
+  path: string;
+  check: 'ok' | 'folder' | 'unsupported' | 'too_large' | 'not_found';
+  duplicates: { id: string; name: string }[];
+}
+
+export function previewMicrosoftImport(user: User, items: { driveId: string; itemId: string }[]) {
+  return authed<{ items: ImportPreviewRow[] }>(user, '/api/integrations/microsoft/import/preview', { method: 'POST', body: JSON.stringify({ items }) })
+    .then(r => r.items);
+}
+
+export function importMicrosoftFile(user: User, input: { driveId: string; itemId: string; folderId?: string | null; caseId?: string | null; clientId?: string | null }) {
+  return authed<{ document: Record<string, unknown> & { id: string } }>(user, '/api/integrations/microsoft/import/file', { method: 'POST', body: JSON.stringify(input) })
+    .then(r => r.document);
+}

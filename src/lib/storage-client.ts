@@ -24,8 +24,13 @@ export interface DocumentRecord {
   folderId?: string | null;     // D1: where the document lives (missing/null = root)
   externalRef?: {               // F1: set on documents imported from Microsoft
     provider: 'onedrive' | 'sharepoint';
-    webUrl?: string;
+    webUrl?: string | null;
     path?: string;
+    driveId?: string;
+    itemId?: string;
+    eTag?: string | null;
+    importedAt?: string;
+    lastSyncedAt?: string;
   } | null;
   signatureRequestId?: string;
   signatureStatus?: 'pending_owner' | 'sent' | 'delivered' | 'completed' | 'declined' | 'voided' | 'expired' | 'error';
