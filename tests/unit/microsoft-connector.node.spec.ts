@@ -8,6 +8,8 @@ import {
 import { classifyAuthError, isReauthError } from '@/lib/integrations/microsoft/errors';
 import { decodeState, encodeState } from '@/lib/integrations/microsoft/state';
 import { decryptString, encryptString } from '@/lib/integrations/crypto';
+import { adminConsentEmail } from '@/lib/integrations/microsoft/consent-email';
+import { adminConsentUrl } from '@/lib/integrations/microsoft/config';
 
 test.describe('read-only scope guard (M2)', () => {
   test('accepts the registered read-only grants', () => {
@@ -112,5 +114,22 @@ test.describe('picker resource allow-list', () => {
     expect(sharePointTenantFromUrl('https://contoso-my.sharepoint.com/personal/ana_contoso_com/Documents')).toBe('contoso');
     expect(sharePointTenantFromUrl('https://contoso.sharepoint.com/sites/x')).toBe('contoso');
     expect(sharePointTenantFromUrl('https://onedrive.live.com/?id=1')).toBeNull();
+  });
+});
+
+test.describe('admin approval request email', () => {
+  test('approval link, read-only permissions, escaping, reply guidance', () => {
+    const url = adminConsentUrl({ authority: 'https://login.microsoftonline.com/common', clientId: 'abc', redirectUri: 'https://avocatapp.com/api/integrations/microsoft/callback' }, null);
+    expect(url).toBe('https://login.microsoftonline.com/organizations/v2.0/adminconsent?client_id=abc&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default&redirect_uri=https%3A%2F%2Favocatapp.com%2Fapi%2Fintegrations%2Fmicrosoft%2Fcallback&state=admin');
+    expect(adminConsentUrl({ authority: 'https://login.microsoftonline.com/common', clientId: 'abc', redirectUri: 'r' }, '11111111-2222-3333-4444-555555555555'))
+      .toContain('/11111111-2222-3333-4444-555555555555/v2.0/adminconsent');
+    expect(adminConsentUrl({ authority: 'https://login.microsoftonline.com/common', clientId: 'abc', redirectUri: 'r' }, 'evil/../x')).toContain('/organizations/');
+    const m = adminConsentEmail({ name: 'Ana <b>', email: 'ana@firma.es' }, url);
+    expect(m.subject).toContain('Ana <b>');
+    expect(m.text).toContain(url);
+    expect(m.text).toContain('solo lectura');
+    expect(m.html).toContain('Ana &lt;b&gt;');
+    expect(m.html).toContain(url.replace(/&/g, '&amp;'));
+    expect(m.html).not.toMatch(/ReadWrite/);
   });
 });

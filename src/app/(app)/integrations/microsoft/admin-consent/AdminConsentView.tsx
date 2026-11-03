@@ -31,10 +31,36 @@ function mailBody(url: string) {
 
 /** declined: Microsoft returned "consent declined" (AADSTS65004) — either the admin-approval screen was
  *  left, or the user said no to the permissions. The page covers both. */
-export default function AdminConsentView({ adminConsentUrl, returnTo, declined = false }: { adminConsentUrl: string; returnTo: string; declined?: boolean }) {
+export default function AdminConsentView({ adminConsentUrl, tid = null, returnTo, declined = false }: {
+  adminConsentUrl: string; tid?: string | null; returnTo: string; declined?: boolean;
+}) {
   const { user } = useAppAuth();
   const [copied, setCopied] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  // "Enviar por email": Avocat sends it (a mailto: link does nothing without a desktop mail app).
+  const [mailOpen, setMailOpen] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [mailResult, setMailResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const send = async () => {
+    setSending(true); setMailResult(null);
+    try {
+      const res = await fetch('/api/integrations/microsoft/admin-consent-request', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminEmail: adminEmail.trim(), tid }),
+      });
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo enviar el email.');
+      setMailResult({ ok: true, text: `Enviado a ${adminEmail.trim()}. Si responde, te llegará a ti.` });
+      setMailOpen(false);
+    } catch (e) {
+      setMailResult({ ok: false, text: (e as Error).message });
+    } finally {
+      setSending(false);
+    }
+  };
 
   const copy = async () => {
     try { await navigator.clipboard.writeText(adminConsentUrl); setCopied(true); setTimeout(() => setCopied(false), 2500); }
@@ -47,7 +73,13 @@ export default function AdminConsentView({ adminConsentUrl, returnTo, declined =
     catch { setRetrying(false); }
   };
 
-  const mailto = `mailto:?subject=${encodeURIComponent(MAIL_SUBJECT)}&body=${encodeURIComponent(mailBody(adminConsentUrl))}`;
+  const to = encodeURIComponent(adminEmail.trim());
+  const subject = encodeURIComponent(MAIL_SUBJECT);
+  const body = encodeURIComponent(mailBody(adminConsentUrl));
+  const mailto = `mailto:${to}?subject=${subject}&body=${body}`;
+  // Web compose links work without a desktop mail app (Microsoft 365 users usually have Outlook on the web).
+  const outlookWeb = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}`;
+  const gmailWeb = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`;
 
   return (
     <div className="flex flex-col h-full">
@@ -77,8 +109,27 @@ export default function AdminConsentView({ adminConsentUrl, returnTo, declined =
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
             <Button variant="BtnGold" size="sm" onClick={copy}>{copied ? 'Enlace copiado ✓' : 'Copiar enlace para tu administrador'}</Button>
-            <a href={mailto}><Button variant="BtnOutlineDark" size="sm" fullWidth>Enviar por email</Button></a>
+            <Button variant="BtnOutlineDark" size="sm" onClick={() => { setMailOpen(o => !o); setMailResult(null); }}>Enviar por email</Button>
           </div>
+          {mailOpen && (
+            <div className="rounded-xl border border-[#2e2b20] bg-[#161410] p-3 space-y-2">
+              <label htmlFor="admin-email" className="block text-[11px] text-[#c8c0ac]">Email del administrador de Microsoft 365</label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input id="admin-email" type="email" autoFocus value={adminEmail} placeholder="it@tuempresa.com"
+                  onChange={e => setAdminEmail(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && adminEmail.trim()) send(); }}
+                  className="flex-1 bg-[#1e1c16] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40" />
+                <Button variant="BtnGold" size="sm" loading={sending} disabled={!adminEmail.trim()} onClick={send}>Enviar</Button>
+              </div>
+              <p className="text-[11px] text-[#6b6050]">Lo enviamos desde Avocat con el enlace de aprobación; las respuestas te llegarán a ti.</p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#6b6050]">
+                <span>O escríbelo tú desde:</span>
+                <a href={outlookWeb} target="_blank" rel="noopener noreferrer" className="text-avocat-gold hover:underline">Outlook web</a>
+                <a href={gmailWeb} target="_blank" rel="noopener noreferrer" className="text-avocat-gold hover:underline">Gmail</a>
+                <a href={mailto} className="text-avocat-gold hover:underline">Tu programa de correo</a>
+              </div>
+            </div>
+          )}
+          {mailResult && <p className={`text-[12px] ${mailResult.ok ? 'text-emerald-400' : 'text-red-400'}`}>{mailResult.text}</p>}
           <div className="flex items-center justify-between pt-2 border-t border-[#2e2b20]">
             <Link href={returnTo} className="text-[12px] text-[#6b6050] hover:text-[#c8c0ac]">← Volver</Link>
             <Button variant="BtnGhost" size="sm" loading={retrying} onClick={retry}>Reintentar</Button>

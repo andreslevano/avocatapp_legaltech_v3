@@ -64,6 +64,19 @@ export function authorityHost(authority: string): string {
   return new URL(authority).origin;
 }
 
+/** Microsoft's organisation-wide approval page for the app's registered (read-only) permissions. */
+export function adminConsentUrl(cfg: Pick<MsServerConfig, 'authority' | 'clientId' | 'redirectUri'>, tid?: string | null): string {
+  const tenant = tid && /^[0-9a-f-]{36}$/i.test(tid) ? tid : 'organizations';
+  const url = new URL(`${authorityHost(cfg.authority)}/${tenant}/v2.0/adminconsent`);
+  url.search = new URLSearchParams({
+    client_id: cfg.clientId,
+    scope: 'https://graph.microsoft.com/.default',
+    redirect_uri: cfg.redirectUri,
+    state: 'admin',
+  }).toString();
+  return url.toString();
+}
+
 // returnTo / query helpers are shared by all integrations.
 export { sanitizeReturnTo, withParams } from '../urls';
 
