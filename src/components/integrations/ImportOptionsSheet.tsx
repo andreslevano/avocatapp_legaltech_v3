@@ -1,25 +1,21 @@
 'use client';
 
-// Import options + progress (F1 stages 3–4, files). After the File Picker: shows what will be
-// imported (size, source, problems, earlier copies), destination, links and "Analizar como contrato";
-// then copies the files one by one (one request each) with per-file progress and retry.
-// Folders arrive in the next step: for now the user opens them in the picker and picks the files.
+// Import options + progress (F1 stages 3–4). After the File Picker: what will be imported (files and
+// expanded folders: size, source, problems, earlier copies), destination, "Mantener estructura de
+// carpetas", case / client links and "Analizar como contrato". "Importar" creates an import job that
+// the app-wide runner (ImportJobsContext) processes one file at a time — closing this sheet or
+// navigating doesn't stop it; a progress pill stays visible.
 
 import { useEffect, useMemo, useState } from 'react';
 import { useAppAuth } from '@/contexts/AppAuthContext';
+import { useImportJobs } from '@/contexts/ImportJobsContext';
 import { Button } from '@/components/ui/Button';
 import { ModalShell } from '@/components/documents/modals';
-import ContractConfirmSheet from '@/components/contracts/ContractConfirmSheet';
-import { formatBytes, type DocumentRecord } from '@/lib/storage-client';
+import { formatBytes } from '@/lib/storage-client';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
-import { importMicrosoftFile, previewMicrosoftImport, type ImportPreviewRow } from '@/lib/integrations/microsoft/client';
+import { createImportJob, previewMicrosoftImport, type ImportPreview } from '@/lib/integrations/microsoft/client';
 import { CHECK_LABEL, CONTRACT_NAME_RE } from '@/lib/integrations/microsoft/import';
 import { canUseContracts } from '@/lib/contracts/config';
-import { analyzeAsContract } from '@/lib/contracts/client';
-import type { Contract } from '@/lib/contracts/types';
-
-type RowState = 'ready' | 'skip' | 'running' | 'done' | 'error';
-interface Row extends ImportPreviewRow { state: RowState; copy: boolean; error?: string; doc?: DocumentRecord }
 
 const SOURCE_LABEL = { onedrive: 'OneDrive', sharepoint: 'SharePoint' } as const;
 const SELECT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[12px] text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40';
@@ -33,125 +29,134 @@ interface Props {
   clients: ClientDoc[];
   onBack: () => void;
   onClose: () => void;
-  onImported: (docs: DocumentRecord[]) => void;
 }
 
-export default function ImportOptionsSheet({ items, folderId, folderLabel, caseId: initialCase, cases, clients, onBack, onClose, onImported }: Props) {
+export default function ImportOptionsSheet({ items, folderId, folderLabel, caseId: initialCase, cases, clients, onBack, onClose }: Props) {
   const { user, userDoc } = useAppAuth();
+  const runner = useImportJobs();
   const contractsOn = canUseContracts(userDoc.plan, user?.email);
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [loadError, setLoadError] = useState('');
   const [caseId, setCaseId] = useState(initialCase ?? '');
   const [clientId, setClientId] = useState('');
   const [analyze, setAnalyze] = useState(false);
-  const [phase, setPhase] = useState<'options' | 'importing' | 'analyzing' | 'done'>('options');
-  const [analyzed, setAnalyzed] = useState(0);
-  const [queue, setQueue] = useState<Contract[]>([]);
-  const [analysisErrors, setAnalysisErrors] = useState(0);
+  const [keepStructure, setKeepStructure] = useState(true);
+  const [reimport, setReimport] = useState<Set<string>>(new Set());   // itemIds already imported, chosen again
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!user) return;
     previewMicrosoftImport(user, items)
-      .then(r => {
-        setRows(r.map(x => ({ ...x, state: x.check === 'ok' ? (x.duplicates.length ? 'skip' : 'ready') : 'skip', copy: false })));
-        setAnalyze(contractsOn && r.some(x => x.check === 'ok' && CONTRACT_NAME_RE.test(x.name)));
+      .then(p => {
+        setPreview(p);
+        setAnalyze(contractsOn && p.files.some(f => f.check === 'ok' && CONTRACT_NAME_RE.test(f.name)));
       })
       .catch(e => setLoadError((e as Error).message));
   // eslint-disable-next-line react-hooks/exhaustive-deps -- once per selection
   }, []);
 
-  const importable = useMemo(() => (rows ?? []).filter(r => r.check === 'ok' && (r.duplicates.length === 0 || r.copy)), [rows]);
-  const done = (rows ?? []).filter(r => r.state === 'done');
-  const failed = (rows ?? []).filter(r => r.state === 'error');
+  const hasFolders = !!preview?.rows.some(r => r.folder);
+  const toImport = useMemo(() => (preview?.files ?? [])
+    .filter(f => f.check === 'ok' && (!f.duplicateOf || reimport.has(f.itemId))), [preview, reimport]);
+  const folderDuplicates = (preview?.files ?? []).filter(f => f.check === 'ok' && f.duplicateOf && f.rel.length > 0);
+  const job = jobId ? runner?.jobs.find(j => j.id === jobId) : null;
 
-  const setRow = (key: string, patch: Partial<Row>) =>
-    setRows(rs => rs!.map(r => (`${r.driveId}:${r.itemId}` === key ? { ...r, ...patch } : r)));
-
-  const runOne = async (r: Row): Promise<DocumentRecord | null> => {
-    const key = `${r.driveId}:${r.itemId}`;
-    setRow(key, { state: 'running', error: undefined });
-    try {
-      const doc = await importMicrosoftFile(user!, { driveId: r.driveId, itemId: r.itemId, folderId: folderId ?? null, caseId: caseId || null, clientId: clientId || null }) as unknown as DocumentRecord;
-      setRow(key, { state: 'done', doc });
-      return doc;
-    } catch (e) {
-      setRow(key, { state: 'error', error: (e as Error).message });
-      return null;
-    }
-  };
-
-  const analyzeAll = async (docs: DocumentRecord[]) => {
-    if (!analyze || !docs.length) { setPhase('done'); return; }
-    setPhase('analyzing');
-    const found: Contract[] = [];
-    let errors = 0;
-    for (const [i, d] of docs.entries()) {
-      try { found.push(await analyzeAsContract(user!, d.id)); } catch { errors++; }
-      setAnalyzed(i + 1);
-    }
-    setAnalysisErrors(errors);
-    setQueue(found);
-    setPhase('done');
-  };
+  const toggleReimport = (ids: string[], on: boolean) => setReimport(prev => {
+    const n = new Set(prev);
+    ids.forEach(id => (on ? n.add(id) : n.delete(id)));
+    return n;
+  });
 
   const start = async () => {
-    if (!user || !rows) return;
-    setPhase('importing');
-    const imported: DocumentRecord[] = [];
-    for (const r of importable) {
-      const doc = await runOne(r);
-      if (doc) imported.push(doc);
+    if (!user || !preview || !runner) return;
+    setStarting(true); setError('');
+    try {
+      const id = await createImportJob(user, {
+        destinationFolderId: folderId ?? null, keepStructure: hasFolders && keepStructure,
+        caseId: caseId || null, clientId: clientId || null, analyze,
+        files: toImport.map(f => ({ driveId: f.driveId, itemId: f.itemId, name: f.name, size: f.size, rel: f.rel })),
+        folders: preview.folders,
+      });
+      setJobId(id);
+      runner.startJob(id, { analyze });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setStarting(false);
     }
-    if (imported.length) onImported(imported);
-    await analyzeAll(imported);
   };
 
-  const retry = async (r: Row) => {
-    const doc = await runOne(r);
-    if (doc) onImported([doc]);
-  };
-
-  // Contract confirmation queue (one by one, skippable).
-  if (queue.length) {
+  // ── Progress (the job keeps running if the sheet is closed) ──
+  if (jobId) {
+    const c = job?.counts;
+    const processed = c ? c.done + c.error + c.skipped : 0;
+    const finished = job && (job.status === 'done' || job.status === 'cancelled');
     return (
-      <ContractConfirmSheet contract={queue[0]} onClose={() => setQueue(q => q.slice(1))} />
+      <ModalShell title={finished ? 'Importación terminada' : 'Importando…'} onClose={onClose} sheetOnMobile>
+        <div className="space-y-3 text-[12px] font-sans">
+          <div className="space-y-1">
+            <div className="flex justify-between text-[11px] text-[#6b6050]">
+              <span>{processed} de {c?.total ?? toImport.length}</span>
+              <span>✓ {c?.done ?? 0}{c?.error ? ` · ⚠️ ${c.error}` : ''}</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-[#161410] overflow-hidden">
+              <div className="h-full bg-avocat-gold transition-all" style={{ width: `${c?.total ? (processed / c.total) * 100 : 0}%` }} />
+            </div>
+          </div>
+          <ul className="space-y-1 max-h-[40vh] overflow-y-auto">
+            {(job?.items ?? []).map((it, i) => (
+              <li key={i} className="flex items-center gap-2 text-[11px]">
+                <span className="truncate flex-1 text-[#c8c0ac]" title={it.name}>{it.name}</span>
+                <span className={`flex-shrink-0 ${it.status === 'done' ? 'text-emerald-400' : it.status === 'error' ? 'text-red-400' : it.status === 'running' ? 'text-avocat-gold' : 'text-[#6b6050]'}`}>
+                  {it.status === 'done' ? '✓' : it.status === 'error' ? (it.error ?? 'Error') : it.status === 'running' ? 'Importando…' : it.status === 'skipped' ? 'Omitido' : 'En cola'}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {!finished && <p className="text-[11px] text-[#6b6050]">Puedes cerrar esta ventana o seguir trabajando: la importación continúa y verás el progreso abajo a la izquierda.</p>}
+          <Button variant="BtnGold" size="sm" fullWidth onClick={onClose}>{finished ? 'Ver en Documentos' : 'Seguir en segundo plano'}</Button>
+        </div>
+      </ModalShell>
     );
   }
 
-  const title = phase === 'options' ? 'Importar desde Microsoft' : phase === 'done' ? 'Importación terminada' : 'Importando…';
   return (
-    <ModalShell title={title} onClose={phase === 'importing' || phase === 'analyzing' ? () => {} : onClose} sheetOnMobile>
+    <ModalShell title="Importar desde Microsoft" onClose={onClose} sheetOnMobile>
       <div className="overflow-y-auto -mx-1 px-1 space-y-3 text-[12px] font-sans">
         {loadError && <p className="text-red-400">{loadError}</p>}
-        {!rows && !loadError && <p className="text-[#6b6050]">Comprobando los archivos…</p>}
+        {!preview && !loadError && <p className="text-[#6b6050]">Comprobando los archivos{items.length > 1 ? ' y carpetas' : ''}…</p>}
 
-        {rows && (
+        {preview && (
           <ul className="space-y-1.5 max-h-[40vh] overflow-y-auto">
-            {rows.map(r => {
-              const key = `${r.driveId}:${r.itemId}`;
+            {preview.rows.map(r => {
+              const dupIds = r.duplicates.length ? [r.itemId] : [];
               return (
-                <li key={key} className="rounded-lg border border-[#2e2b20] px-3 py-2 space-y-1">
+                <li key={`${r.driveId}:${r.itemId}`} className="rounded-lg border border-[#2e2b20] px-3 py-2 space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="flex-shrink-0">{r.check === 'folder' ? '📁' : '📄'}</span>
+                    <span className="flex-shrink-0">{r.folder ? '📁' : '📄'}</span>
                     <span className="truncate flex-1 text-[#c8c0ac]" title={r.name}>{r.name}</span>
-                    <span className="text-[10px] text-[#6b6050] flex-shrink-0">{r.check === 'ok' ? formatBytes(r.size) : ''}</span>
-                    {r.state === 'running' && <span className="text-[10px] text-avocat-gold flex-shrink-0">Importando…</span>}
-                    {r.state === 'done' && <span className="text-[10px] text-emerald-400 flex-shrink-0">✓ Importado</span>}
-                    {r.state === 'error' && phase !== 'importing' && (
-                      <button onClick={() => retry(r)} className="text-[10px] text-avocat-gold hover:underline flex-shrink-0">Reintentar</button>
-                    )}
+                    <span className="text-[10px] text-[#6b6050] flex-shrink-0">
+                      {r.folder ? `${r.folder.files} ${r.folder.files === 1 ? 'archivo' : 'archivos'}` : r.check === 'ok' ? formatBytes(r.size) : ''}
+                    </span>
                   </div>
-                  <p className="text-[10px] text-[#6b6050] truncate">
-                    {SOURCE_LABEL[r.provider]}{r.path ? ` · ${r.path}` : ''}
-                  </p>
-                  {r.check !== 'ok' && <p className="text-[11px] text-amber-400">{CHECK_LABEL[r.check]}</p>}
-                  {r.state === 'error' && <p className="text-[11px] text-red-400">{r.error}</p>}
-                  {r.check === 'ok' && r.duplicates.length > 0 && phase === 'options' && (
+                  <p className="text-[10px] text-[#6b6050] truncate">{SOURCE_LABEL[r.provider]}{r.path ? ` · ${r.path}` : ''}</p>
+                  {r.folder && (
+                    <p className="text-[11px] text-[#c8c0ac]">
+                      {r.folder.importable} para importar
+                      {r.folder.duplicates ? ` · ${r.folder.duplicates} ya importados` : ''}
+                      {r.folder.problems ? ` · ${r.folder.problems} no compatibles o > 25 MB` : ''}
+                      {r.folder.truncated && <span className="text-amber-400"> · solo los primeros 300 archivos / 8 niveles</span>}
+                    </p>
+                  )}
+                  {!r.folder && r.check !== 'ok' && <p className="text-[11px] text-amber-400">{CHECK_LABEL[r.check]}</p>}
+                  {!r.folder && r.check === 'ok' && dupIds.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2 text-[11px]">
                       <span className="text-amber-400">Ya importado como «{r.duplicates[0].name}».</span>
                       <label className="flex items-center gap-1 text-[#c8c0ac]">
-                        <input type="checkbox" className="accent-avocat-gold" checked={r.copy}
-                          onChange={e => setRow(key, { copy: e.target.checked, state: e.target.checked ? 'ready' : 'skip' })} />
+                        <input type="checkbox" className="accent-avocat-gold" checked={reimport.has(r.itemId)}
+                          onChange={e => toggleReimport(dupIds, e.target.checked)} />
                         Importar otra copia
                       </label>
                     </div>
@@ -162,10 +167,24 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
           </ul>
         )}
 
-        {rows && phase === 'options' && (
+        {preview && (
           <>
             <div className="space-y-2">
               <p className="text-[11px] text-[#6b6050]">Destino: <span className="text-[#c8c0ac]">{folderLabel ?? 'Mis documentos'}</span></p>
+              {hasFolders && (
+                <label className="flex items-center gap-2 text-[12px] text-[#c8c0ac]">
+                  <input type="checkbox" className="accent-avocat-gold" checked={keepStructure} onChange={e => setKeepStructure(e.target.checked)} />
+                  Mantener estructura de carpetas
+                </label>
+              )}
+              {folderDuplicates.length > 0 && (
+                <label className="flex items-center gap-2 text-[12px] text-[#c8c0ac]">
+                  <input type="checkbox" className="accent-avocat-gold"
+                    checked={folderDuplicates.every(f => reimport.has(f.itemId))}
+                    onChange={e => toggleReimport(folderDuplicates.map(f => f.itemId), e.target.checked)} />
+                  Volver a importar los {folderDuplicates.length} ya importados de las carpetas
+                </label>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <select className={SELECT} value={caseId} onChange={e => setCaseId(e.target.value)} aria-label="Vincular a caso">
                   <option value="" className="bg-[#161410]">Sin caso</option>
@@ -184,28 +203,14 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
               )}
               <p className="text-[10px] text-[#3a3630]">Avocat guarda una copia. Nunca modifica ni borra nada en OneDrive o SharePoint.</p>
             </div>
+            {error && <p className="text-[11px] text-red-400">{error}</p>}
             <div className="flex gap-2 pt-1">
-              <Button variant="BtnGold" size="sm" fullWidth disabled={!importable.length} onClick={start}>
-                {importable.length ? `Importar ${importable.length} ${importable.length === 1 ? 'archivo' : 'archivos'} →` : 'Nada que importar'}
+              <Button variant="BtnGold" size="sm" fullWidth loading={starting} disabled={!toImport.length || !runner} onClick={start}>
+                {toImport.length ? `Importar ${toImport.length} ${toImport.length === 1 ? 'archivo' : 'archivos'} →` : 'Nada que importar'}
               </Button>
               <Button variant="BtnGhost" size="sm" onClick={onBack}>Volver al selector</Button>
             </div>
           </>
-        )}
-
-        {phase === 'analyzing' && <p className="text-[#c8c0ac]">Analizando contratos… {analyzed} de {done.length}</p>}
-
-        {phase === 'done' && (
-          <div className="space-y-2">
-            <p className={done.length ? 'text-emerald-400' : 'text-[#c8c0ac]'}>
-              {done.length} {done.length === 1 ? 'archivo importado' : 'archivos importados'}{failed.length ? ` · ${failed.length} con error (puedes reintentarlos)` : ''}.
-            </p>
-            {analysisErrors > 0 && <p className="text-[11px] text-amber-400">{analysisErrors} no se pudieron analizar como contrato; puedes hacerlo desde su panel.</p>}
-            <div className="flex gap-2">
-              <Button variant="BtnGold" size="sm" fullWidth onClick={onClose}>Ver en Documentos</Button>
-              <Button variant="BtnGhost" size="sm" onClick={onBack}>Importar más</Button>
-            </div>
-          </div>
         )}
       </div>
     </ModalShell>

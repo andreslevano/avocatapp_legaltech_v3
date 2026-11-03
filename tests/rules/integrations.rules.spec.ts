@@ -60,3 +60,16 @@ test.describe('integration_secrets', () => {
     await assertFails(getDoc(doc(as(null), 'integration_secrets/alice')));
   });
 });
+
+test.describe('import_jobs (F1)', () => {
+  test('owner reads progress; nobody writes from the client', async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      await setDoc(doc(ctx.firestore(), 'import_jobs/j1'), { userId: 'alice', status: 'running', items: [] });
+    });
+    const as = (uid: string) => env.authenticatedContext(uid).firestore();
+    await assertSucceeds(getDoc(doc(as('alice'), 'import_jobs/j1')));
+    await assertFails(getDoc(doc(as('bob'), 'import_jobs/j1')));
+    await assertFails(updateDoc(doc(as('alice'), 'import_jobs/j1'), { status: 'done' }));
+    await assertFails(setDoc(doc(as('alice'), 'import_jobs/j2'), { userId: 'alice', status: 'running' }));
+  });
+});

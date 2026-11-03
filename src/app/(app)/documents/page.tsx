@@ -576,6 +576,11 @@ function DocumentsView() {
         <Button variant="BtnGold" size="sm" onClick={() => fileRef.current?.click()}>Subir</Button>
         <Button variant="BtnOutlineDark" size="sm" onClick={openNewFolder}>Nueva carpeta</Button>
       </div>
+      {msEnabled && (
+        <button onClick={() => setMsImportOpen(true)} className="mt-4 text-[12px] text-avocat-gold hover:underline">
+          ¿Tus contratos están en OneDrive o SharePoint? Impórtalos aquí.
+        </button>
+      )}
     </div>
   );
 
@@ -855,10 +860,6 @@ function DocumentsView() {
           folderLabel={enabled ? folderPathLabel(currentFolderId, foldersById) : undefined}
           cases={cases}
           clients={clients}
-          onImported={imported => {
-            setDocs(prev => [...imported, ...prev.filter(d => !imported.some(x => x.id === d.id))]);
-            ws.notify({ kind: 'ok', text: `${imported.length} ${imported.length === 1 ? 'archivo importado' : 'archivos importados'} de Microsoft` });
-          }}
           onClose={() => setMsImportOpen(false)}
         />
       )}

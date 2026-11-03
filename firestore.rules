@@ -205,6 +205,11 @@ service cloud.firestore {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
+    // import_jobs/{id}: OneDrive / SharePoint imports (F1). Owner reads progress; the server writes.
+    match /import_jobs/{jobId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
     // integration_secrets/{uid}: encrypted OAuth tokens (Microsoft F1, DocuSign D4). Admin SDK only —
     // intentionally no client rule; covered by the catch-all deny below (tested).
 

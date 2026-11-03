@@ -20,7 +20,10 @@ import SignaturePanel from '@/components/signatures/SignaturePanel';
 import SignDocumentSheet from '@/components/signatures/SignDocumentSheet';
 import { canSendForSignature } from '@/lib/signatures/eligibility';
 import { canUseDocusign } from '@/lib/docusign/config';
-import { statusChip } from '@/components/documents/helpers';
+import { inferOrigin, statusChip } from '@/components/documents/helpers';
+import MicrosoftImportFlow from '@/components/integrations/MicrosoftImportFlow';
+import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
+import { useImportJobs } from '@/contexts/ImportJobsContext';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -136,6 +139,22 @@ export default function CaseDetailPage() {
   const [pickerDocs,       setPickerDocs]       = useState<DocumentRecord[]>([]);
   const [loadingPickerDocs,setLoadingPickerDocs]= useState(false);
   const [pickerDocSearch,  setPickerDocSearch]  = useState('');
+
+  // F1: import from OneDrive / SharePoint straight into this case.
+  const msEnabled = canUseMicrosoft(userDoc.plan, user?.email);
+  const [msImportOpen, setMsImportOpen] = useState(false);
+  const importJobs = useImportJobs();
+  const importsDone = (importJobs?.jobs ?? []).reduce((n, j) => n + (j.counts?.done ?? 0), 0);
+  useEffect(() => {
+    // Back from the Microsoft sign-in started here (?ms=connected&intent=import) → reopen the import.
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('ms') === 'connected' && q.get('intent') === 'import') setMsImportOpen(true);
+  }, []);
+  useEffect(() => {
+    // Files imported by the background runner: refresh the case's list.
+    if (!params.id || !importsDone) return;
+    getCaseDocuments(userDoc.uid, params.id).then(setCaseDocs).catch(() => {});
+  }, [importsDone, params.id, userDoc.uid]);
 
   // Client picker
   const [showClientPicker, setShowClientPicker] = useState(false);
@@ -460,6 +479,11 @@ export default function CaseDetailPage() {
                 <button onClick={openDocPicker} className="text-[12px] text-[#6b6050] hover:text-avocat-gold transition-colors">
                   Mis documentos
                 </button>
+                {msEnabled && (
+                  <button onClick={() => setMsImportOpen(true)} className="text-[12px] text-[#6b6050] hover:text-avocat-gold transition-colors">
+                    OneDrive / SharePoint
+                  </button>
+                )}
                 <Button
                   variant="BtnGold"
                   size="sm"
@@ -493,7 +517,7 @@ export default function CaseDetailPage() {
                           )}
                         </p>
                         <p className="text-[10px] text-[#6b6050] mt-0.5">
-                          {ext.toUpperCase()} · {formatBytes(d.size)} · {d.source === 'generated' ? 'Generado' : 'Subido'}
+                          {ext.toUpperCase()} · {formatBytes(d.size)} · {d.source === 'generated' ? 'Generado' : inferOrigin(d)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -515,6 +539,15 @@ export default function CaseDetailPage() {
             )}
           </div>
 
+          {msImportOpen && caseDoc && (
+            <MicrosoftImportFlow
+              returnTo={`/cases/${caseDoc.id}`}
+              caseId={caseDoc.id}
+              cases={[caseDoc]}
+              clients={clients}
+              onClose={() => setMsImportOpen(false)}
+            />
+          )}
           {signDoc && (
             <SignDocumentSheet doc={signDoc} clients={clients} cases={caseDoc ? [caseDoc] : []} onClose={() => setSignDoc(null)} />
           )}

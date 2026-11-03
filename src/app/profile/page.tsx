@@ -6,6 +6,8 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { db, storage } from '@/lib/firebase';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import ConnectDocusignCard from '@/components/integrations/ConnectDocusignCard';
+import ConnectMicrosoftCard from '@/components/integrations/ConnectMicrosoftCard';
+import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 import { canUseDocusign } from '@/lib/docusign/config';
 import NotificationSettingsCard from '@/components/notifications/NotificationSettingsCard';
 import { canUseContracts } from '@/lib/contracts/config';
@@ -506,8 +508,8 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Integraciones (DocuSign; Microsoft joins here in F1) */}
-        {canUseDocusign(userDoc.plan, user?.email) && (
+        {/* Integraciones (DocuSign, Microsoft) */}
+        {(canUseDocusign(userDoc.plan, user?.email) || canUseMicrosoft(userDoc.plan, user?.email)) && (
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 space-y-4 mt-4">
             <div>
               <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
@@ -517,7 +519,8 @@ export default function ProfilePage() {
                 Conecta servicios externos. Avocat guarda las credenciales cifradas y nunca las muestra en el navegador.
               </p>
             </div>
-            <ConnectDocusignCard />
+            {canUseDocusign(userDoc.plan, user?.email) && <ConnectDocusignCard />}
+            {canUseMicrosoft(userDoc.plan, user?.email) && <ConnectMicrosoftCard />}
           </div>
         )}
 

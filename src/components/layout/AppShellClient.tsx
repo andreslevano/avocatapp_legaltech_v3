@@ -14,6 +14,7 @@ import Rail from '@/components/layout/Rail';
 import Sidebar from '@/components/layout/Sidebar';
 import SignatureNotifier from '@/components/signatures/SignatureNotifier';
 import FocusedSigningHost from '@/components/signatures/FocusedSigningHost';
+import { ImportJobsProvider } from '@/contexts/ImportJobsContext';
 
 const LAWYER_ONLY_PATHS = ['/dashboard', '/cases'];
 
@@ -94,6 +95,7 @@ export default function AppShellClient({ children }: AppShellClientProps) {
     <AppAuthProvider user={user} userDoc={userDoc}>
       <SidebarProvider>
         <DocumentsWorkspaceProvider>
+          <ImportJobsProvider>
           <div className="flex h-[100dvh] overflow-hidden bg-[#161410]">
             <Rail user={user} userDoc={userDoc} />
             <Sidebar userDoc={userDoc} />
@@ -103,6 +105,7 @@ export default function AppShellClient({ children }: AppShellClientProps) {
           </div>
           <SignatureNotifier />
           <FocusedSigningHost />
+          </ImportJobsProvider>
         </DocumentsWorkspaceProvider>
       </SidebarProvider>
     </AppAuthProvider>

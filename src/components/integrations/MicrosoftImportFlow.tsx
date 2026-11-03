@@ -10,7 +10,6 @@ import MicrosoftConnectModal from './MicrosoftConnectModal';
 import MicrosoftPicker, { type PickedItem } from './MicrosoftPicker';
 import ImportOptionsSheet from './ImportOptionsSheet';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
-import type { DocumentRecord } from '@/lib/storage-client';
 
 interface Props {
   returnTo: string;          // relative path to come back to after sign-in
@@ -19,11 +18,10 @@ interface Props {
   folderLabel?: string;
   cases?: CaseDoc[];
   clients?: ClientDoc[];
-  onImported?: (docs: DocumentRecord[]) => void;
   onClose: () => void;
 }
 
-export default function MicrosoftImportFlow({ returnTo, folderId, caseId, folderLabel, cases = [], clients = [], onImported, onClose }: Props) {
+export default function MicrosoftImportFlow({ returnTo, folderId, caseId, folderLabel, cases = [], clients = [], onClose }: Props) {
   const { user, userDoc } = useAppAuth();
   const info = microsoftInfo(userDoc);
   const needsConnect = !info || info.status === 'reauth_required';
@@ -61,7 +59,6 @@ export default function MicrosoftImportFlow({ returnTo, folderId, caseId, folder
       clients={clients}
       onBack={() => { setPicked([]); setStep('picker'); }}
       onClose={onClose}
-      onImported={docs => onImported?.(docs)}
     />
   );
 }

@@ -10,7 +10,7 @@ import { decodeState, encodeState } from '@/lib/integrations/microsoft/state';
 import { decryptString, encryptString } from '@/lib/integrations/crypto';
 import { adminConsentEmail } from '@/lib/integrations/microsoft/consent-email';
 import { adminConsentUrl } from '@/lib/integrations/microsoft/config';
-import { checkItem, CONTRACT_NAME_RE, providerOf, readablePath, storageFileName, validIds } from '@/lib/integrations/microsoft/import';
+import { checkItem, clipRel, CONTRACT_NAME_RE, jobCounts, nextItemIndex, providerOf, readablePath, relKey, storageFileName, validIds } from '@/lib/integrations/microsoft/import';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -164,5 +164,26 @@ test.describe('import (files)', () => {
     const src = ['import-server.ts', 'oauth.ts'].map(f => readFileSync(join(__dirname, '../../src/lib/integrations/microsoft', f), 'utf8')).join('\n');
     expect(src).not.toMatch(/method:\s*'(POST|PUT|PATCH|DELETE)'[\s\S]{0,80}graph\.microsoft/);
     expect(src).not.toMatch(/graph\.microsoft\.com[^`'"]*`,\s*\{\s*method:\s*'(POST|PUT|PATCH|DELETE)'/);
+  });
+});
+
+test.describe('import jobs (folders)', () => {
+  test('structure is kept up to 8 levels, deeper files land in the deepest folder', () => {
+    expect(clipRel(['Contratos', '2026'], 0)).toEqual(['Contratos', '2026']);
+    expect(clipRel(['a', 'b', 'c'], 6)).toEqual(['a', 'b']);
+    expect(clipRel(['a', 'b'], 8)).toEqual([]);
+    expect(relKey(['Contratos', '2026'])).toBe('Contratos/2026');
+  });
+  test('next item: pending first, or a running one whose lease expired', () => {
+    const now = Date.parse('2026-11-03T12:00:00Z');
+    expect(nextItemIndex([{ status: 'done' }, { status: 'pending' }], now)).toBe(1);
+    expect(nextItemIndex([{ status: 'running', leaseAt: '2026-11-03T11:59:30Z' }, { status: 'pending' }], now)).toBe(1);
+    expect(nextItemIndex([{ status: 'running', leaseAt: '2026-11-03T11:55:00Z' }], now)).toBe(0);   // tab closed mid-file
+    expect(nextItemIndex([{ status: 'running', leaseAt: '2026-11-03T11:59:30Z' }], now)).toBe(-1);  // another tab is on it
+    expect(nextItemIndex([{ status: 'done' }, { status: 'error' }, { status: 'skipped' }], now)).toBe(-1);
+  });
+  test('counts', () => {
+    expect(jobCounts([{ status: 'done' }, { status: 'error' }, { status: 'skipped' }, { status: 'pending' }, { status: 'running' }]))
+      .toEqual({ total: 5, done: 1, error: 1, skipped: 1, pending: 2 });
   });
 });

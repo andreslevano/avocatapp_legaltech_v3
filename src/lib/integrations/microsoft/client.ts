@@ -56,7 +56,7 @@ export function disconnectMicrosoft(user: User): Promise<{ ok: true }> {
   return authed(user, '/api/integrations/microsoft/disconnect', { method: 'POST', body: '{}' });
 }
 
-// ── Import (F1, files) ───────────────────────────────────────────
+// ── Import (F1) ──────────────────────────────────────────────────
 
 export interface ImportPreviewRow {
   driveId: string;
@@ -67,14 +67,38 @@ export interface ImportPreviewRow {
   path: string;
   check: 'ok' | 'folder' | 'unsupported' | 'too_large' | 'not_found';
   duplicates: { id: string; name: string }[];
+  folder?: { files: number; importable: number; problems: number; duplicates: number; truncated: boolean };
 }
+export interface ImportPreviewFile {
+  driveId: string; itemId: string; name: string; size: number; rel: string[];
+  check: ImportPreviewRow['check']; duplicateOf: string | null;
+}
+export interface ImportPreviewFolder { key: string; name: string; source: { provider: 'microsoft'; driveId: string; itemId: string; webUrl: string; path: string } }
+export interface ImportPreview { rows: ImportPreviewRow[]; files: ImportPreviewFile[]; folders: ImportPreviewFolder[] }
 
 export function previewMicrosoftImport(user: User, items: { driveId: string; itemId: string }[]) {
-  return authed<{ items: ImportPreviewRow[] }>(user, '/api/integrations/microsoft/import/preview', { method: 'POST', body: JSON.stringify({ items }) })
-    .then(r => r.items);
+  return authed<ImportPreview>(user, '/api/integrations/microsoft/import/preview', { method: 'POST', body: JSON.stringify({ items }) });
 }
 
-export function importMicrosoftFile(user: User, input: { driveId: string; itemId: string; folderId?: string | null; caseId?: string | null; clientId?: string | null }) {
-  return authed<{ document: Record<string, unknown> & { id: string } }>(user, '/api/integrations/microsoft/import/file', { method: 'POST', body: JSON.stringify(input) })
-    .then(r => r.document);
+export function createImportJob(user: User, input: {
+  destinationFolderId: string | null; keepStructure: boolean; caseId: string | null; clientId: string | null; analyze: boolean;
+  files: Pick<ImportPreviewFile, 'driveId' | 'itemId' | 'name' | 'size' | 'rel'>[]; folders: ImportPreviewFolder[];
+}) {
+  return authed<{ jobId: string }>(user, '/api/integrations/microsoft/import/jobs', { method: 'POST', body: JSON.stringify(input) }).then(r => r.jobId);
+}
+
+export interface ImportJobCounts { total: number; done: number; error: number; skipped: number; pending: number }
+export interface NextJobResult {
+  status: 'running' | 'done' | 'cancelled' | 'paused';
+  counts: ImportJobCounts;
+  item: { name: string; status: string; error: string | null; documentId: string | null } | null;
+  document: (Record<string, unknown> & { id: string }) | null;
+}
+
+export function nextImportJobItem(user: User, jobId: string) {
+  return authed<NextJobResult>(user, `/api/integrations/microsoft/import/jobs/${encodeURIComponent(jobId)}/next`, { method: 'POST', body: '{}' });
+}
+
+export function importJobAction(user: User, jobId: string, action: 'cancel' | 'retry_failed' | 'resume') {
+  return authed<{ ok: true }>(user, `/api/integrations/microsoft/import/jobs/${encodeURIComponent(jobId)}`, { method: 'POST', body: JSON.stringify({ action }) });
 }
