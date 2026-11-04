@@ -512,19 +512,29 @@ export async function POST(req: NextRequest) {
 
   // SSE streaming
   const encoder = new TextEncoder();
+  // "Detener" in the chat: the browser aborts the request. Stop the model (no more tokens billed)
+  // and keep whatever was already written as a stopped turn.
+  let aborted = false;
+  let currentStream: { abort: () => void } | null = null;
+  const abort = () => { aborted = true; try { currentStream?.abort(); } catch { /* already done */ } };
+  req.signal?.addEventListener?.('abort', abort);
+  let fullText = '';
+
   const readable = new ReadableStream({
+    cancel() { abort(); },
     async start(controller) {
       function emit(event: Record<string, unknown>) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        if (aborted) return;
+        try { controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`)); } catch { abort(); }
       }
 
       try {
-        let fullText = '';
         const allToolUses: StoredToolUse[] = [];
         let finalRawContent: Anthropic.ContentBlock[] = [];
         const MAX_TOOL_ROUNDS = 5;
 
         for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+          if (aborted) break;
           const stream = anthropic.messages.stream({
             model: 'claude-sonnet-4-6',
             max_tokens: 4000,
@@ -532,6 +542,7 @@ export async function POST(req: NextRequest) {
             tools: TOOLS,
             messages: claudeMessages,
           });
+          currentStream = stream;
 
           // Track pending tool uses during streaming
           const pendingToolUses: { id: string; name: string; inputJson: string }[] = [];
@@ -597,6 +608,8 @@ export async function POST(req: NextRequest) {
           ];
         }
 
+        if (aborted) throw new Error('aborted');   // stopped between tool rounds → saved as a stopped turn
+
         // Persist assistant message to Firestore
         // Firestore rejects `undefined` values: tool fields are only added when tools ran
         // (a plain reply such as "continua" used to fail here and show an error to the user).
@@ -618,10 +631,23 @@ export async function POST(req: NextRequest) {
 
         emit({ type: 'done', convId: convRef.id });
       } catch (err) {
-        console.error('[api/agent-v2]', err);
-        emit({ type: 'error', message: (err as Error).message ?? 'Internal error' });
+        if (aborted) {
+          // Stopped by the user: keep the partial answer in the history (if any) so the next turn has context.
+          if (fullText.trim()) {
+            await convRef.update({
+              messages: FieldValue.arrayUnion(
+                { ...userMsg, timestamp: new Date() },
+                { role: 'assistant', content: `${fullText}\n\n[Respuesta detenida por el usuario]`, stopped: true, timestamp: new Date() },
+              ),
+              updatedAt: FieldValue.serverTimestamp(),
+            }).catch(e => console.warn('[api/agent-v2] save stopped turn', (e as Error).message));
+          }
+        } else {
+          console.error('[api/agent-v2]', err);
+          emit({ type: 'error', message: (err as Error).message ?? 'Internal error' });
+        }
       } finally {
-        controller.close();
+        try { controller.close(); } catch { /* client already gone */ }
       }
     },
   });

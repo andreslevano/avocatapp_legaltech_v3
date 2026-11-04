@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, type KeyboardEvent, type DragEvent, type ClipboardEvent } from 'react';
+import { useState, useRef, useCallback, useEffect, type KeyboardEvent, type DragEvent, type ClipboardEvent } from 'react';
 import AgentContextChips from './AgentContextChips';
 import type { MessageAttachment } from './AgentMessage';
 
@@ -12,6 +12,11 @@ interface Chip {
 interface AgentInputProps {
   onSend: (message: string, attachments: MessageAttachment[]) => void;
   disabled?: boolean;
+  /** While the agent answers: the send button becomes "Detener". */
+  streaming?: boolean;
+  onStop?: () => void;
+  /** A prompt put back in the box (after "Detener") to edit and resend; `key` changes each time. */
+  draft?: { key: number; text: string; attachments: MessageAttachment[] } | null;
   chips?: Chip[];
   placeholder?: string;
 }
@@ -102,6 +107,9 @@ async function readFile(file: File): Promise<MessageAttachment> {
 export default function AgentInput({
   onSend,
   disabled,
+  streaming = false,
+  onStop,
+  draft = null,
   chips = [],
   placeholder = 'Escribe tu consulta legal...',
 }: AgentInputProps) {
@@ -111,6 +119,21 @@ export default function AgentInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
+
+  // "Detener": the stopped prompt comes back for editing.
+  useEffect(() => {
+    if (!draft) return;
+    setValue(draft.text);
+    setAttachments(draft.attachments);
+    requestAnimationFrame(() => {
+      const t = textareaRef.current;
+      if (!t) return;
+      t.focus();
+      t.setSelectionRange(t.value.length, t.value.length);
+      t.style.height = 'auto';
+      t.style.height = `${Math.min(t.scrollHeight, 160)}px`;
+    });
+  }, [draft?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addFiles = useCallback(async (files: File[]) => {
     if (!files.length) return;
@@ -273,6 +296,16 @@ export default function AgentInput({
           className="flex-1 resize-none bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40 transition-colors disabled:opacity-50 leading-relaxed min-h-[40px] max-h-[160px]"
         />
 
+        {streaming && onStop ? (
+          <button
+            onClick={onStop}
+            aria-label="Detener respuesta"
+            title="Detener (podrás editar tu mensaje)"
+            className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-[#2e2b20] text-[#e8d4a0] border border-avocat-gold/40 hover:bg-[#3a3528] transition-colors"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+          </button>
+        ) : (
         <button
           onClick={handleSend}
           disabled={!canSend}
@@ -283,6 +316,7 @@ export default function AgentInput({
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
           </svg>
         </button>
+        )}
       </div>
 
       <p className="text-center text-[10px] text-[#3a3630] pb-2 px-4">

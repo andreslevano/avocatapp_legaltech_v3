@@ -47,6 +47,10 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const convIdRef = useRef<string | null>(null);
+  // "Detener": aborts the request (the server stops the model) and puts the prompt back to edit.
+  const abortRef = useRef<AbortController | null>(null);
+  const [draft, setDraft] = useState<{ key: number; text: string; attachments: MessageAttachment[] } | null>(null);
+  const stop = useCallback(() => abortRef.current?.abort(), []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,6 +133,9 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
         ).catch(() => {});
       }
 
+      const ac = new AbortController();
+      abortRef.current = ac;
+      let accumulated = '';
       try {
         const idToken = await user.getIdToken();
 
@@ -138,6 +145,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
           ? `${process.env.NEXT_PUBLIC_CLOUD_RUN_URL}/api/agent-v2`
           : '/api/agent-v2';
         const res = await fetch(agentUrl, {
+          signal: ac.signal,
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -156,7 +164,6 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
         const reader = res.body?.getReader();
         const decoder = new TextDecoder();
         let sseBuffer = '';
-        let accumulated = '';
 
         if (reader) {
           while (true) {
@@ -236,14 +243,24 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
           }
         }
       } catch {
-        setMessages(prev =>
-          prev.map(m =>
-            m.id === assistantId
-              ? { ...m, content: 'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.', streaming: false }
-              : m
-          )
-        );
+        if (ac.signal.aborted) {
+          // Stopped: keep a partial answer (marked), or drop the empty turn; either way the prompt
+          // goes back into the box to edit and resend.
+          setMessages(prev => accumulated.trim()
+            ? prev.map(m => (m.id === assistantId ? { ...m, content: accumulated, streaming: false, stopped: true } : m))
+            : prev.filter(m => m.id !== assistantId && m.id !== userMsg.id));
+          setDraft({ key: Date.now(), text, attachments });
+        } else {
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === assistantId
+                ? { ...m, content: 'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.', streaming: false }
+                : m
+            )
+          );
+        }
       } finally {
+        abortRef.current = null;
         setStreaming(false);
       }
     },
@@ -291,7 +308,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
       {showWelcome ? (
         <>
           <AgentWelcome userDoc={userDoc} caseContext={caseContext} onShortcut={sendMessage} />
-          <AgentInput onSend={sendMessage} disabled={streaming} />
+          <AgentInput onSend={sendMessage} disabled={streaming} streaming={streaming} onStop={stop} draft={draft} />
         </>
       ) : (
         <>
@@ -301,7 +318,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
             ))}
             <div ref={messagesEndRef} />
           </div>
-          <AgentInput onSend={sendMessage} disabled={streaming} />
+          <AgentInput onSend={sendMessage} disabled={streaming} streaming={streaming} onStop={stop} draft={draft} />
         </>
       )}
     </div>

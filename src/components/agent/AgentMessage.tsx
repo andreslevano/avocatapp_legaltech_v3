@@ -17,6 +17,7 @@ export interface Message {
   attachments?: MessageAttachment[];
   toolCalls?: { name: string; status?: 'running' | 'done'; result?: string }[];
   streaming?: boolean;
+  stopped?: boolean;     // "Detener": answer cut short by the user
 }
 
 function fileIcon(mimeType: string, name: string): string {
@@ -85,6 +86,7 @@ export default function AgentMessage({ message }: { message: Message }) {
             <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse rounded-sm align-middle" />
           )}
         </div>
+        {message.stopped && <p className="mt-1 text-[10px] text-[#8a7f68]">Respuesta detenida</p>}
 
         {/* Copy button */}
         {showCopy && (
