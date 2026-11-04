@@ -193,11 +193,21 @@ export async function getConversations(
   caseId?: string
 ): Promise<ConversationDoc[]> {
   if (!db) return [];
-  const constraints = caseId
+  // The agent (/api/agent-v2) stores history in users/{uid}/conversations; older records live in
+  // the top-level `conversations` collection. Read both; skip empty ones (a failed first turn).
+  const legacy = caseId
     ? [where('userId', '==', userId), where('caseId', '==', caseId)]
     : [where('userId', '==', userId)];
-  const snap = await getDocs(query(collection(db, 'conversations'), ...constraints));
-  const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as ConversationDoc));
+  const [current, old] = await Promise.all([
+    getDocs(caseId
+      ? query(collection(db, 'users', userId, 'conversations'), where('caseId', '==', caseId))
+      : collection(db, 'users', userId, 'conversations')).catch(() => null),
+    getDocs(query(collection(db, 'conversations'), ...legacy)).catch(() => null),
+  ]);
+  const docs = [
+    ...(current?.docs ?? []).map(d => ({ id: d.id, userId, ...d.data() } as ConversationDoc)),
+    ...(old?.docs ?? []).map(d => ({ id: d.id, ...d.data() } as ConversationDoc)),
+  ].filter(c => (c.messages?.length ?? 0) > 0);
   return docs.sort((a, b) => tsSeconds(b.updatedAt) - tsSeconds(a.updatedAt));
 }
 

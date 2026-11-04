@@ -208,3 +208,11 @@ test.describe('contract records (F0)', () => {
     expect(src).toMatch(/timingSafeEqual/);
   });
 });
+
+test.describe('agent history persistence', () => {
+  test('assistant messages never carry undefined fields (Firestore rejects them)', () => {
+    const src = readFileSync(join(__dirname, '../../src/app/api/agent-v2/route.ts'), 'utf8');
+    const block = src.slice(src.indexOf('const assistantMsg'), src.indexOf('await convRef.update'));
+    expect(block).not.toMatch(/:\s*undefined/);
+  });
+});

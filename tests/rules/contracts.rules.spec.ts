@@ -93,3 +93,16 @@ test.describe('contract fields on documents', () => {
     await assertFails(setDoc(doc(as('alice'), 'documents/d2'), { userId: 'alice', name: 'x.doc', contractId: 'c1' }));
   });
 });
+
+test.describe('users/{uid}/conversations (agent history)', () => {
+  test('owner reads (incl. query by case); others and clients cannot write', async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      await setDoc(doc(ctx.firestore(), 'users/alice/conversations/k1'), { uid: 'alice', caseId: 'c9', messages: [{ role: 'user', content: 'hola' }] });
+    });
+    await assertSucceeds(getDoc(doc(as('alice'), 'users/alice/conversations/k1')));
+    await assertSucceeds(getDocs(query(collection(as('alice'), 'users', 'alice', 'conversations'), where('caseId', '==', 'c9'))));
+    await assertFails(getDoc(doc(as('bob'), 'users/alice/conversations/k1')));
+    await assertFails(setDoc(doc(as('alice'), 'users/alice/conversations/k2'), { uid: 'alice', messages: [] }));
+    await assertFails(updateDoc(doc(as('alice'), 'users/alice/conversations/k1'), { messages: [] }));
+  });
+});

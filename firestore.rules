@@ -70,7 +70,13 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-    // conversations: owned by the userId field
+    // users/{uid}/conversations: AI agent history (written by /api/agent-v2 with the Admin SDK).
+    // The owner reads it (case detail lists the case's conversations); no client writes.
+    match /users/{userId}/conversations/{conversationId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // conversations: owned by the userId field (legacy location)
     match /conversations/{conversationId} {
       allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;

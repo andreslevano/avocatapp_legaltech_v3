@@ -598,11 +598,12 @@ export async function POST(req: NextRequest) {
         }
 
         // Persist assistant message to Firestore
+        // Firestore rejects `undefined` values: tool fields are only added when tools ran
+        // (a plain reply such as "continua" used to fail here and show an error to the user).
         const assistantMsg: StoredMessage = {
           role: 'assistant',
           content: fullText,
-          rawContentJson: allToolUses.length > 0 ? JSON.stringify(finalRawContent) : undefined,
-          toolUses: allToolUses.length > 0 ? allToolUses : undefined,
+          ...(allToolUses.length > 0 ? { rawContentJson: JSON.stringify(finalRawContent), toolUses: allToolUses } : {}),
           timestamp: FieldValue.serverTimestamp(),
         };
 

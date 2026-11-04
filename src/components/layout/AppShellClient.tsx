@@ -76,6 +76,16 @@ export default function AppShellClient({ children }: AppShellClientProps) {
     };
   }, [router]);
 
+  // Preview by domain needs email_verified in the ID token (src/lib/preview.ts). Firebase only
+  // refreshes tokens hourly, so right after verifying the server would still say "No disponible en
+  // tu plan": force one refresh when the account is verified but the token isn't.
+  useEffect(() => {
+    if (!user?.emailVerified) return;
+    user.getIdTokenResult()
+      .then(r => { if (r.claims.email_verified !== true) return user.getIdToken(true); })
+      .catch(() => {});
+  }, [user]);
+
   // Dark-surface button styles (globals.css) for the app and its portaled modals.
   useEffect(() => {
     document.body.classList.add('app-surface');
