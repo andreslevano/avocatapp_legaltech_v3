@@ -22,7 +22,7 @@ const snapshotOf = (r: SignatureRequest) => ({
 
 export default function SignatureNotifier() {
   const { user, userDoc } = useAppAuth();
-  const enabled = canUseDocusign(userDoc.plan, user?.email);
+  const enabled = canUseDocusign(userDoc.plan, user);
   const seen = useRef<Map<string, ReturnType<typeof snapshotOf>> | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 

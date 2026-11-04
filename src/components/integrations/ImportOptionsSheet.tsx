@@ -34,7 +34,7 @@ interface Props {
 export default function ImportOptionsSheet({ items, folderId, folderLabel, caseId: initialCase, cases, clients, onBack, onClose }: Props) {
   const { user, userDoc } = useAppAuth();
   const runner = useImportJobs();
-  const contractsOn = canUseContracts(userDoc.plan, user?.email);
+  const contractsOn = canUseContracts(userDoc.plan, user);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [loadError, setLoadError] = useState('');
   const [caseId, setCaseId] = useState(initialCase ?? '');

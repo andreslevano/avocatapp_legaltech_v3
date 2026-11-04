@@ -15,6 +15,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import SignatureNotifier from '@/components/signatures/SignatureNotifier';
 import FocusedSigningHost from '@/components/signatures/FocusedSigningHost';
 import { ImportJobsProvider } from '@/contexts/ImportJobsContext';
+import PreviewVerifyBanner from '@/components/layout/PreviewVerifyBanner';
 
 const LAWYER_ONLY_PATHS = ['/dashboard', '/cases'];
 
@@ -100,6 +101,7 @@ export default function AppShellClient({ children }: AppShellClientProps) {
             <Rail user={user} userDoc={userDoc} />
             <Sidebar userDoc={userDoc} />
             <main className="flex-1 overflow-auto flex flex-col min-w-0 pb-16 md:pb-0">
+              <PreviewVerifyBanner />
               {children}
             </main>
           </div>

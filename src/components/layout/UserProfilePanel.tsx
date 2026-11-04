@@ -231,7 +231,7 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
           Ver perfil completo
         </Link>
 
-        {canUseContracts(userDoc.plan, user?.email) && (
+        {canUseContracts(userDoc.plan, user) && (
           <Link
             href="/legal-changes"
             onClick={onClose}

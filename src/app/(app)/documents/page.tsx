@@ -86,7 +86,7 @@ function DocumentsView() {
   const [error, setError] = useState('');
 
   // Live DocuSign status (Phase 3): the webhook updates signature_requests; chips follow it here.
-  const docusignOn = canUseDocusign(userDoc.plan, user.email);
+  const docusignOn = canUseDocusign(userDoc.plan, user);
   const [sigMap, setSigMap] = useState<Map<string, LiveSignature> | null>(null);
   const fetchedSigned = useRef(new Set<string>());
   useEffect(() => {
@@ -124,7 +124,7 @@ function DocumentsView() {
   const canSign = useCallback((d: DocumentRecord) => docusignOn && canSendForSignature(d), [docusignOn]);
 
   // F0: contracts — "Analizar como contrato" and the confirmation sheet.
-  const contractsOn = canUseContracts(userDoc.plan, user.email);
+  const contractsOn = canUseContracts(userDoc.plan, user);
   const [contractSheet, setContractSheet] = useState<Contract | null>(null);
   const [contractNotice, setContractNotice] = useState<{ docId: string; text: string } | null>(null);
   const canContract = useCallback((d: DocumentRecord) =>
@@ -178,7 +178,7 @@ function DocumentsView() {
   }, [searchKey, loading]);
 
   // Microsoft import (F1). After sign-in Microsoft returns here with ?ms=connected|cancelled|error.
-  const msEnabled = canUseMicrosoft(userDoc.plan, user.email);
+  const msEnabled = canUseMicrosoft(userDoc.plan, user);
   const [msImportOpen, setMsImportOpen] = useState(false);
   const [msError, setMsError] = useState(false);
   const { notify } = ws;

@@ -10,15 +10,17 @@ export async function requireMicrosoftUser(req: NextRequest): Promise<string | N
   if (!idToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   let uid: string;
   let email: string | undefined;
+  let emailVerified = false;
   try {
     const decoded = await authAdmin().verifyIdToken(idToken);
     uid = decoded.uid;
     email = decoded.email;
+    emailVerified = decoded.email_verified === true;
   } catch {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
   const plan = (await db().collection('users').doc(uid).get()).get('plan') as string | undefined;
-  if (!canUseMicrosoft(plan, email)) return NextResponse.json({ error: 'No disponible en tu plan' }, { status: 403 });
+  if (!canUseMicrosoft(plan, { email, emailVerified })) return NextResponse.json({ error: 'No disponible en tu plan' }, { status: 403 });
   return uid;
 }
 

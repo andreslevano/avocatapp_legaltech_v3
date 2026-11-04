@@ -45,8 +45,8 @@ export function ImportJobsProvider({ children }: { children: ReactNode }) {
   const { user, userDoc } = useAppAuth();
   const ws = useDocumentsWorkspace();
   const pathname = usePathname();
-  const enabled = canUseMicrosoft(userDoc.plan, user?.email);
-  const contractsOn = canUseContracts(userDoc.plan, user?.email);
+  const enabled = canUseMicrosoft(userDoc.plan, user);
+  const contractsOn = canUseContracts(userDoc.plan, user);
   const [jobs, setJobs] = useState<LiveImportJob[]>([]);
   const [runningHere, setRunningHere] = useState<Set<string>>(new Set());
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());

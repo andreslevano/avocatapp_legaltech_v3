@@ -5,7 +5,7 @@
 //               updates lifecycles and creates notifications; idempotent via contract_alerts/{key}.
 //   • digests — every run: users whose digest hour is now get one grouped email per day.
 
-import { db } from '@/lib/firebase-admin';
+import { authAdmin, db } from '@/lib/firebase-admin';
 import { sendEmail, emailConfigured } from '@/lib/email';
 import { canUseContracts } from './config';
 import { lifecycleFor, madridHour, madridToday, nextContractEvent, rollForward } from './dates';
@@ -23,10 +23,12 @@ async function loadUser(uid: string, cache: Map<string, UserInfo>): Promise<User
   if (hit) return hit;
   const u = (await db().collection('users').doc(uid).get()).data() ?? {};
   const email = (u.email as string | undefined) ?? null;
+  // Domain preview needs a verified email (src/lib/preview.ts) — only Firebase Auth knows that.
+  const emailVerified = await authAdmin().getUser(uid).then(a => a.emailVerified).catch(() => false);
   const info: UserInfo = {
     prefs: normalizePrefs(u.notificationPrefs),
     email,
-    enabled: canUseContracts(u.plan as string | undefined, email),
+    enabled: canUseContracts(u.plan as string | undefined, { email, emailVerified }),
     digestSentOn: (u.notificationDigestSentOn as string | undefined) ?? null,
   };
   cache.set(uid, info);

@@ -24,7 +24,7 @@ import NdaCheckSheet, { VERDICT_ICON, VERDICT_STYLE } from '@/components/legal/N
 
 export default function LegalChangesPage() {
   const { user, userDoc } = useAppAuth();
-  const enabled = canUseContracts(userDoc.plan, user?.email);
+  const enabled = canUseContracts(userDoc.plan, user);
   const [changes, setChanges] = useState<LegalChange[]>([]);
   const [baseline, setBaseline] = useState<BaselineItem[] | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);

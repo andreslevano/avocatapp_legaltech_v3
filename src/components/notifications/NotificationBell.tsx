@@ -10,7 +10,7 @@ import { watchNotifications } from '@/lib/contracts/client';
 
 export default function NotificationBell() {
   const { user, userDoc } = useAppAuth();
-  const enabled = canUseContracts(userDoc.plan, user?.email);
+  const enabled = canUseContracts(userDoc.plan, user);
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {

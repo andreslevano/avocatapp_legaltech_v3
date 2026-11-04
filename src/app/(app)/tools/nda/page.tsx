@@ -151,7 +151,7 @@ export default function NdaPage() {
 
   // F3 "Renovar": /tools/nda?renew=<contractId> prefills the parties, term and jurisdiction of the
   // expiring NDA; the new contract record replaces it (old one → "Renovado").
-  const contractsOn = canUseContracts(userDoc.plan, user?.email);
+  const contractsOn = canUseContracts(userDoc.plan, user);
   const [renewsContractId, setRenewsContractId] = useState<string | null>(null);
   // F2 "Generar versión actualizada": ?renew=<contractId>&check=<checkId> also carries the legal fixes.
   const [legalUpdates, setLegalUpdates] = useState<string[]>([]);

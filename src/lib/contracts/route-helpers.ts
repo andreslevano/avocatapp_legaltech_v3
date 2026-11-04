@@ -12,13 +12,16 @@ export async function requireContractsUser(req: NextRequest): Promise<ContractsC
   if (!idToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   let uid: string;
   let email: string | undefined;
+  let emailVerified = false;
   try {
-    ({ uid, email } = await authAdmin().verifyIdToken(idToken));
+    const t = await authAdmin().verifyIdToken(idToken);
+    ({ uid, email } = t);
+    emailVerified = t.email_verified === true;
   } catch {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
   const u = (await db().collection('users').doc(uid).get()).data() ?? {};
-  if (!canUseContracts(u.plan as string | undefined, email)) return NextResponse.json({ error: 'No disponible en tu plan' }, { status: 403 });
+  if (!canUseContracts(u.plan as string | undefined, { email, emailVerified })) return NextResponse.json({ error: 'No disponible en tu plan' }, { status: 403 });
   return { uid, isAdmin: u.isAdmin === true };
 }
 

@@ -12,7 +12,7 @@ type Props = Omit<SignAndSendSheetProps, 'onClose'> & { autoOpen?: boolean; disa
 export default function SignAndSendButton({ autoOpen = false, disabled, ...sheet }: Props) {
   const { user, userDoc } = useAppAuth();
   const [open, setOpen] = useState(autoOpen);
-  if (!canUseDocusign(userDoc.plan, user?.email)) return null;
+  if (!canUseDocusign(userDoc.plan, user)) return null;
   return (
     <>
       <Button variant="BtnGold" size="sm" disabled={disabled} onClick={() => setOpen(true)}>Firmar y enviar</Button>

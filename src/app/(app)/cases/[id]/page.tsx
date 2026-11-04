@@ -141,7 +141,7 @@ export default function CaseDetailPage() {
   const [pickerDocSearch,  setPickerDocSearch]  = useState('');
 
   // F1: import from OneDrive / SharePoint straight into this case.
-  const msEnabled = canUseMicrosoft(userDoc.plan, user?.email);
+  const msEnabled = canUseMicrosoft(userDoc.plan, user);
   const [msImportOpen, setMsImportOpen] = useState(false);
   const importJobs = useImportJobs();
   const importsDone = (importJobs?.jobs ?? []).reduce((n, j) => n + (j.counts?.done ?? 0), 0);
@@ -525,7 +525,7 @@ export default function CaseDetailPage() {
                           className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">↓</a>
                         <button onClick={() => router.push(`/tools/analisis?docId=${d.id}`)}
                           className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">IA</button>
-                        {canUseDocusign(userDoc.plan, user?.email) && canSendForSignature(d) && (
+                        {canUseDocusign(userDoc.plan, user) && canSendForSignature(d) && (
                           <button onClick={() => setSignDoc(d)} title="Firmar y enviar con DocuSign"
                             className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">Firmar</button>
                         )}

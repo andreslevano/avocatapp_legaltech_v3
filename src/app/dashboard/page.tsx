@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   // Phase 5c: documents waiting for a signature (latest request per document, live).
-  const docusignOn = canUseDocusign(userDoc.plan, user?.email);
+  const docusignOn = canUseDocusign(userDoc.plan, user);
   const [awaitingSignature, setAwaitingSignature] = useState<number | null>(null);
   useEffect(() => {
     if (!docusignOn || !user) return;
@@ -35,7 +35,7 @@ export default function DashboardPage() {
   }, [docusignOn, user]);
 
   // F3: contract dates join "Próximos vencimientos" (live).
-  const contractsOn = canUseContracts(userDoc.plan, user?.email);
+  const contractsOn = canUseContracts(userDoc.plan, user);
   const [contracts, setContracts] = useState<Contract[]>([]);
   useEffect(() => {
     if (!contractsOn || !user) return;

@@ -509,7 +509,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Integraciones (DocuSign, Microsoft) */}
-        {(canUseDocusign(userDoc.plan, user?.email) || canUseMicrosoft(userDoc.plan, user?.email)) && (
+        {(canUseDocusign(userDoc.plan, user) || canUseMicrosoft(userDoc.plan, user)) && (
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 space-y-4 mt-4">
             <div>
               <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
@@ -519,13 +519,13 @@ export default function ProfilePage() {
                 Conecta servicios externos. Avocat guarda las credenciales cifradas y nunca las muestra en el navegador.
               </p>
             </div>
-            {canUseDocusign(userDoc.plan, user?.email) && <ConnectDocusignCard />}
-            {canUseMicrosoft(userDoc.plan, user?.email) && <ConnectMicrosoftCard />}
+            {canUseDocusign(userDoc.plan, user) && <ConnectDocusignCard />}
+            {canUseMicrosoft(userDoc.plan, user) && <ConnectMicrosoftCard />}
           </div>
         )}
 
         {/* Notificaciones (F3: contract expiry alerts) */}
-        {canUseContracts(userDoc.plan, user?.email) && <NotificationSettingsCard />}
+        {canUseContracts(userDoc.plan, user) && <NotificationSettingsCard />}
 
         {/* Save area */}
         <div className="mt-4 flex items-center gap-3">

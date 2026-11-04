@@ -7,7 +7,7 @@
 
 import OpenAI from 'openai';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '@/lib/firebase-admin';
+import { authAdmin, db } from '@/lib/firebase-admin';
 import { addDays, isIsoDate, madridToday } from '@/lib/contracts/dates';
 import { canUseContracts } from '@/lib/contracts/config';
 import { OPEN_LIFECYCLES, type Contract } from '@/lib/contracts/types';
@@ -221,7 +221,8 @@ async function flagAffectedContracts(ch: LegalChange): Promise<{ flagged: number
   let flagged = 0, users = 0;
   for (const [uid, cs] of byUser) {
     const u = (await db().collection('users').doc(uid).get()).data() ?? {};
-    if (!canUseContracts(u.plan as string | undefined, u.email as string | undefined)) continue;
+    const emailVerified = await authAdmin().getUser(uid).then(a => a.emailVerified).catch(() => false);
+    if (!canUseContracts(u.plan as string | undefined, { email: u.email as string | undefined, emailVerified })) continue;
     const batch = db().batch();
     for (const c of cs) {
       batch.update(db().collection('contracts').doc(c.id), {

@@ -224,6 +224,9 @@ Gmail OAuth tokens are currently stored in `users/{uid}` (`gmailAccessToken`, `g
 
 ## 7. Progress
 
+> **Preview access (2026-11-04):** besides the named emails, every user with a **verified** email at a `PREVIEW_DOMAINS` organisation (`src/lib/preview.ts`: `mobilityforwork.es`) gets DocuSign, Microsoft and contracts/alerts/legal features (Abogados plan). Unverified email/password accounts see a banner to verify (Firebase verification email). Server gates use the ID token's `email_verified`; scans use Firebase Auth.
+
+
 | Phase | Status | Notes |
 |---|---|---|
 | 0 | ☑ (2026-11-01) — **D7 = HTML** | `buildDocHtml(…, { forSignature: true })` in `src/lib/doc-html.ts` (omits the stamped image, white 1pt anchors `\sN\`/`\dN\` per block, Parte A = 1, Parte B = 2). Spike run against demo with the in-app connection (`scripts/docusign-spike.ts html|pdf <email>`), checked in DocuSign's own tagger: both formats find all 4 anchors; with the first offsets (sign −10, date −4) tabs sat ~2 lines high (on "Domicilio"). Final offsets (pixels): **signHere X +20 / Y +16, dateSigned X +20 / Y +6** → Sign on the "Firma:" line, Date on the "Fecha:" line, for both parties, in both formats. HTML chosen: DocuSign keeps the Avocat layout (header, fonts, footer) identical to the Word/PDF downloads and needs no second renderer. Phase 2 polish: Sign tab slightly overlaps the Date tab / next party heading — try sign X +60 or a little more spacing after "Firma:". |

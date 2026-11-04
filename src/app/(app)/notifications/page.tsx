@@ -26,7 +26,7 @@ const ACT_DONE: Record<Act, string> = {
 export default function NotificationsPage() {
   const { user, userDoc } = useAppAuth();
   const router = useRouter();
-  const enabled = canUseContracts(userDoc.plan, user?.email);
+  const enabled = canUseContracts(userDoc.plan, user);
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [contracts, setContracts] = useState<Map<string, Contract>>(new Map());
   const [busy, setBusy] = useState<string | null>(null);

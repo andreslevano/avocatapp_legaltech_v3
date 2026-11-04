@@ -1,16 +1,19 @@
 // Microsoft connector (F1) — configuration and the read-only guarantees (decision M2).
 // Pure module: safe to import from client code (no secrets read here except in msServerConfig).
 
+import { inPreview, type Identity } from '@/lib/preview';
+
 export const MICROSOFT_PLAN = 'Abogados';   // feature gating (single constant)
 
 // Preview: while F1 is incomplete, only these accounts see the connector in production.
 // Empty the list to release it to every Abogados user.
 export const MICROSOFT_PREVIEW_EMAILS: string[] = ['andres.levano@mobilityforwork.es'];
 
-export function canUseMicrosoft(plan: string | null | undefined, email: string | null | undefined): boolean {
+/** Plan + preview (named emails, or a verified email at a PREVIEW_DOMAINS organisation — src/lib/preview.ts). */
+export function canUseMicrosoft(plan: string | null | undefined, who: Identity): boolean {
   if (plan !== MICROSOFT_PLAN) return false;
   if (MICROSOFT_PREVIEW_EMAILS.length === 0) return true;
-  return !!email && MICROSOFT_PREVIEW_EMAILS.includes(email.trim().toLowerCase());
+  return inPreview(who, MICROSOFT_PREVIEW_EMAILS);
 }
 
 /** Tenant id Microsoft uses for all personal (MSA) accounts. */
