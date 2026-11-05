@@ -1,9 +1,11 @@
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, authAdmin } from '@/lib/firebase-admin';
 import { buildSystemPrompt } from '@/lib/agent-prompts';
 import { generateEmbedding } from '@/lib/vertex-embeddings';
+import { pdfText } from '@/lib/pdf-text';
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 // agent-v2 is called directly from the browser to the Cloud Run URL (bypassing
@@ -22,6 +24,17 @@ export async function OPTIONS() {
 // ── Anthropic client ────────────────────────────────────────────────────────
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Fallback when Claude is unavailable (no credit, outage, overload) before any text was written:
+// same system prompt and text history on GPT-4o, without tools.
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+const AI_UNAVAILABLE = 'El asistente de IA no está disponible en este momento. Inténtalo de nuevo en unos minutos.';
+
+/** Short, secret-free description of a provider error for the logs. */
+function describeAiError(err: unknown): string {
+  const e = err as { status?: number; message?: string; error?: { error?: { type?: string; message?: string } } };
+  const inner = e?.error?.error;
+  return `${e?.status ?? '-'} ${inner?.type ?? ''} ${(inner?.message ?? e?.message ?? String(err)).slice(0, 200)}`.trim();
+}
 
 // ── Tool definitions ────────────────────────────────────────────────────────
 
@@ -421,9 +434,7 @@ export async function POST(req: NextRequest) {
       let extracted = '';
       try {
         if (doc.mimeType === 'application/pdf' || ext === 'pdf') {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const pdfParse = require('pdf-parse');
-          extracted = ((await pdfParse(buffer)).text ?? '').slice(0, 12000);
+          extracted = (await pdfText(buffer)).slice(0, 12000);
         } else if (doc.mimeType.includes('word') || ['docx', 'doc'].includes(ext)) {
           // eslint-disable-next-line @typescript-eslint/no-require-imports
           const mammoth = require('mammoth');
@@ -509,6 +520,7 @@ export async function POST(req: NextRequest) {
     ...buildClaudeMessages(storedMessages.slice(0, -1)), // history without new user msg
     { role: 'user', content: fullMessage },
   ];
+  const textHistory = claudeMessages;   // plain-text turns, reused by the fallback
 
   // SSE streaming
   const encoder = new TextEncoder();
@@ -643,8 +655,40 @@ export async function POST(req: NextRequest) {
             }).catch(e => console.warn('[api/agent-v2] save stopped turn', (e as Error).message));
           }
         } else {
-          console.error('[api/agent-v2]', err);
-          emit({ type: 'error', message: (err as Error).message ?? 'Internal error' });
+          console.error('[api/agent-v2] claude failed:', describeAiError(err));
+          let recovered = false;
+          if (!fullText.trim() && openai) {
+            try {
+              const ac = new AbortController();
+              currentStream = { abort: () => ac.abort() };
+              const completion = await openai.chat.completions.create({
+                model: 'gpt-4o', max_tokens: 4000, stream: true,
+                messages: [
+                  { role: 'system', content: systemPrompt },
+                  ...textHistory.map(m => ({ role: m.role, content: String(m.content) })),
+                ],
+              }, { signal: ac.signal });
+              for await (const chunk of completion) {
+                const delta = chunk.choices[0]?.delta?.content ?? '';
+                if (delta) { fullText += delta; emit({ type: 'text', delta }); }
+              }
+              if (aborted) throw new Error('aborted');
+              await convRef.update({
+                messages: FieldValue.arrayUnion(
+                  { ...userMsg, timestamp: new Date() },
+                  { role: 'assistant', content: fullText, provider: 'openai-fallback', timestamp: new Date() },
+                ),
+                updatedAt: FieldValue.serverTimestamp(),
+                ...(storedMessages.length <= 1 ? { title: message.slice(0, 60) } : {}),
+              });
+              console.warn('[api/agent-v2] answered with the OpenAI fallback');
+              emit({ type: 'done', convId: convRef.id });
+              recovered = true;
+            } catch (fallbackErr) {
+              if (!aborted) console.error('[api/agent-v2] fallback failed:', describeAiError(fallbackErr));
+            }
+          }
+          if (!recovered && !aborted) emit({ type: 'error', code: 'ai_unavailable', message: AI_UNAVAILABLE });
         }
       } finally {
         try { controller.close(); } catch { /* client already gone */ }

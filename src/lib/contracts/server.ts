@@ -11,6 +11,7 @@ import {
   type NdaFormInput, type NewContract,
 } from './extract';
 import type { Contract, ContractEdit, Lifecycle } from './types';
+import { pdfText } from '@/lib/pdf-text';
 
 export class ContractError extends Error {
   constructor(message: string, public code: string, public status: number) { super(message); }
@@ -119,19 +120,6 @@ const stripHtml = (html: string) => html
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
   .replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n\n').trim();
-
-/** PDF text layer. pdf-parse 2.x exposes a PDFParse class; 1.x was a function — support both. */
-async function pdfText(buf: Buffer): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = require('pdf-parse');
-  if (typeof mod === 'function') return (await mod(buf)).text ?? '';
-  const parser = new mod.PDFParse({ data: new Uint8Array(buf) });
-  try {
-    return (await parser.getText()).text ?? '';
-  } finally {
-    await parser.destroy?.().catch?.(() => {});
-  }
-}
 
 /** Text of a stored document: Avocat's Word HTML (.doc), DOCX, PDF (text layer) or plain text. */
 export async function documentText(d: FirebaseFirestore.DocumentData): Promise<string> {

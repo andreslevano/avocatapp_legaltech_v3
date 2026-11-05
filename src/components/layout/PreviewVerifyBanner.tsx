@@ -8,13 +8,19 @@ import { useState } from 'react';
 import { sendEmailVerification } from 'firebase/auth';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { PREVIEW_DOMAINS } from '@/lib/preview';
+import { canUseContracts } from '@/lib/contracts/config';
+import { canUseDocusign } from '@/lib/docusign/config';
+import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 
 export default function PreviewVerifyBanner() {
-  const { user } = useAppAuth();
+  const { user, userDoc } = useAppAuth();
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'checking' | 'error'>('idle');
   const [msg, setMsg] = useState('');
   const domain = user?.email?.split('@')[1]?.toLowerCase() ?? '';
   if (!user || user.emailVerified || !PREVIEW_DOMAINS.includes(domain)) return null;
+  // Named testers already have every preview feature without verifying: nothing to unlock.
+  const plan = userDoc.plan;
+  if (canUseDocusign(plan, user) && canUseMicrosoft(plan, user) && canUseContracts(plan, user)) return null;
 
   const send = async () => {
     setState('sending'); setMsg('');

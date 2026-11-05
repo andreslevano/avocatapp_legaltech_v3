@@ -205,7 +205,10 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
               } else if (ev.type === 'done') {
                 convIdRef.current = ev.convId as string;
               } else if (ev.type === 'error') {
-                throw new Error(ev.message as string ?? 'Error del servidor');
+                // A coded error carries a message meant for the user (e.g. AI provider unavailable).
+                const e = new Error(ev.message as string ?? 'Error del servidor') as Error & { userMessage?: string };
+                if (ev.code) e.userMessage = ev.message as string;
+                throw e;
               }
             }
           }
@@ -242,7 +245,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
             // silent
           }
         }
-      } catch {
+      } catch (err) {
         if (ac.signal.aborted) {
           // Stopped: keep a partial answer (marked), or drop the empty turn; either way the prompt
           // goes back into the box to edit and resend.
@@ -254,7 +257,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
           setMessages(prev =>
             prev.map(m =>
               m.id === assistantId
-                ? { ...m, content: 'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.', streaming: false }
+                ? { ...m, content: (err as { userMessage?: string })?.userMessage ?? 'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.', streaming: false }
                 : m
             )
           );

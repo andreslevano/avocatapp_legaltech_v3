@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, authAdmin, storage } from '@/lib/firebase-admin';
 import { generateEmbedding } from '@/lib/vertex-embeddings';
+import { pdfText } from '@/lib/pdf-text';
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -18,9 +19,7 @@ async function extractTextFromStorage(storagePath: string): Promise<string> {
     if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) return '';
 
     if (ext === 'pdf') {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require('pdf-parse');
-      return ((await pdfParse(buffer)).text ?? '').slice(0, 12000);
+      return (await pdfText(buffer)).slice(0, 12000);
     }
 
     if (['docx', 'doc'].includes(ext)) {

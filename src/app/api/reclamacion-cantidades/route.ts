@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '@/lib/firebase-admin';
 import { ReclamacionCantidadesRequestSchema } from '@/lib/validate-reclamacion-cantidades';
+import { pdfText } from '@/lib/pdf-text';
 
 interface DocumentPayload {
   name: string;
@@ -16,10 +17,7 @@ async function extractText(doc: DocumentPayload): Promise<string> {
 
   try {
     const buffer = Buffer.from(doc.base64, 'base64');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse');
-    const result = await pdfParse(buffer);
-    return result.text?.slice(0, 12000) ?? '';
+    return (await pdfText(buffer)).slice(0, 12000);
   } catch {
     return `[${doc.name} — no se pudo extraer el texto]`;
   }

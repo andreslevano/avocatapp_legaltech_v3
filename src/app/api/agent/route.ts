@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { NextRequest } from 'next/server';
 import type { UserPlan } from '@/lib/auth';
 import { buildSystemPrompt } from '@/lib/agent-prompts';
+import { pdfText } from '@/lib/pdf-text';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -13,10 +14,7 @@ async function extractDocumentText(doc: FilePayload): Promise<string> {
 
   try {
     if (doc.mimeType === 'application/pdf' || ext === 'pdf') {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require('pdf-parse');
-      const result = await pdfParse(buffer);
-      return result.text?.slice(0, 12000) ?? '';
+      return (await pdfText(buffer)).slice(0, 12000);
     }
 
     if (doc.mimeType.includes('word') || ['docx', 'doc'].includes(ext)) {
