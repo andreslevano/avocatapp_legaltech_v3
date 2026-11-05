@@ -85,13 +85,14 @@ function injectSignature(html: string, signatureUrl?: string): string {
   if (signatureUrl) {
     // First signature block (divulgante/disclosing) → image; rest → blank line
     let first = true;
-    html = html.replace(/(?:Firma|Signature):\s*_{4,}/g, (match) => {
-      const label = match.startsWith('Firma') ? 'Firma' : 'Signature';
+    html = html.replace(/(?:Firma y sello|Firma|Signature):\s*_{4,}/g, (match) => {
+      const label = match.startsWith('Firma y sello') ? 'Firma y sello' : match.startsWith('Firma') ? 'Firma' : 'Signature';
       if (first) { first = false; return `${label}: ${SIG_IMG(signatureUrl)}`; }
       return `${label}:${SIG_LINE}`;
     });
   } else {
     html = html
+      .replace(/Firma y sello:\s*_{4,}/g, `Firma y sello:${SIG_LINE}`)
       .replace(/Firma:\s*_{4,}/g,     `Firma:${SIG_LINE}`)
       .replace(/Signature:\s*_{4,}/g, `Signature:${SIG_LINE}`);
   }
@@ -109,7 +110,8 @@ export const dateAnchor = (n: number) => `\\d${n}\\`;
 const ANCHOR = (text: string) => `<span style="color:#ffffff;font-size:1pt;">${text}</span>`;
 
 // Labels may be bold in the model's output ("**Firma:** ____" → "<strong>Firma:</strong> ____").
-const SIG_BLOCK_RE = /(Firma|Signature):(\*\*|<\/strong>)?\s*_{4,}/g;
+// "Firma y sello:" is the label of the MOBIFORWORK validated template (org-templates).
+const SIG_BLOCK_RE = /(Firma y sello|Firma|Signature):(\*\*|<\/strong>)?\s*_{4,}/g;
 const DATE_BLOCK_RE = /(Fecha|Date):(\*\*|<\/strong>)?\s*_{4,}/g;
 
 /** Number of signature lines ("Firma: ____") in the markdown — one per signing party. */

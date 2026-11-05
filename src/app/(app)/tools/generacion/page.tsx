@@ -9,6 +9,7 @@ import { saveAnalysisDocument, downloadAsWord, downloadAsPdf } from '@/lib/agent
 import { consumirCredito } from '@/lib/creditos';
 import SignAndSendButton from '@/components/signatures/SignAndSendButton';
 import { getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
+import { orgNdaTemplateFor } from '@/lib/org-templates';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -214,6 +215,8 @@ export default function GeneracionPage() {
   const [step,       setStep]       = useState<'select' | 'form' | 'result'>('select');
   const [activeArea, setActiveArea] = useState<Area>('Civil');
   const [selectedType, setSelectedType] = useState<DocType | null>(null);
+  // MOBIFORWORK: NDAs come only from the lawyer-validated template (/tools/nda), never drafted here.
+  const orgNda = orgNdaTemplateFor(user) !== null;
   const [customType,   setCustomType]   = useState('');
 
   // Generic form
@@ -564,6 +567,12 @@ export default function GeneracionPage() {
                   </div>
                   {tip && <p className="text-[11px] text-[#6b6050] leading-relaxed border-t border-[#2e2b20] pt-3">{tip}</p>}
                   {error && <p className="text-[12px] text-red-400">{error}</p>}
+                  {orgNda && selectedType?.value === 'nda' ? (
+                    <div className="rounded-lg border border-avocat-gold/30 bg-avocat-gold/5 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-[12px] text-[#c8c0ac]">Mobility for Work tiene un NDA validado por su abogado. Se genera desde el Generador de NDA para que sea idéntico a la versión aprobada.</p>
+                      <Link href="/tools/nda"><Button variant="BtnGold" size="sm">Ir al Generador de NDA</Button></Link>
+                    </div>
+                  ) : (
                   <div className="flex justify-end">
                     <Button
                       variant="BtnGold"
@@ -575,6 +584,7 @@ export default function GeneracionPage() {
                       Generar documento
                     </Button>
                   </div>
+                  )}
                 </div>
               )}
             </div>

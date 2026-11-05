@@ -6,6 +6,7 @@ import { db, authAdmin } from '@/lib/firebase-admin';
 import { buildSystemPrompt } from '@/lib/agent-prompts';
 import { generateEmbedding } from '@/lib/vertex-embeddings';
 import { pdfText } from '@/lib/pdf-text';
+import { orgNdaTemplateFor } from '@/lib/org-templates';
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 // agent-v2 is called directly from the browser to the Cloud Run URL (bypassing
@@ -407,9 +408,11 @@ export async function POST(req: NextRequest) {
   }
 
   let uid: string;
+  let orgTemplate: ReturnType<typeof orgNdaTemplateFor> = null;
   try {
     const decoded = await authAdmin().verifyIdToken(idToken);
     uid = decoded.uid;
+    orgTemplate = orgNdaTemplateFor({ email: decoded.email, emailVerified: decoded.email_verified === true });
   } catch {
     return new Response('Invalid token', { status: 401, headers: CORS_HEADERS });
   }
@@ -515,7 +518,9 @@ export async function POST(req: NextRequest) {
   storedMessages = [...storedMessages, userMsg];
 
   // Build system prompt and initial Claude messages
-  const systemPrompt = buildSystemPrompt(userPlan, fullCaseContext, userCountry);
+  const systemPrompt = buildSystemPrompt(userPlan, fullCaseContext, userCountry) + (orgTemplate === 'mobilityforwork' ? `
+
+REGLA DE ORGANIZACIÓN — MOBIFORWORK S.L.: esta organización tiene un Acuerdo de Confidencialidad (NDA) validado por su abogado. Si el usuario pide redactar, generar, adaptar o modificar un NDA o acuerdo de confidencialidad de MOBIFORWORK, NO lo redactes ni propongas cláusulas alternativas: explícale que el NDA se genera con la plantilla validada en Herramientas → Generador de NDA (https://avocatapp.com/tools/nda), donde solo se completan los datos de la Parte Receptora y los Productos Protegidos. Puedes explicar o resumir el contenido de un NDA ya generado si te lo pide.` : '');
   let claudeMessages: Anthropic.MessageParam[] = [
     ...buildClaudeMessages(storedMessages.slice(0, -1)), // history without new user msg
     { role: 'user', content: fullMessage },

@@ -30,6 +30,8 @@ export interface NdaFormInput {
   renewsContractId?: string | null;
   /** F2: an updated version after a legal check replaces the old one ("Sustituido", not "Renovado"). */
   supersedes?: boolean;
+  /** Confidentiality surviving after the term (org templates fix it, e.g. MOBIFORWORK). */
+  survivalMonths?: number | null;
 }
 
 const clean = (s: unknown, max = 200) => (typeof s === 'string' ? s.trim().slice(0, max) : '');
@@ -40,7 +42,10 @@ const party = (p: NdaFormParty, role: PartyRole): ContractParty => ({
 
 export function contractFromNdaForm(f: NdaFormInput, uid: string, today: string): NewContract {
   const { months, indefinite } = parseDuration(f.duracion);
-  const term: ContractTerm = { durationText: clean(f.duracion, 120) || null, months, indefinite };
+  const term: ContractTerm = {
+    durationText: clean(f.duracion, 120) || null, months, indefinite,
+    ...(f.survivalMonths && f.survivalMonths > 0 ? { survivalMonths: Math.round(f.survivalMonths) } : {}),
+  };
   const bilateral = f.tipo === 'bilateral';
   const clauses: ContractClause[] = [
     ...(['definition_confidential_info', 'exclusions', 'return_destruction', 'governing_law', 'jurisdiction_forum', 'term'] as ClauseKey[])

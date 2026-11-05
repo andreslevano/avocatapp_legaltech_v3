@@ -17,6 +17,9 @@ import { createNdaContract, watchContract } from '@/lib/contracts/client';
 import { COUNTRIES } from '@/lib/contracts/types';
 import { getNdaCheck } from '@/lib/legal/check-client';
 import { updateInstructions } from '@/lib/legal/check';
+import { orgNdaTemplateFor } from '@/lib/org-templates';
+import { MFW_CONTRACT_DEFAULTS, MFW_NDA_TEMPLATE, renderMfwNda, type MfwReceptor } from '@/lib/org-templates/mobiforwork-nda';
+import MfwNdaFields from '@/components/org-templates/MfwNdaFields';
 
 type Tipo = 'unilateral' | 'bilateral';
 type Lang = 'es' | 'en';
@@ -104,6 +107,9 @@ export default function NdaPage() {
   const [divulgante, setDivulgante]   = useState<Parte>(EMPTY_PARTE);
   const [receptora, setReceptora]     = useState<Parte>(EMPTY_PARTE);
   const [objeto, setObjeto]           = useState('');
+  // Organisation template (MOBIFORWORK, lawyer-validated): deterministic text, only these fields vary.
+  const orgTpl = orgNdaTemplateFor(user);
+  const [mfwReceptor, setMfwReceptor] = useState<MfwReceptor>({ tipo: 'sociedad' });
   const [duracion, setDuracion]       = useState('2 años');
   const [jurisdiccion, setJurisdiccion] = useState(
     (ud.country as string) || 'Chile'
@@ -174,6 +180,8 @@ export default function NdaPage() {
       };
       setDivulgante(toParte(0));
       setReceptora(toParte(1));
+      const rp = c.parties[1];
+      if (rp) setMfwReceptor({ tipo: rp.company ? 'sociedad' : 'persona', razonSocial: rp.company ?? '', nombre: rp.name, email: rp.email ?? '' });
       if (c.term?.durationText && DURACIONES.some(d => d.value === c.term.durationText)) setDuracion(c.term.durationText);
       if (c.governingLaw) setJurisdiccion(c.governingLaw);
       else if (c.jurisdiction?.country) setJurisdiccion(COUNTRIES.find(x => x.code === c.jurisdiction.country)?.label ?? jurisdiccion);
@@ -208,6 +216,12 @@ export default function NdaPage() {
     setSelectedClientId(clientId);
     const client = clients.find(c => c.id === clientId);
     if (!client) return;
+    setMfwReceptor({
+      tipo: client.company ? 'sociedad' : 'persona',
+      razonSocial: client.company || '', nombre: client.name, cargo: client.representativeCapacity || '',
+      documento: client.idNumber ? `${client.idType || ''} ${client.idNumber}`.trim() : '',
+      domicilio: client.address || '', email: client.email || '',
+    });
     setReceptora({
       nombre: client.name,
       empresa: client.company || '',
@@ -283,13 +297,47 @@ export default function NdaPage() {
         }
       }
 
-      // Auto-save to documents repository (Word + PDF)
+      await saveGenerated(accumulated);
+    } catch (err) {
+      setError((err as Error).message ?? 'Error al generar el NDA. Intenta de nuevo.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  /** MOBIFORWORK: the validated template, filled in — no AI drafting, so clauses never drift. */
+  const handleGenerateFromTemplate = async () => {
+    const r = mfwReceptor;
+    if (r.tipo === 'sociedad' && !r.razonSocial?.trim()) return setError('Indica la razón social de la Parte Receptora.');
+    if (!r.nombre?.trim()) return setError(r.tipo === 'sociedad' ? 'Indica el nombre del representante.' : 'Indica el nombre de la Parte Receptora.');
+    if (!objeto.trim()) return setError('Describe los Productos Protegidos.');
+    setError(''); setSaved(false); setSavedDocId(null); setResumeSign(false); setNotice('');
+    setDocTitle(ndaTitle);
+    setGenerating(true);
+    try {
+      const md = renderMfwNda({ receptor: r, productos: objeto });
+      setResult(md);
+      await saveGenerated(md);
+    } catch (err) {
+      setError((err as Error).message ?? 'Error al generar el NDA.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  /** Word + PDF to the documents repository, contract record (F0) and search index. */
+  const saveGenerated = async (accumulated: string) => {
       if (accumulated.length > 200) {
         try {
-          const ndaName = `NDA_${divulgante.empresa || divulgante.nombre}_${receptora.empresa || receptora.nombre}`.replace(/\s+/g, '_').slice(0, 60);
-          const { blob } = buildWordBlob(accumulated, ndaName, signatureUrl, meta);
+          const ndaName = (orgTpl
+            ? `NDA_MOBIFORWORK_${mfwReceptor.tipo === 'sociedad' ? mfwReceptor.razonSocial : mfwReceptor.nombre}`
+            : `NDA_${divulgante.empresa || divulgante.nombre}_${receptora.empresa || receptora.nombre}`).replace(/\s+/g, '_').slice(0, 60);
+          // The template's first signature block is MOBIFORWORK's CEO: never stamp the user's own signature there.
+          const sig = orgTpl ? undefined : signatureUrl;
+          const docMeta: DocMeta = orgTpl ? { authorName: MFW_NDA_TEMPLATE.company, authorNif: `CIF ${MFW_NDA_TEMPLATE.cif}` } : meta;
+          const { blob } = buildWordBlob(accumulated, ndaName, sig, docMeta);
           // Generate PDF in parallel (fire — don't block if it fails)
-          const pdfBlobResult = await buildPdfBlob(accumulated, ndaName, signatureUrl, meta).catch(() => null);
+          const pdfBlobResult = await buildPdfBlob(accumulated, ndaName, sig, docMeta).catch(() => null);
           const record = await saveDocumentToStorage({
             userId: user.uid,
             plan: userDoc.plan ?? 'Autoservicio',
@@ -303,7 +351,13 @@ export default function NdaPage() {
           setSavedDocId(record.id);
           // F0: structured contract record from the form (dates, parties) for expiry alerts.
           if (contractsOn) {
-            createNdaContract(user, {
+            createNdaContract(user, orgTpl ? {
+              documentId: record.id, title: ndaTitle, tipo: 'unilateral', language: 'es', objeto,
+              divulgante: { nombre: 'Félix Dia Morales', empresa: MFW_NDA_TEMPLATE.company, idType: 'CIF', idNumber: MFW_NDA_TEMPLATE.cif },
+              receptora: { nombre: mfwReceptor.nombre ?? '', empresa: mfwReceptor.tipo === 'sociedad' ? mfwReceptor.razonSocial : '', email: mfwReceptor.email },
+              ...MFW_CONTRACT_DEFAULTS, clientId: selectedClientId || null, renewsContractId,
+              supersedes: legalUpdates.length > 0,
+            } : {
               documentId: record.id, title: ndaTitle, tipo, language, objeto,
               divulgante: stripEmail(divulgante), receptora: { ...stripEmail(receptora), email: receptora.email },
               duracion, jurisdiccion, ciudadJurisdiccion: ciudadJurisdiccion || undefined,
@@ -322,14 +376,11 @@ export default function NdaPage() {
           // auto-save failed — user can still download manually
         }
       }
-    } catch (err) {
-      setError((err as Error).message ?? 'Error al generar el NDA. Intenta de nuevo.');
-    } finally {
-      setGenerating(false);
-    }
   };
 
-  const ndaTitle = `NDA — ${divulgante.empresa || divulgante.nombre || 'Divulgante'} / ${receptora.empresa || receptora.nombre || 'Receptora'}`;
+  const ndaTitle = orgTpl
+    ? `NDA — ${MFW_NDA_TEMPLATE.company} / ${(mfwReceptor.tipo === 'sociedad' ? mfwReceptor.razonSocial : mfwReceptor.nombre) || 'Receptora'}`
+    : `NDA — ${divulgante.empresa || divulgante.nombre || 'Divulgante'} / ${receptora.empresa || receptora.nombre || 'Receptora'}`;
 
   return (
     <div className="flex flex-col h-full">
@@ -345,6 +396,10 @@ export default function NdaPage() {
           {/* Form */}
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-6">
 
+            {orgTpl ? (
+              <MfwNdaFields receptor={mfwReceptor} onReceptor={setMfwReceptor} productos={objeto} onProductos={setObjeto}
+                clients={clients} selectedClientId={selectedClientId} onClient={fillFromClient} />
+            ) : (<>
             {/* Language + Tipo row */}
             <div className="flex flex-wrap gap-4 items-start">
               {/* Language toggle */}
@@ -531,11 +586,17 @@ export default function NdaPage() {
               </div>
             </div>
 
+            </>)}
+
             {error && <p className="text-[12px] text-red-400">{error}</p>}
             {notice && <p className="text-[12px] text-amber-400">{notice}</p>}
             {legalUpdates.length > 0 && (
               <div className="rounded-lg border border-sky-400/20 bg-sky-400/5 px-3 py-2 space-y-1">
-                <p className="text-[11px] text-sky-400 font-medium">Versión actualizada: se incluirán {legalUpdates.length} {legalUpdates.length === 1 ? 'ajuste legal' : 'ajustes legales'}</p>
+                <p className="text-[11px] text-sky-400 font-medium">
+                  {orgTpl
+                    ? `La plantilla validada no se modifica automáticamente. Revisa estos ${legalUpdates.length} ${legalUpdates.length === 1 ? 'ajuste' : 'ajustes'} con vuestro abogado:`
+                    : `Versión actualizada: se incluirán ${legalUpdates.length} ${legalUpdates.length === 1 ? 'ajuste legal' : 'ajustes legales'}`}
+                </p>
                 <ul className="text-[11px] text-[#c8c0ac] list-disc pl-4 space-y-0.5">
                   {legalUpdates.map((u, i) => <li key={i} className="line-clamp-2">{u}</li>)}
                 </ul>
@@ -547,14 +608,14 @@ export default function NdaPage() {
                 <p className="text-[11px] text-[#6b6050]">
                   El NDA se guardará automáticamente en tu repositorio de documentos
                 </p>
-                {signatureUrl && (
+                {signatureUrl && !orgTpl && (
                   <p className="text-[11px] text-avocat-gold/60">
                     Tu firma se incluirá en la sección de firmas del Word y PDF
                   </p>
                 )}
               </div>
-              <Button variant="BtnGold" size="md" loading={generating} onClick={handleGenerate}>
-                Generar NDA
+              <Button variant="BtnGold" size="md" loading={generating} onClick={orgTpl ? handleGenerateFromTemplate : handleGenerate}>
+                {orgTpl ? 'Generar NDA (plantilla validada)' : 'Generar NDA'}
               </Button>
             </div>
           </div>

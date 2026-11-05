@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
       clientId: typeof b.clientId === 'string' ? b.clientId : null,
       renewsContractId: typeof b.renewsContractId === 'string' ? b.renewsContractId : null,
       supersedes: b.supersedes === true,
+      survivalMonths: Number.isInteger(b.survivalMonths) && (b.survivalMonths as number) > 0 && (b.survivalMonths as number) <= 1200 ? b.survivalMonths as number : null,
     });
     return NextResponse.json({ contract });
   } catch (err) {
