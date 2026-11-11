@@ -9,7 +9,8 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 |---|---|---|---|---|
 | 0 | Foundations | done | 6ea8c23b | 5,806 |
 | 1 | Buttons & focus | done | 4b0dfb9d | 5,784 |
-| 2 | AI disclaimer | done | (this commit) | 5,781 |
+| 2 | AI disclaimer | done | 15efbd6e | 5,781 |
+| 3 | Public chrome, legal id, consent | done | (this commit) | 5,756 |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
@@ -37,3 +38,12 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 - Inline: under the agent composer (`agent/AgentInput.tsx`), replacing "Avocat puede cometer errores".
 - `productos/autoservicio`: "listo para presentar (ante el juzgado)" → "listo para revisar y presentar" (2 places).
 - Skipped: `dashboard/generar-escritos` is only a redirect to `/tools/generacion`. Not added to `tools/contrato-servicios` (deterministic lawyer template, not AI output).
+
+## Phase 3 — Public chrome, legal identification, consent
+- Moved `acerca-de, contacto, privacidad, terminos, cookies, gdpr, productos` under `src/app/(public)/` (URLs unchanged — route group). Removed their own Navbar/Footer sub-layouts (acerca-de, productos) and the legacy `<Header/>`/`<Footer/>`.
+- Deleted (unreferenced after the move): `components/Header.tsx`, `components/Footer.tsx`, `components/ProductsDropdown.tsx` (only used by Header), `components/UserTypeSelector.tsx` (no imports).
+- Navbar v4: Abogados · Particulares · Estudiantes · Precios (`/#precios`) · Nosotros | Iniciar sesión · "Probar 14 días gratis" (`/signup?plan=abogados`), `aria-current`, dark band via `data-theme="dark"`, mobile menu button (aria-expanded, Esc closes, focus returns).
+- Footer v4: one social set (`SOCIAL_LINKS`), "Configurar cookies", legal line from `src/lib/company.ts` (placeholders → TODO(ds-v4)), "Aviso legal" link.
+- New `/aviso-legal` page.
+- `CookieBanner` + `lib/consent.ts`: first-party cookie `avocat_consent` (180 days), Rechazar/Aceptar todas equal weight, Configurar with Analíticas/Publicidad off by default. Root layout sets Google Consent Mode v2 defaults (all denied) `beforeInteractive`; `ConsentScripts` loads gtag (AW-16479671897) only with Publicidad and Clarity only with Analíticas. `window.gtag` exists from the start so existing `trackXxx()` calls queue safely.
+- lint:tokens shows "new" only for renamed files (path change), baseline rewritten.

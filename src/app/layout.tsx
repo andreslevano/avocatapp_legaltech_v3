@@ -3,6 +3,8 @@ import Script from 'next/script';
 import { Cormorant_Garamond, DM_Sans, EB_Garamond } from 'next/font/google';
 import '@/styles/globals.css';
 import { I18nProvider } from '@/contexts/I18nContext';
+import ConsentScripts from '@/components/legal/ConsentScripts';
+import CookieBanner from '@/components/legal/CookieBanner';
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -50,34 +52,26 @@ export default function RootLayout({
   return (
     <html lang="es" data-theme="light" className={`${cormorant.variable} ${dmSans.variable} ${ebGaramond.variable}`}>
       <body className="font-sans antialiased">
-        {/* Google tag (gtag.js) */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=AW-16479671897"
-          strategy="afterInteractive"
-        />
-        <Script id="google-ads" strategy="afterInteractive">
+        {/* Google Consent Mode v2 — everything denied until the user chooses (CookieBanner). */}
+        <Script id="consent-default" strategy="beforeInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'AW-16479671897');
+            window.gtag = gtag;
+            gtag('consent', 'default', {
+              ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied',
+              analytics_storage: 'denied', wait_for_update: 500
+            });
           `}
         </Script>
-        {/* Microsoft Clarity */}
-        <Script id="ms-clarity" strategy="afterInteractive">
-          {`
-            (function(c,l,a,r,i,t,y){
-                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", "vu7td8np1h");
-          `}
-        </Script>
+        {/* Google Ads + Microsoft Clarity load only after consent */}
+        <ConsentScripts />
         {/* NOTE: Zapier Chatbot script is loaded in (public)/layout.tsx only */}
         <I18nProvider>
           <div className="min-h-screen bg-avocat-cream">
             {children}
           </div>
+          <CookieBanner />
         </I18nProvider>
       </body>
     </html>

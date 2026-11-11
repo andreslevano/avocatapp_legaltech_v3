@@ -1,12 +1,9 @@
 'use client';
 
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 
 export default function GDPRPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <main className="flex-grow bg-app py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-card rounded-lg shadow-sm p-8 md:p-12 border border-border">
@@ -161,7 +158,6 @@ export default function GDPRPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

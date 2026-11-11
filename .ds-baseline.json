@@ -136,6 +136,10 @@
   "arbitrary-text-size": 58,
   "v3-alias": 11
  },
+ "src/app/(public)/acerca-de/page.tsx": {
+  "arbitrary-text-size": 3,
+  "v3-alias": 35
+ },
  "src/app/(public)/login/page.tsx": {
   "arbitrary-text-size": 2,
   "v3-alias": 11
@@ -143,13 +147,21 @@
  "src/app/(public)/onboarding/page.tsx": {
   "v3-alias": 4
  },
+ "src/app/(public)/productos/autoservicio/page.tsx": {
+  "arbitrary-text-size": 2,
+  "v3-alias": 31
+ },
+ "src/app/(public)/productos/gestion-abogados/page.tsx": {
+  "arbitrary-text-size": 4,
+  "v3-alias": 32
+ },
+ "src/app/(public)/productos/material-estudiantes/page.tsx": {
+  "arbitrary-text-size": 3,
+  "v3-alias": 32
+ },
  "src/app/(public)/signup/page.tsx": {
   "arbitrary-text-size": 1,
   "v3-alias": 8
- },
- "src/app/acerca-de/page.tsx": {
-  "arbitrary-text-size": 3,
-  "v3-alias": 35
  },
  "src/app/dashboard/accion-tutela/history/page.tsx": {
   "tw-default-color": 25
@@ -184,18 +196,6 @@
  },
  "src/app/layout.tsx": {
   "v3-alias": 1
- },
- "src/app/productos/autoservicio/page.tsx": {
-  "arbitrary-text-size": 2,
-  "v3-alias": 31
- },
- "src/app/productos/gestion-abogados/page.tsx": {
-  "arbitrary-text-size": 4,
-  "v3-alias": 32
- },
- "src/app/productos/material-estudiantes/page.tsx": {
-  "arbitrary-text-size": 3,
-  "v3-alias": 32
  },
  "src/app/profile/page.tsx": {
   "raw-hex": 58,
@@ -474,13 +474,6 @@
  },
  "src/components/layout/AppShellClient.tsx": {
   "v3-alias": 1
- },
- "src/components/layout/Footer.tsx": {
-  "v3-alias": 12
- },
- "src/components/layout/Navbar.tsx": {
-  "arbitrary-text-size": 1,
-  "v3-alias": 12
  },
  "src/components/layout/PreviewVerifyBanner.tsx": {
   "raw-hex": 2,
