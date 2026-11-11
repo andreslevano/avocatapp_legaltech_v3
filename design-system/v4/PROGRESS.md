@@ -8,7 +8,8 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 | Phase | Title | Status | Commit | lint:tokens after |
 |---|---|---|---|---|
 | 0 | Foundations | done | 6ea8c23b | 5,806 |
-| 1 | Buttons & focus | done | (this commit) | 5,784 |
+| 1 | Buttons & focus | done | 4b0dfb9d | 5,784 |
+| 2 | AI disclaimer | done | (this commit) | 5,781 |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
@@ -29,3 +30,10 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 - Removed the `body.app-surface .btn-Btn*` dark overrides: v4 variants are role-based and correct in both themes.
 - New `ui/IconButton.tsx` (required `label` → aria-label + title, `pressed`) and `ui/TextLink.tsx`.
 - Build pass · tsc 23 · unit 217 pass.
+
+## Phase 2 — AI disclaimer
+- `ui/AIDisclaimer.tsx` (block | inline), fixed copy exported as constants.
+- Block placed: `(app)/tools/generacion` (above the result), `(app)/tools/nda` (AI mode only — the MOBIFORWORK template is lawyer-validated text), `ReclamacionProcess.tsx` step 3, `TutelaProcessSimple.tsx` step 3, `ReclamacionProcessSimple.tsx` step 4 (confirmation/download), `productos/autoservicio` under "Cómo funciona".
+- Inline: under the agent composer (`agent/AgentInput.tsx`), replacing "Avocat puede cometer errores".
+- `productos/autoservicio`: "listo para presentar (ante el juzgado)" → "listo para revisar y presentar" (2 places).
+- Skipped: `dashboard/generar-escritos` is only a redirect to `/tools/generacion`. Not added to `tools/contrato-servicios` (deterministic lawyer template, not AI output).

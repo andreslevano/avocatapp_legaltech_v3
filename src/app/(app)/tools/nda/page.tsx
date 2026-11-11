@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
+import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { downloadAsWord, downloadAsPdf, buildWordBlob, buildPdfBlob, type DocMeta } from '@/lib/agent-export';
 import { saveDocumentToStorage, getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
@@ -657,6 +658,8 @@ export default function NdaPage() {
                   </Button>
                 </div>
               </div>
+              {/* AI drafts only — the org template is lawyer-validated text, not AI output. */}
+              {!orgTpl && <AIDisclaimer className="mx-5 mt-4" />}
               {generating ? (
                 <pre className="px-5 py-4 text-[12px] font-sans text-[#c8c0ac] whitespace-pre-wrap leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto">
                   {result}

@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
+import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
 
 const SERVICES = [
   {
     title: 'Reclamación de Cantidades',
-    description: 'Genera documentos profesionales para reclamar cantidades adeudadas. Sube tus documentos, analiza con IA y obtén un escrito listo para presentar.',
+    description: 'Genera documentos profesionales para reclamar cantidades adeudadas. Sube tus documentos, analiza con IA y obtén un escrito listo para revisar y presentar.',
     features: ['Análisis inteligente de documentos', 'Generación automática de demandas', 'Soporte para múltiples tipos de reclamaciones', 'Documentos listos para presentar'],
     icon: (
       <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -29,7 +30,7 @@ const STEPS = [
   { title: 'Sube tus documentos', description: 'Carga los archivos necesarios para tu caso. La IA analiza el contenido automáticamente.' },
   { title: 'Análisis con IA', description: 'GPT-4o identifica información clave y prepara el contenido del documento.' },
   { title: 'Revisa y personaliza', description: 'Revisa el borrador generado y ajusta lo que necesites.' },
-  { title: 'Descarga y usa', description: 'Descarga en Word y PDF, listo para presentar ante el juzgado.' },
+  { title: 'Descarga y usa', description: 'Descarga en Word y PDF, listo para revisar y presentar.' },
 ];
 
 const BENEFITS = [
@@ -121,6 +122,7 @@ export default function AutoservicioPage() {
               </div>
             ))}
           </div>
+          <AIDisclaimer className="mt-10 max-w-3xl mx-auto" />
         </div>
       </section>
 

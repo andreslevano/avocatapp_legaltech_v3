@@ -6,6 +6,7 @@ import AnalisisExitoModal from './AnalisisExitoModal';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 import { isPilotUser } from '@/lib/pilot-users';
 import { Button } from '@/components/ui/Button';
+import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
 
 interface TutelaProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -1194,6 +1195,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       {/* Step 3: Document Generation and Download */}
       {currentStep === 3 && generatedDocument && (
         <div className="space-y-6">
+          <AIDisclaimer />
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-text-primary">Paso 3: Descargar Documento</h3>
             <button

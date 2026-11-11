@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { UploadedDocument, DocumentCategory, DocumentSummary, GeneratedDocument } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
 
 interface ReclamacionProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -630,6 +631,7 @@ Sin otro particular, reciba un cordial saludo.
       {/* Step 3: Document Generation and Download */}
       {currentStep === 3 && generatedDocument && (
         <div className="space-y-6">
+          <AIDisclaimer />
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-text-primary">Paso 3: Descargar Documento</h3>
             <button

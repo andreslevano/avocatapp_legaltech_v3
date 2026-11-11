@@ -7,6 +7,7 @@ import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 import { saveUploadedFile } from '@/lib/storage';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 import { Button, buttonClasses } from '@/components/ui/Button';
+import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
 
 interface ReclamacionProcessProps {
   userId?: string;
@@ -865,6 +866,7 @@ export default function ReclamacionProcessSimple({ userId, userEmail }: Reclamac
       {/* Step 4: Confirmación */}
       {currentStep === 4 && (
         <div className="space-y-6">
+          <AIDisclaimer />
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-text-primary">Paso 4: Confirmación</h3>
             <button

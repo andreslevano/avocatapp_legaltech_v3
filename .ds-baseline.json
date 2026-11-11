@@ -239,10 +239,10 @@
   "v3-alias": 3
  },
  "src/components/agent/AgentInput.tsx": {
-  "raw-hex": 20,
-  "arbitrary-color": 20,
+  "raw-hex": 19,
+  "arbitrary-color": 19,
   "tw-default-color": 2,
-  "arbitrary-text-size": 7,
+  "arbitrary-text-size": 6,
   "v3-alias": 12
  },
  "src/components/agent/AgentMessage.tsx": {

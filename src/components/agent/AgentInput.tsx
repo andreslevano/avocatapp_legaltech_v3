@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, type KeyboardEvent, type DragEvent, type ClipboardEvent } from 'react';
 import AgentContextChips from './AgentContextChips';
+import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
 import type { MessageAttachment } from './AgentMessage';
 
 interface Chip {
@@ -319,9 +320,10 @@ export default function AgentInput({
         )}
       </div>
 
-      <p className="text-center text-[10px] text-[#3a3630] pb-2 px-4">
-        Arrastra archivos aquí · Pega capturas con Ctrl+V · Avocat puede cometer errores.
-      </p>
+      <div className="text-center pb-2 px-4">
+        <AIDisclaimer variant="inline" />
+        <p className="text-caption text-text-muted">Arrastra archivos aquí · Pega capturas con Ctrl+V</p>
+      </div>
     </div>
   );
 }

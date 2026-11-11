@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
+import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { saveAnalysisDocument, downloadAsWord, downloadAsPdf } from '@/lib/agent-export';
@@ -628,6 +629,8 @@ export default function GeneracionPage() {
                   )}
                 </div>
               </div>
+
+              <AIDisclaimer />
 
               {/* Streaming result */}
               <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
