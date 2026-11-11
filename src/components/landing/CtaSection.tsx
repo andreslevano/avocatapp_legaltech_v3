@@ -23,14 +23,13 @@ export default function CtaSection() {
             <em className="text-avocat-gold-l not-italic">trabajando para ti?</em>
           </h2>
           <p className="font-sans text-[15px] text-[#8a8070] leading-relaxed mb-9">
-            14 días gratis. Sin tarjeta de crédito. Sin compromisos.
-            <br />
-            Más de 1,200 casos gestionados en la plataforma.
+            {/* TODO(ds-v4): "Sin tarjeta" removed — signup sends Abogados to Stripe checkout; restore only if true. */}
+            14 días gratis. Cancela cuando quieras.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/signup">
               <button className="px-8 py-3.5 rounded-xl bg-avocat-gold text-white font-sans text-[15px] font-medium hover:bg-[#a07824] transition-colors">
-                Prueba gratis 14 días →
+                Probar 14 días gratis
               </button>
             </Link>
             <Link href="#como-funciona">

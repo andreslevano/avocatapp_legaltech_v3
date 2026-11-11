@@ -7,12 +7,7 @@ import { db } from '@/lib/firebase';
 import PlanCards from '@/components/auth/PlanCards';
 import type { Plan } from '@/components/auth/PlanCards';
 import { Button } from '@/components/ui/Button';
-
-const PLAN_DASHBOARDS: Record<Plan, string> = {
-  Abogados:    '/dashboard',
-  Estudiantes: '/agent',
-  Autoservicio: '/agent',
-};
+import { PLAN_DASHBOARDS } from '@/lib/plans';
 
 interface OnboardingStepProps {
   uid: string;

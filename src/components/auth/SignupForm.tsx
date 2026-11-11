@@ -12,18 +12,17 @@ import { trackSignupStart, trackRegistrationConversion } from '@/lib/gtag';
 import { isPilotUser } from '@/lib/pilot-users';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 import { SUBSCRIPTION_PRICE_IDS } from '@/lib/subscription-prices';
+import { PLAN_DASHBOARDS, planFromParam } from '@/lib/plans';
 import AccountReactivationModal from '@/components/AccountReactivationModal';
 import PlanCards from '@/components/auth/PlanCards';
 import type { Plan } from '@/components/auth/PlanCards';
 import { Button } from '@/components/ui/Button';
 
-const PLAN_DASHBOARDS: Record<string, string> = {
-  Estudiantes: '/dashboard/estudiantes',
-  'Autoservicio': '/dashboard/autoservicio/revision-email',
-  Abogados: '/dashboard',
-};
-
-const COUNTRIES = ['Chile', 'Colombia', 'Ecuador', 'España', 'Mexico', 'Peru'];
+// Stored values stay as before (existing user docs); labels use the Spanish spelling.
+const COUNTRIES: { value: string; label: string }[] = [
+  { value: 'Chile', label: 'Chile' }, { value: 'Colombia', label: 'Colombia' }, { value: 'Ecuador', label: 'Ecuador' },
+  { value: 'España', label: 'España' }, { value: 'Mexico', label: 'México' }, { value: 'Peru', label: 'Perú' },
+];
 
 export default function SignupForm() {
   const [form, setForm] = useState({
@@ -53,13 +52,7 @@ export default function SignupForm() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
-    const planParam = params.get('plan')?.toLowerCase();
-    const planMap: Record<string, Plan> = {
-      abogados: 'Abogados',
-      estudiantes: 'Estudiantes',
-      autoservicio: 'Autoservicio',
-    };
-    const mapped = planParam ? planMap[planParam] : undefined;
+    const mapped = planFromParam(params.get('plan'));
     if (mapped) setForm(prev => ({ ...prev, plan: mapped }));
   }, []);
 
@@ -97,7 +90,7 @@ export default function SignupForm() {
         await signInWithEmailAndPassword(auth as Auth, reactivationUser.email, form.password);
         setSuccess('¡Cuenta reactivada! Redirigiendo...');
         setShowReactivation(false);
-        setTimeout(() => router.push(PLAN_DASHBOARDS[form.plan] ?? '/dashboard'), 2000);
+        setTimeout(() => router.push((form.plan ? PLAN_DASHBOARDS[form.plan] : undefined) ?? '/dashboard'), 2000);
       } else {
         setError(result.message || 'Error al reactivar la cuenta.');
       }
@@ -155,7 +148,7 @@ export default function SignupForm() {
       trackRegistrationConversion();
       setSuccess('¡Cuenta creada! Redirigiendo...');
 
-      const dashboardUrl = PLAN_DASHBOARDS[form.plan] ?? '/dashboard';
+      const dashboardUrl = (form.plan ? PLAN_DASHBOARDS[form.plan] : undefined) ?? '/dashboard';
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
       const priceId =
         !pilot && form.plan === 'Abogados' ? SUBSCRIPTION_PRICE_IDS.Abogados
@@ -271,7 +264,7 @@ export default function SignupForm() {
           <label className="block text-small font-medium text-avocat-gray5 mb-1.5">País *</label>
           <select required value={form.country} onChange={set('country')} className="input-field">
             <option value="">Selecciona tu país</option>
-            {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {COUNTRIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
         </div>
 

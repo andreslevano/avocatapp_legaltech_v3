@@ -67,7 +67,7 @@ export default function HowItWorks() {
             href="/signup"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-avocat-gold text-white font-sans text-[14px] font-medium hover:bg-[#a07824] transition-colors"
           >
-            Empezar ahora →
+            Probar 14 días gratis
           </a>
           <p className="text-[12px] font-sans text-avocat-gray9 mt-3">
             14 días gratis · Sin tarjeta de crédito

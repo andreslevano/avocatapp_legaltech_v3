@@ -23,7 +23,7 @@ export default function AgentSection() {
           <div>
             <AnimatedSection>
               <div className="inline-block px-3 py-1 rounded-full border border-avocat-gold/25 bg-avocat-gold/8 text-[11px] font-sans font-semibold text-avocat-gold uppercase tracking-widest mb-5">
-                Modo Agente
+                Agente IA
               </div>
               <h2
                 className="font-display text-[#f0ead8] font-semibold leading-tight mb-5"

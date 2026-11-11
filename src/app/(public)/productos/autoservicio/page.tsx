@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
 import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
+import { PLANS, formatEuro, priceLabel } from '@/lib/plans';
 
 const SERVICES = [
   {
@@ -46,12 +47,13 @@ export default function AutoservicioPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <section
+        data-theme="dark"
         className="relative min-h-[560px] flex items-center py-24 overflow-hidden"
         style={{ backgroundImage: 'url(/images/hero-autoservicio-background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div className="absolute inset-0 bg-avocat-black/75" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-          <Tag variant="gold" className="mb-6">Plan Particular — €50/mes</Tag>
+          <Tag variant="gold" className="mb-6">{`Plan ${PLANS.particulares.name} — ${priceLabel(PLANS.particulares)}`}</Tag>
           <h1 className="font-display text-h1 text-avocat-cream mb-6 max-w-3xl mx-auto">
             Autoservicio Legal Inteligente
           </h1>
@@ -59,14 +61,8 @@ export default function AutoservicioPage() {
             Genera documentos legales profesionales de forma automática con IA. Sin necesidad de conocimientos legales avanzados.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link href="/signup?plan=Autoservicio">
-              <Button variant="accent" size="lg">Crear mi documento</Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="secondary" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
-                Ya tengo cuenta
-              </Button>
-            </Link>
+            <Button href="/signup?plan=particulares" variant="accent" size="lg">Crear mi documento</Button>
+            <Button href="/login" variant="secondary" size="lg">Ya tengo cuenta</Button>
           </div>
         </div>
       </section>
@@ -152,9 +148,7 @@ export default function AutoservicioPage() {
           <p className="font-sans text-body text-avocat-cream/70 mb-8">
             Proceso rápido y seguro. Documentos listos para usar en minutos.
           </p>
-          <Link href="/signup?plan=Autoservicio">
-            <Button variant="accent" size="lg">Empezar ahora</Button>
-          </Link>
+          <Button href="/signup?plan=particulares" variant="accent" size="lg">Crear mi escrito</Button>
         </div>
       </section>
     </div>

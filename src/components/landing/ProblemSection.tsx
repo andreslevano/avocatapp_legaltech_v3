@@ -7,7 +7,7 @@ const PROBLEMS = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    stat: '3 horas',
+    stat: 'Horas',
     title: 'Por cada escrito',
     desc: 'Búsqueda de jurisprudencia, redacción, revisión, formato... tiempo que no puedes facturar.',
   },
@@ -64,12 +64,9 @@ export default function ProblemSection() {
         {/* Stat banner */}
         <AnimatedSection delay={300}>
           <div className="bg-avocat-black rounded-2xl px-7 py-5 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-            <div className="font-display text-avocat-gold text-[42px] font-bold leading-none flex-shrink-0">
-              85%
-            </div>
             <div>
               <p className="font-sans font-semibold text-[#e8d4a0] text-[15px]">
-                Avocat reduce ese tiempo en un 85%
+                Avocat prepara el primer borrador por ti; tú revisas y decides
               </p>
               <p className="font-sans text-[13px] text-[#6b6050] mt-0.5">
                 Más casos, más eficiencia, más tiempo para lo que importa: tu cliente.

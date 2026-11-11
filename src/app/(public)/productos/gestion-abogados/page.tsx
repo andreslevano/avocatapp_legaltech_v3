@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
+import { PLANS, formatEuro, priceLabel } from '@/lib/plans';
 
 const FEATURES = [
   {
@@ -31,7 +32,7 @@ const FEATURES = [
     ),
   },
   {
-    title: 'Dashboard KPIs',
+    title: 'Panel de indicadores',
     description: 'Analiza el rendimiento de tu despacho con métricas en tiempo real: casos activos, vencimientos, clientes y escritos generados.',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,10 +68,10 @@ const STEPS = [
 ];
 
 const BENEFITS = [
-  'Ahorra hasta 80% del tiempo en gestión administrativa',
+  'Menos tiempo en tareas administrativas del despacho',
   'Agente IA entrenado en Derecho español e iberoamericano',
   'Directorio completo de clientes con historial',
-  'Dashboard con métricas y vencimientos en tiempo real',
+  'Panel con indicadores y vencimientos en tiempo real',
   'Jurisprudencia y escritos con un solo clic',
 ];
 
@@ -79,12 +80,13 @@ export default function GestionAbogadosPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <section
+        data-theme="dark"
         className="relative min-h-[560px] flex items-center py-24 overflow-hidden"
         style={{ backgroundImage: 'url(/images/hero-abogados-background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div className="absolute inset-0 bg-avocat-black/75" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-          <Tag variant="gold" className="mb-6">Plan Abogados — €75/mes</Tag>
+          <Tag variant="gold" className="mb-6">{`Plan ${PLANS.abogados.name} — ${priceLabel(PLANS.abogados)}`}</Tag>
           <h1 className="font-display text-h1 text-avocat-cream mb-6 max-w-3xl mx-auto">
             Gestión Profesional para Abogados
           </h1>
@@ -92,22 +94,8 @@ export default function GestionAbogadosPage() {
             Plataforma integral de gestión legal con agente IA para optimizar tu práctica profesional y mejorar la eficiencia de tu despacho.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link href="/signup?plan=Abogados">
-              <Button variant="accent" size="lg">Empezar ahora</Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="secondary" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
-                Iniciar sesión
-              </Button>
-            </Link>
-          </div>
-          <div className="mt-12 grid grid-cols-3 gap-6 max-w-lg mx-auto">
-            {[['100+', 'Casos gestionados'], ['50+', 'Clientes activos'], ['80%', 'Tiempo ahorrado']].map(([val, lbl]) => (
-              <div key={lbl} className="text-center">
-                <div className="font-display text-[32px] text-avocat-gold leading-none">{val}</div>
-                <div className="font-sans text-small text-avocat-cream/60 mt-1">{lbl}</div>
-              </div>
-            ))}
+            <Button href="/signup?plan=abogados" variant="accent" size="lg">Probar 14 días gratis</Button>
+            <Button href="/login" variant="secondary" size="lg">Iniciar sesión</Button>
           </div>
         </div>
       </section>
@@ -184,9 +172,7 @@ export default function GestionAbogadosPage() {
           <p className="font-sans text-body text-avocat-cream/70 mb-8">
             Únete a los abogados que ya trabajan de forma más inteligente con Avocat.
           </p>
-          <Link href="/signup?plan=Abogados">
-            <Button variant="accent" size="lg">Comenzar ahora</Button>
-          </Link>
+          <Button href="/signup?plan=abogados" variant="accent" size="lg">Comenzar ahora</Button>
           <p className="font-sans text-small text-avocat-cream/40 mt-4">Sin tarjeta de crédito requerida</p>
         </div>
       </section>

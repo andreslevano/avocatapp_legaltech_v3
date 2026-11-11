@@ -10,7 +10,8 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 | 0 | Foundations | done | 6ea8c23b | 5,806 |
 | 1 | Buttons & focus | done | 4b0dfb9d | 5,784 |
 | 2 | AI disclaimer | done | 15efbd6e | 5,781 |
-| 3 | Public chrome, legal id, consent | done | (this commit) | 5,756 |
+| 3 | Public chrome, legal id, consent | done | a12925cf | 5,756 |
+| 4 | Single pricing source | done | (this commit) | 5,677 |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
@@ -47,3 +48,13 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 - New `/aviso-legal` page.
 - `CookieBanner` + `lib/consent.ts`: first-party cookie `avocat_consent` (180 days), Rechazar/Aceptar todas equal weight, Configurar with Analíticas/Publicidad off by default. Root layout sets Google Consent Mode v2 defaults (all denied) `beforeInteractive`; `ConsentScripts` loads gtag (AW-16479671897) only with Publicidad and Clarity only with Analíticas. `window.gtag` exists from the start so existing `trackXxx()` calls queue safely.
 - lint:tokens shows "new" only for renamed files (path change), baseline rewritten.
+
+## Phase 4 — Single pricing source
+- `src/lib/plans.ts`: `PLANS` (abogados 75 €/mes featured, particulares 10 €/escrito, estudiantes 3 €/escrito), `SALES_CONTACT`, single `PLAN_DASHBOARDS` (keyed by the stored Firestore plan names, which are unchanged), `planFromParam()` (accepts v4 ids + legacy `?plan=` values), `formatEuro()`/`priceLabel()` (es-ES: "75 €").
+- Stripe: Abogados reuses `SUBSCRIPTION_PRICE_IDS.Abogados`; no per-document price ids exist for Particulares/Estudiantes → `null` + TODO(ds-v4).
+- **Particulares 50 €/mes bundle**: removed from public pages (home pricing, product page tag). Its Stripe path is untouched — signup still opens the 50 €/mes subscription checkout for Particulares, so `PlanCards` (signup/onboarding) shows **50 €/mes** for that card to avoid displaying a price different from the one charged. TODO(ds-v4) business decision (see REPORT).
+- Consumers: `landing/PricingSection.tsx` (3 cards + "Hablar con ventas" link; also fixes a pre-existing tsc error → tsc 22), `auth/PlanCards.tsx` (radiogroup), the three `productos/*` pages (tags from PLANS; nested `<Link><Button>` → `<Button href>`; hero gets `data-theme="dark"`), `SignupForm`, `OnboardingStep`, `lib/auth.getDashboardRoute` (all use the one `PLAN_DASHBOARDS`). Signup's post-signup redirect for Estudiantes/Particulares is now `/agent` (as onboarding and `getDashboardRoute` already did) instead of the legacy `/dashboard/*` pages.
+- `ProductsDropdown.tsx` was deleted in Phase 3 (only used by the deleted Header).
+- Removed unsourced claims: "1,200 casos", "85 %", "80 % tiempo ahorrado", "100+/50+/10+" stat grids, "GDPR Compliant", "99.9% Uptime", "Cifrado bancario", "Soporte 24/7", "Sin tarjeta de crédito" (TODO: restore only if the trial truly needs no card). TrustBand now lists 3 verifiable product facts.
+- Deleted unreferenced legacy `components/Hero.tsx`, `Pricing.tsx`, `Features.tsx`.
+- Glossary applied in touched public files: Dashboard → Panel, Template → Plantilla, Modo Agente → Agente IA, CTAs per persona, México/Perú labels (stored values unchanged).

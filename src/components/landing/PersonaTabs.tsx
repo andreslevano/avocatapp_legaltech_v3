@@ -24,14 +24,14 @@ const CONTENT: Record<TabId, {
 }> = {
   lawyer: {
     headline: 'El despacho del siglo XXI',
-    desc: 'Dashboard con KPIs en tiempo real, gestión completa de casos, directorio de clientes y un agente IA que redacta, analiza y extrae datos de tus documentos.',
+    desc: 'Panel con indicadores en tiempo real, gestión completa de casos, directorio de clientes y un agente IA que redacta, analiza y extrae datos de tus documentos.',
     features: [
-      'Dashboard con métricas y charts',
+      'Panel con indicadores y gráficos',
       'Gestión de casos con IA',
       'Directorio de clientes',
       '+50 tipos de escritos legales',
       'Análisis y extracción de documentos',
-      'Modo Agente conversacional',
+      'Agente IA conversacional',
     ],
     mockBg: '#13120e',
     mockAccent: '#B8882A',

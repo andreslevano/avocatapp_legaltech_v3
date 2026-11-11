@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
+import { PLANS, formatEuro, priceLabel } from '@/lib/plans';
 
 const AREAS = [
   { name: 'Derecho Constitucional', docs: ['Recurso de amparo', 'Recurso de inconstitucionalidad', 'Acción de protección'] },
@@ -10,15 +11,15 @@ const AREAS = [
 ];
 
 const PACKAGE = [
-  { title: 'Template DOCX', description: 'Plantilla editable en Word lista para personalizar' },
-  { title: 'Template PDF', description: 'Versión PDF de referencia con notas al margen' },
+  { title: 'Plantilla en Word', description: 'Plantilla editable en Word lista para personalizar' },
+  { title: 'Plantilla en PDF', description: 'Versión PDF de referencia con notas al margen' },
   { title: 'Ejemplo completo', description: 'Documento desarrollado con datos reales de ejemplo' },
   { title: 'Material de estudio', description: 'Guía con explicaciones, fundamentos y claves del texto' },
 ];
 
 const BENEFITS = [
-  'Más de 50 tipos de documentos legales disponibles',
-  'Precios accesibles desde €3 por documento',
+  'Plantillas de escritos de las principales áreas del Derecho',
+  `Desde ${formatEuro(PLANS.estudiantes.price)} por escrito`,
   'Material de estudio incluido en cada paquete',
   'Descarga inmediata después del pago',
   'Tutor socrático IA disponible con el plan Estudiantes',
@@ -29,12 +30,13 @@ export default function MaterialEstudiantesPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <section
+        data-theme="dark"
         className="relative min-h-[560px] flex items-center py-24 overflow-hidden"
         style={{ backgroundImage: 'url(/images/hero-estudiantes-background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div className="absolute inset-0 bg-avocat-black/75" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-          <Tag variant="gold" className="mb-6">Plan Estudiantes — €3/escrito</Tag>
+          <Tag variant="gold" className="mb-6">{`Plan ${PLANS.estudiantes.name} — ${priceLabel(PLANS.estudiantes)}`}</Tag>
           <h1 className="font-display text-h1 text-avocat-cream mb-6 max-w-3xl mx-auto">
             Material de Estudio Legal
           </h1>
@@ -42,22 +44,8 @@ export default function MaterialEstudiantesPage() {
             Accede a una biblioteca de plantillas legales profesionales, ejemplos completos y un tutor socrático IA para estudiantes de derecho.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link href="/signup?plan=Estudiantes">
-              <Button variant="accent" size="lg">Explorar material</Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="secondary" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
-                Ya tengo cuenta
-              </Button>
-            </Link>
-          </div>
-          <div className="mt-12 grid grid-cols-3 gap-6 max-w-sm mx-auto">
-            {[['50+', 'Documentos'], ['10+', 'Áreas legales'], ['€3', 'Desde']].map(([val, lbl]) => (
-              <div key={lbl} className="text-center">
-                <div className="font-display text-[32px] text-avocat-gold leading-none">{val}</div>
-                <div className="font-sans text-small text-avocat-cream/60 mt-1">{lbl}</div>
-              </div>
-            ))}
+            <Button href="/signup?plan=estudiantes" variant="accent" size="lg">Explorar material</Button>
+            <Button href="/login" variant="secondary" size="lg">Ya tengo cuenta</Button>
           </div>
         </div>
       </section>
@@ -140,11 +128,9 @@ export default function MaterialEstudiantesPage() {
             Estudia con material profesional real
           </h2>
           <p className="font-sans text-body text-avocat-cream/70 mb-8">
-            Más de 50 documentos disponibles. Precios desde €3.
+            {`Plantillas comentadas y tutor socrático. Desde ${formatEuro(PLANS.estudiantes.price)} por escrito.`}
           </p>
-          <Link href="/signup?plan=Estudiantes">
-            <Button variant="accent" size="lg">Ver catálogo</Button>
-          </Link>
+          <Button href="/signup?plan=estudiantes" variant="accent" size="lg">Ver catálogo</Button>
         </div>
       </section>
     </div>

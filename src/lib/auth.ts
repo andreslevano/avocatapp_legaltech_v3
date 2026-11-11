@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { PLAN_DASHBOARDS } from './plans';
 
 export type UserPlan = 'Abogados' | 'Estudiantes' | 'Autoservicio';
 
@@ -26,12 +27,7 @@ export interface UserDoc {
 
 /** Returns the default app route for a given plan */
 export function getDashboardRoute(plan: UserPlan | null): string {
-  switch (plan) {
-    case 'Abogados':     return '/dashboard';
-    case 'Estudiantes':  return '/agent';
-    case 'Autoservicio': return '/agent';
-    default:             return '/onboarding';
-  }
+  return plan ? PLAN_DASHBOARDS[plan] ?? '/onboarding' : '/onboarding';
 }
 
 /**

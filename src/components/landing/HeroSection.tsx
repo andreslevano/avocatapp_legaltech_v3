@@ -82,7 +82,7 @@ export default function HeroSection() {
           {/* Trust items */}
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-9">
             {[
-              { icon: '🔒', text: 'GDPR Compliant' },
+              { icon: '📄', text: 'Borradores editables en Word y PDF' },
               { icon: '⚡', text: 'Resultados en segundos' },
               { icon: '🌍', text: 'España y Latinoamérica' },
             ].map(({ icon, text }) => (
@@ -97,7 +97,7 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-3">
             <Link href="/signup">
               <Button variant="accent" size="lg" className="text-[15px] px-7">
-                Prueba gratis 14 días →
+                Probar 14 días gratis
               </Button>
             </Link>
             <Link href="#como-funciona">

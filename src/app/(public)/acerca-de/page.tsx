@@ -34,7 +34,7 @@ const VALUES = [
 const PRODUCTS = [
   {
     title: 'Gestión para Abogados',
-    description: 'Dashboard, gestión de casos, agente IA, directorio de clientes y herramientas profesionales para tu despacho.',
+    description: 'Panel, gestión de casos, agente IA, directorio de clientes y herramientas profesionales para tu despacho.',
     href: '/productos/gestion-abogados',
     plan: 'Abogados',
   },

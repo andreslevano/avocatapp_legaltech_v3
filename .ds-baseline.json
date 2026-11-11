@@ -149,15 +149,15 @@
  },
  "src/app/(public)/productos/autoservicio/page.tsx": {
   "arbitrary-text-size": 2,
-  "v3-alias": 31
+  "v3-alias": 28
  },
  "src/app/(public)/productos/gestion-abogados/page.tsx": {
-  "arbitrary-text-size": 4,
-  "v3-alias": 32
+  "arbitrary-text-size": 3,
+  "v3-alias": 27
  },
  "src/app/(public)/productos/material-estudiantes/page.tsx": {
-  "arbitrary-text-size": 3,
-  "v3-alias": 32
+  "arbitrary-text-size": 2,
+  "v3-alias": 27
  },
  "src/app/(public)/signup/page.tsx": {
   "arbitrary-text-size": 1,
@@ -277,10 +277,6 @@
  "src/components/auth/OnboardingStep.tsx": {
   "tw-default-color": 1,
   "v3-alias": 4
- },
- "src/components/auth/PlanCards.tsx": {
-  "arbitrary-text-size": 3,
-  "v3-alias": 9
  },
  "src/components/auth/SignupForm.tsx": {
   "raw-hex": 4,
@@ -446,22 +442,12 @@
   "arbitrary-text-size": 10,
   "v3-alias": 16
  },
- "src/components/landing/PricingSection.tsx": {
-  "raw-hex": 18,
-  "arbitrary-text-size": 9,
-  "v3-alias": 11
- },
  "src/components/landing/ProblemSection.tsx": {
   "raw-hex": 3,
   "arbitrary-color": 3,
   "tw-default-color": 5,
-  "arbitrary-text-size": 8,
-  "v3-alias": 10
- },
- "src/components/landing/TrustBand.tsx": {
-  "raw-hex": 4,
-  "arbitrary-text-size": 2,
-  "v3-alias": 6
+  "arbitrary-text-size": 7,
+  "v3-alias": 9
  },
  "src/components/landing/ValueProps.tsx": {
   "arbitrary-text-size": 4,
