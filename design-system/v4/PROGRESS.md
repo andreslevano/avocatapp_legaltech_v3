@@ -18,7 +18,7 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 | 7 | Agent | done | a0c34d8b | 2,770 |
 | 8 | Document wizard | done | 14f1d743 | 2,435 |
 | 9 | Retire /dashboard | done | 7d9f6c7e | 2,128 |
-| 10 | Lock it | done | (this commit) | **0** |
+| 10 | Lock it | done | 378307cb | **0** |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
