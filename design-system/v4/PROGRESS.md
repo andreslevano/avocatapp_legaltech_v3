@@ -14,7 +14,8 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 | 4 | Single pricing source | done | 89c42c7f | 5,677 |
 | 5 | Logo & icons | done | 0f7828fe | 5,633 |
 | fix | Opacity modifiers on var colours | done | 929512df | — |
-| 6 | Dark app: raw hex sweep | done | (this commit) | 2,770 |
+| 6 | Dark app: raw hex sweep | done | e06ab228 | 2,770 |
+| 7 | Agent | done | (this commit) | 2,770 |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
@@ -81,3 +82,13 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 - Scope violations: ~1,050 → 0. Total 5,633 → 2,770.
 - Note: `bg-[#161410]/90` overlays became opaque `bg-bg`. One unit-test run failed once during the build and passed 3/3 on rerun (flaky timing, not related).
 - Not subagent-delegated: the map is mechanical, so one script applied it consistently; reviewed the diff by sampling.
+
+## Phase 7 — Agent
+- `react-markdown@9.0.1` + `remark-gfm@4.0.0` (exact). No `rehype-raw` → raw HTML in answers is escaped (verified with a server render: `<script>` not emitted).
+- `AgentMessage`: Markdown in `.agent-prose` (15/24, styles in globals.css), user turn on `bg-surface-raised` (no gold bubble), assistant full width with avatar + "Avocat", `aria-busy` while streaming, gold caret, "Pensando…" instead of an empty bubble, inline danger `Alert` with **Reintentar** on errors (partial text kept), actions Copiar · Regenerar (last answer). `sources` field on the message type → `CitationBlock`; `[n]` markers become superscript links to the source.
+- **Not added: "Exportar a Word"** — CLAUDE.md decision 7 says no Word/PDF buttons on messages (documents auto-save to /documents). "útil / mejorable" feedback: TODO(ds-v4) (no endpoint).
+- `CitationBlock` (new): number, title, reference (mono), quote in EB Garamond italic, **"No localizada" by default** (`verified` undefined) — TODO(ds-v4) server hook for CENDOJ/BOE verification. Sources come from the `buscar_normativa_jurisprudencia` tool result.
+- `ToolCallBadge`: running (spinner, accent) / done (check, success) / error (circle-alert, danger border), human Spanish labels with the tool id as tooltip, `ToolCallGroup` collapses > 3 into "N pasos · ver detalle". Running tools turn to error when the turn fails.
+- `AgentContextChips`: list semantics, X icon, "Quitar … del contexto". AgentChat passes a "Caso: …" chip when opened from a case.
+- Composer (`AgentInput`): visually hidden label, Enter sends / Shift+Enter new line / ⌘-Ctrl+Enter sends (IME-safe), visible placeholder, focus-within ring on the whole box, max 8 lines, Detener button while streaming, attachments removable with labels, keyboard hint, inline disclaimer. Upload/drag/paste/draft logic unchanged.
+- `AgentChat`: log centred at 760px with `role="log" aria-live="polite"`; auto-scroll only when the user is at the bottom; request/stream/auto-save/abort logic unchanged.

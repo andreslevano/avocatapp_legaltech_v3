@@ -259,3 +259,27 @@
 zapier-interfaces-chatbot-embed {
   --zapier-primary: var(--accent) !important;
 }
+
+/* Agent answers (Markdown) — DS v4 AgentMessage: 15/24 DM Sans, measure ≤ 760px. */
+@layer components {
+  .agent-prose { font-size: 15px; line-height: 24px; color: var(--text); overflow-wrap: anywhere; }
+  .agent-prose > * + * { margin-top: var(--space-3); }
+  .agent-prose h1, .agent-prose h2, .agent-prose h3, .agent-prose h4 { font-family: var(--font-sans); color: var(--text-heading); font-weight: 600; }
+  .agent-prose h1 { font-size: 20px; line-height: 28px; }
+  .agent-prose h2 { font-size: 17px; line-height: 26px; margin-top: var(--space-5); }
+  .agent-prose h3, .agent-prose h4 { font-size: 15px; line-height: 24px; margin-top: var(--space-4); }
+  .agent-prose ul { list-style: disc; padding-left: var(--space-5); }
+  .agent-prose ol { list-style: decimal; padding-left: var(--space-5); }
+  .agent-prose li + li { margin-top: var(--space-1); }
+  .agent-prose strong { color: var(--text-heading); font-weight: 600; }
+  .agent-prose a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; }
+  .agent-prose blockquote { border-left: 2px solid var(--accent-border); padding-left: var(--space-3); color: var(--text-muted); font-family: var(--font-document); font-style: italic; }
+  .agent-prose code { font-family: var(--font-mono, ui-monospace, monospace); font-size: 13px; background: var(--surface-muted); border-radius: var(--radius-xs); padding: 1px 4px; }
+  .agent-prose pre { background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); overflow-x: auto; }
+  .agent-prose pre code { background: none; padding: 0; }
+  .agent-prose table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; display: block; overflow-x: auto; }
+  .agent-prose th, .agent-prose td { border: 1px solid var(--border); padding: var(--space-1-5) var(--space-2); text-align: left; vertical-align: top; }
+  .agent-prose th { background: var(--surface-muted); color: var(--text-heading); font-weight: 600; }
+  .agent-prose hr { border: 0; border-top: 1px solid var(--border); }
+  .agent-prose sup a { font-size: 11px; font-weight: 600; color: var(--accent-text); text-decoration: none; padding: 0 3px; border-radius: 3px; background: var(--accent-subtle); margin-left: 1px; }
+}

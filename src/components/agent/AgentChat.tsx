@@ -10,7 +10,8 @@ import { isLegalDocument, buildWordBlob, buildPdfBlob } from '@/lib/agent-export
 import { saveDocumentToStorage, type DocumentRecord } from '@/lib/storage-client';
 import { canUseDocusign } from '@/lib/docusign/config';
 import SignDocumentSheet from '@/components/signatures/SignDocumentSheet';
-import { FileText } from 'lucide-react';
+import { FileText, X } from 'lucide-react';
+import { sourcesFromToolResult } from './CitationBlock';
 
 interface AgentChatProps {
   user: User;
@@ -46,6 +47,11 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
   const [signDoc, setSignDoc] = useState<DocumentRecord | null>(null);
   const docusignOn = canUseDocusign(userDoc.plan, user);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const logRef = useRef<HTMLDivElement>(null);
+  // Follow the stream only while the user is at the bottom (don't yank them back while reading).
+  const atBottomRef = useRef(true);
+  // Last prompt per assistant turn, for "Reintentar" / "Regenerar".
+  const promptsRef = useRef<Map<string, { text: string; attachments: MessageAttachment[] }>>(new Map());
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const convIdRef = useRef<string | null>(null);
   // "Detener": aborts the request (the server stops the model) and puts the prompt back to edit.
@@ -54,8 +60,13 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
   const stop = useCallback(() => abortRef.current?.abort(), []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (atBottomRef.current) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages]);
+
+  const onLogScroll = () => {
+    const el = logRef.current;
+    if (el) atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  };
 
   useEffect(() => {
     return () => {
@@ -109,6 +120,8 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
         toolCalls: [],
       };
 
+      promptsRef.current.set(assistantId, { text, attachments });
+      atBottomRef.current = true;
       setMessages(prev => [...prev, userMsg, assistantMsg]);
       setStreaming(true);
 
@@ -201,6 +214,11 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
                         ? { name: tc.name, status: 'done' as const, result: ev.result as string }
                         : tc
                     ),
+                    // Legal sources found by the search tool feed the CitationBlock (unverified by default).
+                    sources: ev.name === 'buscar_normativa_jurisprudencia'
+                      ? [...(m.sources ?? []), ...sourcesFromToolResult(ev.result as string)]
+                          .map((src, i) => ({ ...src, n: i + 1 }))
+                      : m.sources,
                   } : m)
                 );
               } else if (ev.type === 'done') {
@@ -255,10 +273,17 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
             : prev.filter(m => m.id !== assistantId && m.id !== userMsg.id));
           setDraft({ key: Date.now(), text, attachments });
         } else {
+          // Inline error with "Reintentar" instead of an empty bubble; partial text is kept.
           setMessages(prev =>
             prev.map(m =>
               m.id === assistantId
-                ? { ...m, content: (err as { userMessage?: string })?.userMessage ?? 'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.', streaming: false }
+                ? {
+                    ...m,
+                    content: accumulated,
+                    error: (err as { userMessage?: string })?.userMessage ?? 'Hubo un error al procesar tu consulta. No se ha cobrado nada; puedes intentarlo de nuevo.',
+                    streaming: false,
+                    toolCalls: (m.toolCalls ?? []).map(tc => (tc.status === 'running' ? { ...tc, status: 'error' as const } : tc)),
+                  }
                 : m
             )
           );
@@ -270,6 +295,21 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
     },
     [messages, streaming, userDoc.plan, caseContext, caseDocuments, user]
   );
+
+  /** Drop a turn (user prompt + answer) and send the same prompt again. */
+  const resend = useCallback((assistantId: string) => {
+    const prompt = promptsRef.current.get(assistantId);
+    if (!prompt || streaming) return;
+    setMessages(prev => {
+      const i = prev.findIndex(m => m.id === assistantId);
+      return i > 0 ? [...prev.slice(0, i - 1), ...prev.slice(i + 1)] : prev;
+    });
+    // Let the removal render before the new turn is appended.
+    setTimeout(() => sendMessage(prompt.text, prompt.attachments), 0);
+  }, [sendMessage, streaming]);
+
+  const lastAssistantId = [...messages].reverse().find(m => m.role === 'assistant')?.id;
+  const chips = caseContext?.title ? [{ label: `Caso: ${caseContext.title}` }] : [];
 
   const showWelcome = messages.length === 0;
 
@@ -298,11 +338,10 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
           )}
           <button
             onClick={() => setSavedToast(null)}
+            aria-label="Cerrar aviso"
             className="text-text-muted hover:text-text ml-1"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X size={12} aria-hidden />
           </button>
         </div>
       )}
@@ -312,17 +351,24 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
       {showWelcome ? (
         <>
           <AgentWelcome userDoc={userDoc} caseContext={caseContext} onShortcut={sendMessage} />
-          <AgentInput onSend={sendMessage} disabled={streaming} streaming={streaming} onStop={stop} draft={draft} />
+          <AgentInput onSend={sendMessage} disabled={streaming} streaming={streaming} onStop={stop} draft={draft} chips={chips} />
         </>
       ) : (
         <>
-          <div className="flex-1 overflow-y-auto px-6 py-6">
-            {messages.map(m => (
-              <AgentMessage key={m.id} message={m} />
-            ))}
-            <div ref={messagesEndRef} />
+          <div ref={logRef} onScroll={onLogScroll} className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+            <div role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversación con el agente" className="mx-auto max-w-[760px] space-y-6">
+              {messages.map(m => (
+                <AgentMessage
+                  key={m.id}
+                  message={m}
+                  onRetry={m.error && !streaming ? () => resend(m.id) : undefined}
+                  onRegenerate={m.role === 'assistant' && m.id === lastAssistantId && !streaming && !m.error ? () => resend(m.id) : undefined}
+                />
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
           </div>
-          <AgentInput onSend={sendMessage} disabled={streaming} streaming={streaming} onStop={stop} draft={draft} />
+          <AgentInput onSend={sendMessage} disabled={streaming} streaming={streaming} onStop={stop} draft={draft} chips={chips} />
         </>
       )}
     </div>

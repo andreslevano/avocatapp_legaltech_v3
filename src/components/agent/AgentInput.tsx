@@ -5,6 +5,9 @@ import AgentContextChips from './AgentContextChips';
 import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
 import type { MessageAttachment } from './AgentMessage';
 import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Paperclip, SendHorizontal, Square, Upload, X } from 'lucide-react';
 
 interface Chip {
   label: string;
@@ -106,7 +109,7 @@ export default function AgentInput({
   onStop,
   draft = null,
   chips = [],
-  placeholder = 'Escribe tu consulta legal...',
+  placeholder = 'Escribe tu consulta legal…',
 }: AgentInputProps) {
   const [value, setValue] = useState('');
   const [attachments, setAttachments] = useState<MessageAttachment[]>([]);
@@ -126,7 +129,7 @@ export default function AgentInput({
       t.focus();
       t.setSelectionRange(t.value.length, t.value.length);
       t.style.height = 'auto';
-      t.style.height = `${Math.min(t.scrollHeight, 160)}px`;
+      t.style.height = `${Math.min(t.scrollHeight, 192)}px`;
     });
   }, [draft?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -145,8 +148,10 @@ export default function AgentInput({
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
   };
 
+  // Enter sends · Shift+Enter new line · ⌘/Ctrl+Enter also sends. No send while an IME is composing.
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
+    if (!e.shiftKey || e.metaKey || e.ctrlKey) {
       e.preventDefault();
       handleSend();
     }
@@ -155,7 +160,7 @@ export default function AgentInput({
   const handleInput = () => {
     if (!textareaRef.current) return;
     textareaRef.current.style.height = 'auto';
-    textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
+    textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 192)}px`;
   };
 
   // Paste: intercept clipboard images (screenshots)
@@ -202,121 +207,112 @@ export default function AgentInput({
 
   return (
     <div
-      className={`border-t border-border bg-bg relative transition-colors ${dragActive ? 'bg-accent-subtle border-accent-border' : ''}`}
+      className="relative border-t border-border bg-bg px-4 pt-3 pb-2"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      {/* Drag overlay */}
-      {dragActive && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-bg border-2 border-dashed border-accent-border rounded-t-xl pointer-events-none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8 text-accent-text">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-          </svg>
-          <p className="text-small font-sans text-accent-text font-medium">Suelta aquí para adjuntar</p>
-          <p className="text-caption text-text-muted">Imágenes, PDF, Word, Excel</p>
-        </div>
-      )}
+      <div className="mx-auto max-w-[760px]">
+        {/* Drag overlay */}
+        {dragActive && (
+          <div className="absolute inset-0 z-raised flex flex-col items-center justify-center gap-2 bg-bg border-2 border-dashed border-accent-border pointer-events-none">
+            <Upload size={32} className="text-accent-text" aria-hidden />
+            <p className="text-small text-accent-text font-medium">Suelta aquí para adjuntar</p>
+            <p className="text-caption text-text-muted">Imágenes, PDF, Word, Excel</p>
+          </div>
+        )}
 
-      {chips.length > 0 && <AgentContextChips chips={chips} />}
+        {chips.length > 0 && <div className="mb-2"><AgentContextChips chips={chips} /></div>}
 
-      {/* Attachment previews */}
-      {attachments.length > 0 && (
-        <div className="flex flex-wrap gap-2 px-4 pt-2.5">
-          {attachments.map((att, i) => (
-            <div key={i} className="relative">
-              {att.mimeType.startsWith('image/') ? (
-                <>
-                  <img
-                    src={att.preview}
-                    alt={att.name}
-                    className="h-14 w-14 object-cover rounded-lg border border-border"
-                  />
-                  <button
-                    onClick={() => removeAttachment(i)}
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-bg border border-border text-text-muted hover:text-danger-text flex items-center justify-center text-caption leading-none"
-                  >
-                    ×
-                  </button>
-                </>
+        {/* Composer box — the focus ring wraps the whole box (:focus-within) */}
+        <div className="rounded-lg border border-border-strong bg-surface transition-colors focus-within:border-accent focus-within:ring-2 focus-within:ring-focus">
+          {attachments.length > 0 && (
+            <ul aria-label="Archivos adjuntos" className="flex flex-wrap gap-2 px-3 pt-2.5">
+              {attachments.map((att, i) => (
+                <li key={i} className="relative">
+                  {att.mimeType.startsWith('image/') ? (
+                    <>
+                      <img src={att.preview} alt={att.name} className="h-14 w-14 object-cover rounded-md border border-border" />
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(i)}
+                        aria-label={`Quitar ${att.name}`}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-bg border border-border text-text-muted hover:text-danger-text flex items-center justify-center"
+                      >
+                        <X size={12} aria-hidden />
+                      </button>
+                    </>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 h-7 pl-2.5 pr-1 rounded-md bg-accent-subtle border border-accent-border text-caption text-accent-text max-w-[200px]">
+                      <FileTypeIcon mimeType={att.mimeType} name={att.name} size={14} className="flex-shrink-0" />
+                      <span className="truncate">{att.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(i)}
+                        aria-label={`Quitar ${att.name}`}
+                        className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full hover:text-danger-text"
+                      >
+                        <X size={12} aria-hidden />
+                      </button>
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <label htmlFor="agent-composer" className="sr-only">Mensaje para el agente</label>
+          <textarea
+            id="agent-composer"
+            ref={textareaRef}
+            value={value}
+            onChange={e => setValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onInput={handleInput}
+            onPaste={handlePaste}
+            disabled={disabled}
+            placeholder={placeholder}
+            rows={1}
+            aria-describedby="agent-composer-hint"
+            className="block w-full resize-none bg-transparent px-3 pt-2.5 pb-1 agent-prose text-text outline-none focus-visible:outline-none disabled:opacity-50 min-h-[44px] max-h-[192px]"
+          />
+
+          <div className="flex items-center gap-1 px-1.5 pb-1.5">
+            <IconButton
+              icon={Paperclip}
+              label="Adjuntar archivo (imagen, PDF, Word, Excel)"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={ACCEPTED}
+              multiple
+              onChange={e => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }}
+              className="hidden"
+            />
+            <span id="agent-composer-hint" className="hidden sm:inline text-caption text-text-muted ml-1">
+              Intro para enviar · Mayús+Intro para nueva línea
+            </span>
+            <div className="ml-auto">
+              {streaming && onStop ? (
+                <Button variant="secondary" size="sm" icon={Square} onClick={onStop} title="Detener (podrás editar tu mensaje)">
+                  Detener
+                </Button>
               ) : (
-                <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-lg bg-accent-subtle border border-accent-border text-caption font-sans text-accent-text max-w-[160px]">
-                  <span className="flex-shrink-0"><FileTypeIcon mimeType={att.mimeType} name={att.name} size={14} /></span>
-                  <span className="truncate">{att.name}</span>
-                  <button
-                    onClick={() => removeAttachment(i)}
-                    className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-accent-text hover:text-danger-text text-caption leading-none"
-                  >
-                    ×
-                  </button>
-                </span>
+                <IconButton icon={SendHorizontal} label="Enviar mensaje" variant="accent" size="sm" onClick={handleSend} disabled={!canSend} />
               )}
             </div>
-          ))}
+          </div>
         </div>
-      )}
 
-      <div className="flex items-end gap-2 px-4 py-3">
-        {/* Paperclip */}
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={disabled}
-          title="Adjuntar archivo (imagen, PDF, Word, Excel)"
-          className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl text-text-muted hover:text-text hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
-          </svg>
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ACCEPTED}
-          multiple
-          onChange={e => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }}
-          className="hidden"
-        />
-
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={e => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onInput={handleInput}
-          onPaste={handlePaste}
-          disabled={disabled}
-          placeholder={placeholder}
-          rows={1}
-          className="flex-1 resize-none bg-surface border border-border rounded-xl px-4 py-2.5 text-small font-sans text-text  focus:border-accent-border transition-colors disabled:opacity-50 leading-relaxed min-h-[40px] max-h-[160px]"
-        />
-
-        {streaming && onStop ? (
-          <button
-            onClick={onStop}
-            aria-label="Detener respuesta"
-            title="Detener (podrás editar tu mensaje)"
-            className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-border text-text-heading border border-accent-border hover:bg-surface-muted transition-colors"
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
-          </button>
-        ) : (
-        <button
-          onClick={handleSend}
-          disabled={!canSend}
-          aria-label="Enviar mensaje"
-          className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-accent text-text-on-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-          </svg>
-        </button>
-        )}
-      </div>
-
-      <div className="text-center pb-2 px-4">
-        <AIDisclaimer variant="inline" />
-        <p className="text-caption text-text-muted">Arrastra archivos aquí · Pega capturas con Ctrl+V</p>
+        <div className="mt-1.5 text-center space-y-0.5">
+          <AIDisclaimer variant="inline" />
+          <p className="hidden sm:block text-caption text-text-muted">Arrastra archivos aquí · Pega capturas con Ctrl+V</p>
+        </div>
       </div>
     </div>
   );

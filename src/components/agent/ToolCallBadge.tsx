@@ -1,92 +1,66 @@
 'use client';
 
-import { useState } from 'react';
-import { Check, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Check, CircleAlert, Loader2 } from 'lucide-react';
+import { sourcesFromToolResult } from './CitationBlock';
 
-interface Citation {
-  lawName: string;
-  lawShort: string;
-  articleNumber: string;
-  sectionTitle?: string;
-  content: string;
-  sourceUrl: string;
-  sourceType: 'ley' | 'sentencia';
-  ecli?: string;
-  fecha?: string;
-  sala?: string;
-  similarity?: number;
-}
+// Avocat DS v4 ToolCallBadge — spec: design-system/v4/components/ToolCallBadge.md.
+export type ToolStatus = 'running' | 'done' | 'error';
+
+/** Human labels; the tool id stays available as the tooltip. */
+const TOOL_LABEL: Record<string, { running: string; done: string }> = {
+  buscar_casos:                    { running: 'Buscando en tus casos',     done: 'Casos consultados' },
+  buscar_documentos_caso:          { running: 'Leyendo documentos del caso', done: 'Documentos del caso leídos' },
+  buscar_normativa_jurisprudencia: { running: 'Buscando normativa y jurisprudencia', done: 'Normativa y jurisprudencia' },
+};
 
 interface ToolCallBadgeProps {
   name: string;
-  status?: 'running' | 'done';
-  result?: string; // JSON string — array of Citation when name='buscar_normativa_jurisprudencia'
+  status?: ToolStatus;
+  /** JSON result; for buscar_normativa_jurisprudencia the number of sources is shown. */
+  result?: string;
 }
 
 export default function ToolCallBadge({ name, status = 'done', result }: ToolCallBadgeProps) {
-  const [expanded, setExpanded] = useState(false);
-
-  let citations: Citation[] | null = null;
-  if (status === 'done' && result && name === 'buscar_normativa_jurisprudencia') {
-    try {
-      const parsed = JSON.parse(result);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].lawName) {
-        citations = parsed as Citation[];
-      }
-    } catch {
-      // not citation JSON — ignore
-    }
-  }
-
+  const label = TOOL_LABEL[name]?.[status === 'running' ? 'running' : 'done'] ?? name;
+  const nSources = status === 'done' && name === 'buscar_normativa_jurisprudencia' ? sourcesFromToolResult(result).length : 0;
   return (
-    <span className="inline-flex flex-col gap-1">
-      <button
-        onClick={() => citations && setExpanded(e => !e)}
-        className={[
-          'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-caption font-sans',
-          'bg-surface-raised border border-border text-text',
-          citations ? 'cursor-pointer hover:border-accent-border hover:text-accent-text transition-colors' : 'cursor-default',
-        ].join(' ')}
-      >
-        {status === 'running'
-          ? <Loader2 size={12} className="animate-spin" aria-hidden />
-          : <Check size={12} aria-hidden />}
-        {name}
-        {citations && (
-          <span className="ml-1 text-accent-text">{citations.length} fuentes {expanded ? <ChevronUp size={12} className="inline" aria-hidden /> : <ChevronDown size={12} className="inline" aria-hidden />}</span>
-        )}
-      </button>
-
-      {expanded && citations && (
-        <div className="flex flex-col gap-1.5 mt-0.5 ml-1 max-w-lg">
-          {citations.map((c, i) => (
-            <a
-              key={i}
-              href={c.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block px-3 py-2 rounded-lg bg-surface border border-border hover:border-accent-border transition-colors text-left"
-            >
-              <div className="flex items-baseline gap-2 mb-0.5">
-                <span className="text-caption font-sans font-semibold text-accent-text">
-                  {c.articleNumber}
-                </span>
-                <span className="text-caption text-text-muted">{c.lawShort}</span>
-                {c.similarity && (
-                  <span className="ml-auto text-caption text-text-muted">
-                    {Math.round(c.similarity * 100)}%
-                  </span>
-                )}
-              </div>
-              {c.sectionTitle && (
-                <p className="text-caption text-text-muted mb-0.5">{c.sectionTitle}</p>
-              )}
-              <p className="text-caption text-text-muted leading-snug line-clamp-2">{c.content}</p>
-              {c.ecli && <p className="text-caption text-text-muted mt-0.5">{c.ecli}</p>}
-            </a>
-          ))}
-        </div>
-      )}
+    <span
+      title={name}
+      className={[
+        'inline-flex items-center gap-1.5 h-6 px-2 rounded-xs border bg-surface-raised text-caption text-text',
+        status === 'error' ? 'border-danger' : 'border-border',
+      ].join(' ')}
+    >
+      {status === 'running' && <Loader2 size={12} className="animate-spin text-accent-text" aria-hidden />}
+      {status === 'done' && <Check size={12} className="text-success-text" aria-hidden />}
+      {status === 'error' && <CircleAlert size={12} className="text-danger-text" aria-hidden />}
+      <span>{label}{status === 'running' ? '…' : ''}</span>
+      {nSources > 0 && <span className="text-text-muted">· {nSources} {nSources === 1 ? 'fuente' : 'fuentes'}</span>}
+      <span className="sr-only">{status === 'running' ? '(en curso)' : status === 'error' ? '(error)' : '(completado)'}</span>
     </span>
+  );
+}
+
+/** More than 3 steps collapse into "N pasos · ver detalle". */
+export function ToolCallGroup({ calls }: { calls: { name: string; status?: ToolStatus; result?: string }[] }) {
+  if (!calls.length) return null;
+  if (calls.length <= 3) {
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {calls.map((tc, i) => <ToolCallBadge key={i} name={tc.name} status={tc.status} result={tc.result} />)}
+      </div>
+    );
+  }
+  const running = calls.some(c => c.status === 'running');
+  return (
+    <details className="group">
+      <summary className="inline-flex items-center gap-1.5 h-6 px-2 rounded-xs border border-border bg-surface-raised text-caption text-text cursor-pointer list-none">
+        {running ? <Loader2 size={12} className="animate-spin text-accent-text" aria-hidden /> : <Check size={12} className="text-success-text" aria-hidden />}
+        {calls.length} pasos · <span className="underline">ver detalle</span>
+      </summary>
+      <div className="flex flex-wrap gap-1.5 mt-1.5">
+        {calls.map((tc, i) => <ToolCallBadge key={i} name={tc.name} status={tc.status} result={tc.result} />)}
+      </div>
+    </details>
   );
 }
