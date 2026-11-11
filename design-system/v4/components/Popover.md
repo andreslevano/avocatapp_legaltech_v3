@@ -1,0 +1,1 @@
+Popover is a small non-modal dialog anchored to a trigger: glossary definitions for Particulares, filter panels, the date picker. Opens on click, closes on Esc/outside click, returns focus to the trigger. Use it to explain legal terms in plain language without leaving the flow.

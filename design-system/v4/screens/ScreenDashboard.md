@@ -1,0 +1,1 @@
+Lawyer dashboard in the dark app shell. Before recreated from `src/app/dashboard/page.tsx` (AppHeader + `dashboard/KPICard`, `DeadlineList`, `StatusDonut`) and the legacy `dashboard/casos-*` pages. **Assumption:** logged-in screens were not seen; layout is inferred from code.

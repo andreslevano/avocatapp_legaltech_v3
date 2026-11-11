@@ -86,15 +86,20 @@ export default function AppShellClient({ children }: AppShellClientProps) {
       .catch(() => {});
   }, [user]);
 
-  // Dark-surface button styles (globals.css) for the app and its portaled modals.
+  // Dark-surface button styles (globals.css) for the app and its portaled modals. Portals render
+  // into <body>, outside the shell div, so <body> carries the dark theme too while the shell is up.
   useEffect(() => {
     document.body.classList.add('app-surface');
-    return () => document.body.classList.remove('app-surface');
+    document.body.dataset.theme = 'dark';
+    return () => {
+      document.body.classList.remove('app-surface');
+      delete document.body.dataset.theme;
+    };
   }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#161410] flex items-center justify-center">
+      <div data-theme="dark" className="min-h-screen bg-bg flex items-center justify-center">
         <div className="h-8 w-8 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
       </div>
     );
@@ -107,7 +112,7 @@ export default function AppShellClient({ children }: AppShellClientProps) {
       <SidebarProvider>
         <DocumentsWorkspaceProvider>
           <ImportJobsProvider>
-          <div className="flex h-[100dvh] overflow-hidden bg-[#161410]">
+          <div data-theme="dark" className="flex h-[100dvh] overflow-hidden bg-bg">
             <Rail user={user} userDoc={userDoc} />
             <Sidebar userDoc={userDoc} />
             <main className="flex-1 overflow-auto flex flex-col min-w-0 pb-16 md:pb-0">

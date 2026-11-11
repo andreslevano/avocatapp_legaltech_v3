@@ -1,0 +1,1 @@
+Skeleton reserves the shape of content while it loads (lists, KPI cards, tables, the app shell during auth). Use for loads > 300ms with known layout; use a spinner only inside a button. Shimmer stops under `prefers-reduced-motion`. Containers set `aria-busy="true"`.

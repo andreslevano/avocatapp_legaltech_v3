@@ -2,112 +2,270 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Avocat Design System v4 — mirrors tokens.json. Do not add raw hex anywhere else. */
+/* Theme: <html data-theme="light"> for (public)/*, <div data-theme="dark"> on the app shell. */
+
 :root {
-  /* Brand palette v3 — warm legal-gold */
-  --color-app:            #F9F4EA;
-  --color-sidebar:        #1e1e1e;
-  --color-card:           #FFFFFF;
-  --color-border:         #C8C0B0;
-  --color-text-primary:   #1e1e1e;
-  --color-text-secondary: #5f5f5f;
-  --color-text-on-dark:   #F9F4EA;
+  /* primitives */
+  --gold-50: #fdf3dc;
+  --gold-100: #f8e8c2;
+  --gold-200: #e8d4a0;
+  --gold-300: #e8c97a;
+  --gold-400: #d2a54a;
+  --gold-500: #b8882a;
+  --gold-600: #a07824;
+  --gold-700: #8c6920;
+  --gold-800: #73561a;
+  --gold-900: #4a370f;
+  --gold-950: #2a2415;
+  --neutral-0: #ffffff;
+  --neutral-50: #f9f4ea;
+  --neutral-100: #ede8de;
+  --neutral-200: #ddd6c8;
+  --neutral-300: #c8c0b0;
+  --neutral-400: #a39985;
+  --neutral-500: #857b6b;
+  --neutral-600: #5e574b;
+  --neutral-700: #3f3a31;
+  --neutral-800: #2e2b20;
+  --neutral-850: #252218;
+  --neutral-900: #1e1c16;
+  --neutral-950: #161410;
+  --success-50: #e5f1e8;
+  --success-300: #8fd0a6;
+  --success-600: #2e7048;
+  --success-700: #235a39;
+  --success-950: #13261a;
+  --warning-50: #fceedc;
+  --warning-300: #f5b871;
+  --warning-600: #a3540a;
+  --warning-700: #844308;
+  --warning-950: #2e1d0a;
+  --danger-50: #fbe8e5;
+  --danger-300: #f4a094;
+  --danger-600: #b3261e;
+  --danger-700: #8e1d17;
+  --danger-950: #321311;
+  --info-50: #e6edf6;
+  --info-300: #9dbde6;
+  --info-600: #2e5c99;
+  --info-700: #234a7d;
+  --info-950: #121f31;
 
-  /* Gold accent */
-  --color-gold:           #B8882A;
-  --color-gold-l:         #E8C97A;
-  --color-gold-bg:        #FDF3DC;
-  --color-muted:          #EDE8DE;
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-nav: 200;
+  --z-drawer: 300;
+  --z-overlay: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-toast: 700;
+  --z-tooltip: 800;
+  --size-rail: 52px;
+  --size-sidebar: 220px;
+  --size-agent-panel: 400px;
+  --size-header: 56px;
+  --size-bottom-nav: 64px;
+  --size-container: 1200px;
+  --size-prose: 720px;
+  --size-control-sm: 32px;
+  --size-control-md: 40px;
+  --size-control-lg: 48px;
+  --size-touch: 44px;
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 280ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}
 
-  /* Dark surface */
-  --color-ds-bg:          #161410;
-  --color-ds-card:        #1e1c16;
-  --color-ds-card2:       #252218;
-  --color-ds-border:      #2e2b20;
-  --color-ds-text:        #c8c0ac;
-  --color-ds-head:        #e8d4a0;
+:root, [data-theme="light"] {
+  color-scheme: light;
+  --bg: var(--neutral-50);
+  --surface: var(--neutral-0);
+  --surface-raised: var(--neutral-0);
+  --surface-muted: var(--neutral-100);
+  --surface-inverse: var(--neutral-900);
+  --border: var(--neutral-300);
+  --border-strong: var(--neutral-500);
+  --text: var(--neutral-900);
+  --text-heading: var(--neutral-900);
+  --text-muted: var(--neutral-600);
+  --text-inverse: var(--neutral-50);
+  --text-on-accent: var(--neutral-900);
+  --accent: var(--gold-500);
+  --accent-hover: var(--gold-400);
+  --accent-text: var(--gold-800);
+  --accent-subtle: var(--gold-50);
+  --accent-border: var(--gold-300);
+  --focus: var(--gold-700);
+  --action-primary: var(--neutral-900);
+  --action-primary-hover: var(--neutral-700);
+  --on-action-primary: var(--neutral-50);
+  --danger: var(--danger-600);
+  --on-danger: var(--neutral-0);
+  --danger-text: var(--danger-700);
+  --success-text: var(--success-700);
+  --warning-text: var(--warning-700);
+  --info-text: var(--info-700);
+  --danger-subtle: var(--danger-50);
+  --success-subtle: var(--success-50);
+  --warning-subtle: var(--warning-50);
+  --info-subtle: var(--info-50);
+  --status-vencido-bg: var(--danger-600); --status-vencido-fg: var(--neutral-0); --status-vencido-border: var(--danger-600);
+  --status-urgente-bg: var(--danger-50); --status-urgente-fg: var(--danger-700); --status-urgente-border: var(--danger-300);
+  --status-proximo-bg: var(--warning-50); --status-proximo-fg: var(--warning-700); --status-proximo-border: var(--warning-300);
+  --status-a-tiempo-bg: var(--success-50); --status-a-tiempo-fg: var(--success-700); --status-a-tiempo-border: var(--success-300);
+  --status-borrador-bg: var(--neutral-100); --status-borrador-fg: var(--neutral-600); --status-borrador-border: var(--neutral-300);
+  --status-en-revision-bg: var(--info-50); --status-en-revision-fg: var(--info-700); --status-en-revision-border: var(--info-300);
+  --status-presentado-bg: var(--gold-50); --status-presentado-fg: var(--gold-800); --status-presentado-border: var(--gold-300);
+  --status-pagado-bg: var(--success-600); --status-pagado-fg: var(--neutral-0); --status-pagado-border: var(--success-600);
+  --chart-1: var(--neutral-900);
+  --chart-2: var(--gold-500);
+  --chart-3: var(--info-600);
+  --chart-4: var(--success-600);
+  --chart-5: var(--warning-600);
+  --chart-6: var(--neutral-400);
+  --chart-grid: var(--neutral-200);
+  --chart-axis: var(--neutral-600);
+  --shadow-sm: 0 1px 3px rgba(30,28,22,0.08), 0 4px 16px rgba(30,28,22,0.04);
+  --shadow-md: 0 8px 32px rgba(30,28,22,0.12);
+  --shadow-lg: 0 24px 64px rgba(30,28,22,0.18);
+}
 
-  /* Typography */
-  --font-display:         'Cormorant Garamond', 'EB Garamond', Georgia, serif;
-  --font-sans:            'DM Sans', system-ui, sans-serif;
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: var(--neutral-950);
+  --surface: var(--neutral-900);
+  --surface-raised: var(--neutral-850);
+  --surface-muted: var(--neutral-850);
+  --surface-inverse: var(--neutral-50);
+  --border: var(--neutral-800);
+  --border-strong: var(--neutral-500);
+  --text: var(--neutral-300);
+  --text-heading: var(--gold-200);
+  --text-muted: var(--neutral-400);
+  --text-inverse: var(--neutral-900);
+  --text-on-accent: var(--neutral-900);
+  --accent: var(--gold-500);
+  --accent-hover: var(--gold-300);
+  --accent-text: var(--gold-300);
+  --accent-subtle: var(--gold-950);
+  --accent-border: var(--gold-800);
+  --focus: var(--gold-300);
+  --action-primary: var(--neutral-50);
+  --action-primary-hover: var(--neutral-200);
+  --on-action-primary: var(--neutral-900);
+  --danger: var(--danger-300);
+  --on-danger: var(--neutral-950);
+  --danger-text: var(--danger-300);
+  --success-text: var(--success-300);
+  --warning-text: var(--warning-300);
+  --info-text: var(--info-300);
+  --danger-subtle: var(--danger-950);
+  --success-subtle: var(--success-950);
+  --warning-subtle: var(--warning-950);
+  --info-subtle: var(--info-950);
+  --status-vencido-bg: var(--danger-300); --status-vencido-fg: var(--neutral-950); --status-vencido-border: var(--danger-300);
+  --status-urgente-bg: var(--danger-950); --status-urgente-fg: var(--danger-300); --status-urgente-border: var(--danger-700);
+  --status-proximo-bg: var(--warning-950); --status-proximo-fg: var(--warning-300); --status-proximo-border: var(--warning-700);
+  --status-a-tiempo-bg: var(--success-950); --status-a-tiempo-fg: var(--success-300); --status-a-tiempo-border: var(--success-700);
+  --status-borrador-bg: var(--neutral-850); --status-borrador-fg: var(--neutral-400); --status-borrador-border: var(--neutral-700);
+  --status-en-revision-bg: var(--info-950); --status-en-revision-fg: var(--info-300); --status-en-revision-border: var(--info-700);
+  --status-presentado-bg: var(--gold-950); --status-presentado-fg: var(--gold-300); --status-presentado-border: var(--gold-800);
+  --status-pagado-bg: var(--success-300); --status-pagado-fg: var(--neutral-950); --status-pagado-border: var(--success-300);
+  --chart-1: var(--gold-300);
+  --chart-2: var(--neutral-300);
+  --chart-3: var(--info-300);
+  --chart-4: var(--success-300);
+  --chart-5: var(--warning-300);
+  --chart-6: var(--neutral-500);
+  --chart-grid: var(--neutral-800);
+  --chart-axis: var(--neutral-400);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.50);
+  --shadow-lg: 0 24px 64px rgba(0,0,0,0.60);
 }
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-    -webkit-text-size-adjust: 100%;
-  }
-
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
   body {
-    font-family: var(--font-sans);
-    background-color: var(--color-app);
-    color: var(--color-text-primary);
-    -webkit-tap-highlight-color: transparent;
+    font-family: var(--font-sans);           /* next/font variable from layout.tsx */
+    background-color: var(--bg);
+    color: var(--text);
     font-feature-settings: 'kern' 1, 'liga' 1;
+    -webkit-tap-highlight-color: transparent;
   }
-
-  h1, h2, h3 {
-    font-family: var(--font-display);
-    color: var(--color-text-primary);
-  }
-
-  h1 { @apply text-h1 font-semibold; }
-  h2 { @apply text-h2 font-semibold; }
-  h3 { @apply text-h3 font-medium; }
-
-  button, a {
-    touch-action: manipulation;
+  h1, h2 { font-family: var(--font-display); color: var(--text-heading); }
+  h3, h4 { font-family: var(--font-sans); color: var(--text-heading); }
+  h1 { @apply text-h1; }  h2 { @apply text-h2; }  h3 { @apply text-h3; }  h4 { @apply text-h4; }
+  ::placeholder { color: var(--text-muted); opacity: 1; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  ::selection { background: var(--accent-subtle); color: var(--text); }
+  button, a { touch-action: manipulation; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   }
 }
 
+/* Legal-document reading + print style (replaces hard-coded Times New Roman / Arial) */
 @layer components {
-  /* Legacy aliases — preserved for existing components */
-  .btn-primary {
-    @apply bg-avocat-black hover:opacity-90 text-avocat-cream font-sans font-medium py-2.5 px-5 rounded-md transition-opacity duration-150;
+  .legal-doc { font-family: var(--font-document); font-size: 17px; line-height: 28px; color: var(--neutral-900);
+    background: var(--neutral-0); max-width: var(--size-prose); padding: 64px 72px; }
+  .legal-doc h1 { font-family: var(--font-document); font-size: 22px; line-height: 30px; text-align: center;
+    font-variant-caps: small-caps; letter-spacing: .01em; margin-bottom: 24px; color: inherit; }
+  .legal-doc h2 { font-family: var(--font-document); font-size: 17px; font-weight: 600; text-transform: uppercase; margin: 24px 0 8px; color: inherit; }
+  .legal-doc p { margin: 0 0 12px; text-align: justify; hyphens: auto; }
+  .legal-doc .doc-note { font-size: 14px; line-height: 20px; color: var(--neutral-600); }
+  @media print {
+    @page { size: A4; margin: 25mm 25mm 25mm 30mm; }
+    .legal-doc { font-size: 12pt; line-height: 1.5; padding: 0; max-width: none; }
+    .legal-doc h1 { font-size: 14pt; }  .legal-doc h2 { font-size: 12pt; }
+    .no-print { display: none !important; }
   }
+  /* Jurisdictions that mandate a typeface: add class .legal-doc--official */
+  .legal-doc--official { font-family: "Times New Roman", Times, serif; }
 
-  .btn-secondary {
-    @apply bg-white hover:bg-avocat-muted text-avocat-black font-sans font-medium py-2.5 px-5 rounded-md border border-avocat-border transition-colors duration-150;
-  }
-
-  .card {
-    @apply bg-white rounded-xl shadow-card border border-avocat-border p-6;
-  }
-
-  .input-field {
-    @apply w-full px-3 py-2.5 border border-avocat-border rounded-md bg-white text-avocat-black placeholder:text-avocat-gray9 focus:outline-none focus:ring-2 focus:ring-avocat-gold focus:border-avocat-gold transition-shadow duration-150;
-  }
+  /* Legacy v3 classes, re-pointed to v4 roles. Delete after migration step 6. */
+  .btn-primary   { @apply bg-action-primary text-on-action-primary hover:bg-action-primary-hover font-medium h-10 px-5 rounded-md; }
+  .btn-secondary { @apply bg-surface text-text border border-border-strong hover:bg-surface-muted font-medium h-10 px-5 rounded-md; }
+  .card          { @apply bg-surface rounded-lg shadow-sm border border-border p-6; }
+  .input-field   { @apply w-full h-10 px-3 border border-border-strong rounded-md bg-surface text-text; }
 }
 
 /* Zapier chatbot — override what shadow DOM allows */
 zapier-interfaces-chatbot-embed {
-  --zapier-primary: var(--color-gold) !important;
+  --zapier-primary: var(--accent) !important;
 }
 
-/* ── Dark app surface ───────────────────────────────────────────────
-   Button variants BtnOutlineDark / BtnGhost / BtnDark were designed for the light public pages
-   (dark text on cream). Inside the app (dark surfaces) they were nearly invisible. AppShellClient
-   adds `app-surface` to <body> (so portaled modals are covered too); public pages are unaffected. */
-body.app-surface .btn-BtnOutlineDark {
-  color: #e8d4a0;
-  border-color: rgba(232, 212, 160, 0.35);
-  background-color: rgba(232, 212, 160, 0.04);
-}
-body.app-surface .btn-BtnOutlineDark:hover:not(:disabled) {
-  color: #f3e3b8;
-  border-color: #B8882A;
-  background-color: rgba(184, 136, 42, 0.16);
-}
-body.app-surface .btn-BtnGhost {
-  color: #c8c0ac;
-}
-body.app-surface .btn-BtnGhost:hover:not(:disabled) {
-  color: #e8d4a0;
-  background-color: #252218;
-}
-body.app-surface .btn-BtnDark {
-  color: #e8d4a0;
-  background-color: #2e2b20;
-}
-body.app-surface .btn-BtnDark:hover:not(:disabled) {
-  background-color: #3a3528;
-}
+/* ── Dark app surface (v3 Button variants) ─────────────────────────
+   TODO(ds-v4): remove once ui/Button v4 (Phase 1) no longer emits btn-Btn* classes.
+   AppShellClient adds `app-surface` to <body> (so portaled modals are covered too). */
+body.app-surface .btn-BtnOutlineDark { color: var(--gold-200); border-color: var(--gold-800); background-color: transparent; }
+body.app-surface .btn-BtnOutlineDark:hover:not(:disabled) { border-color: var(--gold-500); background-color: var(--gold-950); }
+body.app-surface .btn-BtnGhost { color: var(--neutral-300); }
+body.app-surface .btn-BtnGhost:hover:not(:disabled) { color: var(--gold-200); background-color: var(--neutral-850); }
+body.app-surface .btn-BtnDark { color: var(--gold-200); background-color: var(--neutral-800); }
+body.app-surface .btn-BtnDark:hover:not(:disabled) { background-color: var(--neutral-700); }

@@ -1,0 +1,632 @@
+{
+ "src/app/(app)/admin/legal-changes/page.tsx": {
+  "raw-hex": 43,
+  "arbitrary-color": 43,
+  "tw-default-color": 10,
+  "arbitrary-text-size": 20,
+  "v3-alias": 8
+ },
+ "src/app/(app)/agent-v2/page.tsx": {
+  "v3-alias": 1
+ },
+ "src/app/(app)/agent/page.tsx": {
+  "v3-alias": 1
+ },
+ "src/app/(app)/cases/[id]/page.tsx": {
+  "raw-hex": 101,
+  "arbitrary-color": 101,
+  "tw-default-color": 14,
+  "arbitrary-text-size": 66,
+  "v3-alias": 25
+ },
+ "src/app/(app)/cases/new/page.tsx": {
+  "raw-hex": 44,
+  "arbitrary-color": 44,
+  "tw-default-color": 14,
+  "arbitrary-text-size": 30,
+  "v3-alias": 12
+ },
+ "src/app/(app)/cases/page.tsx": {
+  "raw-hex": 25,
+  "arbitrary-color": 25,
+  "tw-default-color": 6,
+  "arbitrary-text-size": 9,
+  "v3-alias": 6
+ },
+ "src/app/(app)/clients/page.tsx": {
+  "raw-hex": 49,
+  "arbitrary-color": 49,
+  "tw-default-color": 4,
+  "arbitrary-text-size": 21,
+  "v3-alias": 9
+ },
+ "src/app/(app)/documents/page.tsx": {
+  "raw-hex": 37,
+  "arbitrary-color": 37,
+  "tw-default-color": 15,
+  "arbitrary-text-size": 21,
+  "v3-alias": 15
+ },
+ "src/app/(app)/integrations/microsoft/admin-consent/AdminConsentView.tsx": {
+  "raw-hex": 19,
+  "arbitrary-color": 19,
+  "tw-default-color": 2,
+  "arbitrary-text-size": 11,
+  "v3-alias": 4
+ },
+ "src/app/(app)/legal-changes/page.tsx": {
+  "raw-hex": 22,
+  "arbitrary-color": 22,
+  "tw-default-color": 3,
+  "arbitrary-text-size": 18
+ },
+ "src/app/(app)/notifications/page.tsx": {
+  "raw-hex": 24,
+  "arbitrary-color": 24,
+  "tw-default-color": 3,
+  "arbitrary-text-size": 14,
+  "v3-alias": 6
+ },
+ "src/app/(app)/signatures/return/page.tsx": {
+  "raw-hex": 7,
+  "arbitrary-color": 7,
+  "tw-default-color": 7,
+  "arbitrary-text-size": 7
+ },
+ "src/app/(app)/subscription/page.tsx": {
+  "raw-hex": 17,
+  "arbitrary-color": 17,
+  "tw-default-color": 9,
+  "arbitrary-text-size": 13,
+  "v3-alias": 2
+ },
+ "src/app/(app)/tools/analisis/page.tsx": {
+  "raw-hex": 41,
+  "arbitrary-color": 41,
+  "tw-default-color": 7,
+  "arbitrary-text-size": 26,
+  "v3-alias": 17
+ },
+ "src/app/(app)/tools/contrato-servicios/page.tsx": {
+  "raw-hex": 23,
+  "arbitrary-color": 23,
+  "tw-default-color": 2,
+  "arbitrary-text-size": 15,
+  "v3-alias": 8
+ },
+ "src/app/(app)/tools/estudiantes/page.tsx": {
+  "raw-hex": 37,
+  "arbitrary-color": 37,
+  "tw-default-color": 12,
+  "arbitrary-text-size": 25,
+  "v3-alias": 14
+ },
+ "src/app/(app)/tools/extraccion-datos/page.tsx": {
+  "raw-hex": 38,
+  "arbitrary-color": 38,
+  "tw-default-color": 2,
+  "arbitrary-text-size": 18,
+  "v3-alias": 7
+ },
+ "src/app/(app)/tools/generacion/page.tsx": {
+  "raw-hex": 77,
+  "arbitrary-color": 77,
+  "tw-default-color": 13,
+  "arbitrary-text-size": 39,
+  "v3-alias": 20
+ },
+ "src/app/(app)/tools/nda/page.tsx": {
+  "raw-hex": 65,
+  "arbitrary-color": 64,
+  "tw-default-color": 5,
+  "arbitrary-text-size": 33,
+  "v3-alias": 26
+ },
+ "src/app/(app)/tools/page.tsx": {
+  "raw-hex": 11,
+  "arbitrary-color": 11,
+  "tw-default-color": 1,
+  "arbitrary-text-size": 5,
+  "v3-alias": 1
+ },
+ "src/app/(app)/tools/revision-email/page.tsx": {
+  "raw-hex": 79,
+  "arbitrary-color": 79,
+  "tw-default-color": 31,
+  "arbitrary-text-size": 58,
+  "v3-alias": 11
+ },
+ "src/app/(public)/login/page.tsx": {
+  "arbitrary-text-size": 2,
+  "v3-alias": 11
+ },
+ "src/app/(public)/onboarding/page.tsx": {
+  "v3-alias": 4
+ },
+ "src/app/(public)/signup/page.tsx": {
+  "arbitrary-text-size": 1,
+  "v3-alias": 8
+ },
+ "src/app/acerca-de/page.tsx": {
+  "arbitrary-text-size": 3,
+  "v3-alias": 35
+ },
+ "src/app/dashboard/accion-tutela/history/page.tsx": {
+  "tw-default-color": 25
+ },
+ "src/app/dashboard/administrador/page.tsx": {
+  "tw-default-color": 21
+ },
+ "src/app/dashboard/autoservicio/extraccion-datos/page.tsx": {
+  "raw-hex": 4,
+  "tw-default-color": 33
+ },
+ "src/app/dashboard/crear-caso/page.tsx": {
+  "raw-hex": 1,
+  "arbitrary-color": 1,
+  "v3-alias": 1
+ },
+ "src/app/dashboard/page.tsx": {
+  "raw-hex": 5,
+  "arbitrary-color": 5,
+  "arbitrary-text-size": 3,
+  "v3-alias": 3
+ },
+ "src/app/dashboard/reclamacion-cantidades/error.tsx": {
+  "tw-default-color": 6
+ },
+ "src/app/dashboard/reclamacion-cantidades/loading.tsx": {
+  "tw-default-color": 1
+ },
+ "src/app/e2e/sign-sheet/Harness.tsx": {
+  "raw-hex": 2,
+  "arbitrary-color": 2
+ },
+ "src/app/layout.tsx": {
+  "v3-alias": 1
+ },
+ "src/app/productos/autoservicio/page.tsx": {
+  "arbitrary-text-size": 2,
+  "v3-alias": 31
+ },
+ "src/app/productos/gestion-abogados/page.tsx": {
+  "arbitrary-text-size": 4,
+  "v3-alias": 32
+ },
+ "src/app/productos/material-estudiantes/page.tsx": {
+  "arbitrary-text-size": 3,
+  "v3-alias": 32
+ },
+ "src/app/profile/page.tsx": {
+  "raw-hex": 58,
+  "arbitrary-color": 57,
+  "tw-default-color": 9,
+  "arbitrary-text-size": 33,
+  "v3-alias": 17
+ },
+ "src/components/AccionTutelaPageContent.tsx": {
+  "tw-default-color": 13
+ },
+ "src/components/CaseStatistics.tsx": {
+  "raw-hex": 4,
+  "tw-default-color": 1
+ },
+ "src/components/CustomerStatistics.tsx": {
+  "raw-hex": 6
+ },
+ "src/components/ReclamacionProcess.tsx": {
+  "raw-hex": 3,
+  "tw-default-color": 59,
+  "raw-font": 2
+ },
+ "src/components/ReclamacionProcessSimple.tsx": {
+  "tw-default-color": 3
+ },
+ "src/components/SpainMap.tsx": {
+  "raw-hex": 21
+ },
+ "src/components/TutelaProcessSimple.tsx": {
+  "tw-default-color": 85
+ },
+ "src/components/agent/AgentChat.tsx": {
+  "raw-hex": 5,
+  "arbitrary-color": 5,
+  "arbitrary-text-size": 4,
+  "v3-alias": 3
+ },
+ "src/components/agent/AgentContextChips.tsx": {
+  "arbitrary-text-size": 1,
+  "v3-alias": 3
+ },
+ "src/components/agent/AgentInput.tsx": {
+  "raw-hex": 20,
+  "arbitrary-color": 20,
+  "tw-default-color": 2,
+  "arbitrary-text-size": 7,
+  "v3-alias": 12
+ },
+ "src/components/agent/AgentMessage.tsx": {
+  "raw-hex": 7,
+  "arbitrary-color": 7,
+  "arbitrary-text-size": 4,
+  "v3-alias": 10
+ },
+ "src/components/agent/AgentV2Chat.tsx": {
+  "raw-hex": 17,
+  "arbitrary-color": 17,
+  "arbitrary-text-size": 9,
+  "v3-alias": 14
+ },
+ "src/components/agent/AgentWelcome.tsx": {
+  "raw-hex": 8,
+  "arbitrary-color": 8,
+  "arbitrary-text-size": 5,
+  "v3-alias": 4
+ },
+ "src/components/agent/ToolCallBadge.tsx": {
+  "raw-hex": 10,
+  "arbitrary-color": 10,
+  "arbitrary-text-size": 7,
+  "v3-alias": 5
+ },
+ "src/components/auth/LoginForm.tsx": {
+  "raw-hex": 4,
+  "tw-default-color": 3,
+  "v3-alias": 14
+ },
+ "src/components/auth/OnboardingStep.tsx": {
+  "tw-default-color": 1,
+  "v3-alias": 4
+ },
+ "src/components/auth/PlanCards.tsx": {
+  "arbitrary-text-size": 3,
+  "v3-alias": 9
+ },
+ "src/components/auth/SignupForm.tsx": {
+  "raw-hex": 4,
+  "tw-default-color": 3,
+  "arbitrary-text-size": 1,
+  "v3-alias": 19
+ },
+ "src/components/contracts/ContractCard.tsx": {
+  "raw-hex": 24,
+  "arbitrary-color": 24,
+  "tw-default-color": 17,
+  "arbitrary-text-size": 14,
+  "v3-alias": 3
+ },
+ "src/components/contracts/ContractConfirmSheet.tsx": {
+  "raw-hex": 33,
+  "arbitrary-color": 33,
+  "tw-default-color": 4,
+  "arbitrary-text-size": 18,
+  "v3-alias": 5
+ },
+ "src/components/dashboard/CasesChart.tsx": {
+  "raw-hex": 13,
+  "arbitrary-color": 3,
+  "arbitrary-text-size": 1
+ },
+ "src/components/dashboard/ClientTable.tsx": {
+  "raw-hex": 13,
+  "arbitrary-color": 13,
+  "arbitrary-text-size": 5
+ },
+ "src/components/dashboard/DeadlineList.tsx": {
+  "raw-hex": 10,
+  "arbitrary-color": 10,
+  "tw-default-color": 8,
+  "arbitrary-text-size": 5
+ },
+ "src/components/dashboard/KPICard.tsx": {
+  "raw-hex": 6,
+  "arbitrary-color": 6,
+  "tw-default-color": 2,
+  "arbitrary-text-size": 4,
+  "v3-alias": 3
+ },
+ "src/components/dashboard/StatusDonut.tsx": {
+  "raw-hex": 18,
+  "arbitrary-color": 9,
+  "arbitrary-text-size": 6
+ },
+ "src/components/documents/Breadcrumb.tsx": {
+  "raw-hex": 9,
+  "arbitrary-color": 9,
+  "arbitrary-text-size": 2,
+  "v3-alias": 2
+ },
+ "src/components/documents/DocFiltersBar.tsx": {
+  "raw-hex": 23,
+  "arbitrary-color": 23,
+  "arbitrary-text-size": 5,
+  "v3-alias": 7
+ },
+ "src/components/documents/DocPreviewPanel.tsx": {
+  "raw-hex": 20,
+  "arbitrary-color": 20,
+  "tw-default-color": 4,
+  "arbitrary-text-size": 12,
+  "v3-alias": 2
+ },
+ "src/components/documents/DocTable.tsx": {
+  "raw-hex": 69,
+  "arbitrary-color": 69,
+  "tw-default-color": 20,
+  "arbitrary-text-size": 27,
+  "v3-alias": 7
+ },
+ "src/components/documents/FolderDialogs.tsx": {
+  "raw-hex": 34,
+  "arbitrary-color": 34,
+  "tw-default-color": 9,
+  "arbitrary-text-size": 21,
+  "v3-alias": 8
+ },
+ "src/components/documents/FolderTree.tsx": {
+  "raw-hex": 35,
+  "arbitrary-color": 35,
+  "tw-default-color": 2,
+  "arbitrary-text-size": 5,
+  "v3-alias": 6
+ },
+ "src/components/documents/helpers.ts": {
+  "raw-hex": 12,
+  "arbitrary-color": 12,
+  "tw-default-color": 51
+ },
+ "src/components/documents/modals.tsx": {
+  "raw-hex": 21,
+  "arbitrary-color": 21,
+  "tw-default-color": 11,
+  "arbitrary-text-size": 12,
+  "v3-alias": 7
+ },
+ "src/components/integrations/ConnectDocusignCard.tsx": {
+  "raw-hex": 16,
+  "arbitrary-color": 16,
+  "tw-default-color": 16,
+  "arbitrary-text-size": 9,
+  "v3-alias": 1
+ },
+ "src/components/integrations/ConnectMicrosoftCard.tsx": {
+  "raw-hex": 8,
+  "arbitrary-color": 8,
+  "tw-default-color": 8,
+  "arbitrary-text-size": 7
+ },
+ "src/components/integrations/ImportOptionsSheet.tsx": {
+  "raw-hex": 25,
+  "arbitrary-color": 25,
+  "tw-default-color": 7,
+  "arbitrary-text-size": 17,
+  "v3-alias": 3
+ },
+ "src/components/integrations/MicrosoftConnectModal.tsx": {
+  "raw-hex": 3,
+  "arbitrary-color": 3,
+  "tw-default-color": 4,
+  "arbitrary-text-size": 4
+ },
+ "src/components/integrations/MicrosoftPicker.tsx": {
+  "raw-hex": 11,
+  "arbitrary-color": 11,
+  "arbitrary-text-size": 4,
+  "v3-alias": 1
+ },
+ "src/components/landing/AgentSection.tsx": {
+  "raw-hex": 20,
+  "arbitrary-color": 17,
+  "tw-default-color": 2,
+  "arbitrary-text-size": 10,
+  "v3-alias": 11
+ },
+ "src/components/landing/CtaSection.tsx": {
+  "raw-hex": 8,
+  "arbitrary-color": 7,
+  "arbitrary-text-size": 5,
+  "v3-alias": 6
+ },
+ "src/components/landing/HeroSection.tsx": {
+  "raw-hex": 39,
+  "arbitrary-color": 36,
+  "tw-default-color": 3,
+  "arbitrary-text-size": 18,
+  "v3-alias": 22
+ },
+ "src/components/landing/HowItWorks.tsx": {
+  "raw-hex": 1,
+  "arbitrary-color": 1,
+  "arbitrary-text-size": 7,
+  "v3-alias": 14
+ },
+ "src/components/landing/PersonaTabs.tsx": {
+  "raw-hex": 6,
+  "tw-default-color": 8,
+  "arbitrary-text-size": 10,
+  "v3-alias": 16
+ },
+ "src/components/landing/PricingSection.tsx": {
+  "raw-hex": 18,
+  "arbitrary-text-size": 9,
+  "v3-alias": 11
+ },
+ "src/components/landing/ProblemSection.tsx": {
+  "raw-hex": 3,
+  "arbitrary-color": 3,
+  "tw-default-color": 5,
+  "arbitrary-text-size": 8,
+  "v3-alias": 10
+ },
+ "src/components/landing/TrustBand.tsx": {
+  "raw-hex": 4,
+  "arbitrary-text-size": 2,
+  "v3-alias": 6
+ },
+ "src/components/landing/ValueProps.tsx": {
+  "arbitrary-text-size": 4,
+  "v3-alias": 15
+ },
+ "src/components/layout/AppHeader.tsx": {
+  "raw-hex": 8,
+  "arbitrary-color": 8,
+  "arbitrary-text-size": 3
+ },
+ "src/components/layout/AppShellClient.tsx": {
+  "v3-alias": 1
+ },
+ "src/components/layout/Footer.tsx": {
+  "v3-alias": 12
+ },
+ "src/components/layout/Navbar.tsx": {
+  "arbitrary-text-size": 1,
+  "v3-alias": 12
+ },
+ "src/components/layout/PreviewVerifyBanner.tsx": {
+  "raw-hex": 2,
+  "arbitrary-color": 2,
+  "tw-default-color": 1,
+  "arbitrary-text-size": 2,
+  "v3-alias": 4
+ },
+ "src/components/layout/Rail.tsx": {
+  "raw-hex": 10,
+  "arbitrary-color": 10,
+  "arbitrary-text-size": 4,
+  "v3-alias": 12
+ },
+ "src/components/layout/Sidebar.tsx": {
+  "raw-hex": 27,
+  "arbitrary-color": 27,
+  "tw-default-color": 2,
+  "arbitrary-text-size": 7,
+  "v3-alias": 4
+ },
+ "src/components/layout/UserProfilePanel.tsx": {
+  "raw-hex": 30,
+  "arbitrary-color": 30,
+  "tw-default-color": 8,
+  "arbitrary-text-size": 18,
+  "v3-alias": 10
+ },
+ "src/components/legal/LegalCheckRunner.tsx": {
+  "raw-hex": 6,
+  "arbitrary-color": 6,
+  "tw-default-color": 1,
+  "arbitrary-text-size": 7,
+  "v3-alias": 2
+ },
+ "src/components/legal/NdaCheckSheet.tsx": {
+  "raw-hex": 17,
+  "arbitrary-color": 17,
+  "tw-default-color": 13,
+  "arbitrary-text-size": 14,
+  "v3-alias": 1
+ },
+ "src/components/notifications/NotificationBell.tsx": {
+  "raw-hex": 4,
+  "arbitrary-color": 4,
+  "arbitrary-text-size": 1,
+  "v3-alias": 1
+ },
+ "src/components/notifications/NotificationSettingsCard.tsx": {
+  "raw-hex": 18,
+  "arbitrary-color": 18,
+  "tw-default-color": 2,
+  "arbitrary-text-size": 12,
+  "v3-alias": 6
+ },
+ "src/components/org-templates/MfwNdaFields.tsx": {
+  "raw-hex": 19,
+  "arbitrary-color": 19,
+  "arbitrary-text-size": 10,
+  "v3-alias": 9
+ },
+ "src/components/signatures/FocusedSigningHost.tsx": {
+  "raw-hex": 8,
+  "arbitrary-color": 6,
+  "tw-default-color": 1,
+  "arbitrary-text-size": 5,
+  "v3-alias": 2
+ },
+ "src/components/signatures/SignAndSendSheet.tsx": {
+  "raw-hex": 30,
+  "arbitrary-color": 30,
+  "tw-default-color": 3,
+  "arbitrary-text-size": 20,
+  "v3-alias": 13
+ },
+ "src/components/signatures/SignatureNotifier.tsx": {
+  "raw-hex": 5,
+  "arbitrary-color": 5,
+  "tw-default-color": 2,
+  "arbitrary-text-size": 3,
+  "v3-alias": 2
+ },
+ "src/components/signatures/SignaturePanel.tsx": {
+  "raw-hex": 19,
+  "arbitrary-color": 19,
+  "tw-default-color": 7,
+  "arbitrary-text-size": 11,
+  "v3-alias": 3
+ },
+ "src/components/ui/Button.tsx": {
+  "raw-hex": 4,
+  "arbitrary-color": 4,
+  "arbitrary-text-size": 1,
+  "v3-alias": 13
+ },
+ "src/components/ui/Card.tsx": {
+  "v3-alias": 10
+ },
+ "src/components/ui/Tag.tsx": {
+  "v3-alias": 9
+ },
+ "src/contexts/ImportJobsContext.tsx": {
+  "raw-hex": 10,
+  "arbitrary-color": 10,
+  "tw-default-color": 1,
+  "arbitrary-text-size": 4,
+  "v3-alias": 5
+ },
+ "src/lib/agent-export.ts": {
+  "raw-hex": 2
+ },
+ "src/lib/contracts/alerts.ts": {
+  "raw-hex": 11,
+  "raw-font": 2
+ },
+ "src/lib/doc-html.ts": {
+  "raw-hex": 11,
+  "raw-font": 1
+ },
+ "src/lib/integrations/microsoft/consent-email.ts": {
+  "raw-hex": 8,
+  "raw-font": 2
+ },
+ "src/lib/pdf-generator.ts": {
+  "raw-hex": 23
+ },
+ "src/lib/pdf/email-generator.ts": {
+  "raw-hex": 27,
+  "raw-font": 25
+ },
+ "src/lib/pdf/reclamacion-cantidades.ts": {
+  "raw-font": 40
+ },
+ "src/lib/pdf/reclamacion-simple.ts": {
+  "raw-font": 26
+ },
+ "src/lib/pdf/reclamacion.ts": {
+  "raw-font": 27
+ },
+ "src/lib/pdf/study-material.ts": {
+  "raw-font": 7
+ },
+ "src/lib/pdf/tutela-sample.ts": {
+  "raw-font": 24
+ },
+ "src/lib/pdf/tutela.ts": {
+  "raw-font": 34
+ }
+}

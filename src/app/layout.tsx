@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
-import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
+import { Cormorant_Garamond, DM_Sans, EB_Garamond } from 'next/font/google';
 import '@/styles/globals.css';
 import { I18nProvider } from '@/contexts/I18nContext';
 
@@ -16,6 +16,14 @@ const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600'],
   variable: '--font-sans',
+  display: 'swap',
+});
+
+const ebGaramond = EB_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '600'],
+  style: ['normal', 'italic'],
+  variable: '--font-document',
   display: 'swap',
 });
 
@@ -40,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${cormorant.variable} ${dmSans.variable}`}>
+    <html lang="es" data-theme="light" className={`${cormorant.variable} ${dmSans.variable} ${ebGaramond.variable}`}>
       <body className="font-sans antialiased">
         {/* Google tag (gtag.js) */}
         <Script

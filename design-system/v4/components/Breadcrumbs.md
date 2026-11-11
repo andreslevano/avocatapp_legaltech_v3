@@ -1,0 +1,1 @@
+Breadcrumbs show where a detail page sits: `nav aria-label="Ruta"` > `ol`, last item `aria-current="page"`. Use on case detail, document detail and tool sub-pages; not on top-level sections. Truncate middle items with “…” below 640px.

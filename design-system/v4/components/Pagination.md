@@ -1,0 +1,1 @@
+Pagination moves through pages of a table: summary (“Mostrando 11–20 de 42 casos”), previous/next, page numbers (`aria-current="page"`). Below 640px only previous/next + “2 de 5”. Prefer it over infinite scroll for legal records (users cite positions and return to them).

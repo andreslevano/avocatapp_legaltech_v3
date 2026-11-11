@@ -1,0 +1,1 @@
+“Reclamación de cantidades” wizard at 375px. Before recreated from `src/components/ReclamacionProcessSimple.tsx` (steps 1–3, lines 934–1432). **Assumption:** pay-per-document price 10 € (see PlanCard pricing decision).

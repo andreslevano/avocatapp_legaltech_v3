@@ -18,7 +18,9 @@
     "test:watch": "jest --watch",
     "test:node": "playwright test -c playwright.node.config.ts tests/unit",
     "test:rules": "firebase emulators:exec --only firestore --project demo-avocat \"playwright test -c playwright.node.config.ts tests/rules\"",
-    "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook"
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook",
+    "lint:tokens": "node scripts/check-design-tokens.mjs --baseline .ds-baseline.json",
+    "lint:tokens:baseline": "node scripts/check-design-tokens.mjs --baseline .ds-baseline.json --update-baseline"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
@@ -47,6 +49,7 @@
     "jszip": "^3.10.1",
     "jws": "^4.0.0",
     "lru-memoizer": "^3.0.0",
+    "lucide-react": "1.72.0",
     "mammoth": "^1.12.0",
     "next": "^14.2.32",
     "nodemailer": "^7.0.6",

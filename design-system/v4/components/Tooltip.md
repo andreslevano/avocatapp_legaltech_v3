@@ -1,0 +1,1 @@
+Tooltip is a short, non-essential hint on hover **and** focus (`role="tooltip"`, referenced by `aria-describedby`), 500ms delay, dismissible with Esc. Never put required information or links in a tooltip; on touch, use a Popover.
