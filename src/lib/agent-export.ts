@@ -1,6 +1,7 @@
 'use client';
 
 import { buildDocHtml, type DocMeta } from './doc-html';
+import { A4_PX, PDF_MARGIN_MM, PX_PER_MM, pageStarts, type Zone } from '@/lib/pdf-pages';
 
 export type { DocMeta };
 
@@ -36,10 +37,10 @@ export async function buildPdfBlob(
 
   const container = document.createElement('div');
   container.innerHTML = html;
-  // 794px = A4 at 96dpi; 96px ≈ 2.54cm matches @page margin:2.5cm for html2canvas
+  // 794px = A4 width at 96dpi. Side padding = 2.54cm; top/bottom margins are added per PDF page.
   Object.assign(container.style, {
     position: 'fixed', top: '-9999px', left: '-9999px',
-    width: '794px', padding: '96px', background: 'white', zIndex: '-1',
+    width: `${A4_PX.width}px`, padding: '0 96px', background: 'white', zIndex: '-1',
     boxSizing: 'border-box',
   });
   document.body.appendChild(container);
@@ -49,27 +50,81 @@ export async function buildPdfBlob(
       import('html2canvas'),
       import('jspdf'),
     ]);
+
+    await (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts?.ready;
+    // What must stay together (DOM): a heading with the next line, a signature block, an image.
+    const origin = container.getBoundingClientRect().top;
+    const zones: Zone[] = [];
+    container.querySelectorAll('img, table, .sig-section p').forEach(el => {
+      const r = el.getBoundingClientRect();
+      zones.push({ top: r.top - origin, bottom: r.bottom - origin });
+    });
+    container.querySelectorAll('h1, h2, h3').forEach(el => {
+      const r = el.getBoundingClientRect();
+      const next = el.nextElementSibling?.getBoundingClientRect();
+      // heading + roughly its first following line
+      zones.push({ top: r.top - origin, bottom: next ? Math.min(next.bottom, next.top + 28) - origin : r.bottom - origin });
+    });
+
     const canvas = await html2canvas(container, {
       scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
     });
-    const imgData = canvas.toDataURL('image/jpeg', 0.88);
+    const ratio = canvas.width / container.offsetWidth;          // canvas px per CSS px
+    const totalCss = canvas.height / ratio;
+    const contentCss = A4_PX.height - (PDF_MARGIN_MM.top + PDF_MARGIN_MM.bottom) * PX_PER_MM;
+    // Cut only where the rendered image is blank across the text column (between lines), so a page
+    // never slices through text whatever the DOM-vs-canvas layout drift.
+    const starts = pageStarts(blankRows(canvas, 96 * ratio, (A4_PX.width - 96) * ratio, ratio), zones, totalCss, contentCss);
+
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
-    const imgW = pageW;
-    const imgH = (canvas.height / canvas.width) * imgW;
-
-    pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
-    let consumed = pageH;
-    while (consumed < imgH) {
-      pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, -consumed, imgW, imgH);
-      consumed += pageH;
-    }
+    const mmPerCss = pageW / A4_PX.width;
+    starts.forEach((startCss, i) => {
+      const endCss = starts[i + 1] ?? totalCss;
+      const sliceH = Math.max(1, Math.round((endCss - startCss) * ratio));
+      const page = document.createElement('canvas');
+      page.width = canvas.width;
+      page.height = sliceH;
+      const ctx = page.getContext('2d')!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, page.width, page.height);
+      ctx.drawImage(canvas, 0, Math.round(startCss * ratio), canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+      if (i > 0) pdf.addPage();
+      pdf.addImage(page.toDataURL('image/jpeg', 0.88), 'JPEG', 0, PDF_MARGIN_MM.top, pageW, (endCss - startCss) * mmPerCss);
+      if (starts.length > 1) {
+        pdf.setFontSize(8);
+        pdf.setTextColor(150);
+        pdf.text(`Página ${i + 1} de ${starts.length}`, pageW / 2, pageH - 10, { align: 'center' });
+      }
+    });
     return { blob: pdf.output('blob'), filename: `${sanitizeFilename(docTitle)}.pdf` };
   } finally {
     document.body.removeChild(container);
   }
+}
+
+/** y (CSS px) of every image row that is white across [x0, x1) — safe places to cut a page. */
+function blankRows(canvas: HTMLCanvasElement, x0: number, x1: number, ratio: number): number[] {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return [];
+  const out: number[] = [];
+  const left = Math.max(0, Math.floor(x0)), width = Math.min(canvas.width, Math.ceil(x1)) - left;
+  const BAND = 1500;
+  for (let y0 = 0; y0 < canvas.height; y0 += BAND) {
+    const h = Math.min(BAND, canvas.height - y0);
+    const data = ctx.getImageData(left, y0, width, h).data;
+    for (let row = 0; row < h; row++) {
+      let blank = true;
+      const base = row * width * 4;
+      for (let x = 0; x < width; x += 2) {
+        const i = base + x * 4;
+        if (data[i] < 235 || data[i + 1] < 235 || data[i + 2] < 235) { blank = false; break; }
+      }
+      if (blank) out.push((y0 + row) / ratio);
+    }
+  }
+  return out;
 }
 
 export function buildWordBlob(
