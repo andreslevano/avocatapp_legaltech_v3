@@ -19,7 +19,7 @@ import { canUseContracts } from '@/lib/contracts/config';
 import { FileText, Folder } from 'lucide-react';
 
 const SOURCE_LABEL = { onedrive: 'OneDrive', sharepoint: 'SharePoint' } as const;
-const SELECT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[12px] text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40';
+const SELECT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-caption text-text  focus:border-accent-border';
 
 interface Props {
   items: { driveId: string; itemId: string }[];
@@ -96,27 +96,27 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
     const finished = job && (job.status === 'done' || job.status === 'cancelled');
     return (
       <ModalShell title={finished ? 'Importación terminada' : 'Importando…'} onClose={onClose} sheetOnMobile>
-        <div className="space-y-3 text-[12px] font-sans">
+        <div className="space-y-3 text-caption font-sans">
           <div className="space-y-1">
-            <div className="flex justify-between text-[11px] text-[#6b6050]">
+            <div className="flex justify-between text-caption text-text-muted">
               <span>{processed} de {c?.total ?? toImport.length}</span>
               <span>{c?.done ?? 0} importados{c?.error ? ` · ${c.error} con error` : ''}</span>
             </div>
-            <div className="h-1.5 rounded-full bg-[#161410] overflow-hidden">
-              <div className="h-full bg-avocat-gold transition-all" style={{ width: `${c?.total ? (processed / c.total) * 100 : 0}%` }} />
+            <div className="h-1.5 rounded-full bg-bg overflow-hidden">
+              <div className="h-full bg-accent transition-all" style={{ width: `${c?.total ? (processed / c.total) * 100 : 0}%` }} />
             </div>
           </div>
           <ul className="space-y-1 max-h-[40vh] overflow-y-auto">
             {(job?.items ?? []).map((it, i) => (
-              <li key={i} className="flex items-center gap-2 text-[11px]">
-                <span className="truncate flex-1 text-[#c8c0ac]" title={it.name}>{it.name}</span>
-                <span className={`flex-shrink-0 ${it.status === 'done' ? 'text-emerald-400' : it.status === 'error' ? 'text-red-400' : it.status === 'running' ? 'text-avocat-gold' : 'text-[#6b6050]'}`}>
+              <li key={i} className="flex items-center gap-2 text-caption">
+                <span className="truncate flex-1 text-text" title={it.name}>{it.name}</span>
+                <span className={`flex-shrink-0 ${it.status === 'done' ? 'text-success-text' : it.status === 'error' ? 'text-danger-text' : it.status === 'running' ? 'text-accent-text' : 'text-text-muted'}`}>
                   {it.status === 'done' ? 'Importado' : it.status === 'error' ? (it.error ?? 'Error') : it.status === 'running' ? 'Importando…' : it.status === 'skipped' ? 'Omitido' : 'En cola'}
                 </span>
               </li>
             ))}
           </ul>
-          {!finished && <p className="text-[11px] text-[#6b6050]">Puedes cerrar esta ventana o seguir trabajando: la importación continúa y verás el progreso abajo a la izquierda.</p>}
+          {!finished && <p className="text-caption text-text-muted">Puedes cerrar esta ventana o seguir trabajando: la importación continúa y verás el progreso abajo a la izquierda.</p>}
           <Button variant="accent" size="sm" fullWidth onClick={onClose}>{finished ? 'Ver en Documentos' : 'Seguir en segundo plano'}</Button>
         </div>
       </ModalShell>
@@ -125,38 +125,38 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
 
   return (
     <ModalShell title="Importar desde Microsoft" onClose={onClose} sheetOnMobile>
-      <div className="overflow-y-auto -mx-1 px-1 space-y-3 text-[12px] font-sans">
-        {loadError && <p className="text-red-400">{loadError}</p>}
-        {!preview && !loadError && <p className="text-[#6b6050]">Comprobando los archivos{items.length > 1 ? ' y carpetas' : ''}…</p>}
+      <div className="overflow-y-auto -mx-1 px-1 space-y-3 text-caption font-sans">
+        {loadError && <p className="text-danger-text">{loadError}</p>}
+        {!preview && !loadError && <p className="text-text-muted">Comprobando los archivos{items.length > 1 ? ' y carpetas' : ''}…</p>}
 
         {preview && (
           <ul className="space-y-1.5 max-h-[40vh] overflow-y-auto">
             {preview.rows.map(r => {
               const dupIds = r.duplicates.length ? [r.itemId] : [];
               return (
-                <li key={`${r.driveId}:${r.itemId}`} className="rounded-lg border border-[#2e2b20] px-3 py-2 space-y-1">
+                <li key={`${r.driveId}:${r.itemId}`} className="rounded-lg border border-border px-3 py-2 space-y-1">
                   <div className="flex items-center gap-2">
                     {r.folder ? <Folder size={16} className="flex-shrink-0" aria-hidden /> : <FileText size={16} className="flex-shrink-0" aria-hidden />}
-                    <span className="truncate flex-1 text-[#c8c0ac]" title={r.name}>{r.name}</span>
-                    <span className="text-[10px] text-[#6b6050] flex-shrink-0">
+                    <span className="truncate flex-1 text-text" title={r.name}>{r.name}</span>
+                    <span className="text-caption text-text-muted flex-shrink-0">
                       {r.folder ? `${r.folder.files} ${r.folder.files === 1 ? 'archivo' : 'archivos'}` : r.check === 'ok' ? formatBytes(r.size) : ''}
                     </span>
                   </div>
-                  <p className="text-[10px] text-[#6b6050] truncate">{SOURCE_LABEL[r.provider]}{r.path ? ` · ${r.path}` : ''}</p>
+                  <p className="text-caption text-text-muted truncate">{SOURCE_LABEL[r.provider]}{r.path ? ` · ${r.path}` : ''}</p>
                   {r.folder && (
-                    <p className="text-[11px] text-[#c8c0ac]">
+                    <p className="text-caption text-text">
                       {r.folder.importable} para importar
                       {r.folder.duplicates ? ` · ${r.folder.duplicates} ya importados` : ''}
                       {r.folder.problems ? ` · ${r.folder.problems} no compatibles o > 25 MB` : ''}
-                      {r.folder.truncated && <span className="text-amber-400"> · solo los primeros 300 archivos / 8 niveles</span>}
+                      {r.folder.truncated && <span className="text-warning-text"> · solo los primeros 300 archivos / 8 niveles</span>}
                     </p>
                   )}
-                  {!r.folder && r.check !== 'ok' && <p className="text-[11px] text-amber-400">{CHECK_LABEL[r.check]}</p>}
+                  {!r.folder && r.check !== 'ok' && <p className="text-caption text-warning-text">{CHECK_LABEL[r.check]}</p>}
                   {!r.folder && r.check === 'ok' && dupIds.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                      <span className="text-amber-400">Ya importado como «{r.duplicates[0].name}».</span>
-                      <label className="flex items-center gap-1 text-[#c8c0ac]">
-                        <input type="checkbox" className="accent-avocat-gold" checked={reimport.has(r.itemId)}
+                    <div className="flex flex-wrap items-center gap-2 text-caption">
+                      <span className="text-warning-text">Ya importado como «{r.duplicates[0].name}».</span>
+                      <label className="flex items-center gap-1 text-text">
+                        <input type="checkbox" className="accent-accent" checked={reimport.has(r.itemId)}
                           onChange={e => toggleReimport(dupIds, e.target.checked)} />
                         Importar otra copia
                       </label>
@@ -171,16 +171,16 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
         {preview && (
           <>
             <div className="space-y-2">
-              <p className="text-[11px] text-[#6b6050]">Destino: <span className="text-[#c8c0ac]">{folderLabel ?? 'Mis documentos'}</span></p>
+              <p className="text-caption text-text-muted">Destino: <span className="text-text">{folderLabel ?? 'Mis documentos'}</span></p>
               {hasFolders && (
-                <label className="flex items-center gap-2 text-[12px] text-[#c8c0ac]">
-                  <input type="checkbox" className="accent-avocat-gold" checked={keepStructure} onChange={e => setKeepStructure(e.target.checked)} />
+                <label className="flex items-center gap-2 text-caption text-text">
+                  <input type="checkbox" className="accent-accent" checked={keepStructure} onChange={e => setKeepStructure(e.target.checked)} />
                   Mantener estructura de carpetas
                 </label>
               )}
               {folderDuplicates.length > 0 && (
-                <label className="flex items-center gap-2 text-[12px] text-[#c8c0ac]">
-                  <input type="checkbox" className="accent-avocat-gold"
+                <label className="flex items-center gap-2 text-caption text-text">
+                  <input type="checkbox" className="accent-accent"
                     checked={folderDuplicates.every(f => reimport.has(f.itemId))}
                     onChange={e => toggleReimport(folderDuplicates.map(f => f.itemId), e.target.checked)} />
                   Volver a importar los {folderDuplicates.length} ya importados de las carpetas
@@ -188,23 +188,23 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <select className={SELECT} value={caseId} onChange={e => setCaseId(e.target.value)} aria-label="Vincular a caso">
-                  <option value="" className="bg-[#161410]">Sin caso</option>
-                  {cases.map(c => <option key={c.id} value={c.id} className="bg-[#161410]">{c.title}</option>)}
+                  <option value="" className="bg-bg">Sin caso</option>
+                  {cases.map(c => <option key={c.id} value={c.id} className="bg-bg">{c.title}</option>)}
                 </select>
                 <select className={SELECT} value={clientId} onChange={e => setClientId(e.target.value)} aria-label="Vincular a cliente">
-                  <option value="" className="bg-[#161410]">Sin cliente</option>
-                  {clients.map(c => <option key={c.id} value={c.id} className="bg-[#161410]">{c.name}</option>)}
+                  <option value="" className="bg-bg">Sin cliente</option>
+                  {clients.map(c => <option key={c.id} value={c.id} className="bg-bg">{c.name}</option>)}
                 </select>
               </div>
               {contractsOn && (
-                <label className="flex items-center gap-2 text-[12px] text-[#c8c0ac]">
-                  <input type="checkbox" className="accent-avocat-gold" checked={analyze} onChange={e => setAnalyze(e.target.checked)} />
+                <label className="flex items-center gap-2 text-caption text-text">
+                  <input type="checkbox" className="accent-accent" checked={analyze} onChange={e => setAnalyze(e.target.checked)} />
                   Analizar como contrato después de importar
                 </label>
               )}
-              <p className="text-[10px] text-[#3a3630]">Avocat guarda una copia. Nunca modifica ni borra nada en OneDrive o SharePoint.</p>
+              <p className="text-caption text-text-muted">Avocat guarda una copia. Nunca modifica ni borra nada en OneDrive o SharePoint.</p>
             </div>
-            {error && <p className="text-[11px] text-red-400">{error}</p>}
+            {error && <p className="text-caption text-danger-text">{error}</p>}
             <div className="flex gap-2 pt-1">
               <Button variant="accent" size="sm" fullWidth loading={starting} disabled={!toImport.length || !runner} onClick={start}>
                 {toImport.length ? `Importar ${toImport.length} ${toImport.length === 1 ? 'archivo' : 'archivos'} →` : 'Nada que importar'}

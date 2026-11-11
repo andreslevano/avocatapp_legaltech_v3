@@ -14,10 +14,10 @@ import type { NdaCheckResult } from '@/lib/legal/check-client';
 import { CircleAlert, CircleCheck, CircleX } from 'lucide-react';
 
 export const VERDICT_STYLE: Record<CheckVerdict, string> = {
-  ok: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/5',
-  review: 'text-amber-400 border-amber-400/30 bg-amber-400/5',
-  outdated: 'text-red-400 border-red-400/30 bg-red-400/5',
-  no_rules: 'text-[#6b6050] border-[#2e2b20] bg-transparent',
+  ok: 'text-success-text border-status-a-tiempo-border bg-success-subtle',
+  review: 'text-warning-text border-status-proximo-border bg-warning-subtle',
+  outdated: 'text-danger-text border-status-urgente-border bg-danger-subtle',
+  no_rules: 'text-text-muted border-border bg-transparent',
 };
 export const VERDICT_ICON: Record<CheckVerdict, React.ReactNode> = {
   ok: <CircleCheck size={14} className="inline -mt-0.5" aria-hidden />,
@@ -30,7 +30,7 @@ const STATUS_LABEL: Record<CheckFinding['status'], string> = {
   ok: 'Cumple', not_applicable: 'No aplica', missing: 'Falta', conflict: 'Contradice',
 };
 const STATUS_STYLE: Record<CheckFinding['status'], string> = {
-  ok: 'text-emerald-400', not_applicable: 'text-[#6b6050]', missing: 'text-amber-400', conflict: 'text-red-400',
+  ok: 'text-success-text', not_applicable: 'text-text-muted', missing: 'text-warning-text', conflict: 'text-danger-text',
 };
 const SEV_ORDER = { critical: 0, important: 1, recommended: 2 } as const;
 
@@ -41,33 +41,33 @@ export default function NdaCheckSheet({ check, onClose, onRecheck }: { check: Nd
 
   return (
     <ModalShell title="Revisión de cambios legales" onClose={onClose} sheetOnMobile>
-      <div className="overflow-y-auto -mx-1 px-1 space-y-3 text-[12px] font-sans">
+      <div className="overflow-y-auto -mx-1 px-1 space-y-3 text-caption font-sans">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[#c8c0ac] truncate">{check.title}</p>
-          <span className={`px-2 py-0.5 rounded border text-[11px] font-medium flex-shrink-0 ${VERDICT_STYLE[check.verdict]}`}>
+          <p className="text-text truncate">{check.title}</p>
+          <span className={`px-2 py-0.5 rounded border text-caption font-medium flex-shrink-0 ${VERDICT_STYLE[check.verdict]}`}>
             {VERDICT_ICON[check.verdict]} {VERDICT_LABEL[check.verdict]}
           </span>
         </div>
-        <p className="text-[10px] text-[#6b6050]">
+        <p className="text-caption text-text-muted">
           Revisado el {formatContractDate(check.ranAt.slice(0, 10))} · {check.findings.length} requisitos
           {check.verdict === 'no_rules' && ' · No hay normas registradas para la ley aplicable de este NDA (de momento: España y UE).'}
         </p>
 
         {bad.map(f => <Finding key={f.ruleId} f={f} />)}
         {bad.length === 0 && check.verdict !== 'no_rules' && (
-          <p className="text-[12px] text-emerald-400">No hemos encontrado requisitos pendientes.</p>
+          <p className="text-caption text-success-text">No hemos encontrado requisitos pendientes.</p>
         )}
 
         {good.length > 0 && (
           <div className="space-y-2">
-            <button onClick={() => setShowGood(s => !s)} className="text-[11px] text-[#6b6050] hover:text-[#c8c0ac]">
+            <button onClick={() => setShowGood(s => !s)} className="text-caption text-text-muted hover:text-text">
               {showGood ? 'Ocultar' : 'Ver'} {good.length} {good.length === 1 ? 'requisito que cumple o no aplica' : 'requisitos que cumple o no aplican'}
             </button>
             {showGood && good.map(f => <Finding key={f.ruleId} f={f} />)}
           </div>
         )}
 
-        <p className="text-[10px] text-[#3a3630] leading-snug">
+        <p className="text-caption text-text-muted leading-snug">
           Herramienta de asistencia: no sustituye la revisión de un profesional.
           {check.unvalidatedBaseline && ' Algunos requisitos base están pendientes de validación por un abogado.'}
         </p>
@@ -89,22 +89,22 @@ export default function NdaCheckSheet({ check, onClose, onRecheck }: { check: Nd
 function Finding({ f }: { f: CheckFinding }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="rounded-lg border border-[#2e2b20] px-3 py-2 space-y-1.5">
+    <div className="rounded-lg border border-border px-3 py-2 space-y-1.5">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[12px] text-[#e8d4a0] leading-snug">
+        <p className="text-caption text-text-heading leading-snug">
           {f.url ? <a href={f.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{f.title} ↗</a> : f.title}
         </p>
-        <span className={`text-[10px] font-medium flex-shrink-0 ${STATUS_STYLE[f.status]}`}>{STATUS_LABEL[f.status]}</span>
+        <span className={`text-caption font-medium flex-shrink-0 ${STATUS_STYLE[f.status]}`}>{STATUS_LABEL[f.status]}</span>
       </div>
-      <p className="text-[10px] text-[#6b6050]">{SEVERITY_LABEL[f.severity]}{f.kind === 'change' ? ' · cambio legal' : ' · requisito base'}</p>
-      <p className="text-[12px] text-[#c8c0ac] leading-snug">{f.explanation}</p>
-      {f.excerpt && <p className="text-[11px] text-[#6b6050] italic border-l-2 border-[#2e2b20] pl-2">«{f.excerpt}»</p>}
+      <p className="text-caption text-text-muted">{SEVERITY_LABEL[f.severity]}{f.kind === 'change' ? ' · cambio legal' : ' · requisito base'}</p>
+      <p className="text-caption text-text leading-snug">{f.explanation}</p>
+      {f.excerpt && <p className="text-caption text-text-muted italic border-l-2 border-border pl-2">«{f.excerpt}»</p>}
       {f.suggestedClause && (
-        <div className="rounded bg-[#161410] px-2 py-1.5 space-y-1">
-          <p className="text-[10px] text-[#6b6050] uppercase tracking-widest">Cláusula sugerida</p>
-          <p className="text-[11px] text-[#c8c0ac] leading-snug">{f.suggestedClause}</p>
+        <div className="rounded bg-bg px-2 py-1.5 space-y-1">
+          <p className="text-label text-text-muted uppercase tracking-widest">Cláusula sugerida</p>
+          <p className="text-caption text-text leading-snug">{f.suggestedClause}</p>
           <button onClick={() => { navigator.clipboard?.writeText(f.suggestedClause!).then(() => setCopied(true)).catch(() => {}); }}
-            className="text-[10px] text-avocat-gold hover:underline">{copied ? 'Copiada' : 'Copiar'}</button>
+            className="text-caption text-accent-text hover:underline">{copied ? 'Copiada' : 'Copiar'}</button>
         </div>
       )}
     </div>

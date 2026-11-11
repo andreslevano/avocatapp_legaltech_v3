@@ -51,30 +51,30 @@ export default function ConnectDocusignCard() {
     run(switchUser ? 'switch' : 'connect', () => startDocusignConnect(user, { returnTo: '/settings/perfil', switchUser }));
 
   return (
-    <div className="bg-[#161410] border border-[#2e2b20] rounded-xl p-4 space-y-3">
+    <div className="bg-bg border border-border rounded-xl p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[13px] font-sans font-semibold text-[#e8d4a0]">DocuSign</p>
-          <p className="text-[11px] font-sans text-[#6b6050] mt-0.5">
+          <p className="text-small font-sans font-semibold text-text-heading">DocuSign</p>
+          <p className="text-caption font-sans text-text-muted mt-0.5">
             Firma electrónica: envía documentos a firmar desde Avocat con tu cuenta de DocuSign.
           </p>
         </div>
         {info && (
-          <span className={`flex-shrink-0 px-2 py-0.5 rounded text-[10px] font-medium border ${info.status === 'reauth_required'
-            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+          <span className={`flex-shrink-0 px-2 py-0.5 rounded text-caption font-medium border ${info.status === 'reauth_required'
+            ? 'bg-warning-subtle text-warning-text border-status-proximo-border'
+            : 'bg-success-subtle text-success-text border-status-a-tiempo-border'}`}>
             {info.status === 'reauth_required' ? 'Reconexión necesaria' : 'Conectado'}
           </span>
         )}
       </div>
 
       {notice && (
-        <p className={`text-[12px] font-sans ${notice.kind === 'ok' ? 'text-emerald-400' : 'text-red-400'}`}>{notice.text}</p>
+        <p className={`text-caption font-sans ${notice.kind === 'ok' ? 'text-success-text' : 'text-danger-text'}`}>{notice.text}</p>
       )}
 
       {!info ? (
         <div className="space-y-2">
-          <p className="text-[11px] font-sans text-[#6b6050]">
+          <p className="text-caption font-sans text-text-muted">
             Necesitas una cuenta de DocuSign. Los sobres se envían desde tu cuenta y cuentan en tu plan de DocuSign.
           </p>
           <Button variant="accent" size="sm" loading={busy === 'connect'} onClick={() => connect()}>
@@ -84,46 +84,45 @@ export default function ConnectDocusignCard() {
       ) : (
         <div className="space-y-3">
           {info.status === 'reauth_required' && (
-            <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 flex items-center justify-between gap-3">
-              <span className="text-[12px] text-amber-400">La conexión con DocuSign ha caducado.</span>
+            <div className="rounded-lg bg-warning-subtle border border-status-proximo-border px-3 py-2 flex items-center justify-between gap-3">
+              <span className="text-caption text-warning-text">La conexión con DocuSign ha caducado.</span>
               <Button variant="accent" size="sm" loading={busy === 'connect'} onClick={() => connect()}>Reconectar</Button>
             </div>
           )}
 
-          <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-[12px] font-sans">
-            <dt className="text-[#6b6050]">Conectado como</dt>
-            <dd className="text-[#c8c0ac] truncate">{info.name ? `${info.name} · ` : ''}{info.email}</dd>
-            <dt className="text-[#6b6050]">Cuenta</dt>
-            <dd className="text-[#c8c0ac] truncate">
+          <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-caption font-sans">
+            <dt className="text-text-muted">Conectado como</dt>
+            <dd className="text-text truncate">{info.name ? `${info.name} · ` : ''}{info.email}</dd>
+            <dt className="text-text-muted">Cuenta</dt>
+            <dd className="text-text truncate">
               {info.accounts.length > 1 ? (
                 <select
                   value={info.accountId}
                   disabled={busy === 'account'}
                   onChange={e => run('account', () => selectDocusignAccount(user, e.target.value))}
-                  className="bg-[#1e1c16] border border-[#2e2b20] rounded-md px-2 py-1 text-[12px] text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40 max-w-full"
+                  className="bg-surface border border-border rounded-md px-2 py-1 text-caption text-text  focus:border-accent-border max-w-full"
                 >
                   {info.accounts.map(a => (
-                    <option key={a.accountId} value={a.accountId} className="bg-[#161410]">
+                    <option key={a.accountId} value={a.accountId} className="bg-bg">
                       {a.accountName}{a.isDefault ? ' (predeterminada)' : ''}
                     </option>
                   ))}
                 </select>
               ) : info.accountName}
             </dd>
-            <dt className="text-[#6b6050]">Desde</dt>
-            <dd className="text-[#c8c0ac]">{formatDate(info.connectedAt)}</dd>
+            <dt className="text-text-muted">Desde</dt>
+            <dd className="text-text">{formatDate(info.connectedAt)}</dd>
           </dl>
 
           {confirmDisconnect ? (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2.5 space-y-2">
-              <p className="text-[12px] text-[#c8c0ac]">
+            <div className="rounded-lg border border-status-urgente-border bg-danger-subtle px-3 py-2.5 space-y-2">
+              <p className="text-caption text-text">
                 ¿Desconectar DocuSign? Los documentos firmados y su historial se mantienen en Avocat;
                 los sobres ya enviados siguen su curso en DocuSign.
               </p>
               <div className="flex gap-2 justify-end">
                 <Button variant="ghost" size="sm" onClick={() => setConfirmDisconnect(false)}>Cancelar</Button>
-                <Button variant="accent" size="sm" loading={busy === 'disconnect'}
-                  className="!bg-red-500/80 hover:!bg-red-500 !border-red-500/30"
+                <Button variant="destructive" size="sm" loading={busy === 'disconnect'}
                   onClick={() => run('disconnect', async () => { await disconnectDocusign(user); setConfirmDisconnect(false); })}>
                   Desconectar
                 </Button>

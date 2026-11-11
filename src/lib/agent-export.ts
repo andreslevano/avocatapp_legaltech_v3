@@ -2,6 +2,7 @@
 
 import { buildDocHtml, type DocMeta } from './doc-html';
 import { A4_PX, PDF_MARGIN_MM, PX_PER_MM, pageStarts, type Zone } from '@/lib/pdf-pages';
+import { primitives } from '@/lib/tokens';
 
 export type { DocMeta };
 
@@ -67,7 +68,7 @@ export async function buildPdfBlob(
     });
 
     const canvas = await html2canvas(container, {
-      scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+      scale: 2, useCORS: true, backgroundColor: primitives['neutral-0'], logging: false,
     });
     const ratio = canvas.width / container.offsetWidth;          // canvas px per CSS px
     const totalCss = canvas.height / ratio;
@@ -87,7 +88,7 @@ export async function buildPdfBlob(
       page.width = canvas.width;
       page.height = sliceH;
       const ctx = page.getContext('2d')!;
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = primitives['neutral-0'];
       ctx.fillRect(0, 0, page.width, page.height);
       ctx.drawImage(canvas, 0, Math.round(startCss * ratio), canvas.width, sliceH, 0, 0, canvas.width, sliceH);
       if (i > 0) pdf.addPage();

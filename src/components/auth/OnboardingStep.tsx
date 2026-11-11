@@ -43,12 +43,12 @@ export default function OnboardingStep({ uid, displayName }: OnboardingStepProps
   };
 
   return (
-    <div className="min-h-screen bg-avocat-cream flex items-center justify-center px-4">
+    <div className="min-h-screen bg-bg flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <p className="text-avocat-gold font-sans font-medium text-small mb-2">Bienvenido, {displayName}</p>
-          <h1 className="font-display text-h2 text-avocat-black">¿Cómo usarás Avocat?</h1>
-          <p className="text-small text-avocat-gray5 mt-2">
+          <p className="text-accent-text font-sans font-medium text-small mb-2">Bienvenido, {displayName}</p>
+          <h1 className="font-display text-h2 text-text">¿Cómo usarás Avocat?</h1>
+          <p className="text-small text-text-muted mt-2">
             Elige el plan que mejor se adapte a ti. Podrás cambiarlo más adelante.
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function OnboardingStep({ uid, displayName }: OnboardingStepProps
           <PlanCards selected={plan} onChange={setPlan} />
 
           {error && (
-            <p className="text-small text-red-600">{error}</p>
+            <p className="text-small text-danger-text">{error}</p>
           )}
 
           <Button

@@ -35,13 +35,13 @@ const PROBLEMS = [
 
 export default function ProblemSection() {
   return (
-    <section className="bg-avocat-cream py-20">
+    <section className="bg-bg py-20">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <AnimatedSection className="text-center mb-12">
-          <div className="inline-block px-3 py-1 rounded-full bg-red-50 border border-red-100 text-[11px] font-sans font-semibold text-red-500 uppercase tracking-widest mb-4">
+          <div className="inline-block px-3 py-1 rounded-full bg-danger-subtle border border-status-urgente-border text-label font-sans font-semibold text-danger-text uppercase tracking-widest mb-4">
             El problema
           </div>
-          <h2 className="font-display text-avocat-black font-semibold leading-tight"
+          <h2 className="font-display text-text font-semibold leading-tight"
             style={{ fontSize: 'clamp(26px, 3vw, 38px)' }}>
             Demasiado tiempo en tareas que no deberían tomarlo
           </h2>
@@ -50,29 +50,29 @@ export default function ProblemSection() {
         <div className="grid md:grid-cols-3 gap-6 mb-10">
           {PROBLEMS.map((p, i) => (
             <AnimatedSection key={p.title} delay={i * 100}
-              className="bg-white border border-avocat-border rounded-2xl p-6 group hover:border-avocat-gold/40 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-400 flex items-center justify-center mb-4">
+              className="bg-surface border border-border rounded-2xl p-6 group hover:border-accent-border transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-danger-subtle text-danger-text flex items-center justify-center mb-4">
                 {p.icon}
               </div>
-              <p className="font-display text-[28px] font-bold text-avocat-black mb-1">{p.stat}</p>
-              <p className="text-[13px] font-sans font-semibold text-avocat-black mb-2">{p.title}</p>
-              <p className="text-[13px] font-sans text-avocat-gray5 leading-relaxed">{p.desc}</p>
+              <p className="font-display text-h2 font-bold text-text mb-1">{p.stat}</p>
+              <p className="text-small font-sans font-semibold text-text mb-2">{p.title}</p>
+              <p className="text-small font-sans text-text-muted leading-relaxed">{p.desc}</p>
             </AnimatedSection>
           ))}
         </div>
 
         {/* Stat banner */}
         <AnimatedSection delay={300}>
-          <div className="bg-avocat-black rounded-2xl px-7 py-5 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          <div data-theme="dark" className="bg-bg rounded-2xl px-7 py-5 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
             <div>
-              <p className="font-sans font-semibold text-[#e8d4a0] text-[15px]">
+              <p className="font-sans font-semibold text-text-heading text-body-sm">
                 Avocat prepara el primer borrador por ti; tú revisas y decides
               </p>
-              <p className="font-sans text-[13px] text-[#6b6050] mt-0.5">
+              <p className="font-sans text-small text-text-muted mt-0.5">
                 Más casos, más eficiencia, más tiempo para lo que importa: tu cliente.
               </p>
             </div>
-            <a href="/signup" className="sm:ml-auto flex-shrink-0 px-5 py-2.5 rounded-lg bg-avocat-gold text-white text-[13px] font-sans font-medium hover:bg-[#a07824] transition-colors">
+            <a href="/signup" className="sm:ml-auto flex-shrink-0 px-5 py-2.5 rounded-lg bg-accent text-text-on-accent text-small font-sans font-medium hover:bg-accent-hover transition-colors">
               Empieza gratis →
             </a>
           </div>

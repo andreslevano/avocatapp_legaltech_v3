@@ -135,14 +135,8 @@ module.exports = {
         'info-600': 'var(--info-600)',
         'info-700': 'var(--info-700)',
         'info-950': 'var(--info-950)',
-      // DEPRECATED v3 aliases — kept so the build stays green during migration; remove in step 6
-        'avocat-black': 'var(--neutral-900)', 'avocat-cream': 'var(--neutral-50)', 'avocat-gold': 'var(--gold-500)',
-        'avocat-gold-l': 'var(--gold-300)', 'avocat-gold-bg': 'var(--gold-50)', 'avocat-border': 'var(--neutral-300)',
-        'avocat-muted': 'var(--neutral-100)', 'avocat-gray5': 'var(--neutral-600)', 'avocat-gray9': 'var(--neutral-500)',
-        'ds-bg': 'var(--neutral-950)', 'ds-card': 'var(--neutral-900)', 'ds-card2': 'var(--neutral-850)',
-        'ds-border': 'var(--neutral-800)', 'ds-text': 'var(--neutral-300)', 'ds-head': 'var(--gold-200)',
-        app: 'var(--bg)', sidebar: 'var(--surface-inverse)', card: 'var(--surface)',
-        'text-primary': 'var(--text)', 'text-secondary': 'var(--text-muted)', 'text-on-dark': 'var(--text-inverse)',
+      // Overlay scrim (modal backdrops: bg-black/60). Same ink in both themes.
+        black: 'var(--neutral-950)',
     }),
     fontFamily: {
       display:  ['var(--font-display)', "\"Cormorant Garamond\", \"EB Garamond\", Georgia, serif"],

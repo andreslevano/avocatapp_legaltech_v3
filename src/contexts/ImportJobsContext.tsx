@@ -131,7 +131,7 @@ export function ImportJobsProvider({ children }: { children: ReactNode }) {
         </div>
       )}
       {analyzing && (
-        <div className="fixed z-[55] left-3 md:left-20 bottom-4 md:bottom-4 bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-3 py-2 text-[12px] text-[#c8c0ac] shadow-lg">
+        <div className="fixed z-[55] left-3 md:left-20 bottom-4 md:bottom-4 bg-surface border border-border rounded-xl px-3 py-2 text-caption text-text shadow-lg">
           Analizando contratos importados… {analyzing.done} de {analyzing.total}
         </div>
       )}
@@ -150,28 +150,28 @@ function JobPill({ job: j, here, onResume, onReconnect, onCancel, onRetry, onDis
   const finished = j.status === 'done' || j.status === 'cancelled';
   const pct = c.total ? Math.round((processed / c.total) * 100) : 0;
   return (
-    <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-3 py-2.5 shadow-lg space-y-1.5" role="status">
+    <div className="bg-surface border border-border rounded-xl px-3 py-2.5 shadow-lg space-y-1.5" role="status">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[12px] text-[#e8d4a0] truncate">
+        <p className="text-caption text-text-heading truncate">
           {finished
             ? `${c.done} ${c.done === 1 ? 'archivo importado' : 'archivos importados'}${c.error ? ` · ${c.error} con error` : ''}${j.status === 'cancelled' ? ' · detenida' : ''}`
             : j.status === 'paused' ? 'Importación en pausa: reconecta Microsoft'
             : stale ? `Importación interrumpida · ${c.pending} pendientes`
             : `Importando de Microsoft… ${processed} de ${c.total}`}
         </p>
-        {finished && <button onClick={onDismiss} aria-label="Cerrar" className="text-[#6b6050] hover:text-[#c8c0ac] text-[14px] leading-none">×</button>}
+        {finished && <button onClick={onDismiss} aria-label="Cerrar" className="text-text-muted hover:text-text text-body-sm leading-none">×</button>}
       </div>
       {!finished && (
-        <div className="h-1 rounded-full bg-[#161410] overflow-hidden">
-          <div className="h-full bg-avocat-gold transition-all" style={{ width: `${pct}%` }} />
+        <div className="h-1 rounded-full bg-bg overflow-hidden">
+          <div className="h-full bg-accent transition-all" style={{ width: `${pct}%` }} />
         </div>
       )}
-      <div className="flex flex-wrap gap-3 text-[11px]">
-        {j.status === 'paused' && <button onClick={onReconnect} className="text-avocat-gold hover:underline">Reconectar</button>}
-        {(j.status === 'paused' || stale) && <button onClick={onResume} className="text-avocat-gold hover:underline">Reanudar</button>}
-        {j.status === 'running' && !stale && <button onClick={onCancel} className="text-[#8a7f68] hover:text-red-400">Detener</button>}
-        {finished && c.error > 0 && <button onClick={onRetry} className="text-avocat-gold hover:underline">Reintentar errores</button>}
-        {finished && c.done > 0 && <a href="/documents" className="text-avocat-gold hover:underline">Ver en Documentos</a>}
+      <div className="flex flex-wrap gap-3 text-caption">
+        {j.status === 'paused' && <button onClick={onReconnect} className="text-accent-text hover:underline">Reconectar</button>}
+        {(j.status === 'paused' || stale) && <button onClick={onResume} className="text-accent-text hover:underline">Reanudar</button>}
+        {j.status === 'running' && !stale && <button onClick={onCancel} className="text-text-muted hover:text-danger-text">Detener</button>}
+        {finished && c.error > 0 && <button onClick={onRetry} className="text-accent-text hover:underline">Reintentar errores</button>}
+        {finished && c.done > 0 && <a href="/documents" className="text-accent-text hover:underline">Ver en Documentos</a>}
       </div>
     </div>
   );

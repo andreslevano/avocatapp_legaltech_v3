@@ -7,8 +7,8 @@
 import type { ClientDoc } from '@/lib/firestore';
 import { MFW_NDA_TEMPLATE, type MfwReceptor } from '@/lib/org-templates/mobiforwork-nda';
 
-const INPUT = 'bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
-const LABEL = 'block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5';
+const INPUT = 'bg-bg border border-border rounded-lg px-3 py-2.5 text-small font-sans text-text  focus:border-accent-border';
+const LABEL = 'block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5';
 
 interface Props {
   receptor: MfwReceptor;
@@ -25,12 +25,12 @@ export default function MfwNdaFields({ receptor: r, onReceptor, productos, onPro
   const company = r.tipo === 'sociedad';
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-avocat-gold/30 bg-avocat-gold/5 px-4 py-3 space-y-1">
-        <p className="text-[12px] font-sans font-semibold text-avocat-gold">Plantilla validada por abogado · {MFW_NDA_TEMPLATE.company}</p>
-        <p className="text-[12px] text-[#c8c0ac] leading-relaxed">
+      <div className="rounded-lg border border-accent-border bg-accent-subtle px-4 py-3 space-y-1">
+        <p className="text-caption font-sans font-semibold text-accent-text">Plantilla validada por abogado · {MFW_NDA_TEMPLATE.company}</p>
+        <p className="text-caption text-text leading-relaxed">
           El NDA se genera con el texto aprobado, sin cambios en sus cláusulas. Solo completas los datos de la Parte Receptora y los Productos Protegidos.
         </p>
-        <p className="text-[11px] text-[#6b6050]">
+        <p className="text-caption text-text-muted">
           Fijado por la plantilla: Parte Divulgadora MOBIFORWORK S.L. (CIF {MFW_NDA_TEMPLATE.cif}, Félix Dia Morales, CEO) · protección recíproca ·
           vigencia 5 años · confidencialidad 10 años desde cada revelación · cláusula penal 10.000 € · protección reforzada y no elusión ·
           RGPD · Juzgados de Huesca · español.
@@ -39,19 +39,19 @@ export default function MfwNdaFields({ receptor: r, onReceptor, productos, onPro
 
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-avocat-gold/70">Parte Receptora</p>
+          <p className="text-label font-sans font-semibold uppercase tracking-widest text-accent-text">Parte Receptora</p>
           {clients.length > 0 && (
             <select value={selectedClientId} onChange={e => onClient(e.target.value)}
-              className="text-[11px] font-sans bg-[#161410] border border-[#2e2b20] text-[#6b6050] px-2.5 py-1 rounded-md focus:outline-none">
+              className="text-caption font-sans bg-bg border border-border text-text-muted px-2.5 py-1 rounded-md ">
               <option value="">Seleccionar cliente…</option>
-              {clients.map(c => <option key={c.id} value={c.id} className="bg-[#161410]">{c.name}{c.company ? ` — ${c.company}` : ''}</option>)}
+              {clients.map(c => <option key={c.id} value={c.id} className="bg-bg">{c.name}{c.company ? ` — ${c.company}` : ''}</option>)}
             </select>
           )}
         </div>
         <div className="flex gap-2">
           {([['sociedad', 'Opción B · Sociedad'], ['persona', 'Opción A · Persona física']] as const).map(([k, label]) => (
             <button key={k} type="button" onClick={() => set({ tipo: k })}
-              className={`px-3 py-1.5 rounded-lg border text-[12px] transition-colors ${r.tipo === k ? 'border-avocat-gold/60 text-avocat-gold bg-avocat-gold/10' : 'border-[#2e2b20] text-[#6b6050] hover:text-[#c8c0ac]'}`}>
+              className={`px-3 py-1.5 rounded-lg border text-caption transition-colors ${r.tipo === k ? 'border-accent-border text-accent-text bg-accent-subtle' : 'border-border text-text-muted hover:text-text'}`}>
               {label}
             </button>
           ))}
@@ -76,14 +76,14 @@ export default function MfwNdaFields({ receptor: r, onReceptor, productos, onPro
             <input className={`${INPUT} sm:col-span-2`} placeholder="Facultades: escritura de poder o cargo inscrito" value={r.facultades ?? ''} onChange={e => set({ facultades: e.target.value })} />
           )}
         </div>
-        <p className="text-[11px] text-[#6b6050]">Los datos que dejes vacíos aparecerán entre corchetes en el documento para completarlos antes de firmar.</p>
+        <p className="text-caption text-text-muted">Los datos que dejes vacíos aparecerán entre corchetes en el documento para completarlos antes de firmar.</p>
       </div>
 
       <div>
         <label className={LABEL}>Productos Protegidos *</label>
         <textarea rows={4} value={productos} onChange={e => onProductos(e.target.value)}
           placeholder={'Un producto, servicio o material por línea.\nEj: Plataforma Mobility For Work (CMMS) y sus módulos de mantenimiento\nPortal de fabricantes Norte by Mobility For Work'}
-          className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-3 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40 resize-none leading-relaxed" />
+          className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-small font-sans text-text  focus:border-accent-border resize-none leading-relaxed" />
       </div>
     </div>
   );

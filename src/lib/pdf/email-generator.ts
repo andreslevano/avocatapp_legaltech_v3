@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { registerDocumentFonts, DOC_FONT } from './fonts';
+import { primitives as P } from '@/lib/tokens';
 
 interface EmailData {
   userData: any;
@@ -50,7 +51,7 @@ export async function generateEmailPDF(data: EmailData): Promise<Buffer> {
 function generateHeader(doc: any, data: EmailData) {
   // Fondo del header
   doc.rect(0, 0, doc.page.width, 120)
-     .fill('#4a90e2');
+     .fill(P['info-600']);
 
   // Título principal
   doc.fillColor('white')
@@ -70,7 +71,7 @@ function generateHeader(doc: any, data: EmailData) {
   const badgeY = 20;
 
   doc.rect(badgeX, badgeY, badgeWidth, badgeHeight)
-     .fill('#357abd');
+     .fill(P['info-700']);
   
   doc.fillColor('white')
      .fontSize(12)
@@ -78,7 +79,7 @@ function generateHeader(doc: any, data: EmailData) {
      .text(data.emailType.toUpperCase(), badgeX + 10, badgeY + 8);
 
   // Información del destinatario
-  doc.fillColor('#2c3e50')
+  doc.fillColor(P['neutral-900'])
      .fontSize(14)
      .font(DOC_FONT.heading)
      .text('📋 Información del Destinatario', 50, 140);
@@ -94,7 +95,7 @@ function generateHeader(doc: any, data: EmailData) {
 function generateStats(doc: any, data: EmailData) {
   const { summary } = data.userSummary;
   
-  doc.fillColor('#2c3e50')
+  doc.fillColor(P['neutral-900'])
      .fontSize(16)
      .font(DOC_FONT.heading)
      .text('📊 Estadísticas de Uso', 50, 250);
@@ -118,17 +119,17 @@ function generateStats(doc: any, data: EmailData) {
 
     // Fondo de la tarjeta
     doc.rect(x, y, cardWidth, cardHeight)
-       .fill('#f8f9fa')
-       .stroke('#4a90e2');
+       .fill(P['neutral-50'])
+       .stroke(P['info-600']);
 
     // Valor
-    doc.fillColor('#4a90e2')
+    doc.fillColor(P['info-600'])
        .fontSize(18)
        .font(DOC_FONT.heading)
        .text(stat.value, x + 10, y + 10);
 
     // Etiqueta
-    doc.fillColor('#6c757d')
+    doc.fillColor(P['neutral-600'])
        .fontSize(10)
        .font(DOC_FONT.body)
        .text(stat.label, x + 10, y + 35, { width: cardWidth - 20 });
@@ -136,13 +137,13 @@ function generateStats(doc: any, data: EmailData) {
 }
 
 function generateMainContent(doc: any, data: EmailData) {
-  doc.fillColor('#2c3e50')
+  doc.fillColor(P['neutral-900'])
      .fontSize(16)
      .font(DOC_FONT.heading)
      .text('📝 Contenido del Email', 50, 420);
 
   // Contenido del email
-  doc.fillColor('#333')
+  doc.fillColor(P['neutral-900'])
      .fontSize(12)
      .font(DOC_FONT.body)
      .text(data.emailContent.body, 50, 450, { 
@@ -153,13 +154,13 @@ function generateMainContent(doc: any, data: EmailData) {
 
 function generateRecommendations(doc: any, data: EmailData) {
   // Título de la página
-  doc.fillColor('#2c3e50')
+  doc.fillColor(P['neutral-900'])
      .fontSize(20)
      .font(DOC_FONT.heading)
      .text('🎯 Recomendaciones Personalizadas', 50, 50, { align: 'center' });
 
   // Sección de recomendaciones
-  doc.fillColor('#4a90e2')
+  doc.fillColor(P['info-600'])
      .fontSize(16)
      .font(DOC_FONT.heading)
      .text('Basado en tu perfil de usuario:', 50, 100);
@@ -175,12 +176,12 @@ function generateRecommendations(doc: any, data: EmailData) {
 
   let y = 130;
   recommendations.forEach((rec, index) => {
-    doc.fillColor('#28a745')
+    doc.fillColor(P['success-600'])
        .fontSize(14)
        .font(DOC_FONT.heading)
        .text('✓', 50, y);
     
-    doc.fillColor('#333')
+    doc.fillColor(P['neutral-900'])
        .fontSize(12)
        .font(DOC_FONT.body)
        .text(rec, 70, y);
@@ -189,7 +190,7 @@ function generateRecommendations(doc: any, data: EmailData) {
   });
 
   // Sección de próximos pasos
-  doc.fillColor('#4a90e2')
+  doc.fillColor(P['info-600'])
      .fontSize(16)
      .font(DOC_FONT.heading)
      .text('📈 Próximos Pasos Sugeridos', 50, 300);
@@ -205,12 +206,12 @@ function generateRecommendations(doc: any, data: EmailData) {
 
   y = 330;
   nextSteps.forEach((step, index) => {
-    doc.fillColor('#17a2b8')
+    doc.fillColor(P['info-600'])
        .fontSize(14)
        .font(DOC_FONT.heading)
        .text('→', 50, y);
     
-    doc.fillColor('#333')
+    doc.fillColor(P['neutral-900'])
        .fontSize(12)
        .font(DOC_FONT.body)
        .text(step, 70, y);
@@ -226,13 +227,13 @@ function generateNextSteps(doc: any, data: EmailData) {
 
 function generateTechnicalInfo(doc: any, data: EmailData) {
   // Título de la página
-  doc.fillColor('#2c3e50')
+  doc.fillColor(P['neutral-900'])
      .fontSize(20)
      .font(DOC_FONT.heading)
      .text('🔧 Información Técnica', 50, 50, { align: 'center' });
 
   // Información del sistema
-  doc.fillColor('#4a90e2')
+  doc.fillColor(P['info-600'])
      .fontSize(16)
      .font(DOC_FONT.heading)
      .text('Detalles del Sistema:', 50, 100);
@@ -250,7 +251,7 @@ function generateTechnicalInfo(doc: any, data: EmailData) {
 
   let y = 130;
   technicalInfo.forEach((info, index) => {
-    doc.fillColor('#333')
+    doc.fillColor(P['neutral-900'])
        .fontSize(12)
        .font(DOC_FONT.body)
        .text(info, 50, y);
@@ -259,7 +260,7 @@ function generateTechnicalInfo(doc: any, data: EmailData) {
   });
 
   // Gráfico de rendimiento (simulado)
-  doc.fillColor('#4a90e2')
+  doc.fillColor(P['info-600'])
      .fontSize(16)
      .font(DOC_FONT.heading)
      .text('📊 Gráfico de Rendimiento', 50, 300);
@@ -283,10 +284,10 @@ function generateTechnicalInfo(doc: any, data: EmailData) {
 
     // Barra del gráfico
     doc.rect(x, y, barWidth, height)
-       .fill('#4a90e2');
+       .fill(P['info-600']);
 
     // Etiqueta
-    doc.fillColor('#333')
+    doc.fillColor(P['neutral-900'])
        .fontSize(10)
        .font(DOC_FONT.body)
        .text(metric.label, x, baseY + maxHeight + 10, { width: barWidth, align: 'center' });
@@ -297,26 +298,26 @@ function generateFooter(doc: any, data: EmailData) {
   const footerY = doc.page.height - 100;
 
   // Línea separadora
-  doc.strokeColor('#e9ecef')
+  doc.strokeColor(P['neutral-200'])
      .lineWidth(2)
      .moveTo(50, footerY - 20)
      .lineTo(doc.page.width - 50, footerY - 20)
      .stroke();
 
   // Información de contacto
-  doc.fillColor('#2c3e50')
+  doc.fillColor(P['neutral-900'])
      .fontSize(14)
      .font(DOC_FONT.heading)
      .text('Avocat LegalTech', 50, footerY, { align: 'center' });
 
-  doc.fillColor('#6c757d')
+  doc.fillColor(P['neutral-600'])
      .fontSize(10)
      .font(DOC_FONT.body)
      .text('Gracias por confiar en nosotros', 50, footerY + 20, { align: 'center' })
      .text('Este email fue generado automáticamente', 50, footerY + 35, { align: 'center' });
 
   // Número de página
-  doc.fillColor('#6c757d')
+  doc.fillColor(P['neutral-600'])
      .fontSize(10)
      .font(DOC_FONT.body)
      .text(`Página ${doc.page.number}`, doc.page.width - 100, footerY + 20);

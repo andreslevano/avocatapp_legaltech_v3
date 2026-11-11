@@ -17,11 +17,11 @@ export default function SignSheetHarness() {
   const [open, setOpen] = useState(true);
   return (
     <AppAuthProvider user={user} userDoc={userDoc}>
-      <div className="min-h-screen bg-[#161410] p-6">
+      <div className="min-h-screen bg-bg p-6">
         {open
           ? <SignAndSendSheet documentId="doc-1" title="Contrato de prueba" language="es" returnTo="/documents"
               defaultCounterparty={{ name: 'Juan García', email: 'juan@nike.com' }} onClose={() => setOpen(false)} />
-          : <p data-testid="closed" className="text-[#c8c0ac]">Hoja cerrada</p>}
+          : <p data-testid="closed" className="text-text">Hoja cerrada</p>}
         <FocusedSigningHost />
       </div>
     </AppAuthProvider>

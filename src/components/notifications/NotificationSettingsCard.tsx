@@ -35,22 +35,22 @@ export default function NotificationSettingsCard() {
   };
 
   return (
-    <div id="notificaciones" className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 space-y-4 mt-4 scroll-mt-4">
+    <div id="notificaciones" className="bg-surface border border-border rounded-2xl p-5 space-y-4 mt-4 scroll-mt-4">
       <div>
-        <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">Notificaciones</p>
-        <p className="text-[11px] font-sans text-[#3a3630] mt-1">
+        <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Notificaciones</p>
+        <p className="text-caption font-sans text-text-muted mt-1">
           Avisos antes de que venzan tus contratos: fin del acuerdo, último día de preaviso y fin de la confidencialidad.
         </p>
       </div>
 
       <div className="space-y-2">
-        <p className="text-[12px] text-[#c8c0ac]">Avisarme</p>
+        <p className="text-caption text-text">Avisarme</p>
         <div className="flex flex-wrap gap-2">
           {THRESHOLD_CHOICES.map(n => {
             const on = prefs.thresholds.includes(n);
             return (
               <button key={n} type="button" onClick={() => toggle(n)} aria-pressed={on}
-                className={`px-3 py-1.5 rounded-lg border text-[12px] transition-colors ${on ? 'border-avocat-gold/60 text-avocat-gold bg-avocat-gold/10' : 'border-[#2e2b20] text-[#6b6050] hover:text-[#c8c0ac]'}`}>
+                className={`px-3 py-1.5 rounded-lg border text-caption transition-colors ${on ? 'border-accent-border text-accent-text bg-accent-subtle' : 'border-border text-text-muted hover:text-text'}`}>
                 {dayLabel(n)}
               </button>
             );
@@ -58,31 +58,31 @@ export default function NotificationSettingsCard() {
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-[12px] text-[#c8c0ac]">
-        <input type="checkbox" checked={prefs.email} onChange={e => setPrefs(p => ({ ...p, email: e.target.checked }))} className="accent-avocat-gold" />
+      <label className="flex items-center gap-2 text-caption text-text">
+        <input type="checkbox" checked={prefs.email} onChange={e => setPrefs(p => ({ ...p, email: e.target.checked }))} className="accent-accent" />
         Enviarme un resumen diario por email (solo los días con avisos)
       </label>
 
       {prefs.email && (
-        <label className="flex items-center gap-2 text-[12px] text-[#c8c0ac]">
+        <label className="flex items-center gap-2 text-caption text-text">
           Hora del resumen
           <select value={prefs.digestHour} onChange={e => setPrefs(p => ({ ...p, digestHour: Number(e.target.value) }))}
-            className="bg-[#161410] border border-[#2e2b20] rounded-lg px-2 py-1.5 text-[12px] text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40">
-            {Array.from({ length: 24 }, (_, h) => <option key={h} value={h} className="bg-[#161410]">{String(h).padStart(2, '0')}:00</option>)}
+            className="bg-bg border border-border rounded-lg px-2 py-1.5 text-caption text-text  focus:border-accent-border">
+            {Array.from({ length: 24 }, (_, h) => <option key={h} value={h} className="bg-bg">{String(h).padStart(2, '0')}:00</option>)}
           </select>
-          <span className="text-[11px] text-[#6b6050]">(hora de Madrid)</span>
+          <span className="text-caption text-text-muted">(hora de Madrid)</span>
         </label>
       )}
 
       <div className="flex items-center gap-3">
         <button onClick={save} disabled={state === 'saving'}
-          className="text-[11px] font-sans font-medium text-avocat-black bg-avocat-gold hover:bg-[#a07824] disabled:opacity-40 px-3 py-1.5 rounded-md transition-colors">
+          className="text-caption font-sans font-medium text-text bg-accent hover:bg-accent-hover disabled:opacity-40 px-3 py-1.5 rounded-md transition-colors">
           {state === 'saving' ? 'Guardando…' : 'Guardar avisos'}
         </button>
-        {state === 'saved' && <span className="text-[12px] text-emerald-400">Guardado</span>}
-        {state === 'error' && <span className="text-[12px] text-red-400">No se pudo guardar</span>}
+        {state === 'saved' && <span className="text-caption text-success-text">Guardado</span>}
+        {state === 'error' && <span className="text-caption text-danger-text">No se pudo guardar</span>}
         {JSON.stringify(prefs) !== JSON.stringify(DEFAULT_PREFS) && (
-          <button onClick={() => { setPrefs(DEFAULT_PREFS); setState('idle'); }} className="text-[11px] text-[#6b6050] hover:text-[#c8c0ac]">
+          <button onClick={() => { setPrefs(DEFAULT_PREFS); setState('idle'); }} className="text-caption text-text-muted hover:text-text">
             Restablecer
           </button>
         )}

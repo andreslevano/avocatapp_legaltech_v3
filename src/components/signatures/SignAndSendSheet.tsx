@@ -32,8 +32,8 @@ interface CcRow { key: number; name: string; email: string }
 let keySeq = 0;
 const nextKey = () => ++keySeq;
 
-const FIELD = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
-const LABEL = 'block text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1';
+const FIELD = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border';
+const LABEL = 'block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1';
 
 function defaultSubject(title: string, lang: 'es' | 'en') {
   return (lang === 'en' ? `Signature requested: ${title}` : `Firma solicitada: ${title}`).slice(0, 100);
@@ -135,12 +135,12 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
 
   return (
     <ModalShell title="Firmar y enviar con DocuSign" onClose={busy ? () => {} : p.onClose} sheetOnMobile>
-      <div className="overflow-y-auto -mx-1 px-1 space-y-4 text-[12px] font-sans">
-        <p className="text-[#6b6050] truncate">{p.title}</p>
+      <div className="overflow-y-auto -mx-1 px-1 space-y-4 text-caption font-sans">
+        <p className="text-text-muted truncate">{p.title}</p>
 
         {!connected ? (
-          <div className="rounded-lg border border-avocat-gold/20 bg-avocat-gold/5 px-3 py-3 space-y-2">
-            <p className="text-[12px] text-[#c8c0ac]">
+          <div className="rounded-lg border border-accent-border bg-accent-subtle px-3 py-3 space-y-2">
+            <p className="text-caption text-text">
               {info ? 'La conexión con DocuSign ha caducado.' : 'Conecta tu cuenta de DocuSign para enviar documentos a firmar.'}
               {' '}Volverás aquí con el documento listo para enviar.
             </p>
@@ -152,20 +152,20 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
           <>
             <section className="space-y-1">
               <p className={LABEL}>1 · Firmas tú, ahora</p>
-              <p className="text-[#c8c0ac]">{info?.name} <span className="text-[#6b6050]">· {info?.email}</span></p>
-              <p className="text-[11px] text-[#6b6050]">Firmarás en el primer bloque de firma, sin salir del flujo de Avocat.</p>
+              <p className="text-text">{info?.name} <span className="text-text-muted">· {info?.email}</span></p>
+              <p className="text-caption text-text-muted">Firmarás en el primer bloque de firma, sin salir del flujo de Avocat.</p>
             </section>
 
             <section className="space-y-2">
               <p className={LABEL}>2 · Después {signers.length > 1 ? 'firman' : 'firma'}</p>
               {signers.map((r, i) => (
-                <div key={r.key} className="space-y-1.5 rounded-lg border border-[#2e2b20] p-2">
+                <div key={r.key} className="space-y-1.5 rounded-lg border border-border p-2">
                   <div className="flex items-center gap-2">
-                    {signers.length > 1 && <span className="text-[11px] text-[#6b6050] w-4 flex-shrink-0">{order === 'sequential' ? `${i + 2}.` : '·'}</span>}
+                    {signers.length > 1 && <span className="text-caption text-text-muted w-4 flex-shrink-0">{order === 'sequential' ? `${i + 2}.` : '·'}</span>}
                     <input className={FIELD} placeholder="Nombre completo" value={r.name} onChange={e => setSigner(r.key, { name: e.target.value })} />
                     {signers.length > 1 && (
                       <button type="button" aria-label="Quitar firmante" onClick={() => setSigners(rs => rs.filter(x => x.key !== r.key))}
-                        className="text-[#6b6050] hover:text-red-400 text-[16px] leading-none px-1">×</button>
+                        className="text-text-muted hover:text-danger-text text-body leading-none px-1">×</button>
                     )}
                   </div>
                   <input className={FIELD} type="email" placeholder="email@empresa.com" value={r.email} onChange={e => setSigner(r.key, { email: e.target.value })} />
@@ -175,38 +175,38 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
                         <input className={FIELD} placeholder="Código de acceso (4–20 letras o números)" value={r.code} maxLength={20}
                           autoComplete="off" onChange={e => setSigner(r.key, { code: e.target.value.replace(/\s/g, '') })} />
                         <button type="button" onClick={() => setSigner(r.key, { useCode: false, code: '' })}
-                          className="text-[11px] text-[#6b6050] hover:text-[#c8c0ac] whitespace-nowrap">Quitar</button>
+                          className="text-caption text-text-muted hover:text-text whitespace-nowrap">Quitar</button>
                       </div>
-                      <p className="text-[11px] text-[#6b6050]">DocuSign se lo pedirá antes de abrir el documento. Compártelo por otro canal (teléfono, WhatsApp); Avocat no lo guarda.</p>
+                      <p className="text-caption text-text-muted">DocuSign se lo pedirá antes de abrir el documento. Compártelo por otro canal (teléfono, WhatsApp); Avocat no lo guarda.</p>
                     </div>
                   ) : (
                     <button type="button" onClick={() => setSigner(r.key, { useCode: true })}
-                      className="text-[11px] text-avocat-gold/70 hover:text-avocat-gold inline-flex items-center gap-1"><Lock size={12} aria-hidden /> Pedir código de acceso</button>
+                      className="text-caption text-accent-text hover:text-accent-text inline-flex items-center gap-1"><Lock size={12} aria-hidden /> Pedir código de acceso</button>
                   )}
                 </div>
               ))}
               {signers.length < MAX_SIGNERS && (
                 <button type="button" onClick={() => setSigners(rs => [...rs, { key: nextKey(), name: '', email: '', code: '', useCode: false }])}
-                  className="text-[11px] text-avocat-gold/70 hover:text-avocat-gold">+ Añadir firmante</button>
+                  className="text-caption text-accent-text hover:text-accent-text">+ Añadir firmante</button>
               )}
               {signers.length > 1 && (
                 <div className="space-y-1">
-                  <div className="inline-flex rounded-lg border border-[#2e2b20] overflow-hidden text-[11px]">
+                  <div className="inline-flex rounded-lg border border-border overflow-hidden text-caption">
                     {(['sequential', 'parallel'] as const).map(o => (
                       <button key={o} type="button" onClick={() => setOrder(o)}
-                        className={`px-3 py-1.5 ${order === o ? 'bg-avocat-gold/15 text-avocat-gold' : 'text-[#6b6050] hover:text-[#c8c0ac]'}`}>
+                        className={`px-3 py-1.5 ${order === o ? 'bg-accent-subtle text-accent-text' : 'text-text-muted hover:text-text'}`}>
                         {o === 'sequential' ? 'En orden' : 'A la vez'}
                       </button>
                     ))}
                   </div>
-                  <p className="text-[11px] text-[#6b6050]">
+                  <p className="text-caption text-text-muted">
                     {order === 'sequential'
                       ? 'Cada firmante recibe el email cuando firma el anterior, en el orden de la lista.'
                       : 'Todos reciben el email a la vez, en cuanto firmes tú.'}
                   </p>
                 </div>
               )}
-              <p className="text-[11px] text-[#6b6050]">
+              <p className="text-caption text-text-muted">
                 {signers.length === 1 ? 'Recibirá un email de DocuSign cuando hayas firmado. No necesita cuenta.' : 'No necesitan cuenta de DocuSign.'}
                 {' '}Si el documento no tiene un bloque «Firma:» para cada persona, lo añadimos al final.
               </p>
@@ -219,12 +219,12 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
                   <input className={FIELD} placeholder="Nombre" value={r.name} onChange={e => setCcRow(r.key, { name: e.target.value })} />
                   <input className={FIELD} type="email" placeholder="email@empresa.com" value={r.email} onChange={e => setCcRow(r.key, { email: e.target.value })} />
                   <button type="button" aria-label="Quitar copia" onClick={() => setCc(rs => rs.filter(x => x.key !== r.key))}
-                    className="text-[#6b6050] hover:text-red-400 text-[16px] leading-none px-1">×</button>
+                    className="text-text-muted hover:text-danger-text text-body leading-none px-1">×</button>
                 </div>
               ))}
               {cc.length < MAX_CC && (
                 <button type="button" onClick={() => setCc(rs => [...rs, { key: nextKey(), name: '', email: '' }])}
-                  className="text-[11px] text-avocat-gold/70 hover:text-avocat-gold">+ Añadir en copia</button>
+                  className="text-caption text-accent-text hover:text-accent-text">+ Añadir en copia</button>
               )}
             </section>
 
@@ -242,7 +242,7 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
 
             <section>
               <button type="button" onClick={() => setAdvanced(a => !a)}
-                className="text-[11px] text-avocat-gold/70 hover:text-avocat-gold">
+                className="text-caption text-accent-text hover:text-accent-text">
                 {advanced ? '▾' : '▸'} Opciones avanzadas
               </button>
               {advanced ? (
@@ -265,29 +265,29 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
                   <label className="space-y-1">
                     <span className={LABEL}>Idioma del email</span>
                     <select className={FIELD} value={options.language} onChange={e => setOpt('language', e.target.value)}>
-                      <option value="es" className="bg-[#161410]">Español</option>
-                      <option value="en" className="bg-[#161410]">English</option>
+                      <option value="es" className="bg-bg">Español</option>
+                      <option value="en" className="bg-bg">English</option>
                     </select>
                   </label>
                 </div>
               ) : (
-                <p className="mt-1 text-[11px] text-[#6b6050]">
+                <p className="mt-1 text-caption text-text-muted">
                   Recordatorio cada {options.reminderFrequencyDays} días a partir del día {options.reminderDelayDays} · caduca en {options.expireAfterDays} días
                 </p>
               )}
             </section>
 
-            <p className="rounded-lg bg-[#161410] border border-[#2e2b20] px-3 py-2 text-[11px] text-[#9a9a9a]">
+            <p className="rounded-lg bg-bg border border-border px-3 py-2 text-caption text-text-muted">
               <Lock size={12} className="inline -mt-0.5" aria-hidden /> Mientras esté en firma, el documento queda bloqueado. Para cambiarlo habrá que anular el envío y crear una nueva versión.
             </p>
           </>
         )}
 
-        {error && <p className="text-[12px] text-red-400">{error}</p>}
+        {error && <p className="text-caption text-danger-text">{error}</p>}
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button variant="ghost" size="sm" className="!text-[#9a9a9a] hover:!bg-transparent hover:!text-[#c8c0ac]"
+        <Button variant="ghost" size="sm" className="!text-text-muted hover:!bg-transparent hover:!text-text"
           disabled={!!busy} onClick={p.onClose}>Cancelar</Button>
         {resumeId ? (
           <Button variant="accent" size="sm" loading={busy === 'resume'} onClick={resume}>Continuar firma</Button>

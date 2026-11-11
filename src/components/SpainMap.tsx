@@ -1,4 +1,5 @@
 'use client';
+import { primitives as P } from '@/lib/tokens';
 
 // TODO(ds-v4): product review — no longer referenced after /dashboard was retired (was used by CustomerStatistics).
 
@@ -18,11 +19,11 @@ interface SpainMapProps {
 export default function SpainMap({ cities, loading }: SpainMapProps) {
   const getCityColor = (count: number, maxCount: number) => {
     const intensity = count / maxCount;
-    if (intensity > 0.7) return '#1E1E1E';
-    if (intensity > 0.5) return '#5F5F5F';
-    if (intensity > 0.3) return '#9A9A9A';
-    if (intensity > 0.1) return '#B8B8B8';
-    return '#C4C4C4';
+    if (intensity > 0.7) return P['neutral-900'];
+    if (intensity > 0.5) return P['neutral-600'];
+    if (intensity > 0.3) return P['neutral-500'];
+    if (intensity > 0.1) return P['neutral-400'];
+    return P['neutral-300'];
   };
 
   const maxCount = Math.max(...cities.map(c => c.count));
@@ -38,8 +39,8 @@ export default function SpainMap({ cities, loading }: SpainMapProps) {
         {/* Spain Vector Map - Mainland */}
         <path
           d="M200 300 L250 280 L300 290 L350 280 L400 290 L450 280 L500 290 L550 280 L600 290 L650 280 L700 290 L750 300 L780 320 L800 350 L810 380 L800 410 L780 440 L750 460 L700 470 L650 460 L600 450 L550 440 L500 430 L450 420 L400 410 L350 400 L300 390 L250 380 L200 370 L180 350 L190 320 Z"
-          fill="#F2F2F2"
-          stroke="#9A9A9A"
+          fill={P['neutral-100']}
+          stroke={P['neutral-500']}
           strokeWidth="1.5"
           className="transition-all duration-1000"
         />
@@ -47,8 +48,8 @@ export default function SpainMap({ cities, loading }: SpainMapProps) {
         {/* Balearic Islands */}
         <path
           d="M750 200 L780 190 L800 200 L810 220 L800 240 L780 250 L750 240 L740 220 Z"
-          fill="#F2F2F2"
-          stroke="#9A9A9A"
+          fill={P['neutral-100']}
+          stroke={P['neutral-500']}
           strokeWidth="1.5"
           className="transition-all duration-1000"
         />
@@ -56,16 +57,16 @@ export default function SpainMap({ cities, loading }: SpainMapProps) {
         {/* Canary Islands */}
         <path
           d="M100 500 L120 490 L140 500 L150 520 L140 540 L120 550 L100 540 L90 520 Z"
-          fill="#F2F2F2"
-          stroke="#9A9A9A"
+          fill={P['neutral-100']}
+          stroke={P['neutral-500']}
           strokeWidth="1.5"
           className="transition-all duration-1000"
         />
         
         <path
           d="M150 550 L170 540 L190 550 L200 570 L190 590 L170 600 L150 590 L140 570 Z"
-          fill="#F2F2F2"
-          stroke="#9A9A9A"
+          fill={P['neutral-100']}
+          stroke={P['neutral-500']}
           strokeWidth="1.5"
           className="transition-all duration-1000"
         />
@@ -73,8 +74,8 @@ export default function SpainMap({ cities, loading }: SpainMapProps) {
         {/* Portugal */}
         <path
           d="M50 400 L100 380 L150 390 L180 410 L170 450 L150 480 L100 470 L50 460 L30 430 Z"
-          fill="#E8E8E8"
-          stroke="#B8B8B8"
+          fill={P['neutral-200']}
+          stroke={P['neutral-400']}
           strokeWidth="1"
           className="transition-all duration-1000"
         />
@@ -82,8 +83,8 @@ export default function SpainMap({ cities, loading }: SpainMapProps) {
         {/* France */}
         <path
           d="M600 200 L700 180 L800 190 L850 220 L800 250 L700 240 L600 230 Z"
-          fill="#E8E8E8"
-          stroke="#B8B8B8"
+          fill={P['neutral-200']}
+          stroke={P['neutral-400']}
           strokeWidth="1"
           className="transition-all duration-1000"
         />
@@ -105,7 +106,7 @@ export default function SpainMap({ cities, loading }: SpainMapProps) {
                 cy={mapY}
                 r={loading ? 0 : size}
                 fill={color}
-                stroke="#F2F2F2"
+                stroke={P['neutral-100']}
                 strokeWidth="3"
                 className="transition-all duration-1000 ease-out drop-shadow-lg"
               >
@@ -124,7 +125,7 @@ export default function SpainMap({ cities, loading }: SpainMapProps) {
                 y={mapY - size - 8}
                 textAnchor="middle"
                 className="text-sm font-semibold"
-                style={{ fill: '#1E1E1E', opacity: loading ? 0 : 1 }}
+                style={{ fill: P['neutral-900'], opacity: loading ? 0 : 1 }}
               >
                 {city.city}
               </text>
@@ -135,7 +136,7 @@ export default function SpainMap({ cities, loading }: SpainMapProps) {
                 y={mapY + 5}
                 textAnchor="middle"
                 className="text-sm font-bold"
-                style={{ fill: '#F2F2F2', opacity: loading ? 0 : 1 }}
+                style={{ fill: P['neutral-100'], opacity: loading ? 0 : 1 }}
               >
                 {city.count}
               </text>
@@ -144,7 +145,7 @@ export default function SpainMap({ cities, loading }: SpainMapProps) {
         })}
         
         {/* Decorative Elements */}
-        <circle cx="500" cy="400" r="5" fill="#1E1E1E" opacity="0.2">
+        <circle cx="500" cy="400" r="5" fill={P['neutral-900']} opacity="0.2">
           <animate
             attributeName="r"
             values="5;15;5"
@@ -155,26 +156,26 @@ export default function SpainMap({ cities, loading }: SpainMapProps) {
       </svg>
       
       {/* Map Title */}
-      <div className="absolute top-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border">
-        <h3 className="text-sm font-semibold text-text-primary">Distribución Geográfica</h3>
-        <p className="text-xs text-text-secondary">Clientes por Comunidad</p>
+      <div className="absolute top-4 left-4 bg-surface/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border">
+        <h3 className="text-sm font-semibold text-text">Distribución Geográfica</h3>
+        <p className="text-xs text-text-muted">Clientes por Comunidad</p>
       </div>
       
       {/* Legend */}
-      <div className="absolute bottom-4 right-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border">
-        <div className="text-xs font-medium text-text-primary mb-2">Número de Clientes</div>
+      <div className="absolute bottom-4 right-4 bg-surface/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border">
+        <div className="text-xs font-medium text-text mb-2">Número de Clientes</div>
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 rounded-full bg-text-primary"></div>
-            <span className="text-xs text-text-secondary">Alto</span>
+            <div className="w-3 h-3 rounded-full bg-text"></div>
+            <span className="text-xs text-text-muted">Alto</span>
           </div>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 rounded-full bg-text-secondary"></div>
-            <span className="text-xs text-text-secondary">Medio</span>
+            <div className="w-3 h-3 rounded-full bg-text-muted"></div>
+            <span className="text-xs text-text-muted">Medio</span>
           </div>
           <div className="flex items-center space-x-1">
             <div className="w-3 h-3 rounded-full bg-surface-muted"></div>
-            <span className="text-xs text-text-secondary">Bajo</span>
+            <span className="text-xs text-text-muted">Bajo</span>
           </div>
         </div>
       </div>

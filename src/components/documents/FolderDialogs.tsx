@@ -13,7 +13,7 @@ import { IconFolder } from './FolderTree';
 import { ModalShell } from './modals';
 import type { DragPayload } from './workspace';
 
-const INPUT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
+const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border';
 
 /** Renders whichever folder dialog the workspace has open. Mounted once by /documents. */
 export default function FolderDialogs() {
@@ -50,7 +50,7 @@ function NameDialog({ mode, folder, parentId, onClose }: {
 
   return (
     <ModalShell title={mode === 'new' ? 'Nueva carpeta' : 'Renombrar carpeta'} onClose={onClose}>
-      <p className="text-[11px] text-[#6b6050] truncate">En {folderPathLabel(parentId, ws.foldersById)}</p>
+      <p className="text-caption text-text-muted truncate">En {folderPathLabel(parentId, ws.foldersById)}</p>
       <input
         ref={inputRef}
         className={INPUT}
@@ -59,7 +59,7 @@ function NameDialog({ mode, folder, parentId, onClose }: {
         onChange={e => { setName(e.target.value); setError(''); }}
         onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onClose(); }}
       />
-      {error && <p className="text-[11px] text-red-400">{error}</p>}
+      {error && <p className="text-caption text-danger-text">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
         <Button variant="accent" size="sm" loading={saving} onClick={submit} disabled={!name.trim()}>
@@ -110,22 +110,22 @@ function MoveToModal({ payload, onClose }: { payload: DragPayload; onClose: () =
           onClick={() => !disabled && setTarget(f.id)}
           style={{ paddingLeft: 8 + level * 16 }}
           className={[
-            'flex items-center gap-1.5 pr-2 py-2 rounded-md text-[12px] select-none',
+            'flex items-center gap-1.5 pr-2 py-2 rounded-md text-caption select-none',
             disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
-            target === f.id ? 'bg-avocat-gold/15 text-[#e8d4a0] ring-1 ring-avocat-gold/40' : !disabled ? 'text-[#c8c0ac] hover:bg-[#252218]' : 'text-[#c8c0ac]',
+            target === f.id ? 'bg-accent-subtle text-text-heading ring-1 ring-accent' : !disabled ? 'text-text hover:bg-surface-muted' : 'text-text',
           ].join(' ')}
         >
           <button
             onClick={e => { e.stopPropagation(); setExpanded(p => { const n = new Set(p); if (n.has(f.id)) n.delete(f.id); else n.add(f.id); return n; }); }}
-            className={`w-4 h-4 flex items-center justify-center text-[#6b6050] ${kids.length ? '' : 'invisible'}`}
+            className={`w-4 h-4 flex items-center justify-center text-text-muted ${kids.length ? '' : 'invisible'}`}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </button>
-          <span className="text-avocat-gold/80"><IconFolder /></span>
+          <span className="text-accent-text"><IconFolder /></span>
           <span className="truncate flex-1">{f.name}</span>
-          {current === f.id && <span className="text-[10px] text-[#6b6050]">actual</span>}
+          {current === f.id && <span className="text-caption text-text-muted">actual</span>}
         </div>
         {open && kids.map(k => node(k, level + 1))}
       </div>
@@ -141,18 +141,18 @@ function MoveToModal({ payload, onClose }: { payload: DragPayload; onClose: () =
 
   return (
     <ModalShell title={`Mover ${count} elemento${count !== 1 ? 's' : ''} a…`} onClose={onClose} sheetOnMobile>
-      <div className="flex-1 min-h-0 max-h-[50vh] overflow-y-auto -mx-1 px-1 border border-[#2e2b20] rounded-lg py-1 bg-[#161410]">
+      <div className="flex-1 min-h-0 max-h-[50vh] overflow-y-auto -mx-1 px-1 border border-border rounded-lg py-1 bg-bg">
         <div
           onClick={() => setTarget(null)}
-          className={`flex items-center gap-1.5 px-2 py-2 rounded-md text-[12px] cursor-pointer select-none ${target === null ? 'bg-avocat-gold/15 text-[#e8d4a0] ring-1 ring-avocat-gold/40' : 'text-[#c8c0ac] hover:bg-[#252218]'}`}
+          className={`flex items-center gap-1.5 px-2 py-2 rounded-md text-caption cursor-pointer select-none ${target === null ? 'bg-accent-subtle text-text-heading ring-1 ring-accent' : 'text-text hover:bg-surface-muted'}`}
         >
           <span className="w-4 h-4" />
           <span className="font-medium flex-1">{ROOT_LABEL}</span>
-          {current === null && <span className="text-[10px] text-[#6b6050]">actual</span>}
+          {current === null && <span className="text-caption text-text-muted">actual</span>}
         </div>
         {childrenOf(folders, null).map(f => node(f, 1))}
       </div>
-      <p className="text-[11px] text-[#6b6050] truncate">Destino: {folderPathLabel(target, foldersById)}</p>
+      <p className="text-caption text-text-muted truncate">Destino: {folderPathLabel(target, foldersById)}</p>
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
         <Button variant="accent" size="sm" loading={saving} disabled={target === current} onClick={submit}>Mover aquí</Button>
@@ -191,39 +191,38 @@ function DeleteFolderDialog({ folder, onClose }: { folder: FolderRecord; onClose
 
   return (
     <ModalShell title="Eliminar carpeta" onClose={onClose}>
-      <p className="text-[13px] text-[#c8c0ac]">
-        ¿Eliminar <span className="text-[#e8d4a0] font-medium">&quot;{folder.name}&quot;</span>?
+      <p className="text-small text-text">
+        ¿Eliminar <span className="text-text-heading font-medium">&quot;{folder.name}&quot;</span>?
         {!empty && <> Contiene {contentLabel}.</>}
       </p>
       {!empty && (
         <div className="space-y-2">
-          <label className={`flex gap-2.5 p-3 rounded-lg border cursor-pointer ${mode === 'move-up' ? 'border-avocat-gold/40 bg-avocat-gold/5' : 'border-[#2e2b20]'}`}>
-            <input type="radio" checked={mode === 'move-up'} onChange={() => { setMode('move-up'); setAck(false); }} className="mt-0.5 accent-avocat-gold" />
+          <label className={`flex gap-2.5 p-3 rounded-lg border cursor-pointer ${mode === 'move-up' ? 'border-accent-border bg-accent-subtle' : 'border-border'}`}>
+            <input type="radio" checked={mode === 'move-up'} onChange={() => { setMode('move-up'); setAck(false); }} className="mt-0.5 accent-accent" />
             <span>
-              <span className="block text-[12px] text-[#e8d4a0] font-medium">Mover contenido a la carpeta superior</span>
-              <span className="block text-[11px] text-[#6b6050] mt-0.5">Todo pasa a «{parentLabel}». No se borra ningún documento.</span>
+              <span className="block text-caption text-text-heading font-medium">Mover contenido a la carpeta superior</span>
+              <span className="block text-caption text-text-muted mt-0.5">Todo pasa a «{parentLabel}». No se borra ningún documento.</span>
             </span>
           </label>
-          <label className={`flex gap-2.5 p-3 rounded-lg border cursor-pointer ${mode === 'delete-all' ? 'border-red-500/40 bg-red-500/5' : 'border-[#2e2b20]'}`}>
-            <input type="radio" checked={mode === 'delete-all'} onChange={() => setMode('delete-all')} className="mt-0.5 accent-red-500" />
+          <label className={`flex gap-2.5 p-3 rounded-lg border cursor-pointer ${mode === 'delete-all' ? 'border-status-urgente-border bg-danger-subtle' : 'border-border'}`}>
+            <input type="radio" checked={mode === 'delete-all'} onChange={() => setMode('delete-all')} className="mt-0.5 accent-danger" />
             <span>
-              <span className="block text-[12px] text-red-400 font-medium">Eliminar todo</span>
-              <span className="block text-[11px] text-[#6b6050] mt-0.5">Borra la carpeta, {contentLabel}. No se puede deshacer.</span>
+              <span className="block text-caption text-danger-text font-medium">Eliminar todo</span>
+              <span className="block text-caption text-text-muted mt-0.5">Borra la carpeta, {contentLabel}. No se puede deshacer.</span>
             </span>
           </label>
           {mode === 'delete-all' && (
-            <label className="flex items-center gap-2 text-[11px] text-[#c8c0ac] cursor-pointer">
-              <input type="checkbox" checked={ack} onChange={e => setAck(e.target.checked)} className="accent-red-500" />
+            <label className="flex items-center gap-2 text-caption text-text cursor-pointer">
+              <input type="checkbox" checked={ack} onChange={e => setAck(e.target.checked)} className="accent-danger" />
               Entiendo que se eliminarán {counts.documents} documento{counts.documents !== 1 ? 's' : ''} de forma permanente.
             </label>
           )}
         </div>
       )}
-      {error && <p className="text-[11px] text-red-400">{error}</p>}
+      {error && <p className="text-caption text-danger-text">{error}</p>}
       <div className="flex gap-2 justify-end pt-1">
         <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
-        <Button variant="accent" size="sm" loading={saving} disabled={mode === 'delete-all' && !empty && !ack} onClick={submit}
-          className="!bg-red-500/80 hover:!bg-red-500 !border-red-500/30">
+        <Button variant="destructive" size="sm" loading={saving} disabled={mode === 'delete-all' && !empty && !ack} onClick={submit}>
           {mode === 'delete-all' && !empty ? 'Eliminar todo' : 'Eliminar carpeta'}
         </Button>
       </div>
@@ -279,24 +278,24 @@ function AutoOrganizeModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalShell title="Organizar automáticamente" onClose={onClose} sheetOnMobile>
       {groups.length === 0 ? (
-        <p className="text-[13px] text-[#6b6050]">No hay documentos en la raíz vinculados a casos o clientes.</p>
+        <p className="text-small text-text-muted">No hay documentos en la raíz vinculados a casos o clientes.</p>
       ) : (
         <>
-          <p className="text-[12px] text-[#c8c0ac]">
-            Proponemos mover <span className="text-[#e8d4a0] font-medium">{total} documento{total !== 1 ? 's' : ''}</span> de
+          <p className="text-caption text-text">
+            Proponemos mover <span className="text-text-heading font-medium">{total} documento{total !== 1 ? 's' : ''}</span> de
             «{ROOT_LABEL}» a estas carpetas según su caso o cliente. No se borra nada y los vínculos se mantienen.
           </p>
-          <div className="flex-1 min-h-0 max-h-[45vh] overflow-y-auto border border-[#2e2b20] rounded-lg bg-[#161410] p-2 space-y-2">
+          <div className="flex-1 min-h-0 max-h-[45vh] overflow-y-auto border border-border rounded-lg bg-bg p-2 space-y-2">
             {(['Casos', 'Clientes'] as const).map(p => byParent(p).length > 0 && (
               <div key={p}>
-                <p className="flex items-center gap-1.5 text-[12px] text-[#e8d4a0] font-medium px-1">
-                  <span className="text-avocat-gold"><IconFolder /></span>{p}
+                <p className="flex items-center gap-1.5 text-caption text-text-heading font-medium px-1">
+                  <span className="text-accent-text"><IconFolder /></span>{p}
                 </p>
                 {byParent(p).map(g => (
-                  <p key={g.name} className="flex items-center gap-1.5 text-[12px] text-[#c8c0ac] pl-6 pr-1 py-0.5">
-                    <span className="text-avocat-gold/70"><IconFolder /></span>
+                  <p key={g.name} className="flex items-center gap-1.5 text-caption text-text pl-6 pr-1 py-0.5">
+                    <span className="text-accent-text"><IconFolder /></span>
                     <span className="truncate flex-1">{g.name}</span>
-                    <span className="text-[10px] text-[#6b6050]">{g.docIds.length} doc{g.docIds.length !== 1 ? 's' : ''}</span>
+                    <span className="text-caption text-text-muted">{g.docIds.length} doc{g.docIds.length !== 1 ? 's' : ''}</span>
                   </p>
                 ))}
               </div>
@@ -304,7 +303,7 @@ function AutoOrganizeModal({ onClose }: { onClose: () => void }) {
           </div>
         </>
       )}
-      {error && <p className="text-[11px] text-red-400">{error}</p>}
+      {error && <p className="text-caption text-danger-text">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
         {groups.length > 0 && <Button variant="accent" size="sm" loading={saving} onClick={apply}>Aplicar</Button>}

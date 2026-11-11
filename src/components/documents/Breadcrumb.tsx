@@ -45,30 +45,30 @@ export default function Breadcrumb({ viewGroupLabel }: { viewGroupLabel?: string
         <button
           onClick={() => ws.navigate(parent.loc)}
           aria-label={`Volver a ${parent.label}`}
-          className="md:hidden w-7 h-7 -ml-1 flex items-center justify-center rounded-lg text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#252218] flex-shrink-0"
+          className="md:hidden w-7 h-7 -ml-1 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface-muted flex-shrink-0"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
         </button>
       )}
-      <h1 className="md:hidden font-sans font-medium text-[14px] text-[#e8d4a0] truncate leading-tight">{crumbs[last].label}</h1>
+      <h1 className="md:hidden font-sans font-medium text-body-sm text-text-heading truncate leading-tight">{crumbs[last].label}</h1>
 
       {/* Desktop: full trail */}
-      <nav aria-label="Ruta de carpetas" className="hidden md:flex items-center gap-0.5 min-w-0 text-[14px] font-sans">
+      <nav aria-label="Ruta de carpetas" className="hidden md:flex items-center gap-0.5 min-w-0 text-body-sm font-sans">
         {crumbs.map((c, i) => (
           <span key={i} className={`flex items-center gap-0.5 ${i === last ? 'min-w-0' : 'flex-shrink-0'}`}>
-            {i > 0 && <span className="text-[#3a3630] px-0.5">›</span>}
+            {i > 0 && <span className="text-text-muted px-0.5">›</span>}
             {i === last ? (
               <h1 {...dropHandlers(i, c)}
-                className={`font-medium text-[#e8d4a0] truncate leading-tight px-1 rounded ${over === i ? 'bg-avocat-gold/15 ring-1 ring-avocat-gold/50' : ''}`}>
+                className={`font-medium text-text-heading truncate leading-tight px-1 rounded ${over === i ? 'bg-accent-subtle ring-1 ring-accent' : ''}`}>
                 {c.label}
               </h1>
             ) : (
               <button
                 {...dropHandlers(i, c)}
                 onClick={() => ws.navigate(c.loc)}
-                className={`text-[#6b6050] hover:text-[#e8d4a0] transition-colors truncate max-w-[160px] px-1 rounded ${over === i ? 'bg-avocat-gold/15 ring-1 ring-avocat-gold/50 text-[#e8d4a0]' : ''}`}
+                className={`text-text-muted hover:text-text-heading transition-colors truncate max-w-[160px] px-1 rounded ${over === i ? 'bg-accent-subtle ring-1 ring-accent text-text-heading' : ''}`}
               >
                 {c.label}
               </button>

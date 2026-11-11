@@ -132,22 +132,22 @@ export default function ContactPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Page Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-text-primary mb-4">
+            <h1 className="text-4xl font-bold text-text mb-4">
               {t('navigation.contact') || 'Contacto'}
             </h1>
-            <p className="text-lg text-text-secondary">
+            <p className="text-lg text-text-muted">
               Estamos aquí para ayudarte. Envíanos tu mensaje y nos pondremos en
               contacto contigo lo antes posible.
             </p>
           </div>
 
           {/* Contact Form */}
-          <div className="bg-card shadow-lg rounded-lg p-8 border border-border">
+          <div className="bg-surface shadow-lg rounded-lg p-8 border border-border">
             {success ? (
               <div className="text-center py-8">
                 <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-surface-muted/30 mb-4">
                   <svg
-                    className="h-8 w-8 text-text-primary"
+                    className="h-8 w-8 text-text"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -160,14 +160,14 @@ export default function ContactPage() {
                     />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-semibold text-text-primary mb-2">
+                <h2 className="text-2xl font-semibold text-text mb-2">
                   ¡Mensaje enviado!
                 </h2>
-                <p className="text-text-secondary mb-4">
+                <p className="text-text-muted mb-4">
                   Gracias por contactarnos. Hemos recibido tu mensaje y te
                   responderemos pronto.
                 </p>
-                <p className="text-sm text-text-secondary">
+                <p className="text-sm text-text-muted">
                   Serás redirigido a la página principal en unos segundos...
                 </p>
               </div>
@@ -177,7 +177,7 @@ export default function ContactPage() {
                 <div>
                   <label
                     htmlFor="name"
-                    className="block text-sm font-medium text-text-secondary mb-2"
+                    className="block text-sm font-medium text-text-muted mb-2"
                   >
                     Nombre *
                   </label>
@@ -188,7 +188,7 @@ export default function ContactPage() {
                     required
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="input-field w-full px-4 py-2"
+                    className="w-full h-control-md px-3 border border-border-strong rounded-md bg-surface text-text w-full px-4 py-2"
                     placeholder="Tu nombre completo"
                   />
                 </div>
@@ -197,7 +197,7 @@ export default function ContactPage() {
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-text-secondary mb-2"
+                    className="block text-sm font-medium text-text-muted mb-2"
                   >
                     Email *
                   </label>
@@ -208,7 +208,7 @@ export default function ContactPage() {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="input-field w-full px-4 py-2"
+                    className="w-full h-control-md px-3 border border-border-strong rounded-md bg-surface text-text w-full px-4 py-2"
                     placeholder="tu@email.com"
                   />
                 </div>
@@ -217,7 +217,7 @@ export default function ContactPage() {
                 <div>
                   <label
                     htmlFor="subject"
-                    className="block text-sm font-medium text-text-secondary mb-2"
+                    className="block text-sm font-medium text-text-muted mb-2"
                   >
                     Asunto
                   </label>
@@ -227,7 +227,7 @@ export default function ContactPage() {
                     name="subject"
                     value={formData.subject}
                     onChange={handleInputChange}
-                    className="input-field w-full px-4 py-2"
+                    className="w-full h-control-md px-3 border border-border-strong rounded-md bg-surface text-text w-full px-4 py-2"
                     placeholder="¿Sobre qué quieres contactarnos?"
                   />
                 </div>
@@ -236,7 +236,7 @@ export default function ContactPage() {
                 <div>
                   <label
                     htmlFor="message"
-                    className="block text-sm font-medium text-text-secondary mb-2"
+                    className="block text-sm font-medium text-text-muted mb-2"
                   >
                     Mensaje *
                   </label>
@@ -247,10 +247,10 @@ export default function ContactPage() {
                     rows={6}
                     value={formData.message}
                     onChange={handleInputChange}
-                    className="input-field w-full px-4 py-2 resize-none"
+                    className="w-full h-control-md px-3 border border-border-strong rounded-md bg-surface text-text w-full px-4 py-2 resize-none"
                     placeholder="Escribe tu mensaje aquí..."
                   />
-                  <p className="mt-1 text-sm text-text-secondary">
+                  <p className="mt-1 text-sm text-text-muted">
                     Mínimo 10 caracteres
                   </p>
                 </div>
@@ -261,7 +261,7 @@ export default function ContactPage() {
                     <div className="flex">
                       <div className="flex-shrink-0">
                         <svg
-                          className="h-5 w-5 text-text-secondary"
+                          className="h-5 w-5 text-text-muted"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -275,7 +275,7 @@ export default function ContactPage() {
                         </svg>
                       </div>
                       <div className="ml-3">
-                        <p className="text-sm text-text-primary">{error}</p>
+                        <p className="text-sm text-text">{error}</p>
                       </div>
                     </div>
                   </div>
@@ -285,7 +285,7 @@ export default function ContactPage() {
                 <div className="flex items-center justify-between pt-4">
                   <Link
                     href="/"
-                    className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    className="text-sm text-text-muted hover:text-text transition-colors"
                   >
                     ← Volver al inicio
                   </Link>
@@ -305,7 +305,7 @@ export default function ContactPage() {
             <div className="text-center p-6 bg-surface-muted/20 rounded-lg border border-border">
               <div className="mx-auto w-12 h-12 bg-surface-muted/30 rounded-full flex items-center justify-center mb-4">
                 <svg
-                  className="w-6 h-6 text-text-primary"
+                  className="w-6 h-6 text-text"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -318,14 +318,14 @@ export default function ContactPage() {
                   />
                 </svg>
               </div>
-              <h3 className="font-semibold text-text-primary mb-2">Email</h3>
-              <p className="text-sm text-text-secondary">soporte@avocatapp.com</p>
+              <h3 className="font-semibold text-text mb-2">Email</h3>
+              <p className="text-sm text-text-muted">soporte@avocatapp.com</p>
             </div>
 
             <div className="text-center p-6 bg-surface-muted/20 rounded-lg border border-border">
               <div className="mx-auto w-12 h-12 bg-surface-muted/30 rounded-full flex items-center justify-center mb-4">
                 <svg
-                  className="w-6 h-6 text-text-primary"
+                  className="w-6 h-6 text-text"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -338,14 +338,14 @@ export default function ContactPage() {
                   />
                 </svg>
               </div>
-              <h3 className="font-semibold text-text-primary mb-2">Teléfono</h3>
-              <p className="text-sm text-text-secondary">+34608750040</p>
+              <h3 className="font-semibold text-text mb-2">Teléfono</h3>
+              <p className="text-sm text-text-muted">+34608750040</p>
             </div>
 
             <div className="text-center p-6 bg-surface-muted/20 rounded-lg border border-border">
               <div className="mx-auto w-12 h-12 bg-surface-muted/30 rounded-full flex items-center justify-center mb-4">
                 <svg
-                  className="w-6 h-6 text-text-primary"
+                  className="w-6 h-6 text-text"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -364,8 +364,8 @@ export default function ContactPage() {
                   />
                 </svg>
               </div>
-              <h3 className="font-semibold text-text-primary mb-2">Ubicación</h3>
-              <p className="text-sm text-text-secondary">Madrid, España</p>
+              <h3 className="font-semibold text-text mb-2">Ubicación</h3>
+              <p className="text-sm text-text-muted">Madrid, España</p>
             </div>
           </div>
         </div>

@@ -36,9 +36,9 @@ export default function AnalisisExitoModal({ isOpen, onClose, analisis, loading 
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-card rounded-lg p-8 max-w-2xl w-full mx-4">
+        <div className="bg-surface rounded-lg p-8 max-w-2xl w-full mx-4">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-border-strong mx-auto"></div>
             <p className="mt-4 text-text-muted">Analizando probabilidad de éxito...</p>
           </div>
         </div>
@@ -54,7 +54,7 @@ export default function AnalisisExitoModal({ isOpen, onClose, analisis, loading 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-card rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-surface rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-text">Análisis de Éxito</h2>
@@ -137,7 +137,7 @@ export default function AnalisisExitoModal({ isOpen, onClose, analisis, loading 
                     </div>
                     <div className="w-full bg-surface-muted rounded-full h-2">
                       <div 
-                        className="bg-sidebar h-2 rounded-full" 
+                        className="bg-action-primary h-2 rounded-full" 
                         style={{ width: `${datos.puntuacion}%` }}
                       ></div>
                     </div>

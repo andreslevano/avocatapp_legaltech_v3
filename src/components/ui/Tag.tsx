@@ -8,15 +8,16 @@ interface TagProps extends HTMLAttributes<HTMLSpanElement> {
   size?: TagSize;
 }
 
+// DS v4 roles. For legal statuses use <StatusTag> instead.
 const VARIANT_CLASSES: Record<TagVariant, string> = {
-  dark:  'bg-avocat-black text-avocat-cream',
-  light: 'bg-white text-avocat-black border border-avocat-border',
-  gold:  'bg-avocat-gold-bg text-avocat-gold border border-avocat-gold-l',
-  muted: 'bg-avocat-muted text-avocat-gray5',
+  dark:  'bg-surface-inverse text-text-inverse',
+  light: 'bg-surface text-text border border-border',
+  gold:  'bg-accent-subtle text-accent-text border border-accent-border',
+  muted: 'bg-surface-muted text-text-muted',
 };
 
 const SIZE_CLASSES: Record<TagSize, string> = {
-  sm: 'px-2 py-0.5 text-label',
+  sm: 'px-2 py-0.5 text-caption',
   md: 'px-3 py-1 text-small',
 };
 
@@ -30,7 +31,7 @@ export function Tag({
   return (
     <span
       className={[
-        'inline-flex items-center font-sans font-medium rounded-full tracking-wide',
+        'inline-flex items-center font-sans font-medium rounded-full',
         VARIANT_CLASSES[variant],
         SIZE_CLASSES[size],
         className,

@@ -20,7 +20,7 @@ const IconView = () => (
   </svg>
 );
 
-const ROW = 'flex items-center gap-1.5 pr-2 py-1.5 rounded-md text-[12px] font-sans transition-colors cursor-pointer select-none';
+const ROW = 'flex items-center gap-1.5 pr-2 py-1.5 rounded-md text-caption font-sans transition-colors cursor-pointer select-none';
 
 /** Folder tree + smart views shown in the app Sidebar on /documents. */
 export default function FolderTree({ onNavigate }: { onNavigate?: () => void }) {
@@ -103,20 +103,20 @@ export default function FolderTree({ onNavigate }: { onNavigate?: () => void }) 
           style={{ paddingLeft: 8 + level * 14 }}
           className={[
             ROW, 'group',
-            isDrop ? 'bg-avocat-gold/15 ring-1 ring-avocat-gold/50 text-[#e8d4a0]'
-              : active ? 'bg-[#252218] text-[#e8d4a0]' : 'text-[#c8c0ac] hover:bg-[#1a1812] hover:text-[#e8d4a0]',
+            isDrop ? 'bg-accent-subtle ring-1 ring-accent text-text-heading'
+              : active ? 'bg-surface-raised text-text-heading' : 'text-text hover:bg-bg hover:text-text-heading',
           ].join(' ')}
         >
           <button
             onClick={e => { e.stopPropagation(); if (kids.length) toggle(f.id); }}
             aria-label={isOpen ? 'Contraer' : 'Expandir'}
-            className={`w-4 h-4 flex items-center justify-center text-[#6b6050] flex-shrink-0 ${kids.length ? 'hover:text-[#c8c0ac]' : 'invisible'}`}
+            className={`w-4 h-4 flex items-center justify-center text-text-muted flex-shrink-0 ${kids.length ? 'hover:text-text' : 'invisible'}`}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-90' : ''}`}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </button>
-          <span className={active || isDrop ? 'text-avocat-gold' : 'text-[#6b6050] group-hover:text-avocat-gold/80'}>
+          <span className={active || isDrop ? 'text-accent-text' : 'text-text-muted group-hover:text-accent-text'}>
             <IconFolder open={isOpen && kids.length > 0} />
           </span>
           <span className="truncate flex-1 min-w-0">{f.name}</span>
@@ -128,7 +128,7 @@ export default function FolderTree({ onNavigate }: { onNavigate?: () => void }) 
             }}
             onMouseDown={e => e.stopPropagation()}
             aria-label="Acciones de carpeta"
-            className="md:opacity-0 md:group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#2e2b20] flex-shrink-0"
+            className="md:opacity-0 md:group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-text hover:bg-border flex-shrink-0"
           >
             ···
           </button>
@@ -149,12 +149,12 @@ export default function FolderTree({ onNavigate }: { onNavigate?: () => void }) 
         onClick={() => go({ kind: 'folder', folderId: null })}
         className={[
           ROW, 'pl-2',
-          dropId === null ? 'bg-avocat-gold/15 ring-1 ring-avocat-gold/50 text-[#e8d4a0]'
-            : rootActive ? 'bg-[#252218] text-[#e8d4a0]' : 'text-[#c8c0ac] hover:bg-[#1a1812] hover:text-[#e8d4a0]',
+          dropId === null ? 'bg-accent-subtle ring-1 ring-accent text-text-heading'
+            : rootActive ? 'bg-surface-raised text-text-heading' : 'text-text hover:bg-bg hover:text-text-heading',
         ].join(' ')}
       >
         <span className="w-4 h-4 flex-shrink-0" />
-        <span className={rootActive ? 'text-avocat-gold' : 'text-[#6b6050]'}>
+        <span className={rootActive ? 'text-accent-text' : 'text-text-muted'}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
           </svg>
@@ -165,25 +165,25 @@ export default function FolderTree({ onNavigate }: { onNavigate?: () => void }) 
       {topLevel.map(f => renderNode(f, 1))}
 
       {folders.length === 0 && !ws.loading && (
-        <p className="px-3 py-3 text-[11px] text-[#3a3630] leading-relaxed">
-          Sin carpetas aún. Crea una con <span className="text-[#6b6050]">+</span> y arrastra documentos dentro.
+        <p className="px-3 py-3 text-caption text-text-muted leading-relaxed">
+          Sin carpetas aún. Crea una con <span className="text-text-muted">+</span> y arrastra documentos dentro.
         </p>
       )}
 
       {/* Smart views (virtual) */}
       {views.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-[#2e2b20]">
-          <p className="px-2 pb-1.5 text-[10px] font-sans font-semibold tracking-widest uppercase text-[#6b6050]">Vistas</p>
+        <div className="mt-4 pt-3 border-t border-border">
+          <p className="px-2 pb-1.5 text-label font-sans font-semibold tracking-widest uppercase text-text-muted">Vistas</p>
           {views.map(v => {
             const active = location.kind === 'view' && location.view === v.id;
             return (
               <div
                 key={v.id}
                 onClick={() => go({ kind: 'view', view: v.id, key: null })}
-                className={[ROW, 'pl-2', active ? 'bg-[#252218] text-[#e8d4a0]' : 'text-[#c8c0ac] hover:bg-[#1a1812] hover:text-[#e8d4a0]'].join(' ')}
+                className={[ROW, 'pl-2', active ? 'bg-surface-raised text-text-heading' : 'text-text hover:bg-bg hover:text-text-heading'].join(' ')}
               >
                 <span className="w-4 h-4 flex-shrink-0" />
-                <span className={active ? 'text-avocat-gold' : 'text-[#6b6050]'}><IconView /></span>
+                <span className={active ? 'text-accent-text' : 'text-text-muted'}><IconView /></span>
                 <span className="truncate">{v.label}</span>
               </div>
             );
@@ -194,7 +194,7 @@ export default function FolderTree({ onNavigate }: { onNavigate?: () => void }) 
       {/* Folder context menu */}
       {menu && (
         <div
-          className="fixed z-[60] bg-[#1e1c16] border border-[#2e2b20] rounded-xl shadow-2xl py-1 w-48"
+          className="fixed z-[60] bg-surface border border-border rounded-xl shadow-2xl py-1 w-48"
           ref={menuRef}
           style={{ top: Math.min(menu.top, window.innerHeight - 200), left: Math.min(menu.left, window.innerWidth - 200) }}
         >
@@ -204,13 +204,13 @@ export default function FolderTree({ onNavigate }: { onNavigate?: () => void }) 
             { label: 'Mover a…',         run: () => ws.openDialog({ type: 'move', payload: { docIds: [], folderIds: [menu.folder.id] } }) },
           ].map(item => (
             <button key={item.label} onClick={() => { setMenu(null); item.run(); onNavigate?.(); }}
-              className="w-full text-left px-4 py-2 text-[12px] text-[#c8c0ac] hover:bg-[#252218] hover:text-[#e8d4a0] transition-colors">
+              className="w-full text-left px-4 py-2 text-caption text-text hover:bg-surface-muted hover:text-text-heading transition-colors">
               {item.label}
             </button>
           ))}
-          <div className="border-t border-[#2e2b20] mt-1 pt-1">
+          <div className="border-t border-border mt-1 pt-1">
             <button onClick={() => { setMenu(null); ws.openDialog({ type: 'delete-folder', folder: menu.folder }); onNavigate?.(); }}
-              className="w-full text-left px-4 py-2 text-[12px] text-red-400 hover:bg-red-500/5 transition-colors">
+              className="w-full text-left px-4 py-2 text-caption text-danger-text hover:bg-danger-subtle transition-colors">
               Eliminar carpeta
             </button>
           </div>

@@ -7,11 +7,13 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
+// DS v4 roles (spec: design-system/v4/components/Card.md). `dark` is kept for compatibility: it forces the
+// dark theme on the card instead of hard-coding dark colours.
 const VARIANT_CLASSES: Record<CardVariant, string> = {
-  default:  'bg-white border border-avocat-border shadow-card',
-  dark:     'bg-ds-card border border-ds-border text-ds-text',
-  gold:     'bg-avocat-gold-bg border border-avocat-gold-l',
-  elevated: 'bg-white border border-avocat-border shadow-elevated',
+  default:  'bg-surface border border-border shadow-sm',
+  dark:     'bg-surface border border-border text-text',
+  gold:     'bg-accent-subtle border border-accent-border',
+  elevated: 'bg-surface border border-border shadow-md',
 };
 
 const PADDING_CLASSES = {
@@ -30,8 +32,9 @@ export function Card({
 }: CardProps) {
   return (
     <div
+      data-theme={variant === 'dark' ? 'dark' : undefined}
       className={[
-        'rounded-xl',
+        'rounded-lg',
         VARIANT_CLASSES[variant],
         PADDING_CLASSES[padding],
         className,
@@ -56,7 +59,7 @@ export function CardHeader({ className = '', children, ...props }: HTMLAttribute
 export function CardTitle({ className = '', children, ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={`font-display text-h3 text-avocat-black leading-snug ${className}`}
+      className={`text-h3 text-text-heading leading-snug ${className}`}
       {...props}
     >
       {children}
@@ -66,7 +69,7 @@ export function CardTitle({ className = '', children, ...props }: HTMLAttributes
 
 export function CardBody({ className = '', children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`text-body text-avocat-gray5 ${className}`} {...props}>
+    <div className={`text-body-sm text-text-muted ${className}`} {...props}>
       {children}
     </div>
   );
@@ -74,7 +77,7 @@ export function CardBody({ className = '', children, ...props }: HTMLAttributes<
 
 export function CardFooter({ className = '', children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`mt-4 pt-4 border-t border-avocat-border ${className}`} {...props}>
+    <div className={`mt-4 pt-4 border-t border-border ${className}`} {...props}>
       {children}
     </div>
   );

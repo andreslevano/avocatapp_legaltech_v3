@@ -84,13 +84,13 @@ export default function GestionAbogadosPage() {
         className="relative min-h-[560px] flex items-center py-24 overflow-hidden"
         style={{ backgroundImage: 'url(/images/hero-abogados-background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
-        <div className="absolute inset-0 bg-avocat-black/75" />
+        <div className="absolute inset-0 bg-bg/75" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
           <Tag variant="gold" className="mb-6">{`Plan ${PLANS.abogados.name} — ${priceLabel(PLANS.abogados)}`}</Tag>
-          <h1 className="font-display text-h1 text-avocat-cream mb-6 max-w-3xl mx-auto">
+          <h1 className="font-display text-h1 text-text mb-6 max-w-3xl mx-auto">
             Gestión Profesional para Abogados
           </h1>
-          <p className="font-sans text-body text-avocat-cream/80 max-w-2xl mx-auto mb-10">
+          <p className="font-sans text-body text-text-muted max-w-2xl mx-auto mb-10">
             Plataforma integral de gestión legal con agente IA para optimizar tu práctica profesional y mejorar la eficiencia de tu despacho.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
@@ -101,22 +101,22 @@ export default function GestionAbogadosPage() {
       </section>
 
       {/* Features */}
-      <section className="py-20 bg-avocat-cream">
+      <section className="py-20 bg-bg">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
-            <h2 className="font-display text-h2 text-avocat-black mb-3">Funcionalidades completas</h2>
-            <p className="font-sans text-body text-avocat-gray5 max-w-xl mx-auto">
+            <h2 className="font-display text-h2 text-text mb-3">Funcionalidades completas</h2>
+            <p className="font-sans text-body text-text-muted max-w-xl mx-auto">
               Herramientas profesionales diseñadas para abogados que quieren trabajar de forma más inteligente.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {FEATURES.map((f) => (
-              <div key={f.title} className="bg-white rounded-xl p-6 border border-avocat-border shadow-card hover:shadow-elevated transition-shadow">
-                <div className="w-10 h-10 rounded-lg bg-avocat-gold-bg border border-avocat-gold-l flex items-center justify-center text-avocat-gold mb-4">
+              <div key={f.title} className="bg-surface rounded-xl p-6 border border-border shadow-sm hover:shadow-elevated transition-shadow">
+                <div className="w-10 h-10 rounded-lg bg-accent-subtle border border-accent-border flex items-center justify-center text-accent-text mb-4">
                   {f.icon}
                 </div>
-                <h3 className="font-sans font-semibold text-[16px] text-avocat-black mb-2">{f.title}</h3>
-                <p className="font-sans text-small text-avocat-gray5 leading-relaxed">{f.description}</p>
+                <h3 className="font-sans font-semibold text-body text-text mb-2">{f.title}</h3>
+                <p className="font-sans text-small text-text-muted leading-relaxed">{f.description}</p>
               </div>
             ))}
           </div>
@@ -124,22 +124,22 @@ export default function GestionAbogadosPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-surface">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
-            <h2 className="font-display text-h2 text-avocat-black mb-3">Cómo funciona</h2>
-            <p className="font-sans text-body text-avocat-gray5 max-w-xl mx-auto">
+            <h2 className="font-display text-h2 text-text mb-3">Cómo funciona</h2>
+            <p className="font-sans text-body text-text-muted max-w-xl mx-auto">
               Empieza en minutos y transforma la gestión de tu despacho.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {STEPS.map((s) => (
               <div key={s.step} className="text-center">
-                <div className="w-12 h-12 rounded-full bg-avocat-black text-avocat-gold font-display text-[20px] font-semibold flex items-center justify-center mx-auto mb-4">
+                <div data-theme="dark" className="w-12 h-12 rounded-full bg-bg text-accent-text font-display text-h3 font-semibold flex items-center justify-center mx-auto mb-4">
                   {s.step}
                 </div>
-                <h3 className="font-sans font-semibold text-[15px] text-avocat-black mb-1">{s.title}</h3>
-                <p className="font-sans text-small text-avocat-gray5">{s.description}</p>
+                <h3 className="font-sans font-semibold text-body-sm text-text mb-1">{s.title}</h3>
+                <p className="font-sans text-small text-text-muted">{s.description}</p>
               </div>
             ))}
           </div>
@@ -147,16 +147,16 @@ export default function GestionAbogadosPage() {
       </section>
 
       {/* Benefits */}
-      <section className="py-20 bg-avocat-cream">
+      <section className="py-20 bg-bg">
         <div className="max-w-3xl mx-auto px-6">
-          <h2 className="font-display text-h2 text-avocat-black text-center mb-10">Beneficios clave</h2>
+          <h2 className="font-display text-h2 text-text text-center mb-10">Beneficios clave</h2>
           <div className="space-y-3">
             {BENEFITS.map((b) => (
-              <div key={b} className="flex items-start gap-3 bg-white rounded-xl px-5 py-4 border border-avocat-border">
-                <svg className="w-5 h-5 text-avocat-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div key={b} className="flex items-start gap-3 bg-surface rounded-xl px-5 py-4 border border-border">
+                <svg className="w-5 h-5 text-accent-text flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="font-sans text-body text-avocat-black">{b}</span>
+                <span className="font-sans text-body text-text">{b}</span>
               </div>
             ))}
           </div>
@@ -164,16 +164,16 @@ export default function GestionAbogadosPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-avocat-black">
+      <section data-theme="dark" className="py-20 bg-bg">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="font-display text-h2 text-avocat-cream mb-4">
+          <h2 className="font-display text-h2 text-text mb-4">
             ¿Listo para optimizar tu práctica legal?
           </h2>
-          <p className="font-sans text-body text-avocat-cream/70 mb-8">
+          <p className="font-sans text-body text-text-muted mb-8">
             Únete a los abogados que ya trabajan de forma más inteligente con Avocat.
           </p>
           <Button href="/signup?plan=abogados" variant="accent" size="lg">Comenzar ahora</Button>
-          <p className="font-sans text-small text-avocat-cream/40 mt-4">Sin tarjeta de crédito requerida</p>
+          <p className="font-sans text-small text-text mt-4">14 días gratis · Cancela cuando quieras</p>
         </div>
       </section>
     </div>

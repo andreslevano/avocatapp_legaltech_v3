@@ -5,7 +5,12 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
-const ALLOW = new Set(['src/lib/tokens.ts', 'src/styles/globals.css']);
+const ALLOW = new Set([
+  'src/lib/tokens.ts', 'src/styles/globals.css',
+  // Documented exceptions (see design-system/v4/REPORT.md):
+  'src/components/brand/GoogleIcon.tsx', // Google sign-in brand colours are mandated by Google
+  'src/lib/doc-html.ts',                 // legal-document export HTML (Word/PDF/DocuSign): typography of lawyer-validated templates — TODO(ds-v4) decide EB Garamond vs Times
+]);
 const RULES = [
   { id: 'raw-hex', re: /#[0-9a-fA-F]{3,8}\b(?![\w-])/g, msg: 'Raw hex colour — use a role class (bg-surface, text-text-muted…) or tokens.ts' },
   { id: 'arbitrary-color', re: /\b(?:bg|text|border|ring|fill|stroke|from|to|via|outline|divide|placeholder)-\[(?:#|rgb|hsl)[^\]]*\]/g, msg: 'Arbitrary Tailwind colour' },

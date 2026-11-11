@@ -136,7 +136,7 @@ export default function TutelaHistoryPage() {
       <div className="flex-1 overflow-y-auto bg-bg">
         <div className="py-8">
           <div className="max-w-6xl mx-auto px-4">
-            <div className="bg-card rounded-lg shadow-lg p-8">
+            <div className="bg-surface rounded-lg shadow-lg p-8">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-status-en-revision-border mx-auto"></div>
                 <p className="mt-4 text-text-muted">Cargando historial...</p>
@@ -152,7 +152,7 @@ export default function TutelaHistoryPage() {
     <div className="flex-1 overflow-y-auto bg-bg">
       <div className="py-8">
         <div className="max-w-6xl mx-auto px-4">
-        <div className="bg-card rounded-lg shadow-lg p-8">
+        <div className="bg-surface rounded-lg shadow-lg p-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-text mb-2">
               Historial de Acciones de Tutela
@@ -206,7 +206,7 @@ export default function TutelaHistoryPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-card divide-y divide-border">
+                <tbody className="bg-surface divide-y divide-border">
                   {items.map((item, index) => (
                     <tr key={index} className="hover:bg-bg">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-text">
@@ -268,7 +268,7 @@ export default function TutelaHistoryPage() {
       {/* Modal de Análisis con IA */}
       {showAnalysisModal && analysisResult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+          <div className="bg-surface rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
             <div className="p-6 border-b border-border">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-semibold text-text">

@@ -250,11 +250,6 @@
   /* Jurisdictions that mandate a typeface: add class .legal-doc--official */
   .legal-doc--official { font-family: "Times New Roman", Times, serif; }
 
-  /* Legacy v3 classes, re-pointed to v4 roles. Delete after migration step 6. */
-  .btn-primary   { @apply bg-action-primary text-on-action-primary hover:bg-action-primary-hover font-medium h-10 px-5 rounded-md; }
-  .btn-secondary { @apply bg-surface text-text border border-border-strong hover:bg-surface-muted font-medium h-10 px-5 rounded-md; }
-  .card          { @apply bg-surface rounded-lg shadow-sm border border-border p-6; }
-  .input-field   { @apply w-full h-10 px-3 border border-border-strong rounded-md bg-surface text-text; }
 }
 
 /* Zapier chatbot — override what shadow DOM allows */

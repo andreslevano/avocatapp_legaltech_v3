@@ -43,8 +43,8 @@ function OnboardingContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-avocat-cream flex items-center justify-center">
-        <div className="h-8 w-8 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -58,8 +58,8 @@ export default function OnboardingPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-avocat-cream flex items-center justify-center">
-          <div className="h-8 w-8 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+        <div className="min-h-screen bg-bg flex items-center justify-center">
+          <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
         </div>
       }
     >

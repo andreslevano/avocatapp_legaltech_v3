@@ -180,17 +180,17 @@ export default function MicrosoftPicker({ info, onPick, onClose, onReconnect }: 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center md:p-6">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative w-full h-full md:max-w-[1080px] md:h-[680px] md:max-h-[90vh] bg-[#1e1c16] md:border md:border-[#2e2b20] md:rounded-2xl overflow-hidden flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#2e2b20] flex-shrink-0">
-          <p className="text-[13px] font-sans font-semibold text-[#e8d4a0]">
+      <div className="relative w-full h-full md:max-w-[1080px] md:h-[680px] md:max-h-[90vh] bg-surface md:border md:border-border md:rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border flex-shrink-0">
+          <p className="text-small font-sans font-semibold text-text-heading">
             Importar desde {info.accountType === 'personal' ? 'OneDrive' : 'OneDrive / SharePoint'}
-            <span className="ml-2 text-[11px] font-normal text-[#6b6050]">{info.email}</span>
+            <span className="ml-2 text-caption font-normal text-text-muted">{info.email}</span>
           </p>
-          <button onClick={onClose} aria-label="Cerrar" className="text-[#6b6050] hover:text-[#c8c0ac] p-1"><X size={16} aria-hidden /></button>
+          <button onClick={onClose} aria-label="Cerrar" className="text-text-muted hover:text-text p-1"><X size={16} aria-hidden /></button>
         </div>
-        <div className="relative flex-1 min-h-0 bg-[#161410]">
+        <div className="relative flex-1 min-h-0 bg-bg">
           {!info.pickerBaseUrl ? (
-            <div className="flex items-center justify-center h-full text-[12px] text-[#6b6050] px-6 text-center">
+            <div className="flex items-center justify-center h-full text-caption text-text-muted px-6 text-center">
               No encontramos tu OneDrive. Reconecta tu cuenta de Microsoft.
             </div>
           ) : (
@@ -198,12 +198,12 @@ export default function MicrosoftPicker({ info, onPick, onClose, onReconnect }: 
           )}
           {status === 'loading' && info.pickerBaseUrl && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+              <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
             </div>
           )}
           {status === 'error' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#161410] text-center px-6">
-              <p className="text-[13px] text-[#c8c0ac]">{errorText}</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-bg text-center px-6">
+              <p className="text-small text-text">{errorText}</p>
               <Button variant="accent" size="sm" onClick={() => { setStatus('loading'); setAttempt(a => a + 1); }}>Reintentar</Button>
             </div>
           )}

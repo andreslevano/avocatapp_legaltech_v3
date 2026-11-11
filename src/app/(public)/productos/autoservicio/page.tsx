@@ -51,13 +51,13 @@ export default function AutoservicioPage() {
         className="relative min-h-[560px] flex items-center py-24 overflow-hidden"
         style={{ backgroundImage: 'url(/images/hero-autoservicio-background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
-        <div className="absolute inset-0 bg-avocat-black/75" />
+        <div className="absolute inset-0 bg-bg/75" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
           <Tag variant="gold" className="mb-6">{`Plan ${PLANS.particulares.name} — ${priceLabel(PLANS.particulares)}`}</Tag>
-          <h1 className="font-display text-h1 text-avocat-cream mb-6 max-w-3xl mx-auto">
+          <h1 className="font-display text-h1 text-text mb-6 max-w-3xl mx-auto">
             Autoservicio Legal Inteligente
           </h1>
-          <p className="font-sans text-body text-avocat-cream/80 max-w-2xl mx-auto mb-10">
+          <p className="font-sans text-body text-text-muted max-w-2xl mx-auto mb-10">
             Genera documentos legales profesionales de forma automática con IA. Sin necesidad de conocimientos legales avanzados.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
@@ -68,29 +68,29 @@ export default function AutoservicioPage() {
       </section>
 
       {/* Services */}
-      <section className="py-20 bg-avocat-cream">
+      <section className="py-20 bg-bg">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
-            <h2 className="font-display text-h2 text-avocat-black mb-3">Servicios disponibles</h2>
-            <p className="font-sans text-body text-avocat-gray5 max-w-xl mx-auto">
+            <h2 className="font-display text-h2 text-text mb-3">Servicios disponibles</h2>
+            <p className="font-sans text-body text-text-muted max-w-xl mx-auto">
               Herramientas especializadas para los documentos legales más comunes.
             </p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {SERVICES.map((s) => (
-              <div key={s.title} className="bg-white rounded-xl p-7 border border-avocat-border shadow-card">
-                <div className="w-12 h-12 rounded-xl bg-avocat-gold-bg border border-avocat-gold-l flex items-center justify-center text-avocat-gold mb-5">
+              <div key={s.title} className="bg-surface rounded-xl p-7 border border-border shadow-sm">
+                <div className="w-12 h-12 rounded-xl bg-accent-subtle border border-accent-border flex items-center justify-center text-accent-text mb-5">
                   {s.icon}
                 </div>
-                <h3 className="font-display text-h3 text-avocat-black mb-3">{s.title}</h3>
-                <p className="font-sans text-small text-avocat-gray5 mb-5 leading-relaxed">{s.description}</p>
+                <h3 className="font-display text-h3 text-text mb-3">{s.title}</h3>
+                <p className="font-sans text-small text-text-muted mb-5 leading-relaxed">{s.description}</p>
                 <ul className="space-y-2">
                   {s.features.map((f) => (
                     <li key={f} className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-avocat-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-accent-text flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="font-sans text-small text-avocat-black">{f}</span>
+                      <span className="font-sans text-small text-text">{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -101,20 +101,20 @@ export default function AutoservicioPage() {
       </section>
 
       {/* Process */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-surface">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
-            <h2 className="font-display text-h2 text-avocat-black mb-3">Cómo funciona</h2>
-            <p className="font-sans text-body text-avocat-gray5">Proceso simple en 4 pasos.</p>
+            <h2 className="font-display text-h2 text-text mb-3">Cómo funciona</h2>
+            <p className="font-sans text-body text-text-muted">Proceso simple en 4 pasos.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {STEPS.map((s, i) => (
               <div key={s.title} className="text-center">
-                <div className="w-12 h-12 rounded-full bg-avocat-black text-avocat-gold font-display text-[20px] font-semibold flex items-center justify-center mx-auto mb-4">
+                <div data-theme="dark" className="w-12 h-12 rounded-full bg-bg text-accent-text font-display text-h3 font-semibold flex items-center justify-center mx-auto mb-4">
                   {i + 1}
                 </div>
-                <h3 className="font-sans font-semibold text-[15px] text-avocat-black mb-1">{s.title}</h3>
-                <p className="font-sans text-small text-avocat-gray5">{s.description}</p>
+                <h3 className="font-sans font-semibold text-body-sm text-text mb-1">{s.title}</h3>
+                <p className="font-sans text-small text-text-muted">{s.description}</p>
               </div>
             ))}
           </div>
@@ -123,16 +123,16 @@ export default function AutoservicioPage() {
       </section>
 
       {/* Benefits */}
-      <section className="py-20 bg-avocat-cream">
+      <section className="py-20 bg-bg">
         <div className="max-w-3xl mx-auto px-6">
-          <h2 className="font-display text-h2 text-avocat-black text-center mb-10">Ventajas del autoservicio</h2>
+          <h2 className="font-display text-h2 text-text text-center mb-10">Ventajas del autoservicio</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {BENEFITS.map((b) => (
-              <div key={b} className="flex items-start gap-3 bg-white rounded-xl px-5 py-4 border border-avocat-border">
-                <svg className="w-5 h-5 text-avocat-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div key={b} className="flex items-start gap-3 bg-surface rounded-xl px-5 py-4 border border-border">
+                <svg className="w-5 h-5 text-accent-text flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="font-sans text-small text-avocat-black">{b}</span>
+                <span className="font-sans text-small text-text">{b}</span>
               </div>
             ))}
           </div>
@@ -140,12 +140,12 @@ export default function AutoservicioPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-avocat-black">
+      <section data-theme="dark" className="py-20 bg-bg">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="font-display text-h2 text-avocat-cream mb-4">
+          <h2 className="font-display text-h2 text-text mb-4">
             ¿Listo para generar tu documento legal?
           </h2>
-          <p className="font-sans text-body text-avocat-cream/70 mb-8">
+          <p className="font-sans text-body text-text-muted mb-8">
             Proceso rápido y seguro. Documentos listos para usar en minutos.
           </p>
           <Button href="/signup?plan=particulares" variant="accent" size="lg">Crear mi escrito</Button>

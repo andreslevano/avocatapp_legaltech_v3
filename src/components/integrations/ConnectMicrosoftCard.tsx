@@ -58,39 +58,39 @@ export default function ConnectMicrosoftCard() {
   };
 
   return (
-    <div className="bg-[#161410] border border-[#2e2b20] rounded-xl p-4 space-y-3">
+    <div className="bg-bg border border-border rounded-xl p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[13px] font-sans font-semibold text-[#e8d4a0]">Microsoft OneDrive / SharePoint</p>
-          <p className="text-[11px] font-sans text-[#6b6050] mt-0.5">
+          <p className="text-small font-sans font-semibold text-text-heading">Microsoft OneDrive / SharePoint</p>
+          <p className="text-caption font-sans text-text-muted mt-0.5">
             Importa documentos de tu OneDrive o de SharePoint. Solo lectura: Avocat nunca modifica ni borra nada allí.
           </p>
         </div>
         {info && (
-          <span className={`flex-shrink-0 px-2 py-0.5 rounded text-[10px] font-medium border ${info.status === 'reauth_required'
-            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+          <span className={`flex-shrink-0 px-2 py-0.5 rounded text-caption font-medium border ${info.status === 'reauth_required'
+            ? 'bg-warning-subtle text-warning-text border-status-proximo-border'
+            : 'bg-success-subtle text-success-text border-status-a-tiempo-border'}`}>
             {info.status === 'reauth_required' ? 'Reconexión necesaria' : 'Conectado'}
           </span>
         )}
       </div>
 
-      {notice && <p className={`text-[12px] font-sans ${notice.kind === 'ok' ? 'text-emerald-400' : 'text-red-400'}`}>{notice.text}</p>}
+      {notice && <p className={`text-caption font-sans ${notice.kind === 'ok' ? 'text-success-text' : 'text-danger-text'}`}>{notice.text}</p>}
 
       {!info ? (
         <Button variant="accent" size="sm" loading={busy === 'connect'} onClick={connect}>Conectar con Microsoft</Button>
       ) : (
         <>
-          <div className="text-[12px] font-sans text-[#c8c0ac] space-y-0.5">
+          <div className="text-caption font-sans text-text space-y-0.5">
             <p>{info.email}{info.accountType === 'work' && info.tenantName ? ` · ${info.tenantName} (Microsoft 365)` : info.accountType === 'personal' ? ' · cuenta personal' : ''}</p>
-            <p className="text-[11px] text-[#6b6050]">
+            <p className="text-caption text-text-muted">
               {fmt(info.connectedAt) ? `Conectado el ${fmt(info.connectedAt)}` : 'Conectado'}
               {imported !== null ? ` · ${imported} ${imported === 1 ? 'archivo importado' : 'archivos importados'}` : ''}
             </p>
           </div>
           {confirming ? (
-            <div className="rounded-lg border border-[#2e2b20] p-3 space-y-2">
-              <p className="text-[12px] text-[#c8c0ac]">
+            <div className="rounded-lg border border-border p-3 space-y-2">
+              <p className="text-caption text-text">
                 {imported ? `Los ${imported} archivos importados seguirán en Avocat. ` : ''}Ya no podrás importar desde OneDrive o SharePoint hasta que vuelvas a conectar.
               </p>
               <div className="flex gap-2">

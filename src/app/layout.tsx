@@ -68,7 +68,7 @@ export default function RootLayout({
         <ConsentScripts />
         {/* NOTE: Zapier Chatbot script is loaded in (public)/layout.tsx only */}
         <I18nProvider>
-          <div className="min-h-screen bg-avocat-cream">
+          <div className="min-h-screen bg-bg">
             {children}
           </div>
           <CookieBanner />

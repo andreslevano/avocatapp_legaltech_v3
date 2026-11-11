@@ -50,21 +50,21 @@ export function inferOrigin(d: Pick<DocumentRecord, 'source' | 'externalRef'>): 
 // ── Styling maps ─────────────────────────────────────────────────
 
 export const STATUS_STYLE: Record<string, string> = {
-  Borrador: 'bg-[#252218] text-[#6b6050] border-[#2e2b20]',
-  Generado: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  Firmado:  'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  Enviado:  'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  Borrador: 'bg-surface-raised text-text-muted border-border',
+  Generado: 'bg-success-subtle text-success-text border-status-a-tiempo-border',
+  Firmado:  'bg-info-subtle text-info-text border-status-en-revision-border',
+  Enviado:  'bg-info-subtle text-info-text border-status-en-revision-border',
 };
 
 const SIGNATURE_STYLE: Record<NonNullable<DocumentRecord['signatureStatus']>, string> = {
-  pending_owner: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  sent:          'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  delivered:     'bg-indigo-500/10 text-indigo-300 border-indigo-500/20',
-  completed:     'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  declined:      'bg-red-500/10 text-red-400 border-red-500/20',
-  voided:        'bg-[#252218] text-[#6b6050] border-[#2e2b20]',
-  expired:       'bg-[#252218] text-[#6b6050] border-[#2e2b20]',
-  error:         'bg-red-500/10 text-red-400 border-red-500/20',
+  pending_owner: 'bg-warning-subtle text-warning-text border-status-proximo-border',
+  sent:          'bg-info-subtle text-info-text border-status-en-revision-border',
+  delivered:     'bg-info-subtle text-info-text border-status-en-revision-border',
+  completed:     'bg-info-subtle text-info-text border-status-en-revision-border',
+  declined:      'bg-danger-subtle text-danger-text border-status-urgente-border',
+  voided:        'bg-surface-raised text-text-muted border-border',
+  expired:       'bg-surface-raised text-text-muted border-border',
+  error:         'bg-danger-subtle text-danger-text border-status-urgente-border',
 };
 
 /** Chip for the Estado column: signature status when there is a request, else the estado. */
@@ -77,15 +77,15 @@ export function statusChip(d: DocumentRecord): { label: string; className: strin
 }
 
 export const TIPO_STYLE: Record<string, string> = {
-  NDA:         'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  Demanda:     'bg-red-500/10 text-red-400 border-red-500/20',
-  Contrato:    'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  Recurso:     'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  Análisis:    'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  Reclamación: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  Mandato:     'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-  Extracción:  'bg-teal-500/10 text-teal-400 border-teal-500/20',
-  Otro:        'bg-[#252218] text-[#6b6050] border-[#2e2b20]',
+  NDA:         'bg-warning-subtle text-warning-text border-status-proximo-border',
+  Demanda:     'bg-danger-subtle text-danger-text border-status-urgente-border',
+  Contrato:    'bg-info-subtle text-info-text border-status-en-revision-border',
+  Recurso:     'bg-info-subtle text-info-text border-status-en-revision-border',
+  Análisis:    'bg-info-subtle text-info-text border-status-en-revision-border',
+  Reclamación: 'bg-warning-subtle text-warning-text border-status-proximo-border',
+  Mandato:     'bg-info-subtle text-info-text border-status-en-revision-border',
+  Extracción:  'bg-success-subtle text-success-text border-status-a-tiempo-border',
+  Otro:        'bg-surface-raised text-text-muted border-border',
 };
 
 

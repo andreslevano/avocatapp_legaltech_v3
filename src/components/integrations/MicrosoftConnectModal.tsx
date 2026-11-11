@@ -22,16 +22,16 @@ export default function MicrosoftConnectModal({ onContinue, onClose, reconnect =
 
   return (
     <ModalShell title={reconnect ? 'Reconecta tu cuenta de Microsoft' : 'Conectar con Microsoft'} onClose={onClose}>
-      <p className="text-[13px] text-[#c8c0ac]">Avocat abrirá el inicio de sesión de Microsoft.</p>
-      <ul className="space-y-1.5 text-[12px] text-[#c8c0ac]">
-        <li className="flex gap-2"><Check size={16} className="text-emerald-400 shrink-0 mt-0.5" aria-hidden />Solo importamos los archivos que tú selecciones</li>
-        <li className="flex gap-2"><Check size={16} className="text-emerald-400 shrink-0 mt-0.5" aria-hidden />Nunca modificamos ni borramos nada en tu OneDrive</li>
-        <li className="flex gap-2"><Check size={16} className="text-emerald-400 shrink-0 mt-0.5" aria-hidden />Puedes desconectar cuando quieras.</li>
+      <p className="text-small text-text">Avocat abrirá el inicio de sesión de Microsoft.</p>
+      <ul className="space-y-1.5 text-caption text-text">
+        <li className="flex gap-2"><Check size={16} className="text-success-text shrink-0 mt-0.5" aria-hidden />Solo importamos los archivos que tú selecciones</li>
+        <li className="flex gap-2"><Check size={16} className="text-success-text shrink-0 mt-0.5" aria-hidden />Nunca modificamos ni borramos nada en tu OneDrive</li>
+        <li className="flex gap-2"><Check size={16} className="text-success-text shrink-0 mt-0.5" aria-hidden />Puedes desconectar cuando quieras.</li>
       </ul>
-      <p className="text-[11px] text-[#6b6050] leading-relaxed">
+      <p className="text-caption text-text-muted leading-relaxed">
         Microsoft te pedirá permiso para «leer los archivos a los que tienes acceso»: es necesario para que puedas elegirlos desde Avocat.
       </p>
-      {error && <p className="text-[11px] text-red-400">{error}</p>}
+      {error && <p className="text-caption text-danger-text">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
         <Button variant="accent" size="sm" loading={loading} onClick={go}>Continuar</Button>

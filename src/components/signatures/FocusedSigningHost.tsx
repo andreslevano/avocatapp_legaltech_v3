@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { FOCUSED_SIGNING_EVENT, getSigningUrl, type FocusedSigningDetail } from '@/lib/signatures/client';
 import { X } from 'lucide-react';
+import { primitives } from '@/lib/tokens';
 
 interface DsSigning {
   on(event: 'ready' | 'sessionEnd', cb: (e?: { sessionEndType?: string }) => void): void;
@@ -95,7 +96,8 @@ export default function FocusedSigningHost() {
           url: session.url,
           displayFormat: 'focused',
           style: {
-            branding: { primaryButton: { backgroundColor: '#B8882A', color: '#ffffff' } },
+            // DocuSign's iframe can't read CSS variables: pass the token values. Ink on gold (v4 accent rule).
+            branding: { primaryButton: { backgroundColor: primitives['gold-500'], color: primitives['neutral-900'] } },
             signingNavigationButton: { finishText: 'Finalizar', position: 'bottom-center' },
           },
         });
@@ -114,10 +116,10 @@ export default function FocusedSigningHost() {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/75" role="dialog" aria-modal="true" aria-label="Firma con DocuSign">
       <div className="relative w-full max-w-5xl h-[92vh] bg-white rounded-2xl overflow-hidden flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between px-4 py-2.5 bg-[#1e1c16] border-b border-[#2e2b20]">
-          <p className="text-[12px] font-sans font-semibold text-[#e8d4a0]">Firma con DocuSign</p>
+        <div className="flex items-center justify-between px-4 py-2.5 bg-surface border-b border-border">
+          <p className="text-caption font-sans font-semibold text-text-heading">Firma con DocuSign</p>
           <button onClick={() => finish(session.requestId, 'cancel')}
-            className="text-[11px] font-sans text-[#9a9a9a] hover:text-[#e8d4a0] transition-colors">
+            className="text-caption font-sans text-text-muted hover:text-text-heading transition-colors">
             Firmar más tarde <X size={14} className="inline -mt-0.5" aria-hidden />
           </button>
         </div>
@@ -125,14 +127,14 @@ export default function FocusedSigningHost() {
           <div id={MOUNT_ID} className="absolute inset-0" />
           {!ready && !error && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white pointer-events-none">
-              <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
-              <p className="text-[12px] font-sans text-[#5f5f5f]">Abriendo DocuSign…</p>
+              <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+              <p className="text-caption font-sans text-text-muted">Abriendo DocuSign…</p>
             </div>
           )}
           {error && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white px-6 text-center">
-              <p className="text-[13px] font-sans text-red-600">{error}</p>
-              <button onClick={() => finish(session.requestId, 'cancel')} className="text-[12px] font-sans text-avocat-gold hover:underline">Cerrar</button>
+              <p className="text-small font-sans text-danger-text">{error}</p>
+              <button onClick={() => finish(session.requestId, 'cancel')} className="text-caption font-sans text-accent-text hover:underline">Cerrar</button>
             </div>
           )}
         </div>

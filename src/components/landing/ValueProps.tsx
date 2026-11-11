@@ -59,19 +59,19 @@ const VALUES = [
 
 export default function ValueProps() {
   return (
-    <section className="bg-avocat-cream py-20 border-t border-avocat-border/40" id="funcionalidades">
+    <section className="bg-bg py-20 border-t border-border" id="funcionalidades">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <AnimatedSection className="text-center mb-12">
-          <div className="inline-block px-3 py-1 rounded-full bg-avocat-gold-bg border border-avocat-gold-l/40 text-[11px] font-sans font-semibold text-avocat-gold uppercase tracking-widest mb-4">
+          <div className="inline-block px-3 py-1 rounded-full bg-accent-subtle border border-accent-border text-label font-sans font-semibold text-accent-text uppercase tracking-widest mb-4">
             Funcionalidades
           </div>
           <h2
-            className="font-display text-avocat-black font-semibold leading-tight"
+            className="font-display text-text font-semibold leading-tight"
             style={{ fontSize: 'clamp(26px, 3vw, 38px)' }}
           >
             Todo lo que tu práctica jurídica necesita
           </h2>
-          <p className="font-sans text-[15px] text-avocat-gray5 mt-3 max-w-lg mx-auto">
+          <p className="font-sans text-body-sm text-text-muted mt-3 max-w-lg mx-auto">
             Construido por abogados, para abogados — y diseñado para simplificar el trabajo de cualquier perfil.
           </p>
         </AnimatedSection>
@@ -81,17 +81,17 @@ export default function ValueProps() {
             <AnimatedSection
               key={v.title}
               delay={i * 80}
-              className="bg-white border border-avocat-border rounded-2xl p-6 group hover:border-avocat-gold/40 hover:shadow-md transition-all duration-300"
+              className="bg-surface border border-border rounded-2xl p-6 group hover:border-accent-border hover:shadow-md transition-all duration-300"
             >
               <div className="relative overflow-hidden">
                 <div
-                  className="absolute top-0 left-0 right-0 h-0.5 bg-avocat-gold opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl"
+                  className="absolute top-0 left-0 right-0 h-0.5 bg-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl"
                 />
-                <div className="w-10 h-10 rounded-xl bg-avocat-gold-bg border border-avocat-gold-l/40 text-avocat-gold flex items-center justify-center mb-4">
+                <div className="w-10 h-10 rounded-xl bg-accent-subtle border border-accent-border text-accent-text flex items-center justify-center mb-4">
                   {v.icon}
                 </div>
-                <h3 className="font-sans text-[14px] font-semibold text-avocat-black mb-2">{v.title}</h3>
-                <p className="font-sans text-[13px] text-avocat-gray5 leading-relaxed">{v.body}</p>
+                <h3 className="font-sans text-body-sm font-semibold text-text mb-2">{v.title}</h3>
+                <p className="font-sans text-small text-text-muted leading-relaxed">{v.body}</p>
               </div>
             </AnimatedSection>
           ))}

@@ -586,7 +586,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
   }, []);
 
   return (
-    <div className="bg-card rounded-lg shadow-lg p-4 sm:p-6">
+    <div className="bg-surface rounded-lg shadow-lg p-4 sm:p-6">
       <div className="mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-text mb-2">
           Historial de Compras
@@ -629,7 +629,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
               </th>
             </tr>
           </thead>
-          <tbody className="bg-card divide-y divide-border">
+          <tbody className="bg-surface divide-y divide-border">
             {filteredPurchaseHistory.map((purchase) => (
               <tr key={purchase.id} className="hover:bg-bg">
                 <td className="px-4 py-3 whitespace-nowrap">
@@ -742,7 +742,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4">
         {filteredPurchaseHistory.map((purchase) => (
-          <div key={purchase.id} className="bg-card border border-border rounded-lg p-4 shadow-sm">
+          <div key={purchase.id} className="bg-surface border border-border rounded-lg p-4 shadow-sm">
             {/* Header with icon and title */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center flex-1 min-w-0">
@@ -864,7 +864,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                           {purchase.files.templateDocx && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.templateDocx!, `${purchase.documentTitle}_Plantilla.docx`)}
-                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-surface hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
                                 <svg className="w-4 h-4 mr-2 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -878,7 +878,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                           {purchase.files.templatePdf && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.templatePdf!, `${purchase.documentTitle}_Plantilla.pdf`)}
-                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-surface hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
                                 <svg className="w-4 h-4 mr-2 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -892,7 +892,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                           {purchase.files.sampleDocx && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.sampleDocx!, `${purchase.documentTitle}_Ejemplo.docx`)}
-                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-surface hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
                                 <svg className="w-4 h-4 mr-2 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -906,7 +906,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                           {purchase.files.samplePdf && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.samplePdf!, `${purchase.documentTitle}_Ejemplo.pdf`)}
-                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-surface hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
                                 <svg className="w-4 h-4 mr-2 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -920,7 +920,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                           {purchase.files.studyMaterialPdf && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.studyMaterialPdf!, `${purchase.documentTitle}_Dossier.pdf`)}
-                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-surface hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
                                 <svg className="w-4 h-4 mr-2 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -937,7 +937,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                           {purchase.files.tutelaDocx && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.tutelaDocx!, `${purchase.documentTitle}.docx`)}
-                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-surface hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
                                 <svg className="w-4 h-4 mr-2 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -951,7 +951,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
                           {purchase.files.tutelaPdf && (
                             <button
                               onClick={() => downloadFromUrl(purchase.files.tutelaPdf!, `${purchase.documentTitle}.pdf`)}
-                              className="w-full text-left px-3 py-2 bg-card hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
+                              className="w-full text-left px-3 py-2 bg-surface hover:bg-surface-muted/30 rounded-md text-sm text-text-muted transition-colors flex items-center justify-between"
                             >
                               <span className="flex items-center">
                                 <svg className="w-4 h-4 mr-2 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -995,7 +995,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       {/* PDF Viewer Modal */}
       {showPdfViewer && selectedDocument && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
+          <div className="bg-surface rounded-lg w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border">
               <h3 className="text-lg sm:text-xl font-semibold text-text truncate pr-4">
@@ -1027,7 +1027,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
               
               {/* Contenido del documento */}
               {selectedDocument.documentContent ? (
-                <div className="bg-card rounded-lg border border-border p-4 sm:p-6 mb-4">
+                <div className="bg-surface rounded-lg border border-border p-4 sm:p-6 mb-4">
                   <h4 className="text-base sm:text-lg font-semibold text-text mb-4 flex items-center gap-2"><ClipboardList size={18} aria-hidden /> Contenido del documento:</h4>
                   <div className="prose prose-sm max-w-none">
                     <pre className="whitespace-pre-wrap text-xs sm:text-sm text-text-muted font-mono bg-bg p-4 rounded border overflow-x-auto">
@@ -1049,21 +1049,21 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
               
               {/* Document Details - Mobile Optimized */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm text-text-muted mb-6">
-                <div className="bg-card rounded-md p-3">
+                <div className="bg-surface rounded-md p-3">
                   <p className="font-medium text-text-muted">Fecha de compra</p>
                   <p className="text-text">{selectedDocument.purchaseDate.toLocaleDateString('es-ES')}</p>
                 </div>
-                <div className="bg-card rounded-md p-3">
+                <div className="bg-surface rounded-md p-3">
                   <p className="font-medium text-text-muted">Documentos procesados</p>
                   <p className="text-text">{selectedDocument.documentCount}</p>
                 </div>
-                <div className="bg-card rounded-md p-3">
+                <div className="bg-surface rounded-md p-3">
                   <p className="font-medium text-text-muted">Precisión</p>
                   <p className={`font-medium ${getAccuracyColor(selectedDocument.accuracy)}`}>
                     {selectedDocument.accuracy}%
                   </p>
                 </div>
-                <div className="bg-card rounded-md p-3">
+                <div className="bg-surface rounded-md p-3">
                   <p className="font-medium text-text-muted">Precio</p>
                   <p className="text-text">{selectedDocument.price} {selectedDocument.currency}</p>
                 </div>
@@ -1106,7 +1106,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
         <div className="mt-8 bg-bg rounded-lg p-6">
           <h3 className="text-lg font-semibold text-text mb-4">Resumen Total</h3>
           <div className={`grid gap-6 ${documentType === 'reclamacion_cantidades' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-            <div className="bg-card rounded-lg p-4">
+            <div className="bg-surface rounded-lg p-4">
               <h4 className="text-sm font-medium text-text-muted mb-2">Total de Precios</h4>
               <p className="text-2xl font-bold text-text">
                 €{filteredPurchaseHistory.reduce((total, purchase) => total + purchase.price, 0).toFixed(2)}
@@ -1116,7 +1116,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
               </p>
             </div>
             {documentType === 'reclamacion_cantidades' && (
-              <div className="bg-card rounded-lg p-4">
+              <div className="bg-surface rounded-lg p-4">
                 <h4 className="text-sm font-medium text-text-muted mb-2">Total Reclamado</h4>
                 <p className="text-2xl font-bold text-text">
                   €{filteredPurchaseHistory
@@ -1136,7 +1136,7 @@ export default function PurchaseHistoryComponent({ userId, documentType }: Purch
       {/* Loading State */}
       {loading && (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sidebar mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-border-strong mx-auto"></div>
           <p className="mt-4 text-sm text-text-muted">Cargando historial...</p>
         </div>
       )}

@@ -17,7 +17,8 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 | 6 | Dark app: raw hex sweep | done | e06ab228 | 2,770 |
 | 7 | Agent | done | a0c34d8b | 2,770 |
 | 8 | Document wizard | done | 14f1d743 | 2,435 |
-| 9 | Retire /dashboard | done | (this commit) | 2,128 |
+| 9 | Retire /dashboard | done | 7d9f6c7e | 2,128 |
+| 10 | Lock it | done | (this commit) | **0** |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
@@ -126,3 +127,13 @@ Route moves (all inside the `(app)` shell, dark theme):
 - ZapierChatbot kept (accent themed); TODO: disclaimer can't be injected into the third-party popup.
 - Untracked Finder duplicates (`src/app/dashboard/layout 2.tsx`, `casos/page 2.tsx`, `src/app/profile/layout 2.tsx`) are git-ignored and not routes; left on disk.
 - tsc 23 → 16. Single commit for the phase (route moves are interdependent: redirects, PLAN_DASHBOARDS and deletions had to land together to keep the build green).
+
+## Phase 10 — Lock it
+- Swept every remaining file: app components (documents, signatures, contracts, integrations, legal, notifications, org-templates, ImportJobsContext) with the dark map; public pages, landing, auth, forgot/reset password, legacy modals with a light map. Dark bands inside light pages (home hero, agent section, CTA, product heroes/CTAs, login/signup side panels, problem banner, numbered step badges) now carry `data-theme="dark"` instead of hard-coded dark colours; inline hex gradients use `var(--bg)` / `color-mix(var(--accent))`.
+- `ui/Card.tsx`, `ui/Tag.tsx` → roles. Delete buttons → `variant="destructive"`. Email templates (contract alerts, Microsoft consent) and the unused pdf/email generators use `primitives` from `lib/tokens.ts`; email buttons now ink on gold. DocuSign Focused View branding passes token values (ink on gold). Google "G" moved to `brand/GoogleIcon.tsx`.
+- Removed from `tailwind.config.js` every v3 alias (`avocat-*`, `ds-*`, `app`, `card`, `sidebar`, `text-primary`, `text-secondary`, `text-on-dark`); added `black: var(--neutral-950)` for modal scrims. Removed `.btn-primary/.btn-secondary/.card/.input-field` from globals.css (all usages migrated).
+- Verified by diffing compiled CSS (before vs `AVOCAT_STRICT_COLORS=1` after): every lost class was either migrated or only present in git-ignored Finder duplicates/comments; `accent-avocat-gold` checkboxes → `accent-accent`. Strict and normal `next build` both pass.
+- Guard allow-list (documented exceptions): `brand/GoogleIcon.tsx` (Google brand colours) and `lib/doc-html.ts` (legal-document export HTML — Times New Roman kept for the lawyer-validated templates; TODO decide EB Garamond).
+- Removed remaining "Sin tarjeta de crédito" claims (hero, how-it-works, CTA, abogados page).
+- `.github/workflows/ci.yml`: `lint:tokens` (baseline `{}` = 0), strict Tailwind compile, strict `next build`, unit tests.
+- lint:tokens: **0 violations** (from 5,806). tsc 16 (from 23). Unit tests 217/217.

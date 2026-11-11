@@ -1,0 +1,23 @@
+# DS v4 guard rails (Phase 10). Runs on every push / PR; no secrets needed.
+name: ci
+on:
+  push:
+    branches: [dev, main, ds-v4]
+  pull_request:
+
+jobs:
+  design-system:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Fails on any new raw colour / off-system class (baseline is 0).
+      - run: npm run lint:tokens
+      # Tailwind default palettes and v3 aliases no longer compile.
+      - run: AVOCAT_STRICT_COLORS=1 npx tailwindcss -i src/styles/globals.css -o /tmp/out.css
+      - run: AVOCAT_STRICT_COLORS=1 npm run build
+      - run: npx playwright test -c playwright.node.config.ts tests/unit

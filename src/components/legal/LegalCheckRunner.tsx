@@ -52,33 +52,33 @@ export default function LegalCheckRunner({ targets, onClose }: { targets: CheckT
 
   return (
     <ModalShell title="Revisar cambios legales" onClose={() => { stopped.current = true; onClose(); }} sheetOnMobile>
-      <div className="overflow-y-auto -mx-1 px-1 space-y-3 text-[12px] font-sans">
+      <div className="overflow-y-auto -mx-1 px-1 space-y-3 text-caption font-sans">
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-[11px] text-[#6b6050]">
+          <div className="flex items-center justify-between text-caption text-text-muted">
             <span>{done} de {rows.length} {rows.length === 1 ? 'NDA revisado' : 'NDAs revisados'}</span>
             <span>{count('ok')} vigentes · {count('review')} a revisar · {count('outdated')} desactualizados</span>
           </div>
-          <div className="h-1.5 rounded-full bg-[#161410] overflow-hidden">
-            <div className="h-full bg-avocat-gold transition-all" style={{ width: `${rows.length ? (done / rows.length) * 100 : 0}%` }} />
+          <div className="h-1.5 rounded-full bg-bg overflow-hidden">
+            <div className="h-full bg-accent transition-all" style={{ width: `${rows.length ? (done / rows.length) * 100 : 0}%` }} />
           </div>
         </div>
         <ul className="space-y-1">
           {rows.map(r => (
-            <li key={r.t.contractId} className="flex items-center justify-between gap-2 rounded-lg border border-[#2e2b20] px-3 py-2">
-              <span className="truncate text-[#c8c0ac]" title={r.t.title}>{r.t.title}</span>
-              {r.state === 'pending' && <span className="text-[10px] text-[#3a3630] flex-shrink-0">En cola</span>}
-              {r.state === 'running' && <span className="text-[10px] text-avocat-gold flex-shrink-0">Revisando…</span>}
-              {r.state === 'error' && <span className="text-[10px] text-red-400 flex-shrink-0 max-w-[50%] truncate" title={r.error}>{r.error}</span>}
+            <li key={r.t.contractId} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
+              <span className="truncate text-text" title={r.t.title}>{r.t.title}</span>
+              {r.state === 'pending' && <span className="text-caption text-text-muted flex-shrink-0">En cola</span>}
+              {r.state === 'running' && <span className="text-caption text-accent-text flex-shrink-0">Revisando…</span>}
+              {r.state === 'error' && <span className="text-caption text-danger-text flex-shrink-0 max-w-[50%] truncate" title={r.error}>{r.error}</span>}
               {r.state === 'done' && r.check && (
                 <button onClick={() => setOpen(r.check!)}
-                  className={`px-2 py-0.5 rounded border text-[10px] font-medium flex-shrink-0 hover:opacity-80 ${VERDICT_STYLE[r.check.verdict]}`}>
+                  className={`px-2 py-0.5 rounded border text-caption font-medium flex-shrink-0 hover:opacity-80 ${VERDICT_STYLE[r.check.verdict]}`}>
                   {VERDICT_ICON[r.check.verdict]} {VERDICT_LABEL[r.check.verdict]}
                 </button>
               )}
             </li>
           ))}
         </ul>
-        <p className="text-[10px] text-[#3a3630]">Herramienta de asistencia: no sustituye la revisión de un profesional. Pulsa un resultado para ver el detalle.</p>
+        <p className="text-caption text-text-muted">Herramienta de asistencia: no sustituye la revisión de un profesional. Pulsa un resultado para ver el detalle.</p>
         <Button variant="ghost" size="sm" fullWidth onClick={() => { stopped.current = true; onClose(); }}>
           {finished ? 'Cerrar' : 'Detener y cerrar'}
         </Button>

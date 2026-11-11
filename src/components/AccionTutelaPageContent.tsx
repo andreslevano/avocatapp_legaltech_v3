@@ -151,7 +151,7 @@ function AccionTutelaContentInner() {
           {showPaymentSuccess && (
             <div className="mb-6">
               {processingStatus === 'processing' && (
-                <div className="bg-surface-muted/20 border-l-4 border-sidebar p-4 rounded-md shadow-sm">
+                <div className="bg-surface-muted/20 border-l-4 border-border-strong p-4 rounded-md shadow-sm">
                   <div className="flex items-start">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-status-en-revision-border"></div>
                     <div className="ml-3">
@@ -179,7 +179,7 @@ function AccionTutelaContentInner() {
             </p>
           </div>
           <h1 className="text-h1 text-text mb-8">Panel de Acción de Tutela</h1>
-          <div className="bg-card overflow-hidden shadow rounded-lg mb-8">
+          <div className="bg-surface overflow-hidden shadow rounded-lg mb-8">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-h3 text-text mb-2">¡Bienvenido a Avocat para Acciones de Tutela!</h3>
               <p className="text-body text-text-muted">

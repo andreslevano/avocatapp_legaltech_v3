@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { primitives as P } from '@/lib/tokens';
 
 // Configuración de fuentes y estilos
 const FONT_SIZES = {
@@ -10,10 +11,10 @@ const FONT_SIZES = {
 };
 
 const COLORS = {
-  primary: '#1f2937',
-  secondary: '#6b7280',
-  accent: '#3b82f6',
-  border: '#e5e7eb'
+  primary: P['neutral-900'],
+  secondary: P['neutral-600'],
+  accent: P['info-600'],
+  border: P['neutral-200']
 };
 
 // Función para generar PDF profesional
@@ -139,42 +140,42 @@ export const generateAreaSpecificPDF = (areaLegal: string, tipoEscrito: string, 
   const templates = {
     'Derecho Civil y Procesal Civil': {
       header: 'DEMANDA CIVIL',
-      color: '#3b82f6',
+      color: P['info-600'],
       sections: ['AL JUZGADO', 'HECHOS', 'FUNDAMENTOS DE DERECHO', 'SUPLICO']
     },
     'Derecho Penal y Procesal Penal': {
       header: 'DENUNCIA/QUERELLA PENAL',
-      color: '#dc2626',
+      color: P['danger-600'],
       sections: ['AL JUZGADO', 'HECHOS', 'FUNDAMENTOS DE DERECHO', 'SUPLICO']
     },
     'Derecho Laboral (Jurisdicción Social)': {
       header: 'DEMANDA LABORAL',
-      color: '#059669',
+      color: P['success-600'],
       sections: ['AL JUZGADO DE LO SOCIAL', 'HECHOS', 'FUNDAMENTOS DE DERECHO', 'SUPLICO']
     },
     'Derecho Constitucional': {
       header: 'RECURSO CONSTITUCIONAL',
-      color: '#7c3aed',
+      color: P['gold-700'],
       sections: ['AL TRIBUNAL CONSTITUCIONAL', 'HECHOS', 'FUNDAMENTOS DE DERECHO', 'SUPLICO']
     },
     'Derecho de Familia': {
       header: 'DEMANDA DE FAMILIA',
-      color: '#ea580c',
+      color: P['warning-600'],
       sections: ['AL JUZGADO DE PRIMERA INSTANCIA', 'HECHOS', 'FUNDAMENTOS DE DERECHO', 'SUPLICO']
     },
     'Derecho Administrativo y Contencioso-Administrativo': {
       header: 'RECURSO ADMINISTRATIVO',
-      color: '#0891b2',
+      color: P['info-600'],
       sections: ['AL TRIBUNAL', 'HECHOS', 'FUNDAMENTOS DE DERECHO', 'SUPLICO']
     },
     'Derecho Mercantil': {
       header: 'DEMANDA MERCANTIL',
-      color: '#be185d',
+      color: P['danger-700'],
       sections: ['AL JUZGADO DE LO MERCANTIL', 'HECHOS', 'FUNDAMENTOS DE DERECHO', 'SUPLICO']
     },
     'Recursos procesales transversales': {
       header: 'RECURSO PROCESAL',
-      color: '#4338ca',
+      color: P['info-700'],
       sections: ['AL TRIBUNAL', 'HECHOS', 'FUNDAMENTOS DE DERECHO', 'SUPLICO']
     }
   };
@@ -182,7 +183,7 @@ export const generateAreaSpecificPDF = (areaLegal: string, tipoEscrito: string, 
   const template = templates[areaLegal as keyof typeof templates] || templates['Derecho Civil y Procesal Civil'];
 
   // Función helper para agregar texto
-  const addText = (text: string, fontSize: number, isBold: boolean = false, color: string = '#1f2937') => {
+  const addText = (text: string, fontSize: number, isBold: boolean = false, color: string = P['neutral-900']) => {
     doc.setFontSize(fontSize);
     doc.setTextColor(color);
     if (isBold) {
@@ -198,8 +199,8 @@ export const generateAreaSpecificPDF = (areaLegal: string, tipoEscrito: string, 
 
   // Encabezado específico del área
   addText(template.header, 18, true, template.color);
-  addText(tipoEscrito, 14, true, '#6b7280');
-  addText(`Área: ${areaLegal}`, 12, false, '#6b7280');
+  addText(tipoEscrito, 14, true, P['neutral-600']);
+  addText(`Área: ${areaLegal}`, 12, false, P['neutral-600']);
   
   // Línea separadora
   doc.setDrawColor(template.color);
@@ -243,7 +244,7 @@ export const generateAreaSpecificPDF = (areaLegal: string, tipoEscrito: string, 
   // Pie de página
   const pageHeight = doc.internal.pageSize.getHeight();
   doc.setFontSize(8);
-  doc.setTextColor('#6b7280');
+  doc.setTextColor(P['neutral-600']);
   doc.text('Generado por Avocat LegalTech - Plataforma de Documentos Legales', 20, pageHeight - 10);
   doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, pageWidth - 40, pageHeight - 10);
 
@@ -258,16 +259,16 @@ export const generateDocumentTypePDF = (tipoEscrito: string, content: string, da
 
   // Configuración específica por tipo de documento
   const documentConfigs = {
-    'Demanda': { color: '#3b82f6', icon: '⚖️' },
-    'Denuncia': { color: '#dc2626', icon: '🚨' },
-    'Recurso': { color: '#7c3aed', icon: '📋' },
-    'Escrito': { color: '#059669', icon: '📝' },
-    'Solicitud': { color: '#ea580c', icon: '📄' }
+    'Demanda': { color: P['info-600'], icon: '⚖️' },
+    'Denuncia': { color: P['danger-600'], icon: '🚨' },
+    'Recurso': { color: P['gold-700'], icon: '📋' },
+    'Escrito': { color: P['success-600'], icon: '📝' },
+    'Solicitud': { color: P['warning-600'], icon: '📄' }
   };
 
   const config = documentConfigs[Object.keys(documentConfigs).find(key => tipoEscrito.includes(key)) as keyof typeof documentConfigs] || documentConfigs['Escrito'];
 
-  const addText = (text: string, fontSize: number, isBold: boolean = false, color: string = '#1f2937') => {
+  const addText = (text: string, fontSize: number, isBold: boolean = false, color: string = P['neutral-900']) => {
     doc.setFontSize(fontSize);
     doc.setTextColor(color);
     if (isBold) {
@@ -283,7 +284,7 @@ export const generateDocumentTypePDF = (tipoEscrito: string, content: string, da
 
   // Encabezado con icono
   addText(`${config.icon} ${tipoEscrito.toUpperCase()}`, 18, true, config.color);
-  addText('Documento Legal Profesional', 12, false, '#6b7280');
+  addText('Documento Legal Profesional', 12, false, P['neutral-600']);
   
   // Línea decorativa
   doc.setDrawColor(config.color);

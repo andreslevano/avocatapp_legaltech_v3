@@ -16,8 +16,8 @@ import {
   type Contract, type ContractParty, type ContractTerm, type ContractType, type NdaKind, type PartyRole,
 } from '@/lib/contracts/types';
 
-const FIELD = 'w-full bg-[#161410] border rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
-const LABEL = 'block text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1';
+const FIELD = 'w-full bg-bg border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border';
+const LABEL = 'block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1';
 const ROLE_LABEL: Record<PartyRole, string> = { disclosing: 'Divulgante', receiving: 'Receptora', mutual: 'Mutua' };
 
 const intOrNull = (s: string) => { const n = Number(s); return s.trim() && Number.isInteger(n) && n > 0 ? n : null; };
@@ -48,8 +48,8 @@ export default function ContractConfirmSheet({ contract: c, onClose, onSaved }: 
 
   const llm = c.extraction?.source === 'llm' && !c.confirmedByUser;
   const low = (k: string) => llm && (c.extraction.fieldConfidence?.[k] ?? 0) < LOW_CONFIDENCE;
-  const border = (k: string) => (low(k) ? 'border-amber-400/60' : 'border-[#2e2b20]');
-  const Hint = ({ k }: { k: string }) => (low(k) ? <p className="text-[10px] text-amber-400 mt-1">Revisa este dato: no estaba claro en el documento.</p> : null);
+  const border = (k: string) => (low(k) ? 'border-status-proximo-border' : 'border-border');
+  const Hint = ({ k }: { k: string }) => (low(k) ? <p className="text-caption text-warning-text mt-1">Revisa este dato: no estaba claro en el documento.</p> : null);
 
   const term: ContractTerm = useMemo(() => ({
     ...c.term,
@@ -89,9 +89,9 @@ export default function ContractConfirmSheet({ contract: c, onClose, onSaved }: 
 
   return (
     <ModalShell title={c.confirmedByUser ? 'Datos del contrato' : 'Revisa los datos del contrato'} onClose={busy ? () => {} : onClose} sheetOnMobile>
-      <div className="overflow-y-auto -mx-1 px-1 space-y-4 text-[12px] font-sans">
+      <div className="overflow-y-auto -mx-1 px-1 space-y-4 text-caption font-sans">
         {llm && (
-          <p className="text-[11px] text-[#6b6050]">
+          <p className="text-caption text-text-muted">
             Hemos leído estos datos del documento. Compruébalos: los avisos de vencimiento solo se activan cuando los confirmas.
           </p>
         )}
@@ -99,21 +99,21 @@ export default function ContractConfirmSheet({ contract: c, onClose, onSaved }: 
         <section className="space-y-2">
           <div>
             <label className={LABEL}>Título</label>
-            <input className={`${FIELD} border-[#2e2b20]`} value={title} onChange={e => setTitle(e.target.value)} maxLength={160} />
+            <input className={`${FIELD} border-border`} value={title} onChange={e => setTitle(e.target.value)} maxLength={160} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={LABEL}>Tipo</label>
-              <select className={`${FIELD} border-[#2e2b20]`} value={type} onChange={e => setType(e.target.value as ContractType)}>
-                {(Object.keys(CONTRACT_TYPE_LABEL) as ContractType[]).map(t => <option key={t} value={t} className="bg-[#161410]">{CONTRACT_TYPE_LABEL[t]}</option>)}
+              <select className={`${FIELD} border-border`} value={type} onChange={e => setType(e.target.value as ContractType)}>
+                {(Object.keys(CONTRACT_TYPE_LABEL) as ContractType[]).map(t => <option key={t} value={t} className="bg-bg">{CONTRACT_TYPE_LABEL[t]}</option>)}
               </select>
             </div>
             <div>
               <label className={LABEL}>Ley aplicable</label>
               <select className={`${FIELD} ${border('jurisdiction')}`} value={country} onChange={e => setCountry(e.target.value)}>
-                <option value="" className="bg-[#161410]">—</option>
-                {COUNTRIES.map(x => <option key={x.code} value={x.code} className="bg-[#161410]">{x.label}</option>)}
-                {country && !COUNTRIES.some(x => x.code === country) && <option value={country} className="bg-[#161410]">{country}</option>}
+                <option value="" className="bg-bg">—</option>
+                {COUNTRIES.map(x => <option key={x.code} value={x.code} className="bg-bg">{x.label}</option>)}
+                {country && !COUNTRIES.some(x => x.code === country) && <option value={country} className="bg-bg">{country}</option>}
               </select>
               <Hint k="jurisdiction" />
             </div>
@@ -122,7 +122,7 @@ export default function ContractConfirmSheet({ contract: c, onClose, onSaved }: 
             <div className="flex gap-2">
               {(['unilateral', 'bilateral'] as NdaKind[]).map(k => (
                 <button key={k} type="button" onClick={() => setNdaKind(k)}
-                  className={`px-3 py-1.5 rounded-lg border text-[12px] transition-colors ${ndaKind === k ? 'border-avocat-gold/60 text-avocat-gold bg-avocat-gold/10' : 'border-[#2e2b20] text-[#6b6050] hover:text-[#c8c0ac]'}`}>
+                  className={`px-3 py-1.5 rounded-lg border text-caption transition-colors ${ndaKind === k ? 'border-accent-border text-accent-text bg-accent-subtle' : 'border-border text-text-muted hover:text-text'}`}>
                   {k === 'unilateral' ? 'Unilateral' : 'Bilateral (mutuo)'}
                 </button>
               ))}
@@ -135,16 +135,16 @@ export default function ContractConfirmSheet({ contract: c, onClose, onSaved }: 
           {parties.map((p, i) => (
             <div key={i} className={`rounded-lg border p-2 space-y-1.5 ${border('parties')}`}>
               <div className="flex gap-2">
-                <input className={`${FIELD} border-[#2e2b20]`} placeholder="Nombre" value={p.name} onChange={e => setParty(i, { name: e.target.value })} />
+                <input className={`${FIELD} border-border`} placeholder="Nombre" value={p.name} onChange={e => setParty(i, { name: e.target.value })} />
                 {parties.length > 1 && (
                   <button type="button" aria-label="Quitar parte" onClick={() => setParties(ps => ps.filter((_, j) => j !== i))}
-                    className="text-[#6b6050] hover:text-red-400 text-[16px] leading-none px-1">×</button>
+                    className="text-text-muted hover:text-danger-text text-body leading-none px-1">×</button>
                 )}
               </div>
               <div className="flex gap-2">
-                <input className={`${FIELD} border-[#2e2b20]`} placeholder="Empresa (opcional)" value={p.company ?? ''} onChange={e => setParty(i, { company: e.target.value })} />
-                <select className={`${FIELD} border-[#2e2b20] max-w-[130px]`} value={p.role} onChange={e => setParty(i, { role: e.target.value as PartyRole })}>
-                  {(Object.keys(ROLE_LABEL) as PartyRole[]).map(r => <option key={r} value={r} className="bg-[#161410]">{ROLE_LABEL[r]}</option>)}
+                <input className={`${FIELD} border-border`} placeholder="Empresa (opcional)" value={p.company ?? ''} onChange={e => setParty(i, { company: e.target.value })} />
+                <select className={`${FIELD} border-border max-w-[130px]`} value={p.role} onChange={e => setParty(i, { role: e.target.value as PartyRole })}>
+                  {(Object.keys(ROLE_LABEL) as PartyRole[]).map(r => <option key={r} value={r} className="bg-bg">{ROLE_LABEL[r]}</option>)}
                 </select>
               </div>
             </div>
@@ -152,7 +152,7 @@ export default function ContractConfirmSheet({ contract: c, onClose, onSaved }: 
           <Hint k="parties" />
           {parties.length < 6 && (
             <button type="button" onClick={() => setParties(ps => [...ps, { name: '', role: 'mutual' }])}
-              className="text-[11px] text-avocat-gold hover:underline">+ Añadir parte</button>
+              className="text-caption text-accent-text hover:underline">+ Añadir parte</button>
           )}
         </section>
 
@@ -160,56 +160,56 @@ export default function ContractConfirmSheet({ contract: c, onClose, onSaved }: 
           <p className={LABEL}>Plazos</p>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[11px] text-[#6b6050]">Fecha de inicio</label>
+              <label className="text-caption text-text-muted">Fecha de inicio</label>
               <input type="date" className={`${FIELD} ${border('effectiveDate')}`} value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)} />
               <Hint k="effectiveDate" />
             </div>
             <div>
-              <label className="text-[11px] text-[#6b6050]">Duración (meses)</label>
+              <label className="text-caption text-text-muted">Duración (meses)</label>
               <input type="number" min={1} inputMode="numeric" className={`${FIELD} ${border('term')}`} value={indefinite ? '' : months}
                 disabled={indefinite || !!fixedEnd} placeholder={indefinite ? 'Indefinido' : 'p. ej. 24'} onChange={e => setMonths(e.target.value)} />
               <Hint k="term" />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-[12px] text-[#c8c0ac]">
-            <input type="checkbox" checked={indefinite} onChange={e => setIndefinite(e.target.checked)} className="accent-avocat-gold" />
+          <label className="flex items-center gap-2 text-caption text-text">
+            <input type="checkbox" checked={indefinite} onChange={e => setIndefinite(e.target.checked)} className="accent-accent" />
             Duración indefinida
           </label>
           {!indefinite && (
             <div>
-              <label className="text-[11px] text-[#6b6050]">Fecha de fin explícita (opcional — sustituye a la duración)</label>
-              <input type="date" className={`${FIELD} border-[#2e2b20]`} value={fixedEnd} onChange={e => setFixedEnd(e.target.value)} />
+              <label className="text-caption text-text-muted">Fecha de fin explícita (opcional — sustituye a la duración)</label>
+              <input type="date" className={`${FIELD} border-border`} value={fixedEnd} onChange={e => setFixedEnd(e.target.value)} />
             </div>
           )}
-          <label className="flex items-center gap-2 text-[12px] text-[#c8c0ac]">
-            <input type="checkbox" checked={autoRenewal} onChange={e => setAutoRenewal(e.target.checked)} className="accent-avocat-gold" />
+          <label className="flex items-center gap-2 text-caption text-text">
+            <input type="checkbox" checked={autoRenewal} onChange={e => setAutoRenewal(e.target.checked)} className="accent-accent" />
             Renovación automática (prórroga tácita)
           </label>
           {autoRenewal && (
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[11px] text-[#6b6050]">Cada (meses)</label>
+                <label className="text-caption text-text-muted">Cada (meses)</label>
                 <input type="number" min={1} className={`${FIELD} ${border('renewal')}`} value={renewalMonths} placeholder={months || '12'} onChange={e => setRenewalMonths(e.target.value)} />
               </div>
               <div>
-                <label className="text-[11px] text-[#6b6050]">Preaviso (días)</label>
+                <label className="text-caption text-text-muted">Preaviso (días)</label>
                 <input type="number" min={1} className={`${FIELD} ${border('renewal')}`} value={noticeDays} placeholder="p. ej. 30" onChange={e => setNoticeDays(e.target.value)} />
               </div>
             </div>
           )}
           <div>
-            <label className="text-[11px] text-[#6b6050]">La confidencialidad sigue tras el fin durante (meses, opcional)</label>
+            <label className="text-caption text-text-muted">La confidencialidad sigue tras el fin durante (meses, opcional)</label>
             <input type="number" min={1} className={`${FIELD} ${border('survival')}`} value={survivalMonths} placeholder="p. ej. 36" onChange={e => setSurvivalMonths(e.target.value)} />
           </div>
         </section>
 
-        <section className="rounded-lg border border-[#2e2b20] bg-[#161410] px-3 py-2 space-y-1">
+        <section className="rounded-lg border border-border bg-bg px-3 py-2 space-y-1">
           <Row label="Fin del acuerdo" value={indefinite ? 'Indefinido' : formatContractDate(preview.termEndDate)} />
           {autoRenewal && <Row label="Último día de preaviso" value={formatContractDate(preview.noticeDeadline)} />}
           {preview.confidentialitySurvivalEnd && <Row label="Fin de la confidencialidad" value={formatContractDate(preview.confidentialitySurvivalEnd)} />}
         </section>
 
-        {error && <p className="text-[11px] text-red-400">{error}</p>}
+        {error && <p className="text-caption text-danger-text">{error}</p>}
 
         <div className="flex gap-2 pt-1">
           <Button variant="accent" size="sm" fullWidth loading={busy} onClick={submit}>
@@ -224,9 +224,9 @@ export default function ContractConfirmSheet({ contract: c, onClose, onSaved }: 
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between text-[12px]">
-      <span className="text-[#6b6050]">{label}</span>
-      <span className="text-[#e8d4a0]">{value}</span>
+    <div className="flex items-center justify-between text-caption">
+      <span className="text-text-muted">{label}</span>
+      <span className="text-text-heading">{value}</span>
     </div>
   );
 }

@@ -55,8 +55,8 @@ interface Props {
   emptyState?: React.ReactNode;
 }
 
-const TH = 'px-3 py-2.5 text-left text-[10px] font-semibold tracking-widest uppercase text-[#6b6050] cursor-pointer select-none whitespace-nowrap hover:text-[#c8c0ac] transition-colors';
-const TD = 'px-3 py-2.5 text-[12px]';
+const TH = 'px-3 py-2.5 text-left text-label font-semibold tracking-widest uppercase text-text-muted cursor-pointer select-none whitespace-nowrap hover:text-text transition-colors';
+const TD = 'px-3 py-2.5 text-caption';
 
 const MENU_ITEMS: { label: string; action: DocAction; needsMove?: boolean; needsSign?: boolean; needsContract?: boolean }[] = [
   { label: 'Ver / previsualizar',  action: 'preview'     },
@@ -77,11 +77,11 @@ const FOLDER_MENU: { label: string; action: FolderAction }[] = [
 ];
 
 const ORIGEN_STYLE: Record<string, string> = {
-  Avocat:     'text-avocat-gold/80',
-  Subido:     'text-[#6b6050]',
-  OneDrive:   'text-sky-400',
-  SharePoint: 'text-teal-400',
-  DocuSign:   'text-sky-400/80',
+  Avocat:     'text-accent-text',
+  Subido:     'text-text-muted',
+  OneDrive:   'text-info-text',
+  SharePoint: 'text-success-text',
+  DocuSign:   'text-info-text',
 };
 
 const itemsLabel = (n: number) => `${n} elemento${n !== 1 ? 's' : ''}`;
@@ -186,7 +186,7 @@ export default function DocTable({
   if (docs.length === 0 && folderRows.length === 0) {
     return emptyState ? <>{emptyState}</> : (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <p className="text-[13px] text-[#6b6050]">No hay documentos que coincidan con los filtros.</p>
+        <p className="text-small text-text-muted">No hay documentos que coincidan con los filtros.</p>
       </div>
     );
   }
@@ -195,7 +195,7 @@ export default function DocTable({
   const menuFolder = menu?.kind === 'folder' ? folderRows.find(r => r.id === menu.id) : null;
 
   const SortIcon = ({ col }: { col: SortCol }) => (
-    <span className="ml-1 text-[9px] opacity-50">
+    <span className="ml-1 text-caption opacity-50">
       {sortCol === col ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
     </span>
   );
@@ -208,7 +208,7 @@ export default function DocTable({
       onBlur={onCommit}
       onKeyDown={e => { if (e.key === 'Enter') onCommit(); if (e.key === 'Escape') setRenamingId(null); }}
       onClick={e => e.stopPropagation()}
-      className={`flex-1 min-w-0 bg-[#161410] border rounded px-2 py-0.5 text-[12px] text-[#c8c0ac] focus:outline-none ${renameError ? 'border-red-500/60' : 'border-avocat-gold/40'}`}
+      className={`flex-1 min-w-0 bg-bg border rounded px-2 py-0.5 text-caption text-text  ${renameError ? 'border-status-urgente-border' : 'border-accent-border'}`}
     />
   );
 
@@ -217,8 +217,8 @@ export default function DocTable({
       onClick={e => openMenu(e, 'folder', row.id)}
       aria-label="Acciones de carpeta"
       className={mobile
-        ? 'w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#2e2b20] transition-colors text-[16px] leading-none'
-        : 'opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#2e2b20]'}
+        ? 'w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-border transition-colors text-body leading-none'
+        : 'opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-text hover:bg-border'}
     >
       ···
     </button>
@@ -227,21 +227,21 @@ export default function DocTable({
   return (
     <>
       {/* ── Mobile card list (< md) ───────────────────────────── */}
-      <div className="md:hidden divide-y divide-[#2e2b20]">
+      <div className="md:hidden divide-y divide-border">
         {folderRows.map(row => (
           <div
             key={`f-${row.id}`}
             onClick={() => onOpenFolder?.(row)}
-            className="flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-[#252218] transition-colors"
+            className="flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-surface-raised transition-colors"
           >
             <span className="w-[13px] flex-shrink-0" />
-            <span className="text-avocat-gold/80 flex-shrink-0"><IconFolder className="w-6 h-6" /></span>
+            <span className="text-accent-text flex-shrink-0"><IconFolder className="w-6 h-6" /></span>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-sans font-medium text-[#c8c0ac] truncate">{row.name}</p>
-              <p className="text-[10px] text-[#6b6050] mt-0.5 truncate">{row.path ?? `${itemsLabel(row.itemCount)} · ${formatDate(row.modified)}`}</p>
+              <p className="text-small font-sans font-medium text-text truncate">{row.name}</p>
+              <p className="text-caption text-text-muted mt-0.5 truncate">{row.path ?? `${itemsLabel(row.itemCount)} · ${formatDate(row.modified)}`}</p>
             </div>
             {folderMenuButton(row, true) || (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#3a3630] flex-shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-text-muted flex-shrink-0">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
               </svg>
             )}
@@ -258,7 +258,7 @@ export default function DocTable({
             <div
               key={d.id}
               onClick={() => onAction('preview', d)}
-              className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${isActive ? 'bg-avocat-gold/5' : 'active:bg-[#252218]'}`}
+              className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${isActive ? 'bg-accent-subtle' : 'active:bg-surface-raised'}`}
             >
               {/* Checkbox */}
               <input
@@ -266,26 +266,26 @@ export default function DocTable({
                 checked={selected.has(d.id)}
                 onChange={() => onToggleSelect(d.id)}
                 onClick={e => e.stopPropagation()}
-                className="rounded border-[#2e2b20] bg-[#161410] accent-avocat-gold flex-shrink-0"
+                className="rounded border-border bg-bg accent-accent flex-shrink-0"
               />
               {/* Icon */}
               <FileTypeIcon name={`f.${displayExt}`} size={20} className="flex-shrink-0 text-text-muted" />
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-sans font-medium text-[#c8c0ac] truncate">{d.name}</p>
-                {path && <p className="text-[10px] text-[#6b6050] truncate">{path}</p>}
+                <p className="text-small font-sans font-medium text-text truncate">{d.name}</p>
+                {path && <p className="text-caption text-text-muted truncate">{path}</p>}
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${TIPO_STYLE[tipo] ?? TIPO_STYLE.Otro}`}>{tipo}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${statusChip(d).className}`}>{statusChip(d).label}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-caption font-medium border ${TIPO_STYLE[tipo] ?? TIPO_STYLE.Otro}`}>{tipo}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-caption font-medium border ${statusChip(d).className}`}>{statusChip(d).label}</span>
                   <ContractChip d={d} />
-                  {caseDoc && <span className="text-[10px] text-[#6b6050] truncate max-w-[100px]">{caseDoc.title}</span>}
+                  {caseDoc && <span className="text-caption text-text-muted truncate max-w-[100px]">{caseDoc.title}</span>}
                 </div>
-                <p className="text-[10px] text-[#3a3630] mt-0.5">{formatDate(d.createdAt)} · {inferOrigin(d)}</p>
+                <p className="text-caption text-text-muted mt-0.5">{formatDate(d.createdAt)} · {inferOrigin(d)}</p>
               </div>
               {/* Menu button — always visible on mobile */}
               <button
                 onClick={e => openMenu(e, 'doc', d.id)}
-                className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#2e2b20] transition-colors text-[16px] leading-none"
+                className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-border transition-colors text-body leading-none"
               >
                 ···
               </button>
@@ -296,12 +296,12 @@ export default function DocTable({
 
       {/* ── Desktop table (≥ md) ──────────────────────────────── */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-[12px] font-sans border-collapse">
+        <table className="w-full text-caption font-sans border-collapse">
           <thead>
-            <tr className="border-b border-[#2e2b20]">
+            <tr className="border-b border-border">
               <th className="px-3 py-2.5 w-8">
                 <input type="checkbox" checked={allSelected} onChange={onSelectAll}
-                  className="rounded border-[#2e2b20] bg-[#161410] accent-avocat-gold cursor-pointer" />
+                  className="rounded border-border bg-bg accent-accent cursor-pointer" />
               </th>
               <th className={TH} onClick={() => onSort('name')}>Nombre<SortIcon col="name" /></th>
               <th className={TH} onClick={() => onSort('tipo')}>Tipo<SortIcon col="tipo" /></th>
@@ -313,7 +313,7 @@ export default function DocTable({
               <th className="px-3 py-2.5 w-8" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#2e2b20]">
+          <tbody className="divide-y divide-border">
             {folderRows.map(row => {
               const isRenaming = renamingId === `f:${row.id}`;
               const isDrop = dropRowId === row.id;
@@ -323,25 +323,25 @@ export default function DocTable({
                   {...folderRowProps(row)}
                   onClick={() => !isRenaming && onOpenFolder?.(row)}
                   onDoubleClick={() => !isRenaming && onOpenFolder?.(row)}
-                  className={`group transition-colors cursor-pointer ${isDrop ? 'bg-avocat-gold/10 outline outline-1 outline-avocat-gold/50' : 'hover:bg-[#252218]'}`}
+                  className={`group transition-colors cursor-pointer ${isDrop ? 'bg-accent-subtle outline outline-1 outline-accent-border' : 'hover:bg-surface-muted'}`}
                 >
                   <td className={TD} />
                   <td className={`${TD} max-w-[260px]`}>
                     <div className="flex items-center gap-2">
-                      <span className="text-avocat-gold/80 flex-shrink-0"><IconFolder className="w-4 h-4" /></span>
+                      <span className="text-accent-text flex-shrink-0"><IconFolder className="w-4 h-4" /></span>
                       {isRenaming ? renameInput(() => commitFolderRename(row)) : (
-                        <span className="truncate text-[#c8c0ac] group-hover:text-[#e8d4a0] font-medium">{row.name}</span>
+                        <span className="truncate text-text group-hover:text-text-heading font-medium">{row.name}</span>
                       )}
                     </div>
                     {isRenaming && renameError
-                      ? <p className="text-[10px] text-red-400 mt-0.5 ml-6">{renameError}</p>
-                      : <p className="text-[10px] text-[#3a3630] mt-0.5 ml-6 truncate">{row.path ?? itemsLabel(row.itemCount)}</p>}
+                      ? <p className="text-caption text-danger-text mt-0.5 ml-6">{renameError}</p>
+                      : <p className="text-caption text-text-muted mt-0.5 ml-6 truncate">{row.path ?? itemsLabel(row.itemCount)}</p>}
                   </td>
-                  <td className={`${TD} text-[#3a3630]`}>Carpeta</td>
-                  <td className={`${TD} hidden lg:table-cell text-[#3a3630]`}>—</td>
-                  <td className={`${TD} hidden xl:table-cell text-[#3a3630]`}>—</td>
-                  <td className={`${TD} text-[#6b6050] whitespace-nowrap`}>{formatDate(row.modified)}</td>
-                  <td className={`${TD} text-[#6b6050]`}>{row.path ? itemsLabel(row.itemCount) : ''}</td>
+                  <td className={`${TD} text-text-muted`}>Carpeta</td>
+                  <td className={`${TD} hidden lg:table-cell text-text-muted`}>—</td>
+                  <td className={`${TD} hidden xl:table-cell text-text-muted`}>—</td>
+                  <td className={`${TD} text-text-muted whitespace-nowrap`}>{formatDate(row.modified)}</td>
+                  <td className={`${TD} text-text-muted`}>{row.path ? itemsLabel(row.itemCount) : ''}</td>
                   <td className={`${TD} hidden lg:table-cell`} />
                   <td className={TD} onClick={e => e.stopPropagation()}>{folderMenuButton(row, false)}</td>
                 </tr>
@@ -362,52 +362,52 @@ export default function DocTable({
                   key={d.id}
                   {...dragDocProps(d)}
                   onClick={() => !isRenaming && onAction('preview', d)}
-                  className={`group transition-colors cursor-pointer ${isActive ? 'bg-avocat-gold/5' : 'hover:bg-[#252218]'}`}
+                  className={`group transition-colors cursor-pointer ${isActive ? 'bg-accent-subtle' : 'hover:bg-surface-muted'}`}
                 >
                   <td className={TD} onClick={e => { e.stopPropagation(); onToggleSelect(d.id); }}>
                     {/* The cell toggles (bigger hit area); the input's own click must not reach it or it toggles twice. */}
                     <input type="checkbox" checked={selected.has(d.id)} onChange={() => onToggleSelect(d.id)}
                       onClick={e => e.stopPropagation()}
-                      className="rounded border-[#2e2b20] bg-[#161410] accent-avocat-gold cursor-pointer" />
+                      className="rounded border-border bg-bg accent-accent cursor-pointer" />
                   </td>
 
                   <td className={`${TD} max-w-[260px]`}>
                     <div className="flex items-center gap-2">
                       <FileTypeIcon name={`f.${displayExt}`} size={16} className="flex-shrink-0 text-text-muted" />
                       {isRenaming ? renameInput(() => commitRename(d)) : (
-                        <span className="truncate text-[#c8c0ac] group-hover:text-[#e8d4a0] font-medium">{d.name}</span>
+                        <span className="truncate text-text group-hover:text-text-heading font-medium">{d.name}</span>
                       )}
                       {!isRenaming && <ContractChip d={d} />}
                     </div>
-                    <p className="text-[10px] text-[#3a3630] mt-0.5 ml-7 truncate">
-                      {path ? <span className="text-[#6b6050]">{path}</span> : formatBytes(d.size)}
+                    <p className="text-caption text-text-muted mt-0.5 ml-7 truncate">
+                      {path ? <span className="text-text-muted">{path}</span> : formatBytes(d.size)}
                     </p>
                   </td>
 
                   <td className={TD}>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${TIPO_STYLE[tipo] ?? TIPO_STYLE.Otro}`}>{tipo}</span>
+                    <span className={`px-2 py-0.5 rounded text-caption font-medium border ${TIPO_STYLE[tipo] ?? TIPO_STYLE.Otro}`}>{tipo}</span>
                   </td>
 
-                  <td className={`${TD} hidden lg:table-cell text-[#6b6050] max-w-[160px]`}>
-                    {caseDoc ? <span className="truncate block">{caseDoc.title}</span> : <span className="text-[#3a3630]">—</span>}
+                  <td className={`${TD} hidden lg:table-cell text-text-muted max-w-[160px]`}>
+                    {caseDoc ? <span className="truncate block">{caseDoc.title}</span> : <span className="text-text-muted">—</span>}
                   </td>
 
-                  <td className={`${TD} hidden xl:table-cell text-[#6b6050]`}>
-                    {client ? client.name : <span className="text-[#3a3630]">—</span>}
+                  <td className={`${TD} hidden xl:table-cell text-text-muted`}>
+                    {client ? client.name : <span className="text-text-muted">—</span>}
                   </td>
 
-                  <td className={`${TD} text-[#6b6050] whitespace-nowrap`}>{formatDate(d.createdAt)}</td>
+                  <td className={`${TD} text-text-muted whitespace-nowrap`}>{formatDate(d.createdAt)}</td>
 
                   <td className={TD}>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${statusChip(d).className}`}>{statusChip(d).label}</span>
+                    <span className={`px-2 py-0.5 rounded text-caption font-medium border ${statusChip(d).className}`}>{statusChip(d).label}</span>
                   </td>
 
-                  <td className={`${TD} hidden lg:table-cell whitespace-nowrap ${ORIGEN_STYLE[origen] ?? 'text-[#9a8f78]'}`}>{origen}</td>
+                  <td className={`${TD} hidden lg:table-cell whitespace-nowrap ${ORIGEN_STYLE[origen] ?? 'text-text-muted'}`}>{origen}</td>
 
                   <td className={TD} onClick={e => e.stopPropagation()}>
                     <button
                       onClick={e => openMenu(e, 'doc', d.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#2e2b20]"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-text hover:bg-border"
                     >
                       ···
                     </button>
@@ -422,7 +422,7 @@ export default function DocTable({
       {/* ── Context menu (shared mobile + desktop) ─────────────── */}
       {(menuDoc || menuFolder) && (
         <div
-          className="fixed z-50 bg-[#1e1c16] border border-[#2e2b20] rounded-xl shadow-2xl py-1 w-52"
+          className="fixed z-50 bg-surface border border-border rounded-xl shadow-2xl py-1 w-52"
           ref={menuRef}
           style={{ top: menuPos.top, right: menuPos.right }}
         >
@@ -434,7 +434,7 @@ export default function DocTable({
                 if (action === 'rename') startRename(menuDoc.id, menuDoc.name);
                 else onAction(action, menuDoc);
               }}
-              className="w-full text-left px-4 py-2.5 text-[12px] text-[#c8c0ac] hover:bg-[#252218] hover:text-[#e8d4a0] active:bg-[#252218] transition-colors"
+              className="w-full text-left px-4 py-2.5 text-caption text-text hover:bg-surface-muted hover:text-text-heading active:bg-surface-raised transition-colors"
             >
               {action === 'contract' && menuDoc.contractId ? 'Ver datos del contrato' : label}
             </button>
@@ -448,19 +448,19 @@ export default function DocTable({
                 if (action === 'rename' && window.matchMedia('(min-width: 768px)').matches) startRename(`f:${menuFolder.id}`, menuFolder.name);
                 else onFolderAction?.(action, menuFolder);
               }}
-              className="w-full text-left px-4 py-2.5 text-[12px] text-[#c8c0ac] hover:bg-[#252218] hover:text-[#e8d4a0] active:bg-[#252218] transition-colors"
+              className="w-full text-left px-4 py-2.5 text-caption text-text hover:bg-surface-muted hover:text-text-heading active:bg-surface-raised transition-colors"
             >
               {label}
             </button>
           ))}
-          <div className="border-t border-[#2e2b20] mt-1 pt-1">
+          <div className="border-t border-border mt-1 pt-1">
             <button
               onClick={() => {
                 setMenu(null);
                 if (menuDoc) onAction('delete', menuDoc);
                 else if (menuFolder) onFolderAction?.('delete', menuFolder);
               }}
-              className="w-full text-left px-4 py-2.5 text-[12px] text-red-400 hover:bg-red-500/5 active:bg-red-500/5 transition-colors"
+              className="w-full text-left px-4 py-2.5 text-caption text-danger-text hover:bg-danger-subtle active:bg-danger-subtle transition-colors"
             >
               {menuFolder ? 'Eliminar carpeta' : 'Eliminar'}
             </button>
@@ -477,26 +477,26 @@ function ContractChip({ d }: { d: DocumentRecord }) {
   if (!d.contractLegalFlag && (d.contractLegalVerdict === 'outdated' || d.contractLegalVerdict === 'review')) {
     const outdated = d.contractLegalVerdict === 'outdated';
     return (
-      <span title="Resultado de la última revisión de cambios legales" className={`px-1.5 py-0.5 rounded text-[9px] font-medium border flex-shrink-0 ${outdated ? 'text-red-400 border-red-400/30' : 'text-amber-400 border-amber-400/30'}`}>
+      <span title="Resultado de la última revisión de cambios legales" className={`px-1.5 py-0.5 rounded text-caption font-medium border flex-shrink-0 ${outdated ? 'text-danger-text border-status-urgente-border' : 'text-warning-text border-status-proximo-border'}`}>
         {outdated ? 'Desactualizado' : 'Revisar'}
       </span>
     );
   }
   if (d.contractLegalFlag) {
     return (
-      <span title="Un cambio legal aprobado puede afectar a este contrato" className="px-1.5 py-0.5 rounded text-[9px] font-medium border flex-shrink-0 text-sky-400 border-sky-400/30">
+      <span title="Un cambio legal aprobado puede afectar a este contrato" className="px-1.5 py-0.5 rounded text-caption font-medium border flex-shrink-0 text-info-text border-status-en-revision-border">
         Cambio legal
       </span>
     );
   }
-  const tone = d.contractLifecycle === 'expired' ? 'text-red-400 border-red-400/30'
-    : d.contractLifecycle === 'expiring' ? 'text-amber-400 border-amber-400/30'
-    : !d.contractConfirmed ? 'text-[#6b6050] border-[#2e2b20]'
-    : 'text-emerald-400/80 border-emerald-400/20';
+  const tone = d.contractLifecycle === 'expired' ? 'text-danger-text border-status-urgente-border'
+    : d.contractLifecycle === 'expiring' ? 'text-warning-text border-status-proximo-border'
+    : !d.contractConfirmed ? 'text-text-muted border-border'
+    : 'text-success-text border-status-a-tiempo-border';
   const title = !d.contractConfirmed ? 'Contrato sin confirmar'
     : d.contractNextDate ? `Contrato · próxima fecha ${formatContractDate(d.contractNextDate)}` : 'Contrato';
   return (
-    <span title={title} className={`px-1.5 py-0.5 rounded text-[9px] font-medium border flex-shrink-0 ${tone}`}>
+    <span title={title} className={`px-1.5 py-0.5 rounded text-caption font-medium border flex-shrink-0 ${tone}`}>
       {d.contractLifecycle === 'expiring' && d.contractNextDate ? `Vence ${formatContractDate(d.contractNextDate)}` : 'Contrato'}
     </span>
   );

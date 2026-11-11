@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 
-const INPUT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
+const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border';
 
 // ── LinkCaseModal ────────────────────────────────────────────────
 
@@ -26,16 +26,16 @@ export function LinkCaseModal({
       <div className="space-y-1 max-h-64 overflow-y-auto mt-2">
         {currentCaseId && (
           <button onClick={() => onLink(null)}
-            className="w-full text-left px-3 py-2 rounded-lg bg-red-500/5 border border-red-500/15 hover:border-red-500/30 text-[12px] text-red-400 transition-colors">
+            className="w-full text-left px-3 py-2 rounded-lg bg-danger-subtle border border-status-urgente-border hover:border-status-urgente-border text-caption text-danger-text transition-colors">
             Desvincular del caso actual
           </button>
         )}
-        {filtered.length === 0 && <p className="text-[12px] text-[#3a3630] py-4 text-center">Sin casos.</p>}
+        {filtered.length === 0 && <p className="text-caption text-text-muted py-4 text-center">Sin casos.</p>}
         {filtered.map(c => (
           <button key={c.id} onClick={() => onLink(c.id)}
-            className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${c.id === currentCaseId ? 'bg-avocat-gold/10 border-avocat-gold/30' : 'bg-[#161410] border-[#2e2b20] hover:border-avocat-gold/30'}`}>
-            <p className="text-[12px] font-medium text-[#c8c0ac] truncate">{c.title}</p>
-            <p className="text-[10px] text-[#6b6050] mt-0.5">{c.ref} · {c.client || '—'}</p>
+            className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${c.id === currentCaseId ? 'bg-accent-subtle border-accent-border' : 'bg-bg border-border hover:border-accent-border'}`}>
+            <p className="text-caption font-medium text-text truncate">{c.title}</p>
+            <p className="text-caption text-text-muted mt-0.5">{c.ref} · {c.client || '—'}</p>
           </button>
         ))}
       </div>
@@ -66,16 +66,16 @@ export function LinkClientModal({
       <div className="space-y-1 max-h-64 overflow-y-auto mt-2">
         {currentClientId && (
           <button onClick={() => onLink(null)}
-            className="w-full text-left px-3 py-2 rounded-lg bg-red-500/5 border border-red-500/15 hover:border-red-500/30 text-[12px] text-red-400 transition-colors">
+            className="w-full text-left px-3 py-2 rounded-lg bg-danger-subtle border border-status-urgente-border hover:border-status-urgente-border text-caption text-danger-text transition-colors">
             Desvincular del cliente actual
           </button>
         )}
-        {filtered.length === 0 && <p className="text-[12px] text-[#3a3630] py-4 text-center">Sin clientes.</p>}
+        {filtered.length === 0 && <p className="text-caption text-text-muted py-4 text-center">Sin clientes.</p>}
         {filtered.map(c => (
           <button key={c.id} onClick={() => onLink(c.id)}
-            className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${c.id === currentClientId ? 'bg-avocat-gold/10 border-avocat-gold/30' : 'bg-[#161410] border-[#2e2b20] hover:border-avocat-gold/30'}`}>
-            <p className="text-[12px] font-medium text-[#c8c0ac] truncate">{c.name}</p>
-            {c.company && <p className="text-[10px] text-[#6b6050] mt-0.5">{c.company}</p>}
+            className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${c.id === currentClientId ? 'bg-accent-subtle border-accent-border' : 'bg-bg border-border hover:border-accent-border'}`}>
+            <p className="text-caption font-medium text-text truncate">{c.name}</p>
+            {c.company && <p className="text-caption text-text-muted mt-0.5">{c.company}</p>}
           </button>
         ))}
       </div>
@@ -98,21 +98,20 @@ export function DeleteConfirmModal({
 }) {
   return (
     <ModalShell title="Confirmar eliminación" onClose={onClose}>
-      <p className="text-[13px] text-[#c8c0ac]">
+      <p className="text-small text-text">
         {names.length === 1
-          ? <>¿Eliminar <span className="text-[#e8d4a0] font-medium">&quot;{names[0]}&quot;</span>? Esta acción no se puede deshacer.</>
-          : <>¿Eliminar <span className="text-[#e8d4a0] font-medium">{names.length} documentos</span>? Esta acción no se puede deshacer.</>
+          ? <>¿Eliminar <span className="text-text-heading font-medium">&quot;{names[0]}&quot;</span>? Esta acción no se puede deshacer.</>
+          : <>¿Eliminar <span className="text-text-heading font-medium">{names.length} documentos</span>? Esta acción no se puede deshacer.</>
         }
       </p>
       {names.length > 1 && (
         <ul className="mt-2 max-h-32 overflow-y-auto space-y-0.5">
-          {names.map((n, i) => <li key={i} className="text-[11px] text-[#6b6050] truncate">• {n}</li>)}
+          {names.map((n, i) => <li key={i} className="text-caption text-text-muted truncate">• {n}</li>)}
         </ul>
       )}
       <div className="flex gap-2 justify-end pt-2">
         <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
-        <Button variant="accent" size="sm" loading={loading} onClick={onConfirm}
-          className="!bg-red-500/80 hover:!bg-red-500 !border-red-500/30">
+        <Button variant="destructive" size="sm" loading={loading} onClick={onConfirm}>
           Eliminar
         </Button>
       </div>
@@ -129,8 +128,8 @@ export function ModalShell({ title, onClose, children, sheetOnMobile = false }: 
   return (
     <div className={`fixed inset-0 z-50 flex justify-center ${sheetOnMobile ? 'items-end md:items-center md:p-4' : 'items-center p-4'}`}>
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className={`relative bg-[#1e1c16] border border-[#2e2b20] p-5 w-full max-w-md shadow-xl space-y-3 ${sheetOnMobile ? 'rounded-t-2xl md:rounded-2xl max-h-[85vh] flex flex-col' : 'rounded-2xl'}`}>
-        <h2 className="font-sans font-semibold text-[14px] text-[#e8d4a0]">{title}</h2>
+      <div className={`relative bg-surface border border-border p-5 w-full max-w-md shadow-xl space-y-3 ${sheetOnMobile ? 'rounded-t-2xl md:rounded-2xl max-h-[85vh] flex flex-col' : 'rounded-2xl'}`}>
+        <h2 className="font-sans font-semibold text-body-sm text-text-heading">{title}</h2>
         {children}
       </div>
     </div>

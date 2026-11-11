@@ -4,10 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import AnimatedSection from './AnimatedSection';
 
+/** Token colour at `pct` % opacity (colours are CSS variables, so no hex-alpha suffixes). */
+const alpha = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+
 const TABS = [
-  { id: 'lawyer',  label: 'Abogados',     tag: 'Plan Abogados',    tagCls: 'bg-avocat-gold/10 text-avocat-gold border-avocat-gold/25' },
-  { id: 'student', label: 'Estudiantes',  tag: 'Plan Estudiantes', tagCls: 'bg-blue-50 text-blue-500 border-blue-200' },
-  { id: 'self',    label: 'Particulares', tag: 'Plan Particular',  tagCls: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+  { id: 'lawyer',  label: 'Abogados',     tag: 'Plan Abogados',    tagCls: 'bg-accent-subtle text-accent-text border-accent-border' },
+  { id: 'student', label: 'Estudiantes',  tag: 'Plan Estudiantes', tagCls: 'bg-info-subtle text-info-text border-status-en-revision-border' },
+  { id: 'self',    label: 'Particulares', tag: 'Plan Particular',  tagCls: 'bg-success-subtle text-success-text border-status-a-tiempo-border' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -33,15 +36,15 @@ const CONTENT: Record<TabId, {
       'Análisis y extracción de documentos',
       'Agente IA conversacional',
     ],
-    mockBg: '#13120e',
-    mockAccent: '#B8882A',
+    mockBg: 'var(--neutral-900)',
+    mockAccent: 'var(--gold-500)',
     mockLines: [
       { label: 'Casos activos',      value: '12' },
       { label: 'Escritos generados', value: '47' },
       { label: 'Tiempo ahorrado',    value: '38 h' },
     ],
     href: '/productos/gestion-abogados',
-    linkColor: 'text-avocat-gold',
+    linkColor: 'text-accent-text',
   },
   student: {
     headline: 'Aprende Derecho razonando',
@@ -54,15 +57,15 @@ const CONTENT: Record<TabId, {
       'Jurisprudencia comentada',
       'Descarga en PDF o email',
     ],
-    mockBg: '#f0f5ff',
-    mockAccent: '#4A90C4',
+    mockBg: 'var(--info-50)',
+    mockAccent: 'var(--info-600)',
     mockLines: [
       { label: 'Materia',  value: 'Derecho Civil' },
       { label: 'Escritos', value: '7 tipos' },
       { label: 'Áreas',    value: '8 cubiertas' },
     ],
     href: '/productos/material-estudiantes',
-    linkColor: 'text-blue-500',
+    linkColor: 'text-info-text',
   },
   self: {
     headline: 'Tus derechos, en lenguaje claro',
@@ -75,15 +78,15 @@ const CONTENT: Record<TabId, {
       'Evaluación de riesgo legal',
       '100 créditos al mes',
     ],
-    mockBg: '#f0faf5',
-    mockAccent: '#3DAB7A',
+    mockBg: 'var(--success-50)',
+    mockAccent: 'var(--success-600)',
     mockLines: [
       { label: 'Créditos', value: '100 / mes' },
       { label: 'Análisis', value: 'Contratos, PDFs' },
       { label: 'Escritos', value: 'Reclamaciones' },
     ],
     href: '/productos/autoservicio',
-    linkColor: 'text-emerald-600',
+    linkColor: 'text-success-text',
   },
 };
 
@@ -93,14 +96,14 @@ export default function PersonaTabs() {
   const tab = TABS.find(t => t.id === active)!;
 
   return (
-    <section className="bg-white py-20 border-t border-avocat-border/40">
+    <section className="bg-surface py-20 border-t border-border">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <AnimatedSection className="text-center mb-10">
-          <div className="inline-block px-3 py-1 rounded-full bg-avocat-gold-bg border border-avocat-gold-l/40 text-[11px] font-sans font-semibold text-avocat-gold uppercase tracking-widest mb-4">
+          <div className="inline-block px-3 py-1 rounded-full bg-accent-subtle border border-accent-border text-label font-sans font-semibold text-accent-text uppercase tracking-widest mb-4">
             Para cada perfil
           </div>
           <h2
-            className="font-display text-avocat-black font-semibold leading-tight"
+            className="font-display text-text font-semibold leading-tight"
             style={{ fontSize: 'clamp(26px, 3vw, 38px)' }}
           >
             Una experiencia diseñada para ti
@@ -109,16 +112,16 @@ export default function PersonaTabs() {
 
         {/* Tab switcher */}
         <div className="flex justify-center mb-8">
-          <div className="inline-flex gap-1 p-1 bg-avocat-muted rounded-xl">
+          <div className="inline-flex gap-1 p-1 bg-surface-muted rounded-xl">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActive(t.id)}
                 className={[
-                  'px-5 py-2.5 rounded-lg text-[13px] font-sans font-medium transition-all',
+                  'px-5 py-2.5 rounded-lg text-small font-sans font-medium transition-all',
                   active === t.id
-                    ? 'bg-white shadow-sm text-avocat-black'
-                    : 'text-avocat-gray5 hover:text-avocat-black',
+                    ? 'bg-surface shadow-sm text-text'
+                    : 'text-text-muted hover:text-text-heading',
                 ].join(' ')}
               >
                 {t.label}
@@ -130,21 +133,21 @@ export default function PersonaTabs() {
         {/* Content panel */}
         <div className="grid lg:grid-cols-2 gap-10 items-center">
           <div>
-            <div className={`inline-block px-3 py-1 rounded-full text-[11px] font-sans font-semibold uppercase tracking-widest mb-4 border ${tab.tagCls}`}>
+            <div className={`inline-block px-3 py-1 rounded-full text-label font-sans font-semibold uppercase tracking-widest mb-4 border ${tab.tagCls}`}>
               {tab.tag}
             </div>
-            <h3 className="font-display text-avocat-black font-semibold text-[28px] leading-tight mb-3">
+            <h3 className="font-display text-text font-semibold text-h2 leading-tight mb-3">
               {content.headline}
             </h3>
-            <p className="font-sans text-[14px] text-avocat-gray5 leading-relaxed mb-6">
+            <p className="font-sans text-body-sm text-text-muted leading-relaxed mb-6">
               {content.desc}
             </p>
             <ul className="space-y-2.5 mb-7">
               {content.features.map((f) => (
-                <li key={f} className="flex items-center gap-2.5 text-[13px] font-sans text-avocat-black">
+                <li key={f} className="flex items-center gap-2.5 text-small font-sans text-text">
                   <div
                     className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: `${content.mockAccent}18` }}
+                    style={{ background: `color-mix(in srgb, ${content.mockAccent} 10%, transparent)` }}
                   >
                     <div
                       className="w-1.5 h-1.5 rounded-full"
@@ -157,7 +160,7 @@ export default function PersonaTabs() {
             </ul>
             <Link
               href={content.href}
-              className={`inline-flex items-center gap-1 text-[13px] font-sans font-semibold ${content.linkColor} hover:underline`}
+              className={`inline-flex items-center gap-1 text-small font-sans font-semibold ${content.linkColor} hover:underline`}
             >
               Saber más →
             </Link>
@@ -166,12 +169,12 @@ export default function PersonaTabs() {
           {/* Mock UI */}
           <div
             className="rounded-2xl overflow-hidden"
-            style={{ background: content.mockBg, border: `1px solid ${content.mockAccent}30` }}
+            style={{ background: content.mockBg, border: `1px solid color-mix(in srgb, ${content.mockAccent} 19%, transparent)` }}
           >
-            <div className="px-5 py-3 border-b" style={{ borderColor: `${content.mockAccent}20` }}>
+            <div className="px-5 py-3 border-b" style={{ borderColor: alpha(content.mockAccent, 13) }}>
               <div className="flex gap-1.5">
                 {[0, 1, 2].map(i => (
-                  <div key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: `${content.mockAccent}30` }} />
+                  <div key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: alpha(content.mockAccent, 19) }} />
                 ))}
               </div>
             </div>
@@ -180,25 +183,25 @@ export default function PersonaTabs() {
                 <div
                   key={label}
                   className="flex items-center justify-between py-3 border-b"
-                  style={{ borderColor: `${content.mockAccent}15` }}
+                  style={{ borderColor: alpha(content.mockAccent, 8) }}
                 >
-                  <span className="text-[12px] font-sans" style={{ color: `${content.mockAccent}90` }}>{label}</span>
-                  <span className="text-[16px] font-display font-semibold" style={{ color: content.mockAccent }}>{value}</span>
+                  <span className="text-caption font-sans" style={{ color: alpha(content.mockAccent, 56) }}>{label}</span>
+                  <span className="text-body font-display font-semibold" style={{ color: content.mockAccent }}>{value}</span>
                 </div>
               ))}
               <div
                 className="mt-4 flex items-center gap-3 p-3.5 rounded-xl"
-                style={{ background: `${content.mockAccent}10`, border: `1px solid ${content.mockAccent}25` }}
+                style={{ background: alpha(content.mockAccent, 6), border: `1px solid ${alpha(content.mockAccent, 15)}` }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${content.mockAccent}20` }}
+                  style={{ background: alpha(content.mockAccent, 13) }}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke={content.mockAccent} strokeWidth="1.5" className="w-4 h-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                   </svg>
                 </div>
-                <p className="text-[11px] font-sans leading-snug" style={{ color: content.mockAccent }}>
+                <p className="text-caption font-sans leading-snug" style={{ color: content.mockAccent }}>
                   Agente IA activo · Listo para trabajar
                 </p>
               </div>

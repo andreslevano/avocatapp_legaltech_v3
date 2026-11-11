@@ -5,6 +5,10 @@
 import { daysBetween, formatContractDate } from './dates';
 import type { Contract, DateKind } from './types';
 import { OPEN_LIFECYCLES } from './types';
+import { fonts, primitives as P } from '@/lib/tokens';
+
+// Email clients can't load web fonts reliably: DM Sans when installed, else the system UI font.
+const EMAIL_FONT = fonts.sans.replace(/"/g, "'");
 
 export interface NotificationPrefs {
   thresholds: number[];     // days before the date, e.g. [90, 30, 7, 0]
@@ -119,16 +123,16 @@ export function buildDigest(items: DigestItem[], appUrl: string): { subject: str
     `Ver y gestionar los avisos: ${link}`, '',
     'Puedes cambiar los avisos en Perfil → Notificaciones.',
   ].join('\n');
-  const dot = (s: AlertSeverity) => (s === 'high' ? '#d9534f' : s === 'medium' ? '#B8882A' : '#9a9a9a');
-  const html = `<!doctype html><html><body style="margin:0;background:#F9F4EA;font-family:Arial,Helvetica,sans-serif;color:#1e1e1e">
+  const dot = (s: AlertSeverity) => (s === 'high' ? P['danger-600'] : s === 'medium' ? P['gold-500'] : P['neutral-500']);
+  const html = `<!doctype html><html><body style="margin:0;background:${P['neutral-50']};font-family:${EMAIL_FONT};color:${P['neutral-900']}">
 <div style="max-width:560px;margin:0 auto;padding:24px">
 <p style="font-family:Georgia,serif;font-size:22px;margin:0 0 16px">Avocat</p>
 <p style="font-size:14px;margin:0 0 12px">Avisos de vencimiento de tus contratos:</p>
-${sorted.map(i => `<div style="background:#fff;border:1px solid #C8C0B0;border-radius:8px;padding:12px 14px;margin:0 0 8px">
+${sorted.map(i => `<div style="background:${P['neutral-0']};border:1px solid ${P['neutral-300']};border-radius:8px;padding:12px 14px;margin:0 0 8px">
 <p style="margin:0;font-size:14px;font-weight:bold"><span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:${dot(i.severity)};margin-right:6px"></span>${esc(i.title)}</p>
-<p style="margin:4px 0 0;font-size:13px;color:#5f5f5f">${esc(i.body)}</p></div>`).join('\n')}
-<p style="margin:16px 0"><a href="${esc(link)}" style="background:#B8882A;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;font-size:14px">Ver avisos</a></p>
-<p style="font-size:12px;color:#9a9a9a">Puedes cambiar los avisos en Perfil → Notificaciones.</p>
+<p style="margin:4px 0 0;font-size:13px;color:${P['neutral-600']}">${esc(i.body)}</p></div>`).join('\n')}
+<p style="margin:16px 0"><a href="${esc(link)}" style="background:${P['gold-500']};color:${P['neutral-900']};text-decoration:none;padding:10px 16px;border-radius:8px;font-size:14px">Ver avisos</a></p>
+<p style="font-size:12px;color:${P['neutral-500']}">Puedes cambiar los avisos en Perfil → Notificaciones.</p>
 </div></body></html>`;
   return { subject, text, html };
 }

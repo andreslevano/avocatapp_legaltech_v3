@@ -65,14 +65,14 @@ export default function SignatureNotifier() {
   return (
     <div className="fixed z-[60] right-3 bottom-20 md:bottom-4 flex flex-col gap-2 max-w-[calc(100vw-24px)] w-[340px]" role="status">
       {toasts.map(t => (
-        <div key={t.id} className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-3.5 py-2.5 shadow-lg flex items-start gap-2.5">
-          <span className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${t.tone === 'ok' ? 'bg-emerald-400' : t.tone === 'err' ? 'bg-red-400' : 'bg-avocat-gold'}`} />
+        <div key={t.id} className="bg-surface border border-border rounded-xl px-3.5 py-2.5 shadow-lg flex items-start gap-2.5">
+          <span className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${t.tone === 'ok' ? 'bg-status-pagado-bg' : t.tone === 'err' ? 'bg-danger' : 'bg-accent'}`} />
           <div className="flex-1 min-w-0">
-            <p className="text-[12px] text-[#c8c0ac] leading-snug">{t.text}</p>
-            <Link href="/documents" className="text-[11px] text-avocat-gold hover:underline">Ver en Documentos</Link>
+            <p className="text-caption text-text leading-snug">{t.text}</p>
+            <Link href="/documents" className="text-caption text-accent-text hover:underline">Ver en Documentos</Link>
           </div>
           <button onClick={() => setToasts(ts => ts.filter(o => o.id !== t.id))} aria-label="Cerrar"
-            className="text-[#6b6050] hover:text-[#c8c0ac] text-[14px] leading-none">×</button>
+            className="text-text-muted hover:text-text text-body-sm leading-none">×</button>
         </div>
       ))}
     </div>
