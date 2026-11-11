@@ -638,7 +638,9 @@ export default function NdaPage() {
                       documentId={savedDocId}
                       markdown={result}
                       title={docTitle || ndaTitle}
-                      defaultCounterparty={{ name: receptora.nombre, email: receptora.email }}
+                      defaultCounterparty={orgTpl
+                        ? { name: mfwReceptor.nombre ?? '', email: mfwReceptor.email ?? '' }
+                        : { name: receptora.nombre, email: receptora.email }}
                       language={language}
                       returnTo="/tools/nda"
                       autoOpen={resumeSign}

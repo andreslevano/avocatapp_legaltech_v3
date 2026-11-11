@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 import { useState } from 'react';
+import { orgNdaTemplateFor } from '@/lib/org-templates';
 
 const TOOLS_COMMON = [
   {
@@ -37,6 +38,16 @@ const TOOLS_COMMON = [
     title: 'Revisión de Email',
     description: 'Analiza el contenido de emails legales: categorías, ideas principales, nivel de riesgo.',
     icon: '📧',
+  },
+];
+
+// Organisation templates (MOBIFORWORK): only for users of that organisation.
+const TOOLS_MOBILITYFORWORK = [
+  {
+    href: '/tools/contrato-servicios',
+    title: 'Generador de contrato de servicios',
+    description: 'Contrato de Prestación de Servicios con la plantilla de MOBIFORWORK: datos del colaborador, tarifa y firma con DocuSign.',
+    icon: '🤝',
   },
 ];
 
@@ -75,7 +86,9 @@ export default function ToolsPage() {
   const tools = [
     ...(isEstudiantes ? TOOLS_ESTUDIANTES : []),
     ...(isAutoservicio ? TOOLS_AUTOSERVICIO : []),
-    ...TOOLS_COMMON,
+    ...TOOLS_COMMON.slice(0, 1),
+    ...(orgNdaTemplateFor(user) === 'mobilityforwork' ? TOOLS_MOBILITYFORWORK : []),
+    ...TOOLS_COMMON.slice(1),
   ];
 
   const creditos = userDoc.creditos_disponibles ?? 0;

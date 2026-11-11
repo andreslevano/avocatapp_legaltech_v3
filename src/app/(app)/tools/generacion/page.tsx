@@ -567,10 +567,16 @@ export default function GeneracionPage() {
                   </div>
                   {tip && <p className="text-[11px] text-[#6b6050] leading-relaxed border-t border-[#2e2b20] pt-3">{tip}</p>}
                   {error && <p className="text-[12px] text-red-400">{error}</p>}
-                  {orgNda && selectedType?.value === 'nda' ? (
+                  {orgNda && (selectedType?.value === 'nda' || selectedType?.value === 'contrato_servicios') ? (
                     <div className="rounded-lg border border-avocat-gold/30 bg-avocat-gold/5 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-[12px] text-[#c8c0ac]">Mobility for Work tiene un NDA validado por su abogado. Se genera desde el Generador de NDA para que sea idéntico a la versión aprobada.</p>
-                      <Link href="/tools/nda"><Button variant="BtnGold" size="sm">Ir al Generador de NDA</Button></Link>
+                      <p className="text-[12px] text-[#c8c0ac]">
+                        {selectedType?.value === 'nda'
+                          ? 'Mobility for Work tiene un NDA validado por su abogado. Se genera desde el Generador de NDA para que sea idéntico a la versión aprobada.'
+                          : 'Mobility for Work tiene una plantilla de contrato de servicios. Se genera desde el Generador de contrato de servicios para que sea idéntico a la plantilla.'}
+                      </p>
+                      <Link href={selectedType?.value === 'nda' ? '/tools/nda' : '/tools/contrato-servicios'}>
+                        <Button variant="BtnGold" size="sm">{selectedType?.value === 'nda' ? 'Ir al Generador de NDA' : 'Ir al Generador de contrato de servicios'}</Button>
+                      </Link>
                     </div>
                   ) : (
                   <div className="flex justify-end">

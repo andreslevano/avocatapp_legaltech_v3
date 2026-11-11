@@ -3,11 +3,16 @@
 import { useEffect, useState } from 'react';
 import { buildPdfBlob } from '@/lib/agent-export';
 import { renderMfwNda } from '@/lib/org-templates/mobiforwork-nda';
+import { renderMfwServices } from '@/lib/org-templates/mobiforwork-services';
 
 export default function PdfHarness() {
   const [b64, setB64] = useState('');
   useEffect(() => {
-    const md = renderMfwNda({
+    const services = new URLSearchParams(window.location.search).get('doc') === 'services';
+    const md = services ? renderMfwServices({
+      fechaContrato: '2026-11-11', inicioPool: '2026-08-10', mesesIniciales: 2, tarifaHora: 35, moneda: 'USD',
+      colaborador: { nombre: 'Juan Pérez Gómez', nacionalidad: 'colombiana', domicilio: 'Cra 7 #12-34, Bogotá', documento: 'C.C. 1012345678', email: 'juan@example.com' },
+    }) : renderMfwNda({
       receptor: { tipo: 'sociedad', razonSocial: 'ACME SL', nif: 'B12345678', domicilio: 'C/ Mayor 1, Madrid', nombre: 'Ana Pérez', documento: 'DNI 12345678Z', cargo: 'Administradora', facultades: 'escritura de poder nº 123', email: 'ana@acme.es' },
       productos: 'Plataforma Mobility For Work\nPortal de fabricantes',
     });
