@@ -6,10 +6,22 @@ const defaultColors = require('tailwindcss/colors');
 const STRICT = process.env.AVOCAT_STRICT_COLORS === '1';
 const legacy = STRICT ? {} : (({ lightBlue, warmGray, trueGray, coolGray, blueGray, ...rest }) => rest)(defaultColors);
 
+// Role/primitive colours are CSS variables, so Tailwind can't apply `/40`-style opacity modifiers to
+// them by itself (bg-accent/10, border-avocat-gold/40 … would generate no CSS). Each var colour is
+// wrapped so a modifier becomes color-mix(); without one it stays a plain var().
+const withAlpha = (value) => {
+  if (typeof value !== 'string' || !/^var\(--[\w-]+\)$/.test(value)) return value;
+  return ({ opacityValue }) =>
+    opacityValue === undefined || opacityValue === '1' || opacityValue === 1 || String(opacityValue).startsWith('var(--tw-')
+      ? value
+      : `color-mix(in srgb, ${value} calc(${opacityValue} * 100%), transparent)`;
+};
+const alphaColors = (obj) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, withAlpha(v)]));
+
 module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
-    colors: {
+    colors: alphaColors({
       ...legacy,
       transparent: 'transparent',
       current: 'currentColor',
@@ -131,7 +143,7 @@ module.exports = {
         'ds-border': 'var(--neutral-800)', 'ds-text': 'var(--neutral-300)', 'ds-head': 'var(--gold-200)',
         app: 'var(--bg)', sidebar: 'var(--surface-inverse)', card: 'var(--surface)',
         'text-primary': 'var(--text)', 'text-secondary': 'var(--text-muted)', 'text-on-dark': 'var(--text-inverse)',
-    },
+    }),
     fontFamily: {
       display:  ['var(--font-display)', "\"Cormorant Garamond\", \"EB Garamond\", Georgia, serif"],
       sans:     ['var(--font-sans)', "\"DM Sans\", system-ui, sans-serif"],
