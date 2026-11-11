@@ -260,10 +260,10 @@ function EstudiantesContent() {
           actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
         />
         <div className="flex-1 flex items-center justify-center p-6">
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-8 max-w-sm text-center space-y-3">
+          <div className="bg-surface border border-border rounded-xl p-8 max-w-sm text-center space-y-3">
             <GraduationCap size={32} className="text-accent-text" aria-hidden />
-            <h3 className="font-display text-lg text-[#e8d4a0]">Módulo exclusivo para Estudiantes</h3>
-            <p className="text-[12px] text-[#6b6050] leading-relaxed">
+            <h3 className="font-display text-lg text-text-heading">Módulo exclusivo para Estudiantes</h3>
+            <p className="text-caption text-text-muted leading-relaxed">
               Accede a más de 44 modelos de escritos académicos de las 8 áreas del derecho español por €3 cada uno.
             </p>
             <Link href="/subscription">
@@ -285,10 +285,10 @@ function EstudiantesContent() {
           actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
         />
         <div className="flex-1 flex items-center justify-center p-6">
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-8 max-w-sm text-center space-y-4">
+          <div className="bg-surface border border-border rounded-xl p-8 max-w-sm text-center space-y-4">
             <CircleCheck size={40} className="text-success-text" aria-hidden />
-            <h3 className="font-display text-lg text-[#e8d4a0]">¡Pago completado!</h3>
-            <p className="text-[12px] text-[#6b6050] leading-relaxed">
+            <h3 className="font-display text-lg text-text-heading">¡Pago completado!</h3>
+            <p className="text-caption text-text-muted leading-relaxed">
               Tus documentos se están generando. Aparecerán en el historial de compras en unos momentos.
             </p>
             <div className="flex gap-2 justify-center">
@@ -325,17 +325,17 @@ function EstudiantesContent() {
 
           {/* Area selector */}
           <div className="lg:col-span-1 space-y-1">
-            <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">
+            <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-2">
               Área del derecho
             </p>
             {areaKeys.map((area) => (
               <button
                 key={area}
                 onClick={() => setSelectedArea(area)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg text-[12px] font-sans transition-colors ${
+                className={`w-full text-left px-3 py-2.5 rounded-lg text-caption font-sans transition-colors ${
                   selectedArea === area
-                    ? 'bg-avocat-gold/20 text-avocat-gold border border-avocat-gold/30'
-                    : 'text-[#9a9a9a] hover:text-[#c8c0ac] hover:bg-[#1e1c16]'
+                    ? 'bg-accent-subtle text-accent-text border border-accent-border'
+                    : 'text-text-muted hover:text-text hover:bg-surface'
                 }`}
               >
                 {area}
@@ -345,7 +345,7 @@ function EstudiantesContent() {
 
           {/* Document list */}
           <div className="lg:col-span-2">
-            <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">
+            <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-2">
               {selectedArea}
             </p>
             <div className="space-y-2">
@@ -355,22 +355,22 @@ function EstudiantesContent() {
                 return (
                   <div
                     key={id}
-                    className="bg-[#1e1c16] border border-[#2e2b20] rounded-lg px-4 py-3 flex items-center justify-between gap-3"
+                    className="bg-surface border border-border rounded-lg px-4 py-3 flex items-center justify-between gap-3"
                   >
-                    <span className="text-[12px] font-sans text-[#c8c0ac] flex-1 leading-snug">{doc.name}</span>
+                    <span className="text-caption font-sans text-text flex-1 leading-snug">{doc.name}</span>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[12px] font-sans text-avocat-gold font-semibold">{fmt.format(doc.price)}</span>
+                      <span className="text-caption font-sans text-accent-text font-semibold">{fmt.format(doc.price)}</span>
                       {inCart ? (
                         <button
                           onClick={() => removeFromCart(id)}
-                          className="text-[11px] px-2 py-1 rounded bg-red-900/30 text-red-400 border border-red-900/40 hover:bg-red-900/50 transition-colors"
+                          className="text-caption px-2 py-1 rounded bg-danger-subtle text-danger-text border border-status-urgente-border hover:bg-danger-subtle transition-colors"
                         >
                           Quitar
                         </button>
                       ) : (
                         <button
                           onClick={() => addToCart(doc.name, selectedArea, doc.price)}
-                          className="text-[11px] px-2 py-1 rounded bg-avocat-gold/10 text-avocat-gold border border-avocat-gold/20 hover:bg-avocat-gold/20 transition-colors"
+                          className="text-caption px-2 py-1 rounded bg-accent-subtle text-accent-text border border-accent-border hover:bg-accent-subtle transition-colors"
                         >
                           + Añadir
                         </button>
@@ -385,14 +385,14 @@ function EstudiantesContent() {
 
         {/* ── Cart ── */}
         {cart.length > 0 && (
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
+          <div className="bg-surface border border-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-sans font-semibold text-[13px] text-[#e8d4a0]">
+              <h3 className="font-sans font-semibold text-small text-text-heading">
                 Carrito ({cart.reduce((s, i) => s + i.quantity, 0)} documento{cart.reduce((s, i) => s + i.quantity, 0) !== 1 ? 's' : ''})
               </h3>
               <button
                 onClick={() => setCart([])}
-                className="text-[11px] text-[#6b6050] hover:text-[#9a9a9a] transition-colors"
+                className="text-caption text-text-muted hover:text-text-muted transition-colors"
               >
                 Vaciar
               </button>
@@ -400,17 +400,17 @@ function EstudiantesContent() {
 
             <div className="space-y-2 mb-4">
               {cart.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 text-[12px]">
+                <div key={item.id} className="flex items-center gap-3 text-caption">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[#c8c0ac] leading-snug truncate">{item.name}</p>
-                    <p className="text-[#6b6050]">{item.area}</p>
+                    <p className="text-text leading-snug truncate">{item.name}</p>
+                    <p className="text-text-muted">{item.area}</p>
                   </div>
-                  <span className="text-avocat-gold font-semibold shrink-0">
+                  <span className="text-accent-text font-semibold shrink-0">
                     {fmt.format(item.price * item.quantity)}
                   </span>
                   <button
                     onClick={() => removeFromCart(item.id)}
-                    className="text-[#6b6050] hover:text-red-400 transition-colors shrink-0"
+                    className="text-text-muted hover:text-danger-text transition-colors shrink-0"
                     aria-label="Eliminar"
                   >
                     <X size={16} aria-hidden />
@@ -419,10 +419,10 @@ function EstudiantesContent() {
               ))}
             </div>
 
-            <div className="border-t border-[#2e2b20] pt-4 flex items-center justify-between">
+            <div className="border-t border-border pt-4 flex items-center justify-between">
               <div>
-                <p className="text-[11px] text-[#6b6050] uppercase tracking-wider">Total</p>
-                <p className="text-[18px] font-display font-semibold text-[#e8d4a0]">{fmt.format(cartTotal)}</p>
+                <p className="text-label text-text-muted uppercase tracking-wider">Total</p>
+                <p className="text-body-lg font-display font-semibold text-text-heading">{fmt.format(cartTotal)}</p>
               </div>
               <Button
                 variant="accent"
@@ -433,44 +433,44 @@ function EstudiantesContent() {
                 Pagar con Stripe
               </Button>
             </div>
-            {error && <p className="mt-3 text-[12px] text-red-400">{error}</p>}
+            {error && <p className="mt-3 text-caption text-danger-text">{error}</p>}
           </div>
         )}
 
         {/* ── Purchase history ── */}
         <div>
-          <h3 className="font-sans font-semibold text-[13px] text-[#9a9a9a] uppercase tracking-widest mb-3">
+          <h3 className="font-sans font-semibold text-small text-text-muted uppercase tracking-widest mb-3">
             Historial de compras
           </h3>
           {historyLoading ? (
-            <p className="text-[12px] text-[#6b6050]">Cargando...</p>
+            <p className="text-caption text-text-muted">Cargando...</p>
           ) : purchaseHistory.length === 0 ? (
-            <p className="text-[12px] text-[#6b6050]">Aún no has realizado ninguna compra.</p>
+            <p className="text-caption text-text-muted">Aún no has realizado ninguna compra.</p>
           ) : (
             <div className="space-y-3">
               {purchaseHistory.map((purchase) => (
                 <div
                   key={purchase.id}
-                  className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-4"
+                  className="bg-surface border border-border rounded-xl p-4"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <p className="text-[12px] font-sans font-semibold text-[#c8c0ac]">
+                      <p className="text-caption font-sans font-semibold text-text">
                         {purchase.createdAt.toLocaleDateString('es-ES', {
                           day: '2-digit', month: 'short', year: 'numeric',
                         })}
                       </p>
-                      <p className="text-[11px] text-[#6b6050]">
+                      <p className="text-caption text-text-muted">
                         {purchase.items.length} documento{purchase.items.length !== 1 ? 's' : ''} · {fmt.format(purchase.total)}
                       </p>
                     </div>
                     <span
-                      className={`text-[11px] px-2 py-0.5 rounded-full font-sans ${
+                      className={`text-caption px-2 py-0.5 rounded-full font-sans ${
                         purchase.status === 'completed'
-                          ? 'bg-green-900/30 text-green-400'
+                          ? 'bg-success-subtle text-success-text'
                           : purchase.status === 'pending'
-                          ? 'bg-yellow-900/30 text-yellow-400'
-                          : 'bg-red-900/30 text-red-400'
+                          ? 'bg-warning-subtle text-warning-text'
+                          : 'bg-danger-subtle text-danger-text'
                       }`}
                     >
                       {purchase.status === 'completed' ? 'Completada' : purchase.status === 'pending' ? 'En proceso' : purchase.status}
@@ -483,20 +483,20 @@ function EstudiantesContent() {
                       return (
                         <div key={item.id} className="flex items-center gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="text-[12px] text-[#c8c0ac] leading-snug">{item.name}</p>
-                            {item.area && <p className="text-[11px] text-[#6b6050]">{item.area}</p>}
+                            <p className="text-caption text-text leading-snug">{item.name}</p>
+                            {item.area && <p className="text-caption text-text-muted">{item.area}</p>}
                           </div>
                           {url ? (
                             <a
                               href={url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[11px] px-3 py-1.5 rounded-lg bg-avocat-gold/10 text-avocat-gold border border-avocat-gold/20 hover:bg-avocat-gold/20 transition-colors shrink-0"
+                              className="text-caption px-3 py-1.5 rounded-lg bg-accent-subtle text-accent-text border border-accent-border hover:bg-accent-subtle transition-colors shrink-0"
                             >
                               Descargar
                             </a>
                           ) : (
-                            <span className="text-[11px] text-[#6b6050] shrink-0">
+                            <span className="text-caption text-text-muted shrink-0">
                               {purchase.status === 'pending' ? 'Generando...' : 'No disponible'}
                             </span>
                           )}
@@ -520,7 +520,7 @@ export default function EstudiantesPage() {
       <div className="flex flex-col h-full">
         <AppHeader title="Documentos por Área Legal" />
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-5 h-5 border-2 border-avocat-gold/30 border-t-avocat-gold rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-accent-border border-t-accent rounded-full animate-spin" />
         </div>
       </div>
     }>

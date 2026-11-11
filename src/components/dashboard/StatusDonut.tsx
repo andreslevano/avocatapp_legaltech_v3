@@ -3,6 +3,7 @@
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import type { CaseDoc, CaseStatus } from '@/lib/firestore';
+import { themes } from '@/lib/tokens';
 
 ChartJS.register(ArcElement, Tooltip);
 
@@ -13,11 +14,14 @@ const STATUS_LABELS: Record<CaseStatus, string> = {
   archived: 'Archivados',
 };
 
+// Case status → dark-theme colours (canvas can't read CSS variables). Urgent uses the danger hue; the
+// legend also prints the word, so colour is never the only cue.
+const T = themes.dark;
 const STATUS_COLORS: Record<CaseStatus, string> = {
-  active:   '#10b981',
-  urgent:   '#ef4444',
-  closed:   '#6b6050',
-  archived: '#3a3630',
+  active:   T.successText,
+  urgent:   T.dangerText,
+  closed:   T.textMuted,
+  archived: T.borderStrong,
 };
 
 interface StatusDonutProps {
@@ -35,7 +39,7 @@ export default function StatusDonut({ cases }: StatusDonutProps) {
       {
         data: counts,
         backgroundColor: statuses.map(s => STATUS_COLORS[s]),
-        borderColor: '#1e1c16',
+        borderColor: T.surface,
         borderWidth: 2,
         hoverOffset: 4,
       },
@@ -49,33 +53,33 @@ export default function StatusDonut({ cases }: StatusDonutProps) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#1e1c16',
-        borderColor: '#2e2b20',
+        backgroundColor: T.surface,
+        borderColor: T.border,
         borderWidth: 1,
-        titleColor: '#e8d4a0',
-        bodyColor: '#c8c0ac',
+        titleColor: T.textHeading,
+        bodyColor: T.text,
         padding: 10,
       },
     },
   };
 
   return (
-    <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
-      <h3 className="text-[13px] font-sans font-semibold text-[#e8d4a0] mb-4">
+    <div className="bg-surface border border-border rounded-xl p-5">
+      <h3 className="text-small font-sans font-semibold text-text-heading mb-4">
         Estado de casos
       </h3>
       <div className="flex items-center gap-6">
         <div className="h-[140px] w-[140px] relative flex-shrink-0">
           {total === 0 ? (
-            <div className="h-full w-full rounded-full border-2 border-[#2e2b20] flex items-center justify-center">
-              <span className="text-[11px] text-[#6b6050]">Sin datos</span>
+            <div className="h-full w-full rounded-full border-2 border-border flex items-center justify-center">
+              <span className="text-caption text-text-muted">Sin datos</span>
             </div>
           ) : (
             <>
               <Doughnut data={data} options={options} />
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[22px] font-display font-semibold text-[#e8d4a0] leading-none">{total}</span>
-                <span className="text-[10px] text-[#6b6050] mt-0.5">casos</span>
+                <span className="text-h3 font-display font-semibold text-text-heading leading-none">{total}</span>
+                <span className="text-caption text-text-muted mt-0.5">casos</span>
               </div>
             </>
           )}
@@ -87,8 +91,8 @@ export default function StatusDonut({ cases }: StatusDonutProps) {
                 className="w-2 h-2 rounded-full flex-shrink-0"
                 style={{ backgroundColor: STATUS_COLORS[s] }}
               />
-              <span className="text-[12px] text-[#6b6050]">{STATUS_LABELS[s]}</span>
-              <span className="text-[12px] font-medium text-[#c8c0ac] ml-auto pl-3">{counts[i]}</span>
+              <span className="text-caption text-text-muted">{STATUS_LABELS[s]}</span>
+              <span className="text-caption font-medium text-text ml-auto pl-3">{counts[i]}</span>
             </div>
           ))}
         </div>

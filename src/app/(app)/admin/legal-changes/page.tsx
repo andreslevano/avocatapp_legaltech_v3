@@ -18,15 +18,15 @@ import {
   type ChangeSeverity, type ChangeStatus, type LegalChange, type LegalJurisdiction, type LegalTopic,
 } from '@/lib/legal/types';
 
-const FIELD = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[12px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
-const LABEL = 'block text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1';
+const FIELD = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-caption font-sans text-text  focus:border-accent-border';
+const LABEL = 'block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1';
 type Tab = ChangeStatus | 'baseline';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'new', label: 'Pendientes' }, { id: 'approved', label: 'Aprobados' }, { id: 'dismissed', label: 'Descartados' },
   { id: 'baseline', label: 'Requisitos base' },
 ];
 const SEVERITY_STYLE: Record<ChangeSeverity, string> = {
-  critical: 'text-red-400 border-red-400/30', important: 'text-amber-400 border-amber-400/30', recommended: 'text-[#6b6050] border-[#2e2b20]',
+  critical: 'text-danger-text border-status-urgente-border', important: 'text-warning-text border-status-proximo-border', recommended: 'text-text-muted border-border',
 };
 const SOURCE_LABEL = { boe: 'BOE', eurlex: 'DOUE', manual: 'Manual' } as const;
 
@@ -49,7 +49,7 @@ export default function LegalChangesAdminPage() {
     return (
       <div className="flex flex-col h-full">
         <AppHeader title="Cambios legales" />
-        <p className="p-6 text-[13px] text-[#6b6050]">Solo los administradores pueden revisar cambios legales.</p>
+        <p className="p-6 text-small text-text-muted">Solo los administradores pueden revisar cambios legales.</p>
       </div>
     );
   }
@@ -80,27 +80,27 @@ export default function LegalChangesAdminPage() {
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto space-y-4">
-          <p className="text-[11px] text-[#6b6050]">
+          <p className="text-caption text-text-muted">
             Avocat revisa cada mañana el BOE (sección I) y la legislación de la UE. La IA propone; nada se usa hasta que lo apruebas.
             Al aprobar, se marcan los NDAs que pueden verse afectados y se avisa a sus titulares.
           </p>
           {manualOpen && <ManualForm onDone={msg => { setManualOpen(false); setTab('new'); setNotice({ kind: 'ok', text: msg }); }} />}
 
-          <div className="flex gap-1 border-b border-[#2e2b20]">
+          <div className="flex gap-1 border-b border-border">
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`px-3 py-2 text-[12px] -mb-px border-b-2 transition-colors ${tab === t.id ? 'border-avocat-gold text-avocat-gold' : 'border-transparent text-[#6b6050] hover:text-[#c8c0ac]'}`}>
+                className={`px-3 py-2 text-caption -mb-px border-b-2 transition-colors ${tab === t.id ? 'border-accent text-accent-text' : 'border-transparent text-text-muted hover:text-text'}`}>
                 {t.label}
               </button>
             ))}
           </div>
 
-          {notice && <p className={`text-[12px] ${notice.kind === 'ok' ? 'text-emerald-400' : 'text-red-400'}`}>{notice.text}</p>}
+          {notice && <p className={`text-caption ${notice.kind === 'ok' ? 'text-success-text' : 'text-danger-text'}`}>{notice.text}</p>}
 
           {tab === 'baseline' ? <BaselineAdmin onNotice={setNotice} />
-            : items === null ? <p className="text-[12px] text-[#6b6050]">Cargando…</p>
+            : items === null ? <p className="text-caption text-text-muted">Cargando…</p>
             : items.length === 0 ? (
-              <p className="text-[12px] text-[#6b6050] py-6 text-center">
+              <p className="text-caption text-text-muted py-6 text-center">
                 {tab === 'new' ? 'No hay cambios pendientes de revisar.' : tab === 'approved' ? 'Aún no hay cambios aprobados.' : 'No hay cambios descartados.'}
               </p>
             ) : items.map(c => (
@@ -130,24 +130,24 @@ function ChangeCard({ c, busy, onRun }: { c: LegalChange; busy: string | null; o
   });
 
   return (
-    <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-4 py-3 space-y-3">
+    <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-3">
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-1.5 text-[10px] mb-1">
-            <span className="px-1.5 py-0.5 rounded border border-[#2e2b20] text-[#c8c0ac]">{SOURCE_LABEL[c.source]} · {c.jurisdiction === 'EU' ? 'UE' : 'España'}</span>
+          <div className="flex flex-wrap items-center gap-1.5 text-caption mb-1">
+            <span className="px-1.5 py-0.5 rounded border border-border text-text">{SOURCE_LABEL[c.source]} · {c.jurisdiction === 'EU' ? 'UE' : 'España'}</span>
             <span className={`px-1.5 py-0.5 rounded border ${SEVERITY_STYLE[c.severity]}`}>{SEVERITY_LABEL[c.severity]}</span>
-            <span className="text-[#6b6050]">Publicado {formatContractDate(c.publishedAt)}{c.effectiveFrom ? ` · en vigor ${formatContractDate(c.effectiveFrom)}` : ''}</span>
-            {c.status === 'approved' && <span className="text-emerald-400">· {c.flaggedContracts ?? 0} NDAs marcados</span>}
+            <span className="text-text-muted">Publicado {formatContractDate(c.publishedAt)}{c.effectiveFrom ? ` · en vigor ${formatContractDate(c.effectiveFrom)}` : ''}</span>
+            {c.status === 'approved' && <span className="text-success-text">· {c.flaggedContracts ?? 0} NDAs marcados</span>}
           </div>
-          <p className="text-[13px] text-[#e8d4a0] leading-snug">{c.title}</p>
-          {c.url && <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-avocat-gold hover:underline">Ver texto oficial ↗</a>}
+          <p className="text-small text-text-heading leading-snug">{c.title}</p>
+          {c.url && <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-caption text-accent-text hover:underline">Ver texto oficial ↗</a>}
         </div>
-        <button onClick={() => setOpen(o => !o)} className="text-[11px] text-[#6b6050] hover:text-[#c8c0ac] flex-shrink-0">{open ? 'Ocultar' : 'Ver'}</button>
+        <button onClick={() => setOpen(o => !o)} className="text-caption text-text-muted hover:text-text flex-shrink-0">{open ? 'Ocultar' : 'Ver'}</button>
       </div>
 
       {open && (
         <div className="space-y-2.5">
-          {c.aiTriage?.rationale && <p className="text-[11px] text-[#6b6050]">IA: {c.aiTriage.rationale}</p>}
+          {c.aiTriage?.rationale && <p className="text-caption text-text-muted">IA: {c.aiTriage.rationale}</p>}
           <div>
             <label className={LABEL}>Qué cambia</label>
             <textarea className={FIELD} rows={3} value={summary} disabled={!editable} onChange={e => setSummary(e.target.value)} />
@@ -164,14 +164,14 @@ function ChangeCard({ c, busy, onRun }: { c: LegalChange; busy: string | null; o
             <div>
               <label className={LABEL}>Gravedad</label>
               <select className={FIELD} value={severity} disabled={!editable} onChange={e => setSeverity(e.target.value as ChangeSeverity)}>
-                {(Object.keys(SEVERITY_LABEL) as ChangeSeverity[]).map(s => <option key={s} value={s} className="bg-[#161410]">{SEVERITY_LABEL[s]}</option>)}
+                {(Object.keys(SEVERITY_LABEL) as ChangeSeverity[]).map(s => <option key={s} value={s} className="bg-bg">{SEVERITY_LABEL[s]}</option>)}
               </select>
             </div>
             <div>
               <label className={LABEL}>Ámbito</label>
               <select className={FIELD} value={jurisdiction} disabled={!editable} onChange={e => setJurisdiction(e.target.value as LegalJurisdiction)}>
-                <option value="ES" className="bg-[#161410]">España</option>
-                <option value="EU" className="bg-[#161410]">Unión Europea</option>
+                <option value="ES" className="bg-bg">España</option>
+                <option value="EU" className="bg-bg">Unión Europea</option>
               </select>
             </div>
             <div>
@@ -184,7 +184,7 @@ function ChangeCard({ c, busy, onRun }: { c: LegalChange; busy: string | null; o
               const on = topics.includes(t);
               return (
                 <button key={t} type="button" disabled={!editable} onClick={() => setTopics(ts => on ? ts.filter(x => x !== t) : [...ts, t])}
-                  className={`px-2 py-1 rounded border text-[10px] transition-colors ${on ? 'border-avocat-gold/60 text-avocat-gold bg-avocat-gold/10' : 'border-[#2e2b20] text-[#6b6050]'} ${editable ? 'hover:text-[#c8c0ac]' : ''}`}>
+                  className={`px-2 py-1 rounded border text-caption transition-colors ${on ? 'border-accent-border text-accent-text bg-accent-subtle' : 'border-border text-text-muted'} ${editable ? 'hover:text-text' : ''}`}>
                   {TOPIC_LABEL[t]}
                 </button>
               );
@@ -232,18 +232,18 @@ function ManualForm({ onDone }: { onDone: (msg: string) => void }) {
   };
 
   return (
-    <div className="bg-[#1e1c16] border border-avocat-gold/20 rounded-xl px-4 py-3 space-y-2.5">
-      <p className="text-[12px] text-[#c8c0ac]">Pega el texto de la norma; la IA prepara el resumen y la cláusula, y queda pendiente de tu aprobación.</p>
+    <div className="bg-surface border border-accent-border rounded-xl px-4 py-3 space-y-2.5">
+      <p className="text-caption text-text">Pega el texto de la norma; la IA prepara el resumen y la cláusula, y queda pendiente de tu aprobación.</p>
       <input className={FIELD} placeholder="Título (p. ej. Ley 2/2023, de 20 de febrero, …)" value={title} onChange={e => setTitle(e.target.value)} />
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-2">
         <input className={FIELD} placeholder="Enlace oficial (opcional)" value={url} onChange={e => setUrl(e.target.value)} />
         <select className={FIELD} value={jurisdiction} onChange={e => setJurisdiction(e.target.value as LegalJurisdiction)}>
-          <option value="ES" className="bg-[#161410]">España</option>
-          <option value="EU" className="bg-[#161410]">Unión Europea</option>
+          <option value="ES" className="bg-bg">España</option>
+          <option value="EU" className="bg-bg">Unión Europea</option>
         </select>
       </div>
       <textarea className={FIELD} rows={6} placeholder="Texto de la norma (o de los artículos relevantes)" value={text} onChange={e => setText(e.target.value)} />
-      {error && <p className="text-[11px] text-red-400">{error}</p>}
+      {error && <p className="text-caption text-danger-text">{error}</p>}
       <Button variant="accent" size="sm" loading={busy} disabled={!title.trim() || text.trim().length < 200} onClick={submit}>
         {busy ? 'Analizando…' : 'Analizar y añadir'}
       </Button>
@@ -281,10 +281,10 @@ function BaselineAdmin({ onNotice }: { onNotice: (n: { kind: 'ok' | 'err'; text:
     }
   };
 
-  if (items === null) return <p className="text-[12px] text-[#6b6050]">Cargando…</p>;
+  if (items === null) return <p className="text-caption text-text-muted">Cargando…</p>;
   return (
     <div className="space-y-3">
-      <p className="text-[11px] text-[#6b6050]">
+      <p className="text-caption text-text-muted">
         Cada NDA se revisa frente a estos requisitos además de los cambios aprobados. Son un punto de partida: un abogado debe validarlos
         (mientras no lo estén, los resultados lo indican).
       </p>
@@ -303,14 +303,14 @@ function BaselineCard({ b, busy, onSave }: { b: BaselineItem; busy: string | nul
   const [severity, setSeverity] = useState<ChangeSeverity>(b.severity);
   const dirty = requirement !== b.requirement || clause !== (b.suggestedClause ?? '') || severity !== b.severity;
   return (
-    <div className={`bg-[#1e1c16] border rounded-xl px-4 py-3 space-y-2 ${b.active ? 'border-[#2e2b20]' : 'border-[#2e2b20] opacity-60'}`}>
-      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-        <span className="px-1.5 py-0.5 rounded border border-[#2e2b20] text-[#c8c0ac]">{b.jurisdiction === 'EU' ? 'UE' : 'España'}</span>
+    <div className={`bg-surface border rounded-xl px-4 py-3 space-y-2 ${b.active ? 'border-border' : 'border-border opacity-60'}`}>
+      <div className="flex flex-wrap items-center gap-1.5 text-caption">
+        <span className="px-1.5 py-0.5 rounded border border-border text-text">{b.jurisdiction === 'EU' ? 'UE' : 'España'}</span>
         <span className={`px-1.5 py-0.5 rounded border ${SEVERITY_STYLE[b.severity]}`}>{SEVERITY_LABEL[b.severity]}</span>
-        {b.validatedByLawyer ? <span className="text-emerald-400">Validado por abogado</span> : <span className="text-amber-400">Pendiente de validación</span>}
-        {!b.active && <span className="text-[#6b6050]">· Desactivado</span>}
+        {b.validatedByLawyer ? <span className="text-success-text">Validado por abogado</span> : <span className="text-warning-text">Pendiente de validación</span>}
+        {!b.active && <span className="text-text-muted">· Desactivado</span>}
       </div>
-      <p className="text-[12px] text-[#e8d4a0] leading-snug">{b.url ? <a href={b.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{b.title} ↗</a> : b.title}</p>
+      <p className="text-caption text-text-heading leading-snug">{b.url ? <a href={b.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{b.title} ↗</a> : b.title}</p>
       <div>
         <label className={LABEL}>Requisito</label>
         <textarea className={FIELD} rows={2} value={requirement} onChange={e => setRequirement(e.target.value)} />
@@ -321,7 +321,7 @@ function BaselineCard({ b, busy, onSave }: { b: BaselineItem; busy: string | nul
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <select className={`${FIELD} max-w-[160px]`} value={severity} onChange={e => setSeverity(e.target.value as ChangeSeverity)}>
-          {(Object.keys(SEVERITY_LABEL) as ChangeSeverity[]).map(s => <option key={s} value={s} className="bg-[#161410]">{SEVERITY_LABEL[s]}</option>)}
+          {(Object.keys(SEVERITY_LABEL) as ChangeSeverity[]).map(s => <option key={s} value={s} className="bg-bg">{SEVERITY_LABEL[s]}</option>)}
         </select>
         {dirty && (
           <Button variant="accent" size="sm" disabled={!!busy} loading={busy === b.id}

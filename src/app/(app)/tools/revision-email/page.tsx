@@ -57,12 +57,12 @@ function parseGmailDate(dateStr: string): string {
 }
 
 const URGENCIA_CLS: Record<string, string> = {
-  alta:  'text-red-400 bg-red-400/10 border-red-400/20',
-  media: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
-  baja:  'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  alta:  'text-danger-text bg-danger-subtle border-status-urgente-border',
+  media: 'text-warning-text bg-warning-subtle border-status-proximo-border',
+  baja:  'text-success-text bg-success-subtle border-status-a-tiempo-border',
 };
 
-const INPUT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
+const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border';
 
 // ── Gmail tab ─────────────────────────────────────────────────────────────────
 
@@ -240,18 +240,18 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
   if (!connected) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center max-w-sm mx-auto gap-5">
-        <div className="w-14 h-14 rounded-2xl bg-[#1e1c16] border border-[#2e2b20] flex items-center justify-center "><Mail size={24} className="text-accent-text" aria-hidden /></div>
+        <div className="w-14 h-14 rounded-2xl bg-surface border border-border flex items-center justify-center "><Mail size={24} className="text-accent-text" aria-hidden /></div>
         <div>
-          <p className="text-[15px] font-sans font-semibold text-[#e8d4a0] mb-1">Conecta tu cuenta de Gmail</p>
-          <p className="text-[12px] text-[#6b6050] leading-relaxed">
+          <p className="text-body-sm font-sans font-semibold text-text-heading mb-1">Conecta tu cuenta de Gmail</p>
+          <p className="text-caption text-text-muted leading-relaxed">
             Autoriza acceso de solo lectura a tu Gmail para buscar, analizar y vincular emails a tus casos.
           </p>
         </div>
         <Button variant="accent" size="md" loading={connecting} onClick={handleConnect}>
           Conectar Gmail
         </Button>
-        {searchError && <p className="text-[12px] text-red-400">{searchError}</p>}
-        <p className="text-[10px] text-[#3a3630]">
+        {searchError && <p className="text-caption text-danger-text">{searchError}</p>}
+        <p className="text-caption text-text-muted">
           Avocat solo lee tus emails — nunca envía ni modifica nada.
         </p>
       </div>
@@ -261,38 +261,38 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
   return (
     <div className="space-y-5">
       {/* Connection badge */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#1e1c16] border border-[#2e2b20] rounded-xl">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-surface border border-border rounded-xl">
         <div className="flex items-center gap-2.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
-          <span className="text-[12px] text-[#c8c0ac]">Conectado como <strong className="text-[#e8d4a0]">{gmailEmail}</strong></span>
+          <span className="w-2 h-2 rounded-full bg-status-pagado-bg flex-shrink-0" />
+          <span className="text-caption text-text">Conectado como <strong className="text-text-heading">{gmailEmail}</strong></span>
         </div>
-        <button onClick={handleDisconnect} className="text-[11px] text-[#6b6050] hover:text-red-400 transition-colors">
+        <button onClick={handleDisconnect} className="text-caption text-text-muted hover:text-danger-text transition-colors">
           Desconectar
         </button>
       </div>
 
       {/* Search form */}
-      <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-3">
-        <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">Criterios de búsqueda</p>
+      <div className="bg-surface border border-border rounded-xl p-5 space-y-3">
+        <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Criterios de búsqueda</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] text-[#6b6050] mb-1">Palabras clave</label>
+            <label className="block text-caption text-text-muted mb-1">Palabras clave</label>
             <input className={INPUT} placeholder="Ej: contrato, demanda, requerimiento..." value={keywords} onChange={e => setKeywords(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} />
           </div>
           <div>
-            <label className="block text-[11px] text-[#6b6050] mb-1">De (remitente)</label>
+            <label className="block text-caption text-text-muted mb-1">De (remitente)</label>
             <input className={INPUT} placeholder="ejemplo@dominio.com" value={fromEmail} onChange={e => setFromEmail(e.target.value)} />
           </div>
           <div>
-            <label className="block text-[11px] text-[#6b6050] mb-1">Desde</label>
+            <label className="block text-caption text-text-muted mb-1">Desde</label>
             <input type="date" className={INPUT} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
           </div>
           <div>
-            <label className="block text-[11px] text-[#6b6050] mb-1">Hasta</label>
+            <label className="block text-caption text-text-muted mb-1">Hasta</label>
             <input type="date" className={INPUT} value={dateTo} onChange={e => setDateTo(e.target.value)} />
           </div>
         </div>
-        {searchError && <p className="text-[12px] text-red-400">{searchError}</p>}
+        {searchError && <p className="text-caption text-danger-text">{searchError}</p>}
         <div className="flex justify-end">
           <Button variant="accent" size="sm" loading={searching} onClick={handleSearch}>Buscar emails</Button>
         </div>
@@ -300,31 +300,31 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
 
       {/* Results */}
       {searched && (
-        <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-[#2e2b20]">
-            <span className="text-[12px] text-[#6b6050]">
+        <div className="bg-surface border border-border rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-border">
+            <span className="text-caption text-text-muted">
               {messages.length === 0 ? 'Sin resultados' : `${messages.length} email${messages.length !== 1 ? 's' : ''} encontrado${messages.length !== 1 ? 's' : ''}`}
             </span>
           </div>
           {messages.length > 0 && (
-            <div className="divide-y divide-[#2e2b20]">
+            <div className="divide-y divide-border">
               {messages.map(m => (
                 <div
                   key={m.id}
-                  className={`px-5 py-3 flex items-start gap-4 hover:bg-[#252218] transition-colors cursor-pointer ${selected?.id === m.id ? 'bg-[#252218]' : ''}`}
+                  className={`px-5 py-3 flex items-start gap-4 hover:bg-surface-muted transition-colors cursor-pointer ${selected?.id === m.id ? 'bg-surface-raised' : ''}`}
                   onClick={() => handleSelectEmail(m.id)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      {m.hasAttachments && <Paperclip size={12} className="text-[#6b6050]" aria-label="Con adjuntos" />}
-                      <p className="text-[13px] font-medium text-[#e8d4a0] truncate">{m.subject}</p>
+                      {m.hasAttachments && <Paperclip size={12} className="text-text-muted" aria-label="Con adjuntos" />}
+                      <p className="text-small font-medium text-text-heading truncate">{m.subject}</p>
                     </div>
-                    <p className="text-[11px] text-[#6b6050] truncate">{m.from}</p>
-                    <p className="text-[11px] text-[#3a3630] mt-0.5 line-clamp-1">{m.snippet}</p>
+                    <p className="text-caption text-text-muted truncate">{m.from}</p>
+                    <p className="text-caption text-text-muted mt-0.5 line-clamp-1">{m.snippet}</p>
                   </div>
-                  <span className="text-[10px] text-[#3a3630] shrink-0 whitespace-nowrap">{parseGmailDate(m.date)}</span>
+                  <span className="text-caption text-text-muted shrink-0 whitespace-nowrap">{parseGmailDate(m.date)}</span>
                   {loadingMsg === m.id && (
-                    <div className="h-4 w-4 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin shrink-0" />
+                    <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin shrink-0" />
                   )}
                 </div>
               ))}
@@ -335,22 +335,22 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
 
       {/* Email detail + analysis */}
       {selected && (
-        <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
+        <div className="bg-surface border border-border rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="px-5 py-4 border-b border-[#2e2b20] space-y-1">
-            <p className="text-[14px] font-sans font-semibold text-[#e8d4a0]">{selected.subject}</p>
-            <p className="text-[11px] text-[#6b6050]">De: {selected.from}</p>
-            <p className="text-[11px] text-[#6b6050]">{parseGmailDate(selected.date)}</p>
+          <div className="px-5 py-4 border-b border-border space-y-1">
+            <p className="text-body-sm font-sans font-semibold text-text-heading">{selected.subject}</p>
+            <p className="text-caption text-text-muted">De: {selected.from}</p>
+            <p className="text-caption text-text-muted">{parseGmailDate(selected.date)}</p>
             {selected.attachments.length > 0 && (
-              <p className="text-[11px] text-[#6b6050]">
+              <p className="text-caption text-text-muted">
                 Adjuntos: {selected.attachments.map(a => a.name).join(', ')}
               </p>
             )}
           </div>
 
           {/* Body preview */}
-          <div className="px-5 py-4 border-b border-[#2e2b20]">
-            <pre className="text-[12px] text-[#c8c0ac] whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto font-sans">
+          <div className="px-5 py-4 border-b border-border">
+            <pre className="text-caption text-text whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto font-sans">
               {selected.bodyText.slice(0, 2000) || '(Sin contenido de texto)'}
             </pre>
           </div>
@@ -368,38 +368,38 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
           {analysis && (
             <div className="px-5 py-4 space-y-4">
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-[13px] font-medium text-[#c8c0ac]">{analysis.categoria}</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${URGENCIA_CLS[analysis.urgencia] ?? URGENCIA_CLS.media}`}>
+                <span className="text-small font-medium text-text">{analysis.categoria}</span>
+                <span className={`px-2 py-0.5 rounded text-caption font-medium border ${URGENCIA_CLS[analysis.urgencia] ?? URGENCIA_CLS.media}`}>
                   Urgencia {analysis.urgencia}
                 </span>
               </div>
 
-              <p className="text-[12px] text-[#c8c0ac] leading-relaxed">{analysis.resumen}</p>
+              <p className="text-caption text-text leading-relaxed">{analysis.resumen}</p>
 
               {analysis.riesgoLegal && analysis.riesgoLegal !== 'Sin riesgo aparente' && (
-                <div className="bg-red-500/5 border border-red-500/20 rounded-lg px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-red-400 mb-1">Riesgo legal</p>
-                  <p className="text-[12px] text-red-400">{analysis.riesgoLegal}</p>
+                <div className="bg-danger-subtle border border-status-urgente-border rounded-lg px-4 py-3">
+                  <p className="text-label font-semibold uppercase tracking-widest text-danger-text mb-1">Riesgo legal</p>
+                  <p className="text-caption text-danger-text">{analysis.riesgoLegal}</p>
                 </div>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {analysis.partesInvolucradas?.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">Partes</p>
-                    {analysis.partesInvolucradas.map((p, i) => <p key={i} className="text-[12px] text-[#c8c0ac]">• {p}</p>)}
+                    <p className="text-label font-semibold uppercase tracking-widest text-text-muted mb-1.5">Partes</p>
+                    {analysis.partesInvolucradas.map((p, i) => <p key={i} className="text-caption text-text">• {p}</p>)}
                   </div>
                 )}
                 {analysis.fechasClave?.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">Fechas clave</p>
-                    {analysis.fechasClave.map((f, i) => <p key={i} className="text-[12px] text-avocat-gold">• {f}</p>)}
+                    <p className="text-label font-semibold uppercase tracking-widest text-text-muted mb-1.5">Fechas clave</p>
+                    {analysis.fechasClave.map((f, i) => <p key={i} className="text-caption text-accent-text">• {f}</p>)}
                   </div>
                 )}
                 {analysis.accionesRequeridas?.length > 0 && (
                   <div className="sm:col-span-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">Acciones requeridas</p>
-                    {analysis.accionesRequeridas.map((a, i) => <p key={i} className="text-[12px] text-amber-400">→ {a}</p>)}
+                    <p className="text-label font-semibold uppercase tracking-widest text-text-muted mb-1.5">Acciones requeridas</p>
+                    {analysis.accionesRequeridas.map((a, i) => <p key={i} className="text-caption text-warning-text">→ {a}</p>)}
                   </div>
                 )}
               </div>
@@ -407,8 +407,8 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
               <div className="flex gap-2 pt-2 flex-wrap items-center">
                 {caseSaved ? (
                   <>
-                    <span className="text-[12px] text-emerald-400">Caso guardado</span>
-                    <Link href={caseSaved} className="text-[12px] text-avocat-gold hover:underline">Ver caso →</Link>
+                    <span className="text-caption text-success-text">Caso guardado</span>
+                    <Link href={caseSaved} className="text-caption text-accent-text hover:underline">Ver caso →</Link>
                   </>
                 ) : (
                   <>
@@ -419,7 +419,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
                   </>
                 )}
                 {docSaved ? (
-                  <Link href="/documents" className="text-[12px] text-avocat-gold hover:underline ml-auto">Ver documento →</Link>
+                  <Link href="/documents" className="text-caption text-accent-text hover:underline ml-auto">Ver documento →</Link>
                 ) : (
                   <Button
                     variant="ghost"
@@ -449,19 +449,19 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
               {/* Link to existing case */}
               {showLinkCase && !caseSaved && (
                 <div className="mt-2">
-                  <p className="text-[11px] text-[#6b6050] mb-2">Selecciona el caso:</p>
+                  <p className="text-caption text-text-muted mb-2">Selecciona el caso:</p>
                   <div className="space-y-1 max-h-48 overflow-y-auto">
                     {cases.map(c => (
                       <button key={c.id}
                         onClick={() => handleLinkCase(c.id)}
                         disabled={savingCase}
-                        className="w-full text-left px-3 py-2 rounded-lg bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/30 text-[12px] text-[#c8c0ac] transition-colors disabled:opacity-40"
+                        className="w-full text-left px-3 py-2 rounded-lg bg-bg border border-border hover:border-accent-border text-caption text-text transition-colors disabled:opacity-40"
                       >
                         <span className="font-medium">{c.title}</span>
-                        {c.ref && <span className="text-[#6b6050] ml-2">{c.ref}</span>}
+                        {c.ref && <span className="text-text-muted ml-2">{c.ref}</span>}
                       </button>
                     ))}
-                    {cases.length === 0 && <p className="text-[12px] text-[#6b6050]">No hay casos activos.</p>}
+                    {cases.length === 0 && <p className="text-caption text-text-muted">No hay casos activos.</p>}
                   </div>
                 </div>
               )}
@@ -474,27 +474,27 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
       {showCreateCase && analysis && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowCreateCase(false)} />
-          <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-6 w-full max-w-md shadow-elevated space-y-4">
-            <h2 className="font-display text-[18px] text-[#e8d4a0]">Crear caso desde email</h2>
+          <div className="relative bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-elevated space-y-4">
+            <h2 className="font-display text-body-lg text-text-heading">Crear caso desde email</h2>
             <div className="space-y-3">
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Título</label>
+                <label className="block text-label font-semibold uppercase tracking-widest text-text-muted mb-1">Título</label>
                 <input className={INPUT} value={caseForm.title} onChange={e => setCaseForm(p => ({ ...p, title: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Tipo</label>
+                <label className="block text-label font-semibold uppercase tracking-widest text-text-muted mb-1">Tipo</label>
                 <select className={INPUT} value={caseForm.type} onChange={e => setCaseForm(p => ({ ...p, type: e.target.value }))}>
                   {['civil', 'laboral', 'contractual', 'familia', 'penal', 'sucesoral', 'otro'].map(t => (
-                    <option key={t} value={t} className="bg-[#161410] capitalize">{t}</option>
+                    <option key={t} value={t} className="bg-bg capitalize">{t}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Cliente / Contraparte</label>
+                <label className="block text-label font-semibold uppercase tracking-widest text-text-muted mb-1">Cliente / Contraparte</label>
                 <input className={INPUT} value={caseForm.client} onChange={e => setCaseForm(p => ({ ...p, client: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Notas</label>
+                <label className="block text-label font-semibold uppercase tracking-widest text-text-muted mb-1">Notas</label>
                 <textarea rows={3} className={`${INPUT} resize-none`} value={caseForm.notes} onChange={e => setCaseForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
             </div>
@@ -542,40 +542,40 @@ function ManualTab({ user }: { user: ReturnType<typeof useAppAuth>['user'] }) {
 
   return (
     <div className="space-y-5">
-      <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
-        <h3 className="font-sans font-semibold text-[13px] text-[#e8d4a0] mb-3">Contenido del email</h3>
+      <div className="bg-surface border border-border rounded-xl p-5">
+        <h3 className="font-sans font-semibold text-small text-text-heading mb-3">Contenido del email</h3>
         <textarea rows={8} value={emailText} onChange={e => setEmailText(e.target.value)}
           placeholder="Pega aquí el contenido del email legal a analizar..."
-          className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-3 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40 resize-none leading-relaxed" />
-        {error && <p className="mt-2 text-[12px] text-red-400">{error}</p>}
+          className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-small font-sans text-text  focus:border-accent-border resize-none leading-relaxed" />
+        {error && <p className="mt-2 text-caption text-danger-text">{error}</p>}
         <div className="mt-3 flex justify-end">
           <Button variant="accent" size="md" loading={analyzing} onClick={handleAnalyze}>Analizar email</Button>
         </div>
       </div>
 
       {result && (
-        <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-4">
+        <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
           <div className="flex items-center gap-3">
-            <span className="text-[13px] font-sans font-medium text-[#c8c0ac]">{result.categoria}</span>
-            <span className={`px-2 py-0.5 rounded text-[11px] font-medium border ${URGENCIA_CLS[result.urgencia] ?? URGENCIA_CLS.media}`}>
+            <span className="text-small font-sans font-medium text-text">{result.categoria}</span>
+            <span className={`px-2 py-0.5 rounded text-caption font-medium border ${URGENCIA_CLS[result.urgencia] ?? URGENCIA_CLS.media}`}>
               Urgencia {result.urgencia}
             </span>
           </div>
-          <p className="text-[12px] text-[#6b6050] leading-relaxed">{result.resumen}</p>
+          <p className="text-caption text-text-muted leading-relaxed">{result.resumen}</p>
           {[
-            { label: 'Partes involucradas', items: result.partesInvolucradas, color: 'text-[#c8c0ac]' },
-            { label: 'Fechas clave',        items: result.fechasClave,        color: 'text-avocat-gold' },
-            { label: 'Acciones requeridas', items: result.accionesRequeridas, color: 'text-amber-400'  },
+            { label: 'Partes involucradas', items: result.partesInvolucradas, color: 'text-text' },
+            { label: 'Fechas clave',        items: result.fechasClave,        color: 'text-accent-text' },
+            { label: 'Acciones requeridas', items: result.accionesRequeridas, color: 'text-warning-text'  },
           ].map(({ label, items, color }) => items?.length ? (
             <div key={label}>
-              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">{label}</p>
-              <ul className="space-y-1">{items.map((item, i) => <li key={i} className={`text-[12px] ${color}`}>• {item}</li>)}</ul>
+              <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-2">{label}</p>
+              <ul className="space-y-1">{items.map((item, i) => <li key={i} className={`text-caption ${color}`}>• {item}</li>)}</ul>
             </div>
           ) : null)}
           {result.riesgoLegal && result.riesgoLegal !== 'Sin riesgo aparente' && (
-            <div className="bg-red-500/5 border border-red-500/20 rounded-lg px-4 py-3">
-              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-red-400 mb-1">Riesgo legal</p>
-              <p className="text-[12px] text-red-400">{result.riesgoLegal}</p>
+            <div className="bg-danger-subtle border border-status-urgente-border rounded-lg px-4 py-3">
+              <p className="text-label font-sans font-semibold uppercase tracking-widest text-danger-text mb-1">Riesgo legal</p>
+              <p className="text-caption text-danger-text">{result.riesgoLegal}</p>
             </div>
           )}
         </div>
@@ -621,17 +621,17 @@ export default function RevisionEmailPage() {
         <div className="max-w-3xl mx-auto space-y-5">
 
           {banner && (
-            <div className={`px-4 py-2.5 rounded-lg text-[12px] border ${banner.startsWith('Error') ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
+            <div className={`px-4 py-2.5 rounded-lg text-caption border ${banner.startsWith('Error') ? 'bg-danger-subtle border-status-urgente-border text-danger-text' : 'bg-success-subtle border-status-a-tiempo-border text-success-text'}`}>
               {banner}
               <button onClick={() => setBanner('')} aria-label="Cerrar" className="ml-3 opacity-60 hover:opacity-100"><X size={14} aria-hidden /></button>
             </div>
           )}
 
           {/* Tabs */}
-          <div className="flex gap-1 bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-1 w-fit">
+          <div className="flex gap-1 bg-surface border border-border rounded-xl p-1 w-fit">
             {TABS.map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
-                className={`px-4 py-1.5 rounded-lg text-[12px] font-sans transition-colors ${tab === t.key ? 'bg-avocat-gold/15 text-avocat-gold border border-avocat-gold/30' : 'text-[#6b6050] hover:text-[#c8c0ac]'}`}>
+                className={`px-4 py-1.5 rounded-lg text-caption font-sans transition-colors ${tab === t.key ? 'bg-accent-subtle text-accent-text border border-accent-border' : 'text-text-muted hover:text-text'}`}>
                 {t.label}
               </button>
             ))}

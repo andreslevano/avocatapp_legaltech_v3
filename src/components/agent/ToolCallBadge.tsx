@@ -43,9 +43,9 @@ export default function ToolCallBadge({ name, status = 'done', result }: ToolCal
       <button
         onClick={() => citations && setExpanded(e => !e)}
         className={[
-          'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-sans',
-          'bg-[#252218] border border-[#2e2b20] text-[#c8c0ac]',
-          citations ? 'cursor-pointer hover:border-avocat-gold/30 hover:text-avocat-gold transition-colors' : 'cursor-default',
+          'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-caption font-sans',
+          'bg-surface-raised border border-border text-text',
+          citations ? 'cursor-pointer hover:border-accent-border hover:text-accent-text transition-colors' : 'cursor-default',
         ].join(' ')}
       >
         {status === 'running'
@@ -53,7 +53,7 @@ export default function ToolCallBadge({ name, status = 'done', result }: ToolCal
           : <Check size={12} aria-hidden />}
         {name}
         {citations && (
-          <span className="ml-1 text-avocat-gold">{citations.length} fuentes {expanded ? <ChevronUp size={12} className="inline" aria-hidden /> : <ChevronDown size={12} className="inline" aria-hidden />}</span>
+          <span className="ml-1 text-accent-text">{citations.length} fuentes {expanded ? <ChevronUp size={12} className="inline" aria-hidden /> : <ChevronDown size={12} className="inline" aria-hidden />}</span>
         )}
       </button>
 
@@ -65,24 +65,24 @@ export default function ToolCallBadge({ name, status = 'done', result }: ToolCal
               href={c.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block px-3 py-2 rounded-lg bg-[#1e1c16] border border-[#2e2b20] hover:border-avocat-gold/30 transition-colors text-left"
+              className="block px-3 py-2 rounded-lg bg-surface border border-border hover:border-accent-border transition-colors text-left"
             >
               <div className="flex items-baseline gap-2 mb-0.5">
-                <span className="text-[11px] font-sans font-semibold text-avocat-gold">
+                <span className="text-caption font-sans font-semibold text-accent-text">
                   {c.articleNumber}
                 </span>
-                <span className="text-[10px] text-[#6b6050]">{c.lawShort}</span>
+                <span className="text-caption text-text-muted">{c.lawShort}</span>
                 {c.similarity && (
-                  <span className="ml-auto text-[10px] text-[#3a3630]">
+                  <span className="ml-auto text-caption text-text-muted">
                     {Math.round(c.similarity * 100)}%
                   </span>
                 )}
               </div>
               {c.sectionTitle && (
-                <p className="text-[10px] text-[#6b6050] mb-0.5">{c.sectionTitle}</p>
+                <p className="text-caption text-text-muted mb-0.5">{c.sectionTitle}</p>
               )}
-              <p className="text-[11px] text-[#9a9a9a] leading-snug line-clamp-2">{c.content}</p>
-              {c.ecli && <p className="text-[10px] text-[#3a3630] mt-0.5">{c.ecli}</p>}
+              <p className="text-caption text-text-muted leading-snug line-clamp-2">{c.content}</p>
+              {c.ecli && <p className="text-caption text-text-muted mt-0.5">{c.ecli}</p>}
             </a>
           ))}
         </div>

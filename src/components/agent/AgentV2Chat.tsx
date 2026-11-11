@@ -173,20 +173,20 @@ export default function AgentV2Chat({ user, userDoc, caseId }: AgentV2ChatProps)
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[#2e2b20] bg-[#161410]">
-        <div className="w-7 h-7 rounded-full bg-avocat-gold/20 border border-avocat-gold/30 flex items-center justify-center flex-shrink-0">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-avocat-gold">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-bg">
+        <div className="w-7 h-7 rounded-full bg-accent-subtle border border-accent-border flex items-center justify-center flex-shrink-0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-accent-text">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-sans font-semibold text-[#e8d4a0] leading-none">
-            Avocat IA <span className="text-[10px] font-sans font-normal text-avocat-gold bg-avocat-gold/10 border border-avocat-gold/20 px-1.5 py-0.5 rounded-full ml-1.5 align-middle">v2 · Claude</span>
+          <p className="text-small font-sans font-semibold text-text-heading leading-none">
+            Avocat IA <span className="text-caption font-sans font-normal text-accent-text bg-accent-subtle border border-accent-border px-1.5 py-0.5 rounded-full ml-1.5 align-middle">v2 · Claude</span>
           </p>
-          <p className="text-[11px] font-sans text-[#6b6050] mt-0.5">{planLabel}</p>
+          <p className="text-caption font-sans text-text-muted mt-0.5">{planLabel}</p>
         </div>
         {convId && (
-          <span className="text-[10px] font-sans text-[#3a3630]">conv {convId.slice(-6)}</span>
+          <span className="text-caption font-sans text-text-muted">conv {convId.slice(-6)}</span>
         )}
       </div>
 
@@ -194,14 +194,14 @@ export default function AgentV2Chat({ user, userDoc, caseId }: AgentV2ChatProps)
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-12">
-            <div className="w-12 h-12 rounded-full bg-avocat-gold/10 border border-avocat-gold/20 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5 text-avocat-gold">
+            <div className="w-12 h-12 rounded-full bg-accent-subtle border border-accent-border flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5 text-accent-text">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
             </div>
             <div>
-              <p className="text-[14px] font-sans font-semibold text-[#c8c0ac]">Agente jurídico con herramientas</p>
-              <p className="text-[12px] text-[#6b6050] mt-1 max-w-xs leading-relaxed">
+              <p className="text-body-sm font-sans font-semibold text-text">Agente jurídico con herramientas</p>
+              <p className="text-caption text-text-muted mt-1 max-w-xs leading-relaxed">
                 Puedo buscar tus casos y documentos en Firestore. Prueba: "¿Cuáles son mis casos activos?"
               </p>
             </div>
@@ -214,7 +214,7 @@ export default function AgentV2Chat({ user, userDoc, caseId }: AgentV2ChatProps)
                 <button
                   key={q}
                   onClick={() => { setInput(q); inputRef.current?.focus(); }}
-                  className="text-[11px] px-3 py-1.5 rounded-full bg-[#1e1c16] border border-[#2e2b20] text-[#9a9a9a] hover:text-avocat-gold hover:border-avocat-gold/30 transition-colors"
+                  className="text-caption px-3 py-1.5 rounded-full bg-surface border border-border text-text-muted hover:text-accent-text hover:border-accent-border transition-colors"
                 >
                   {q}
                 </button>
@@ -232,8 +232,8 @@ export default function AgentV2Chat({ user, userDoc, caseId }: AgentV2ChatProps)
       </div>
 
       {/* Input */}
-      <div className="border-t border-[#2e2b20] bg-[#161410] p-3">
-        <div className="flex gap-2 items-end bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-3 py-2.5 focus-within:border-avocat-gold/40 transition-colors">
+      <div className="border-t border-border bg-bg p-3">
+        <div className="flex gap-2 items-end bg-surface border border-border rounded-xl px-3 py-2.5 focus-within:border-accent-border transition-colors">
           <textarea
             ref={inputRef}
             rows={1}
@@ -242,7 +242,7 @@ export default function AgentV2Chat({ user, userDoc, caseId }: AgentV2ChatProps)
             onKeyDown={handleKeyDown}
             placeholder="Escribe tu consulta jurídica… (Enter para enviar)"
             disabled={streaming}
-            className="flex-1 resize-none bg-transparent text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none leading-relaxed max-h-32 overflow-y-auto"
+            className="flex-1 resize-none bg-transparent text-small font-sans text-text  leading-relaxed max-h-32 overflow-y-auto"
             style={{ height: 'auto' }}
             onInput={e => {
               const el = e.currentTarget;
@@ -253,7 +253,7 @@ export default function AgentV2Chat({ user, userDoc, caseId }: AgentV2ChatProps)
           <button
             onClick={send}
             disabled={!input.trim() || streaming}
-            className="flex-shrink-0 w-7 h-7 rounded-lg bg-avocat-gold disabled:opacity-30 flex items-center justify-center transition-opacity hover:bg-avocat-gold/90"
+            className="flex-shrink-0 w-7 h-7 rounded-lg bg-accent disabled:opacity-30 flex items-center justify-center transition-opacity hover:bg-accent-subtle"
             aria-label="Enviar"
           >
             {streaming ? (
@@ -273,7 +273,7 @@ export default function AgentV2Chat({ user, userDoc, caseId }: AgentV2ChatProps)
           ].map(t => (
             <ToolCallBadge key={t.label} name={t.label} />
           ))}
-          <span className="text-[10px] text-[#3a3630] ml-1">herramientas disponibles</span>
+          <span className="text-caption text-text-muted ml-1">herramientas disponibles</span>
         </div>
       </div>
     </div>

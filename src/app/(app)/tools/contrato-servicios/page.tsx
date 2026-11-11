@@ -20,8 +20,8 @@ import { MFW_SERVICES_TEMPLATE, renderMfwServices, type MfwServicesInput } from 
 import { madridToday } from '@/lib/contracts/dates';
 import type { Currency } from '@/lib/org-templates/spanish-numbers';
 
-const INPUT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
-const LABEL = 'block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5';
+const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-small font-sans text-text  focus:border-accent-border';
+const LABEL = 'block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5';
 const META: DocMeta = { authorName: MFW_SERVICES_TEMPLATE.company, authorNif: `CIF ${MFW_SERVICES_TEMPLATE.cif}` };
 
 export default function ServicesContractPage() {
@@ -81,7 +81,7 @@ export default function ServicesContractPage() {
     return (
       <div className="flex flex-col h-full">
         <AppHeader title="Generador de contrato de servicios" />
-        <p className="p-6 text-[13px] text-[#6b6050]">Esta herramienta usa la plantilla de tu organización y no está disponible para tu cuenta.</p>
+        <p className="p-6 text-small text-text-muted">Esta herramienta usa la plantilla de tu organización y no está disponible para tu cuenta.</p>
       </div>
     );
   }
@@ -143,11 +143,11 @@ export default function ServicesContractPage() {
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto space-y-5">
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-6">
-            <div className="rounded-lg border border-avocat-gold/30 bg-avocat-gold/5 px-4 py-3 space-y-1">
-              <p className="text-[12px] font-semibold text-avocat-gold">Plantilla de {MFW_SERVICES_TEMPLATE.company}</p>
-              <p className="text-[12px] text-[#c8c0ac]">El contrato se genera con el texto de la plantilla, sin cambios en sus cláusulas. Solo completas los datos del colaborador y las condiciones económicas.</p>
-              <p className="text-[11px] text-[#6b6050]">
+          <div className="bg-surface border border-border rounded-xl p-5 space-y-6">
+            <div className="rounded-lg border border-accent-border bg-accent-subtle px-4 py-3 space-y-1">
+              <p className="text-caption font-semibold text-accent-text">Plantilla de {MFW_SERVICES_TEMPLATE.company}</p>
+              <p className="text-caption text-text">El contrato se genera con el texto de la plantilla, sin cambios en sus cláusulas. Solo completas los datos del colaborador y las condiciones económicas.</p>
+              <p className="text-caption text-text-muted">
                 Fijado por la plantilla: LA EMPRESA (Félix Dia Morales, CIF {MFW_SERVICES_TEMPLATE.cif}) · régimen mercantil · pago a 30 días ·
                 confidencialidad · propiedad intelectual para LA EMPRESA · preaviso de 30 días · no competencia 12 meses (40 %) · Juzgados de Barbastro.
               </p>
@@ -155,12 +155,12 @@ export default function ServicesContractPage() {
 
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-avocat-gold/70">El colaborador (persona física)</p>
+                <p className="text-label font-semibold uppercase tracking-widest text-accent-text">El colaborador (persona física)</p>
                 {clients.length > 0 && (
                   <select value={clientId} onChange={e => fillFromClient(e.target.value)}
-                    className="text-[11px] bg-[#161410] border border-[#2e2b20] text-[#6b6050] px-2.5 py-1 rounded-md focus:outline-none">
+                    className="text-caption bg-bg border border-border text-text-muted px-2.5 py-1 rounded-md ">
                     <option value="">Seleccionar cliente…</option>
-                    {clients.map(c => <option key={c.id} value={c.id} className="bg-[#161410]">{c.name}</option>)}
+                    {clients.map(c => <option key={c.id} value={c.id} className="bg-bg">{c.name}</option>)}
                   </select>
                 )}
               </div>
@@ -201,28 +201,28 @@ export default function ServicesContractPage() {
                 <div className="flex gap-2">
                   <input inputMode="decimal" className={INPUT} placeholder="p. ej. 35" value={tarifa} onChange={e => setTarifa(e.target.value)} />
                   <select className={`${INPUT} max-w-[90px]`} value={moneda} onChange={e => setMoneda(e.target.value as Currency)}>
-                    <option value="USD" className="bg-[#161410]">USD</option>
-                    <option value="EUR" className="bg-[#161410]">EUR</option>
+                    <option value="USD" className="bg-bg">USD</option>
+                    <option value="EUR" className="bg-bg">EUR</option>
                   </select>
                 </div>
               </div>
             </div>
-            <p className="text-[11px] text-[#6b6050]">Los datos que dejes vacíos aparecerán entre corchetes en el documento para completarlos antes de firmar. Importes y plazos se escriben en letra y número.</p>
+            <p className="text-caption text-text-muted">Los datos que dejes vacíos aparecerán entre corchetes en el documento para completarlos antes de firmar. Importes y plazos se escriben en letra y número.</p>
 
-            {error && <p className="text-[12px] text-red-400">{error}</p>}
-            {notice && <p className="text-[12px] text-amber-400">{notice}</p>}
+            {error && <p className="text-caption text-danger-text">{error}</p>}
+            {notice && <p className="text-caption text-warning-text">{notice}</p>}
             <div className="flex items-center justify-between">
-              <p className="text-[11px] text-[#6b6050]">El contrato se guardará automáticamente en tus documentos (Word y PDF).</p>
+              <p className="text-caption text-text-muted">El contrato se guardará automáticamente en tus documentos (Word y PDF).</p>
               <Button variant="accent" size="md" loading={generating} onClick={generate}>Generar contrato</Button>
             </div>
           </div>
 
           {result && (
-            <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
-              <div className="px-5 py-3 border-b border-[#2e2b20] flex items-center justify-between flex-wrap gap-2">
+            <div className="bg-surface border border-border rounded-xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-border flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-semibold text-[#e8d4a0]">{docTitle || title}</span>
-                  {savedDocId && <span className="text-[10px] bg-avocat-gold/10 border border-avocat-gold/20 text-avocat-gold/70 px-2 py-0.5 rounded-full">Guardado en documentos</span>}
+                  <span className="text-small font-semibold text-text-heading">{docTitle || title}</span>
+                  {savedDocId && <span className="text-caption bg-accent-subtle border border-accent-border text-accent-text px-2 py-0.5 rounded-full">Guardado en documentos</span>}
                 </div>
                 <div className="flex gap-2">
                   {savedDocId && !generating && (
@@ -240,7 +240,7 @@ export default function ServicesContractPage() {
                   <Button variant="ghost" size="sm" onClick={() => downloadAsPdf(result, docTitle || title, undefined, META)}>PDF</Button>
                 </div>
               </div>
-              <pre className="px-5 py-4 text-[12px] text-[#c8c0ac] whitespace-pre-wrap font-sans leading-relaxed max-h-[60vh] overflow-y-auto">{result}</pre>
+              <pre className="px-5 py-4 text-caption text-text whitespace-pre-wrap font-sans leading-relaxed max-h-[60vh] overflow-y-auto">{result}</pre>
             </div>
           )}
         </div>

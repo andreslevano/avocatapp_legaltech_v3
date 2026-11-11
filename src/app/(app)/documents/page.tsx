@@ -60,7 +60,7 @@ export default function DocumentsPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center h-40">
-        <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+        <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
       </div>
     }>
       <DocumentsView />
@@ -570,15 +570,15 @@ function DocumentsView() {
 
   const emptyFolder = (
     <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-      <span className="text-[#3a3630] mb-3"><IconFolder className="w-10 h-10" /></span>
-      <p className="text-[13px] text-[#c8c0ac] font-medium">Carpeta vacía</p>
-      <p className="text-[12px] text-[#6b6050] mt-1 mb-4">Arrastra archivos aquí o súbelos desde tu equipo.</p>
+      <span className="text-text-muted mb-3"><IconFolder className="w-10 h-10" /></span>
+      <p className="text-small text-text font-medium">Carpeta vacía</p>
+      <p className="text-caption text-text-muted mt-1 mb-4">Arrastra archivos aquí o súbelos desde tu equipo.</p>
       <div className="flex gap-2">
         <Button variant="accent" size="sm" onClick={() => fileRef.current?.click()}>Subir</Button>
         <Button variant="secondary" size="sm" onClick={openNewFolder}>Nueva carpeta</Button>
       </div>
       {msEnabled && (
-        <button onClick={() => setMsImportOpen(true)} className="mt-4 text-[12px] text-avocat-gold hover:underline">
+        <button onClick={() => setMsImportOpen(true)} className="mt-4 text-caption text-accent-text hover:underline">
           ¿Tus contratos están en OneDrive o SharePoint? Impórtalos aquí.
         </button>
       )}
@@ -597,10 +597,10 @@ function DocumentsView() {
       {/* Drag overlay (files from the OS only) */}
       {dragOver && (
         <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-          <div className="absolute inset-0 bg-avocat-gold/10 border-4 border-dashed border-avocat-gold/40 rounded-2xl m-4" />
-          <div className="relative bg-[#1e1c16] border border-avocat-gold/30 rounded-xl px-8 py-5 text-center shadow-xl">
-            <p className="text-[14px] font-sans font-semibold text-avocat-gold">Suelta para subir</p>
-            <p className="text-[12px] text-[#6b6050] mt-1">
+          <div className="absolute inset-0 bg-accent-subtle border-4 border-dashed border-accent-border rounded-2xl m-4" />
+          <div className="relative bg-surface border border-accent-border rounded-xl px-8 py-5 text-center shadow-xl">
+            <p className="text-body-sm font-sans font-semibold text-accent-text">Suelta para subir</p>
+            <p className="text-caption text-text-muted mt-1">
               {enabled ? `A ${currentFolderId ? `«${foldersById.get(currentFolderId)?.name}»` : 'Mis documentos'} · ` : ''}PDF, DOCX, XLSX, imágenes
             </p>
           </div>
@@ -613,9 +613,9 @@ function DocumentsView() {
         subtitle={loading ? undefined : subtitle}
         actions={
           <div className="flex items-center gap-2">
-            {indexMsg && <span className="hidden sm:inline text-[11px] text-[#6b6050]">{indexMsg}</span>}
+            {indexMsg && <span className="hidden sm:inline text-caption text-text-muted">{indexMsg}</span>}
             <button onClick={handleIndexAll} disabled={indexing}
-              className="hidden sm:inline text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors disabled:opacity-40">
+              className="hidden sm:inline text-caption text-text-muted hover:text-accent-text transition-colors disabled:opacity-40">
               {indexing ? 'Indexando…' : 'Reindexar'}
             </button>
             <input ref={fileRef} type="file" multiple
@@ -627,20 +627,20 @@ function DocumentsView() {
                   Añadir ▾
                 </Button>
                 {addMenu && (
-                  <div className="absolute right-0 top-full mt-1 z-50 bg-[#1e1c16] border border-[#2e2b20] rounded-xl shadow-2xl py-1 w-56">
+                  <div className="absolute right-0 top-full mt-1 z-50 bg-surface border border-border rounded-xl shadow-2xl py-1 w-56">
                     <button onClick={() => { setAddMenu(false); fileRef.current?.click(); }}
-                      className="w-full text-left px-4 py-2.5 text-[12px] text-[#c8c0ac] hover:bg-[#252218] hover:text-[#e8d4a0] transition-colors">
+                      className="w-full text-left px-4 py-2.5 text-caption text-text hover:bg-surface-muted hover:text-text-heading transition-colors">
                       Subir desde mi equipo
                     </button>
                     {msEnabled && (
                       <button onClick={() => { setAddMenu(false); setMsImportOpen(true); }}
-                        className="w-full text-left px-4 py-2.5 text-[12px] text-[#c8c0ac] hover:bg-[#252218] hover:text-[#e8d4a0] transition-colors">
+                        className="w-full text-left px-4 py-2.5 text-caption text-text hover:bg-surface-muted hover:text-text-heading transition-colors">
                         Importar desde OneDrive / SharePoint
                       </button>
                     )}
                     <button onClick={() => { setAddMenu(false); openNewFolder(); }}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-[12px] text-[#c8c0ac] hover:bg-[#252218] hover:text-[#e8d4a0] transition-colors">
-                      Nueva carpeta <kbd className="text-[10px] text-[#6b6050] font-sans">⇧N</kbd>
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-caption text-text hover:bg-surface-muted hover:text-text-heading transition-colors">
+                      Nueva carpeta <kbd className="text-caption text-text-muted font-sans">⇧N</kbd>
                     </button>
                   </div>
                 )}
@@ -655,14 +655,14 @@ function DocumentsView() {
       />
 
       {error && (
-        <div className="mx-4 mt-3 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2 text-[12px] text-red-400">{error}</div>
+        <div className="mx-4 mt-3 rounded-lg bg-danger-subtle border border-status-urgente-border px-4 py-2 text-caption text-danger-text">{error}</div>
       )}
 
       {msError && (
-        <div className="mx-4 mt-3 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2 flex items-center justify-between text-[12px] text-red-400">
+        <div className="mx-4 mt-3 rounded-lg bg-danger-subtle border border-status-urgente-border px-4 py-2 flex items-center justify-between text-caption text-danger-text">
           <span>No pudimos conectar con Microsoft</span>
           <span className="flex gap-3 flex-shrink-0">
-            <button onClick={() => { setMsError(false); setMsImportOpen(true); }} className="text-avocat-gold hover:underline">Reintentar</button>
+            <button onClick={() => { setMsError(false); setMsImportOpen(true); }} className="text-accent-text hover:underline">Reintentar</button>
             <button onClick={() => setMsError(false)} aria-label="Cerrar"><X size={14} aria-hidden /></button>
           </span>
         </div>
@@ -670,17 +670,17 @@ function DocumentsView() {
 
       {/* Workspace notices (moves, folder ops) */}
       {ws.notice && (
-        <div className={`mx-4 mt-3 rounded-lg px-4 py-2 text-[12px] border ${ws.notice.kind === 'ok' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+        <div className={`mx-4 mt-3 rounded-lg px-4 py-2 text-caption border ${ws.notice.kind === 'ok' ? 'bg-success-subtle border-status-a-tiempo-border text-success-text' : 'bg-danger-subtle border-status-urgente-border text-danger-text'}`}>
           {ws.notice.text}
         </div>
       )}
 
       {/* Upload toast */}
       {uploadedDoc && (
-        <div className="mx-4 mt-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 flex items-center justify-between text-[12px]">
-          <span className="text-emerald-400 truncate">Documento subido — <span className="font-medium">{uploadedDoc.name}</span></span>
+        <div className="mx-4 mt-3 rounded-lg bg-success-subtle border border-status-a-tiempo-border px-4 py-2 flex items-center justify-between text-caption">
+          <span className="text-success-text truncate">Documento subido — <span className="font-medium">{uploadedDoc.name}</span></span>
           <button onClick={() => setModal({ type: 'link-case', docs: [uploadedDoc] })}
-            className="text-avocat-gold hover:underline ml-4 flex-shrink-0">
+            className="text-accent-text hover:underline ml-4 flex-shrink-0">
             Vincular a caso →
           </button>
         </div>
@@ -688,15 +688,15 @@ function DocumentsView() {
 
       {/* One-time suggestion: Organizar automáticamente */}
       {showOrganizeBanner && (
-        <div className="mx-4 mt-3 rounded-lg bg-avocat-gold/5 border border-avocat-gold/20 px-4 py-2.5 flex items-center gap-3 text-[12px]">
-          <span className="text-avocat-gold flex-shrink-0"><IconFolder className="w-4 h-4" /></span>
-          <span className="text-[#c8c0ac] flex-1 min-w-0">
-            ¿Organizamos tus documentos en carpetas <span className="text-[#e8d4a0]">Casos</span> y <span className="text-[#e8d4a0]">Clientes</span> según sus vínculos?
+        <div className="mx-4 mt-3 rounded-lg bg-accent-subtle border border-accent-border px-4 py-2.5 flex items-center gap-3 text-caption">
+          <span className="text-accent-text flex-shrink-0"><IconFolder className="w-4 h-4" /></span>
+          <span className="text-text flex-1 min-w-0">
+            ¿Organizamos tus documentos en carpetas <span className="text-text-heading">Casos</span> y <span className="text-text-heading">Clientes</span> según sus vínculos?
           </span>
-          <button onClick={() => ws.openDialog({ type: 'auto-organize' })} className="text-avocat-gold hover:underline flex-shrink-0">
+          <button onClick={() => ws.openDialog({ type: 'auto-organize' })} className="text-accent-text hover:underline flex-shrink-0">
             Ver propuesta
           </button>
-          <button onClick={dismissOrganize} aria-label="Descartar" className="text-[#6b6050] hover:text-[#c8c0ac] flex-shrink-0"><X size={14} aria-hidden /></button>
+          <button onClick={dismissOrganize} aria-label="Descartar" className="text-text-muted hover:text-text flex-shrink-0"><X size={14} aria-hidden /></button>
         </div>
       )}
 
@@ -716,11 +716,11 @@ function DocumentsView() {
         <div className={`flex-1 min-w-0 overflow-y-auto ${previewDoc ? 'hidden md:block' : ''}`}>
           {loading ? (
             <div className="flex items-center justify-center h-40">
-              <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+              <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
             </div>
           ) : docs.length === 0 && folders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-[13px] text-[#6b6050] mb-4">No hay documentos subidos aún.</p>
+              <p className="text-small text-text-muted mb-4">No hay documentos subidos aún.</p>
               <div className="flex gap-2">
                 <Button variant="accent" size="md" onClick={() => fileRef.current?.click()}>
                   Subir primer documento
@@ -758,7 +758,7 @@ function DocumentsView() {
         {/* Preview panel — desktop split pane */}
         {previewDoc && (
           <>
-            <div className="hidden md:flex w-[360px] flex-shrink-0 border-l border-[#2e2b20] flex-col overflow-hidden">
+            <div className="hidden md:flex w-[360px] flex-shrink-0 border-l border-border flex-col overflow-hidden">
               <DocPreviewPanel
                 doc={previewDoc}
                 cases={cases}
@@ -773,7 +773,7 @@ function DocumentsView() {
             {/* Mobile: full overlay */}
             <div className="md:hidden fixed inset-0 z-40 flex items-end">
               <div className="absolute inset-0 bg-black/70" onClick={() => setPreviewId(null)} />
-              <div className="relative bg-[#1e1c16] border-t border-[#2e2b20] rounded-t-2xl w-full max-h-[85vh] flex flex-col">
+              <div className="relative bg-surface border-t border-border rounded-t-2xl w-full max-h-[85vh] flex flex-col">
                 <DocPreviewPanel
                   doc={previewDoc}
                   cases={cases}
@@ -792,8 +792,8 @@ function DocumentsView() {
 
       {/* Bulk action bar */}
       {selectedDocs.length > 0 && (
-        <div className="border-t border-[#2e2b20] bg-[#161410] px-4 py-3 flex items-center gap-3 flex-wrap">
-          <span className="text-[12px] text-avocat-gold font-medium">{selectedDocs.length} seleccionado{selectedDocs.length !== 1 ? 's' : ''}</span>
+        <div className="border-t border-border bg-bg px-4 py-3 flex items-center gap-3 flex-wrap">
+          <span className="text-caption text-accent-text font-medium">{selectedDocs.length} seleccionado{selectedDocs.length !== 1 ? 's' : ''}</span>
           {enabled && <Button variant="secondary" size="sm" onClick={handleBulkMove}>Mover a…</Button>}
           <Button variant="secondary" size="sm" onClick={handleBulkLinkCase}>Vincular a caso</Button>
           <Button variant="secondary" size="sm" onClick={handleBulkZip}>Descargar ZIP</Button>
@@ -805,7 +805,7 @@ function DocumentsView() {
             }}>Revisar cambios legales</Button>
           )}
           <Button variant="secondary" size="sm" onClick={handleBulkDelete}>Eliminar</Button>
-          <button onClick={() => setSelected(new Set())} className="ml-auto text-[11px] text-[#6b6050] hover:text-[#c8c0ac] transition-colors">
+          <button onClick={() => setSelected(new Set())} className="ml-auto text-caption text-text-muted hover:text-text transition-colors">
             Deseleccionar todo
           </button>
         </div>
@@ -822,9 +822,9 @@ function DocumentsView() {
         <ContractConfirmSheet contract={contractSheet} onClose={() => setContractSheet(null)} onSaved={applyContract} />
       )}
       {contractNotice && (
-        <div className="fixed z-[60] left-1/2 -translate-x-1/2 bottom-20 md:bottom-6 bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-4 py-2.5 shadow-lg flex items-center gap-3 max-w-[calc(100vw-32px)]" role="status">
-          <p className="text-[12px] text-[#c8c0ac]">{contractNotice.text}</p>
-          <button onClick={() => setContractNotice(null)} aria-label="Cerrar" className="text-[#6b6050] hover:text-[#c8c0ac] text-[14px] leading-none">×</button>
+        <div className="fixed z-[60] left-1/2 -translate-x-1/2 bottom-20 md:bottom-6 bg-surface border border-border rounded-xl px-4 py-2.5 shadow-lg flex items-center gap-3 max-w-[calc(100vw-32px)]" role="status">
+          <p className="text-caption text-text">{contractNotice.text}</p>
+          <button onClick={() => setContractNotice(null)} aria-label="Cerrar" className="text-text-muted hover:text-text text-body-sm leading-none">×</button>
         </div>
       )}
 

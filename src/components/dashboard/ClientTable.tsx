@@ -20,39 +20,39 @@ export default function ClientTable({ clients, activeCasesByClientId = {} }: Cli
   const active = clients.filter(c => c.status === 'active').slice(0, 10);
 
   return (
-    <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-[#2e2b20]">
-        <h3 className="text-[13px] font-sans font-semibold text-[#e8d4a0]">Clientes activos</h3>
+    <div className="bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-border">
+        <h3 className="text-small font-sans font-semibold text-text-heading">Clientes activos</h3>
       </div>
 
       {active.length === 0 ? (
         <div className="px-5 py-8 text-center">
-          <p className="text-[12px] text-[#6b6050]">Sin clientes registrados aún</p>
+          <p className="text-caption text-text-muted">Sin clientes registrados aún</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-[12px] font-sans">
+          <table className="w-full text-caption font-sans">
             <thead>
-              <tr className="border-b border-[#2e2b20]">
+              <tr className="border-b border-border">
                 {['Cliente', 'Casos activos', 'Último caso'].map(h => (
                   <th
                     key={h}
-                    className="text-left px-5 py-2.5 text-[11px] font-semibold tracking-widest uppercase text-[#6b6050]"
+                    className="text-left px-5 py-2.5 text-label font-semibold tracking-widest uppercase text-text-muted"
                   >
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2e2b20]">
+            <tbody className="divide-y divide-border">
               {active.map(c => (
-                <tr key={c.id} className="hover:bg-[#252218] transition-colors">
+                <tr key={c.id} className="hover:bg-surface-muted transition-colors">
                   <td className="px-5 py-3">
-                    <p className="font-medium text-[#c8c0ac]">{c.name}</p>
-                    <p className="text-[10px] text-[#6b6050] mt-0.5">{c.email}</p>
+                    <p className="font-medium text-text">{c.name}</p>
+                    <p className="text-caption text-text-muted mt-0.5">{c.email}</p>
                   </td>
-                  <td className="px-5 py-3 text-[#c8c0ac]">{activeCasesByClientId[c.id] ?? 0}</td>
-                  <td className="px-5 py-3 text-[#6b6050]">{formatDate(c.lastCaseDate)}</td>
+                  <td className="px-5 py-3 text-text">{activeCasesByClientId[c.id] ?? 0}</td>
+                  <td className="px-5 py-3 text-text-muted">{formatDate(c.lastCaseDate)}</td>
                 </tr>
               ))}
             </tbody>

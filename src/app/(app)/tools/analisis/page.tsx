@@ -85,11 +85,11 @@ function resultToMarkdown(r: AnalisisResult, fileName: string): string {
   return lines.join('\n');
 }
 
-const INPUT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
+const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border';
 
 export default function AnalisisPage() {
   return (
-    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" /></div>}>
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" /></div>}>
       <AnalisisPageContent />
     </Suspense>
   );
@@ -279,10 +279,10 @@ function AnalisisPageContent() {
         <div className="max-w-4xl mx-auto space-y-5">
 
           {/* ── Source card ────────────────────────────────── */}
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
+          <div className="bg-surface border border-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-sans font-semibold text-[13px] text-[#e8d4a0]">Documento a analizar</h3>
-              <button onClick={openPicker} className="text-[12px] text-[#6b6050] hover:text-avocat-gold transition-colors">
+              <h3 className="font-sans font-semibold text-small text-text-heading">Documento a analizar</h3>
+              <button onClick={openPicker} className="text-caption text-text-muted hover:text-accent-text transition-colors">
                 Mis documentos
               </button>
             </div>
@@ -291,11 +291,11 @@ function AnalisisPageContent() {
 
             {/* Drop zone */}
             <div
-              onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-avocat-gold/40', 'bg-avocat-gold/5'); }}
-              onDragLeave={e => { e.currentTarget.classList.remove('border-avocat-gold/40', 'bg-avocat-gold/5'); }}
+              onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-accent-border', 'bg-accent-subtle'); }}
+              onDragLeave={e => { e.currentTarget.classList.remove('border-accent-border', 'bg-accent-subtle'); }}
               onDrop={e => {
                 e.preventDefault();
-                e.currentTarget.classList.remove('border-avocat-gold/40', 'bg-avocat-gold/5');
+                e.currentTarget.classList.remove('border-accent-border', 'bg-accent-subtle');
                 const file = e.dataTransfer.files?.[0];
                 if (file) {
                   const fakeEvent = { target: { files: e.dataTransfer.files } } as unknown as React.ChangeEvent<HTMLInputElement>;
@@ -303,29 +303,29 @@ function AnalisisPageContent() {
                 }
               }}
               onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-[#2e2b20] rounded-xl py-10 text-center cursor-pointer hover:border-avocat-gold/30 hover:bg-[#252218] transition-colors"
+              className="border-2 border-dashed border-border rounded-xl py-10 text-center cursor-pointer hover:border-accent-border hover:bg-surface-muted transition-colors"
             >
-              <p className="text-[13px] text-[#6b6050]">Arrastra aquí un PDF, DOCX o TXT</p>
-              <p className="text-[11px] text-[#3a3630] mt-1">o haz clic para seleccionar</p>
+              <p className="text-small text-text-muted">Arrastra aquí un PDF, DOCX o TXT</p>
+              <p className="text-caption text-text-muted mt-1">o haz clic para seleccionar</p>
             </div>
 
             {/* Status */}
             {extracting && (
               <div className="mt-4 flex items-center gap-2.5">
-                <div className="h-4 w-4 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin shrink-0" />
-                <span className="text-[12px] text-[#6b6050]">Extrayendo texto de {selectedName}...</span>
+                <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin shrink-0" />
+                <span className="text-caption text-text-muted">Extrayendo texto de {selectedName}...</span>
               </div>
             )}
 
-            {extractError && <p className="mt-4 text-[12px] text-red-400">{extractError}</p>}
+            {extractError && <p className="mt-4 text-caption text-danger-text">{extractError}</p>}
 
             {ready && (
-              <div className="mt-4 flex items-center justify-between gap-4 bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-3">
+              <div className="mt-4 flex items-center justify-between gap-4 bg-bg border border-border rounded-lg px-4 py-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <FileTypeIcon name={selectedName} size={18} className="shrink-0 text-accent-text" />
                   <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-[#c8c0ac] truncate">{selectedName}</p>
-                    <p className="text-[11px] text-emerald-400">Texto extraído — listo para analizar</p>
+                    <p className="text-small font-medium text-text truncate">{selectedName}</p>
+                    <p className="text-caption text-success-text">Texto extraído — listo para analizar</p>
                   </div>
                 </div>
                 <Button variant="accent" size="md" loading={analyzing} onClick={handleAnalyze}>
@@ -334,26 +334,26 @@ function AnalisisPageContent() {
               </div>
             )}
 
-            {analyzeError && <p className="mt-3 text-[12px] text-red-400">{analyzeError}</p>}
+            {analyzeError && <p className="mt-3 text-caption text-danger-text">{analyzeError}</p>}
           </div>
 
           {/* ── Results ────────────────────────────────────── */}
           {result && (
             <div className="space-y-4">
               {/* Header card with save actions */}
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
+              <div className="bg-surface border border-border rounded-xl p-5">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div>
-                    <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Resumen ejecutivo</p>
-                    {result.tipo && <p className="text-[12px] text-avocat-gold mb-2">Tipo: {result.tipo}</p>}
+                    <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Resumen ejecutivo</p>
+                    {result.tipo && <p className="text-caption text-accent-text mb-2">Tipo: {result.tipo}</p>}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     {savedDocId ? (
                       <div className="flex items-center gap-3">
-                        <span className="text-[12px] text-emerald-400">
+                        <span className="text-caption text-success-text">
                           Guardado{assignedCase ? ` en caso "${assignedCase.title}"` : ''}
                         </span>
-                        <Link href="/documents" className="text-[12px] text-avocat-gold hover:underline">Ver en documentos →</Link>
+                        <Link href="/documents" className="text-caption text-accent-text hover:underline">Ver en documentos →</Link>
                       </div>
                     ) : (
                       <>
@@ -370,50 +370,50 @@ function AnalisisPageContent() {
 
                 {/* Case picker */}
                 {showCasePicker && !savedDocId && (
-                  <div className="mt-4 pt-4 border-t border-[#2e2b20] space-y-2">
-                    <p className="text-[11px] text-[#6b6050]">Selecciona el caso:</p>
+                  <div className="mt-4 pt-4 border-t border-border space-y-2">
+                    <p className="text-caption text-text-muted">Selecciona el caso:</p>
                     <input className={INPUT} placeholder="Buscar caso..." value={caseSearch} onChange={e => setCaseSearch(e.target.value)} />
                     <div className="space-y-1 max-h-44 overflow-y-auto">
                       {filteredCases.length === 0 && (
-                        <p className="text-[12px] text-[#3a3630] px-2">Sin casos activos.</p>
+                        <p className="text-caption text-text-muted px-2">Sin casos activos.</p>
                       )}
                       {filteredCases.map(c => (
                         <button
                           key={c.id}
                           onClick={() => handleSave(c.id)}
                           disabled={saving}
-                          className="w-full text-left px-3 py-2 rounded-lg bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/30 text-[12px] text-[#c8c0ac] transition-colors disabled:opacity-40"
+                          className="w-full text-left px-3 py-2 rounded-lg bg-bg border border-border hover:border-accent-border text-caption text-text transition-colors disabled:opacity-40"
                         >
                           <span className="font-medium">{c.title}</span>
-                          <span className="text-[#6b6050] ml-2">{c.ref}</span>
+                          <span className="text-text-muted ml-2">{c.ref}</span>
                         </button>
                       ))}
                     </div>
                     <div className="flex justify-end">
-                      <button onClick={() => setShowCasePicker(false)} className="text-[11px] text-[#6b6050] hover:text-[#c8c0ac]">Cancelar</button>
+                      <button onClick={() => setShowCasePicker(false)} className="text-caption text-text-muted hover:text-text">Cancelar</button>
                     </div>
                   </div>
                 )}
 
-                <p className="mt-4 text-[13px] text-[#c8c0ac] leading-relaxed">{result.resumen}</p>
+                <p className="mt-4 text-small text-text leading-relaxed">{result.resumen}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {([
-                  { key: 'riesgos',         label: 'Riesgos y puntos de atención', color: 'text-red-400' },
-                  { key: 'recomendaciones', label: 'Recomendaciones',              color: 'text-emerald-400' },
-                  { key: 'clausulasClave',  label: 'Cláusulas clave',             color: 'text-avocat-gold' },
-                  { key: 'partes',          label: 'Partes involucradas',          color: 'text-[#c8c0ac]' },
-                  { key: 'fechasClave',     label: 'Fechas clave',                color: 'text-amber-400' },
+                  { key: 'riesgos',         label: 'Riesgos y puntos de atención', color: 'text-danger-text' },
+                  { key: 'recomendaciones', label: 'Recomendaciones',              color: 'text-success-text' },
+                  { key: 'clausulasClave',  label: 'Cláusulas clave',             color: 'text-accent-text' },
+                  { key: 'partes',          label: 'Partes involucradas',          color: 'text-text' },
+                  { key: 'fechasClave',     label: 'Fechas clave',                color: 'text-warning-text' },
                 ] as { key: keyof AnalisisResult; label: string; color: string }[]).map(({ key, label, color }) => {
                   const items = result[key] as string[];
                   if (!items?.length) return null;
                   return (
-                    <div key={key} className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
-                      <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">{label}</p>
+                    <div key={key} className="bg-surface border border-border rounded-xl p-5">
+                      <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3">{label}</p>
                       <ul className="space-y-1.5">
                         {items.map((item, i) => (
-                          <li key={i} className={`text-[12px] leading-snug ${color}`}>• {item}</li>
+                          <li key={i} className={`text-caption leading-snug ${color}`}>• {item}</li>
                         ))}
                       </ul>
                     </div>
@@ -429,23 +429,23 @@ function AnalisisPageContent() {
       {showPicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowPicker(false)} />
-          <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 w-full max-w-md shadow-xl space-y-3">
-            <h2 className="font-sans font-semibold text-[14px] text-[#e8d4a0]">Mis documentos</h2>
+          <div className="relative bg-surface border border-border rounded-2xl p-5 w-full max-w-md shadow-xl space-y-3">
+            <h2 className="font-sans font-semibold text-body-sm text-text-heading">Mis documentos</h2>
             <input className={INPUT} placeholder="Buscar..." value={pickerSearch} onChange={e => setPickerSearch(e.target.value)} />
             <div className="space-y-1 max-h-72 overflow-y-auto">
               {loadingDocs && (
                 <div className="py-6 flex justify-center">
-                  <div className="h-5 w-5 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+                  <div className="h-5 w-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
                 </div>
               )}
               {!loadingDocs && filteredDocs.length === 0 && (
-                <p className="text-[12px] text-[#3a3630] py-6 text-center">Sin documentos guardados.</p>
+                <p className="text-caption text-text-muted py-6 text-center">Sin documentos guardados.</p>
               )}
               {filteredDocs.map(d => (
                 <button key={d.id} onClick={() => handlePickDoc(d)}
-                  className="w-full text-left px-3 py-2.5 rounded-lg bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/30 transition-colors">
-                  <p className="text-[12px] font-medium text-[#c8c0ac] truncate">{d.name}</p>
-                  <p className="text-[10px] text-[#3a3630] uppercase mt-0.5">{d.type}</p>
+                  className="w-full text-left px-3 py-2.5 rounded-lg bg-bg border border-border hover:border-accent-border transition-colors">
+                  <p className="text-caption font-medium text-text truncate">{d.name}</p>
+                  <p className="text-label text-text-muted uppercase mt-0.5">{d.type}</p>
                 </button>
               ))}
             </div>

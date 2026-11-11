@@ -19,10 +19,10 @@ interface CaseItem {
 }
 
 const STATUS_DOT: Record<string, string> = {
-  active:   'bg-emerald-500',
-  urgent:   'bg-red-500',
-  closed:   'bg-[#6b6050]',
-  archived: 'bg-[#3a3630]',
+  active:   'bg-status-pagado-bg',
+  urgent:   'bg-danger',
+  closed:   'bg-text-muted',
+  archived: 'bg-border',
 };
 
 interface SidebarProps {
@@ -63,13 +63,13 @@ export default function Sidebar({ userDoc }: SidebarProps) {
 
   const folderPanel = (
     <>
-      <div className="px-4 pt-4 pb-3 border-b border-[#2e2b20]">
+      <div className="px-4 pt-4 pb-3 border-b border-border">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-sans font-semibold tracking-widest uppercase text-[#6b6050]">Carpetas</span>
+          <span className="text-label font-sans font-semibold tracking-widest uppercase text-text-muted">Carpetas</span>
           <button
             title="Nueva carpeta (Shift+N)"
             onClick={() => { close(); workspace.openDialog({ type: 'new-folder', parentId: workspace.currentFolderId }); }}
-            className="w-6 h-6 flex items-center justify-center rounded text-[#6b6050] hover:text-avocat-gold hover:bg-[#252218] transition-colors"
+            className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-accent-text hover:bg-surface-muted transition-colors"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -83,14 +83,14 @@ export default function Sidebar({ userDoc }: SidebarProps) {
 
   const casesPanel = (
     <>
-      <div className="px-4 pt-4 pb-3 border-b border-[#2e2b20]">
+      <div className="px-4 pt-4 pb-3 border-b border-border">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-sans font-semibold tracking-widest uppercase text-[#6b6050]">Casos</span>
+          <span className="text-label font-sans font-semibold tracking-widest uppercase text-text-muted">Casos</span>
           <Link
             href="/cases/new"
             title="Nuevo caso"
             onClick={close}
-            className="w-6 h-6 flex items-center justify-center rounded text-[#6b6050] hover:text-avocat-gold hover:bg-[#252218] transition-colors"
+            className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-accent-text hover:bg-surface-muted transition-colors"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -102,14 +102,14 @@ export default function Sidebar({ userDoc }: SidebarProps) {
           placeholder="Buscar..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full bg-[#161410] border border-[#2e2b20] rounded-md px-2.5 py-1.5 text-[12px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/50 transition-colors"
+          className="w-full bg-bg border border-border rounded-md px-2.5 py-1.5 text-caption font-sans text-text  focus:border-accent-border transition-colors"
         />
       </div>
 
       <div className="flex-1 overflow-y-auto py-2">
         {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center">
-            <p className="text-[11px] text-[#3a3630]">{search ? 'Sin resultados' : 'Sin casos aún'}</p>
+            <p className="text-caption text-text-muted">{search ? 'Sin resultados' : 'Sin casos aún'}</p>
           </div>
         ) : (
           filtered.map(c => {
@@ -119,14 +119,14 @@ export default function Sidebar({ userDoc }: SidebarProps) {
                 key={c.id}
                 href={`/cases/${c.id}`}
                 onClick={close}
-                className={['flex items-start gap-2.5 px-4 py-2.5 transition-colors group', active ? 'bg-[#252218]' : 'hover:bg-[#1a1812]'].join(' ')}
+                className={['flex items-start gap-2.5 px-4 py-2.5 transition-colors group', active ? 'bg-surface-raised' : 'hover:bg-bg'].join(' ')}
               >
                 <span className={`mt-[5px] w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[c.status] ?? STATUS_DOT.active}`} />
                 <div className="min-w-0">
-                  <p className={`text-[12px] font-sans font-medium truncate leading-snug ${active ? 'text-[#e8d4a0]' : 'text-[#c8c0ac] group-hover:text-[#e8d4a0]'}`}>
+                  <p className={`text-caption font-sans font-medium truncate leading-snug ${active ? 'text-text-heading' : 'text-text group-hover:text-text-heading'}`}>
                     {c.title}
                   </p>
-                  <p className="text-[10px] text-[#6b6050] truncate mt-0.5">{c.ref}</p>
+                  <p className="text-caption text-text-muted truncate mt-0.5">{c.ref}</p>
                 </div>
               </Link>
             );
@@ -137,16 +137,16 @@ export default function Sidebar({ userDoc }: SidebarProps) {
   );
 
   const sidebarInner = (
-    <aside className="w-[220px] h-full bg-[#1e1c16] border-r border-[#2e2b20] flex flex-col flex-shrink-0">
+    <aside className="w-[220px] h-full bg-surface border-r border-border flex flex-col flex-shrink-0">
       {showFolders ? folderPanel : casesPanel}
 
-      <div className="px-4 py-3 border-t border-[#2e2b20]">
+      <div className="px-4 py-3 border-t border-border">
         <Link
           href="/agent"
           onClick={close}
           className={[
-            'flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[12px] font-sans font-medium transition-colors',
-            pathname === '/agent' ? 'bg-avocat-gold text-white' : 'text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#252218]',
+            'flex items-center gap-2 w-full px-3 py-2 rounded-lg text-caption font-sans font-medium transition-colors',
+            pathname === '/agent' ? 'bg-accent text-text-on-accent' : 'text-text-muted hover:text-text hover:bg-surface-muted',
           ].join(' ')}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">

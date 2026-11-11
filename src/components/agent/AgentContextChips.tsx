@@ -15,7 +15,7 @@ export default function AgentContextChips({ chips }: AgentContextChipsProps) {
       {chips.map((chip, i) => (
         <span
           key={i}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-avocat-gold/10 border border-avocat-gold/20 text-[11px] font-sans text-avocat-gold"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent-subtle border border-accent-border text-caption font-sans text-accent-text"
         >
           {chip.label}
           {chip.onRemove && (

@@ -95,10 +95,10 @@ async function extractPdfTextLayer(file: File): Promise<string> {
 function FileChip({ name, onRemove }: { name: string; onRemove: () => void }) {
   const ext = name.split('.').pop()?.toUpperCase() ?? '';
   return (
-    <div className="flex items-center gap-2 bg-[#252218] border border-[#2e2b20] rounded-lg px-3 py-1.5">
-      <span className="text-[10px] font-sans font-semibold text-avocat-gold">{ext}</span>
-      <span className="text-[12px] font-sans text-[#c8c0ac] max-w-[160px] truncate">{name}</span>
-      <button type="button" onClick={onRemove} aria-label="Quitar" className="text-[#6b6050] hover:text-red-400 ml-1"><X size={14} aria-hidden /></button>
+    <div className="flex items-center gap-2 bg-surface-raised border border-border rounded-lg px-3 py-1.5">
+      <span className="text-caption font-sans font-semibold text-accent-text">{ext}</span>
+      <span className="text-caption font-sans text-text max-w-[160px] truncate">{name}</span>
+      <button type="button" onClick={onRemove} aria-label="Quitar" className="text-text-muted hover:text-danger-text ml-1"><X size={14} aria-hidden /></button>
     </div>
   );
 }
@@ -112,11 +112,11 @@ function FileRow({ state }: { state: FileState }) {
     error:        <X size={16} aria-hidden />,
   };
   const statusColor: Record<FileStatus, string> = {
-    waiting:      'text-[#6b6050]',
-    'text-extract': 'text-avocat-gold',
-    ocr:          'text-amber-400',
-    done:         'text-emerald-400',
-    error:        'text-red-400',
+    waiting:      'text-text-muted',
+    'text-extract': 'text-accent-text',
+    ocr:          'text-warning-text',
+    done:         'text-success-text',
+    error:        'text-danger-text',
   };
   const statusLabel: Record<FileStatus, string> = {
     waiting:      'En cola',
@@ -134,18 +134,18 @@ function FileRow({ state }: { state: FileState }) {
 
   return (
     <div className="flex items-center gap-3 py-2">
-      <span className={`text-[14px] flex-shrink-0 ${statusColor[state.status]}`}>
+      <span className={`text-body-sm flex-shrink-0 ${statusColor[state.status]}`}>
         {statusIcon[state.status]}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-sans text-[#c8c0ac] truncate">{state.name}</p>
-        <p className={`text-[11px] font-sans ${statusColor[state.status]}`}>
+        <p className="text-caption font-sans text-text truncate">{state.name}</p>
+        <p className={`text-caption font-sans ${statusColor[state.status]}`}>
           {statusLabel[state.status]}
         </p>
         {state.status === 'ocr' && state.ocrPercent > 0 && (
-          <div className="mt-1 h-1 bg-[#2e2b20] rounded-full overflow-hidden w-full">
+          <div className="mt-1 h-1 bg-border rounded-full overflow-hidden w-full">
             <div
-              className="h-full bg-amber-400 rounded-full transition-all duration-300"
+              className="h-full bg-warning-text rounded-full transition-all duration-300"
               style={{ width: `${state.ocrPercent}%` }}
             />
           </div>
@@ -158,26 +158,26 @@ function FileRow({ state }: { state: FileState }) {
 function AssessmentPanel({ result }: { result: IntakeResult }) {
   return (
     <div className="space-y-4">
-      <div className="bg-[#161410] border border-[#2e2b20] rounded-xl p-4">
-        <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">Resumen ejecutivo</p>
-        <p className="text-[12px] text-[#c8c0ac] leading-relaxed">{result.resumen}</p>
+      <div className="bg-bg border border-border rounded-xl p-4">
+        <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-2">Resumen ejecutivo</p>
+        <p className="text-caption text-text leading-relaxed">{result.resumen}</p>
         {result.partes.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {result.partes.map((p, i) => (
-              <span key={i} className="px-2 py-0.5 rounded-full bg-[#252218] border border-[#2e2b20] text-[11px] text-[#6b6050]">{p}</span>
+              <span key={i} className="px-2 py-0.5 rounded-full bg-surface-raised border border-border text-caption text-text-muted">{p}</span>
             ))}
           </div>
         )}
       </div>
 
       {result.riesgos.length > 0 && (
-        <div className="bg-red-500/5 border border-red-500/15 rounded-xl p-4">
-          <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-red-400 mb-3 flex items-center gap-1.5"><TriangleAlert size={14} aria-hidden /> Riesgos y puntos de atención</p>
+        <div className="bg-danger-subtle border border-status-urgente-border rounded-xl p-4">
+          <p className="text-label font-sans font-semibold uppercase tracking-widest text-danger-text mb-3 flex items-center gap-1.5"><TriangleAlert size={14} aria-hidden /> Riesgos y puntos de atención</p>
           <ul className="space-y-2">
             {result.riesgos.map((r, i) => (
               <li key={i} className="flex items-start gap-2">
-                <span className="text-red-400 mt-0.5 flex-shrink-0">•</span>
-                <span className="text-[12px] text-red-300 leading-snug">{r}</span>
+                <span className="text-danger-text mt-0.5 flex-shrink-0">•</span>
+                <span className="text-caption text-danger-text leading-snug">{r}</span>
               </li>
             ))}
           </ul>
@@ -185,13 +185,13 @@ function AssessmentPanel({ result }: { result: IntakeResult }) {
       )}
 
       {result.puntosClave.length > 0 && (
-        <div className="bg-avocat-gold/5 border border-avocat-gold/15 rounded-xl p-4">
-          <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-avocat-gold mb-3 flex items-center gap-1.5"><Sparkle size={14} aria-hidden /> Puntos jurídicos clave</p>
+        <div className="bg-accent-subtle border border-accent-border rounded-xl p-4">
+          <p className="text-label font-sans font-semibold uppercase tracking-widest text-accent-text mb-3 flex items-center gap-1.5"><Sparkle size={14} aria-hidden /> Puntos jurídicos clave</p>
           <ul className="space-y-2">
             {result.puntosClave.map((p, i) => (
               <li key={i} className="flex items-start gap-2">
-                <span className="text-avocat-gold mt-0.5 flex-shrink-0">•</span>
-                <span className="text-[12px] text-[#c8c0ac] leading-snug">{p}</span>
+                <span className="text-accent-text mt-0.5 flex-shrink-0">•</span>
+                <span className="text-caption text-text leading-snug">{p}</span>
               </li>
             ))}
           </ul>
@@ -199,11 +199,11 @@ function AssessmentPanel({ result }: { result: IntakeResult }) {
       )}
 
       {result.fechasClave.length > 0 && (
-        <div className="bg-[#161410] border border-[#2e2b20] rounded-xl p-4">
-          <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3 flex items-center gap-1.5"><CalendarDays size={14} aria-hidden /> Fechas y plazos relevantes</p>
+        <div className="bg-bg border border-border rounded-xl p-4">
+          <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3 flex items-center gap-1.5"><CalendarDays size={14} aria-hidden /> Fechas y plazos relevantes</p>
           <ul className="space-y-1.5">
             {result.fechasClave.map((f, i) => (
-              <li key={i} className="text-[12px] text-[#c8c0ac]">• {f}</li>
+              <li key={i} className="text-caption text-text">• {f}</li>
             ))}
           </ul>
         </div>
@@ -469,7 +469,7 @@ export default function NewCasePage() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm(prev => ({ ...prev, [field]: e.target.value }));
 
-  const inputCls = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40 transition-colors';
+  const inputCls = 'w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-small font-sans text-text  focus:border-accent-border transition-colors';
 
   const isProcessing = phase !== 'idle';
 
@@ -492,8 +492,8 @@ export default function NewCasePage() {
         {/* ── STEP 1: Upload ─────────────────────────────────── */}
         {step === 'upload' && (
           <div className="max-w-2xl mx-auto space-y-5">
-            <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
-              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-4">
+            <div className="bg-surface border border-border rounded-xl p-5">
+              <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-4">
                 Documentos del caso (opcional)
               </p>
 
@@ -507,15 +507,15 @@ export default function NewCasePage() {
                   className={[
                     'border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors',
                     dragging
-                      ? 'border-avocat-gold bg-avocat-gold/5'
-                      : 'border-[#2e2b20] hover:border-avocat-gold/40 hover:bg-[#252218]',
+                      ? 'border-accent bg-accent-subtle'
+                      : 'border-border hover:border-accent-border hover:bg-surface-muted',
                   ].join(' ')}
                 >
                   <Paperclip size={40} className="mx-auto mb-3 text-text-muted" aria-hidden />
-                  <p className="text-[13px] font-sans font-medium text-[#c8c0ac] mb-1">
+                  <p className="text-small font-sans font-medium text-text mb-1">
                     Arrastra documentos aquí o haz clic para seleccionar
                   </p>
-                  <p className="text-[11px] text-[#6b6050]">
+                  <p className="text-caption text-text-muted">
                     PDF (texto o escaneado), DOCX, TXT · Múltiples archivos
                   </p>
                 </div>
@@ -540,13 +540,13 @@ export default function NewCasePage() {
 
               {/* ── Processing progress ── */}
               {isProcessing && (
-                <div className="space-y-0 divide-y divide-[#2e2b20]">
+                <div className="space-y-0 divide-y divide-border">
                   {fileStates.map((fs, i) => <FileRow key={i} state={fs} />)}
 
                   {phase === 'analyzing' && (
                     <div className="flex items-center gap-3 pt-3 mt-1">
-                      <div className="h-4 w-4 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin flex-shrink-0" />
-                      <p className="text-[12px] font-sans text-avocat-gold">
+                      <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin flex-shrink-0" />
+                      <p className="text-caption font-sans text-accent-text">
                         Analizando con GPT-4o...
                       </p>
                     </div>
@@ -555,7 +555,7 @@ export default function NewCasePage() {
               )}
 
               {analyzeError && (
-                <p className="mt-3 text-[12px] text-red-400">{analyzeError}</p>
+                <p className="mt-3 text-caption text-danger-text">{analyzeError}</p>
               )}
             </div>
 
@@ -585,7 +585,7 @@ export default function NewCasePage() {
             <button
               type="button"
               onClick={() => setStep('upload')}
-              className="mb-5 flex items-center gap-1.5 text-[12px] text-[#6b6050] hover:text-[#c8c0ac] transition-colors"
+              className="mb-5 flex items-center gap-1.5 text-caption text-text-muted hover:text-text transition-colors"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -598,7 +598,7 @@ export default function NewCasePage() {
               {/* Assessment panel */}
               {intakeResult && (
                 <div className="space-y-2">
-                  <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">
+                  <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3">
                     Análisis de documentos
                   </p>
                   <AssessmentPanel result={intakeResult} />
@@ -608,48 +608,48 @@ export default function NewCasePage() {
               {/* Form */}
               <div>
                 {intakeResult && (
-                  <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">
+                  <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3">
                     Datos del caso — pre-rellenados, puedes editar
                   </p>
                 )}
-                <form onSubmit={handleSubmit} className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-4">
+                <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-xl p-5 space-y-4">
                   {saveError && (
-                    <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-[12px] text-red-400">
+                    <div className="rounded-lg bg-danger-subtle border border-status-urgente-border px-4 py-3 text-caption text-danger-text">
                       {saveError}
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">Título *</label>
+                    <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">Título *</label>
                     <input type="text" required value={form.title} onChange={set('title')} placeholder="Ej: Despido improcedente García López" className={inputCls} />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">Tipo *</label>
+                      <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">Tipo *</label>
                       <select value={form.type} onChange={set('type')} className={inputCls}>
-                        {CASE_TYPES.map(t => <option key={t.value} value={t.value} className="bg-[#1e1c16]">{t.label}</option>)}
+                        {CASE_TYPES.map(t => <option key={t.value} value={t.value} className="bg-surface">{t.label}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">Referencia</label>
+                      <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">Referencia</label>
                       <input type="text" value={form.ref} onChange={set('ref')} placeholder="AVC-2025-001" className={inputCls} />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">Cliente</label>
+                      <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">Cliente</label>
                       <input type="text" value={form.client} onChange={set('client')} placeholder="Nombre del cliente" className={inputCls} />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">Fecha límite</label>
+                      <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">Fecha límite</label>
                       <input type="date" value={form.deadline} onChange={set('deadline')} className={inputCls} />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
+                    <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">
                       Notas{intakeResult ? ' — generadas por IA' : ''}
                     </label>
                     <textarea rows={5} value={form.notes} onChange={set('notes')} placeholder="Descripción, antecedentes, observaciones..." className={`${inputCls} resize-none leading-relaxed`} />

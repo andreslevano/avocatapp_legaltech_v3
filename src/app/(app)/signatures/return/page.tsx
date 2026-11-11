@@ -74,22 +74,22 @@ function ReturnInner() {
                 text: 'No hay nada pendiente de tu firma en esta solicitud.' },
   };
 
-  if (!rid) return <p className="text-[13px] text-[#9a9a9a]">Enlace de firma no válido.</p>;
-  if (view === 'loading') return <p className="text-[13px] text-[#9a9a9a]">Comprobando la firma…</p>;
+  if (!rid) return <p className="text-small text-text-muted">Enlace de firma no válido.</p>;
+  if (view === 'loading') return <p className="text-small text-text-muted">Comprobando la firma…</p>;
 
   const c = content[view];
   return (
-    <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-6 space-y-4">
+    <div className="bg-surface border border-border rounded-2xl p-6 space-y-4">
       <div className="flex items-start gap-3">
-        <span className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-[15px] font-semibold ${
-          view === 'signed' || view === 'done' ? 'bg-emerald-500/15 text-emerald-400'
-          : view === 'declined' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'}`}>{c.icon}</span>
+        <span className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-body-sm font-semibold ${
+          view === 'signed' || view === 'done' ? 'bg-success-subtle text-success-text'
+          : view === 'declined' ? 'bg-danger-subtle text-danger-text' : 'bg-warning-subtle text-warning-text'}`}>{c.icon}</span>
         <div className="space-y-1">
-          <h2 className="font-display text-[22px] leading-tight text-[#e8d4a0]">{c.title}</h2>
-          <p className="text-[13px] font-sans text-[#9a9a9a]">{c.text}</p>
+          <h2 className="font-display text-h3 leading-tight text-text-heading">{c.title}</h2>
+          <p className="text-small font-sans text-text-muted">{c.text}</p>
         </div>
       </div>
-      {error && <p className="text-[12px] text-red-400">{error}</p>}
+      {error && <p className="text-caption text-danger-text">{error}</p>}
       <div className="flex flex-wrap gap-2 justify-end">
         <Link href="/documents"><Button variant="secondary" size="sm">Ver en Documentos</Button></Link>
         {c.resume
@@ -106,7 +106,7 @@ export default function SignatureReturnPage() {
       <AppHeader title="Firma electrónica" subtitle="DocuSign" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-xl mx-auto">
-          <Suspense fallback={<p className="text-[13px] text-[#9a9a9a]">Cargando…</p>}>
+          <Suspense fallback={<p className="text-small text-text-muted">Cargando…</p>}>
             <ReturnInner />
           </Suspense>
         </div>

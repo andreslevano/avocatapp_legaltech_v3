@@ -108,13 +108,13 @@ export default function AgentWelcome({ userDoc, onShortcut, caseContext }: Agent
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-6 sm:py-12 overflow-y-auto">
-      <div className="w-12 h-12 rounded-2xl bg-avocat-gold/15 border border-avocat-gold/30 flex items-center justify-center mb-6">
+      <div className="w-12 h-12 rounded-2xl bg-accent-subtle border border-accent-border flex items-center justify-center mb-6">
         <svg
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth="1.5"
-          className="w-6 h-6 text-avocat-gold"
+          className="w-6 h-6 text-accent-text"
         >
           <path
             strokeLinecap="round"
@@ -124,19 +124,19 @@ export default function AgentWelcome({ userDoc, onShortcut, caseContext }: Agent
         </svg>
       </div>
 
-      <h2 className="font-display text-[22px] text-[#e8d4a0] mb-2">Hola, {firstName}</h2>
+      <h2 className="font-display text-h3 text-text-heading mb-2">Hola, {firstName}</h2>
 
       {hasCaseContext ? (
         <div className="mb-8 text-center">
-          <p className="text-[13px] text-[#c8c0ac] font-medium mb-0.5 truncate max-w-sm">
+          <p className="text-small text-text font-medium mb-0.5 truncate max-w-sm">
             {caseContext!.title}
           </p>
           {caseContext!.client && (
-            <p className="text-[11px] text-[#6b6050]">Cliente: {caseContext!.client}</p>
+            <p className="text-caption text-text-muted">Cliente: {caseContext!.client}</p>
           )}
         </div>
       ) : (
-        <p className="text-[13px] text-[#6b6050] mb-8 text-center max-w-xs">
+        <p className="text-small text-text-muted mb-8 text-center max-w-xs">
           Soy tu asistente legal. ¿En qué puedo ayudarte hoy?
         </p>
       )}
@@ -146,9 +146,9 @@ export default function AgentWelcome({ userDoc, onShortcut, caseContext }: Agent
           <button
             key={i}
             onClick={() => onShortcut(text)}
-            className="text-left px-4 py-3 rounded-xl bg-[#1e1c16] border border-[#2e2b20] hover:border-avocat-gold/30 hover:bg-[#252218] transition-colors"
+            className="text-left px-4 py-3 rounded-xl bg-surface border border-border hover:border-accent-border hover:bg-surface-muted transition-colors"
           >
-            <span className="text-[12px] font-sans text-[#c8c0ac] leading-snug">{text}</span>
+            <span className="text-caption font-sans text-text leading-snug">{text}</span>
           </button>
         ))}
       </div>

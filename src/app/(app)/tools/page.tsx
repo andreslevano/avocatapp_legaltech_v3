@@ -126,14 +126,14 @@ export default function ToolsPage() {
 
         {/* Credit balance banner for Autoservicio */}
         {isAutoservicio && (
-          <div className="flex items-center justify-between bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-5 py-3 max-w-3xl">
+          <div className="flex items-center justify-between bg-surface border border-border rounded-xl px-5 py-3 max-w-3xl">
             <div>
-              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-0.5">
+              <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-0.5">
                 Créditos disponibles
               </p>
-              <p className={`text-[22px] font-display font-semibold ${creditos <= 5 ? 'text-amber-400' : 'text-[#e8d4a0]'}`}>
+              <p className={`text-h3 font-display font-semibold ${creditos <= 5 ? 'text-warning-text' : 'text-text-heading'}`}>
                 {creditos}
-                <span className="text-[13px] font-sans text-[#6b6050] ml-1">/ mes</span>
+                <span className="text-small font-sans text-text-muted ml-1">/ mes</span>
               </p>
             </div>
             <Button
@@ -152,13 +152,13 @@ export default function ToolsPage() {
             <Link
               key={t.href}
               href={t.href}
-              className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 hover:border-avocat-gold/30 hover:bg-[#252218] transition-colors group"
+              className="bg-surface border border-border rounded-xl p-5 hover:border-accent-border hover:bg-surface-muted transition-colors group"
             >
               <t.icon size={24} className="mb-3 text-accent-text" aria-hidden />
-              <h3 className="font-sans font-semibold text-[14px] text-[#c8c0ac] group-hover:text-[#e8d4a0] mb-1.5">
+              <h3 className="font-sans font-semibold text-body-sm text-text group-hover:text-text-heading mb-1.5">
                 {t.title}
               </h3>
-              <p className="text-[12px] text-[#6b6050] leading-relaxed">{t.description}</p>
+              <p className="text-caption text-text-muted leading-relaxed">{t.description}</p>
             </Link>
           ))}
         </div>

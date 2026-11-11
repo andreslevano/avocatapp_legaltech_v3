@@ -21,20 +21,20 @@ export default function KPICard({ label, value, trend, icon, accent }: KPICardPr
       className={[
         'rounded-xl p-5 border flex flex-col gap-3',
         accent
-          ? 'bg-avocat-gold/10 border-avocat-gold/30'
-          : 'bg-[#1e1c16] border-[#2e2b20]',
+          ? 'bg-accent-subtle border-accent-border'
+          : 'bg-surface border-border',
       ].join(' ')}
     >
       <div className="flex items-start justify-between">
-        <span className="text-[11px] font-sans font-semibold tracking-widest uppercase text-[#6b6050]">
+        <span className="text-label font-sans font-semibold tracking-widest uppercase text-text-muted">
           {label}
         </span>
         {icon && (
-          <span className="text-avocat-gold opacity-60">{icon}</span>
+          <span className="text-accent-text opacity-60">{icon}</span>
         )}
       </div>
 
-      <div className="text-[32px] font-display font-semibold text-[#e8d4a0] leading-none">
+      <div className="text-h1 font-display font-semibold text-text-heading leading-none">
         {value}
       </div>
 
@@ -42,8 +42,8 @@ export default function KPICard({ label, value, trend, icon, accent }: KPICardPr
         <div className="flex items-center gap-1.5">
           <span
             className={[
-              'text-[11px] font-sans font-medium',
-              trendUp ? 'text-emerald-400' : trendDown ? 'text-red-400' : 'text-[#6b6050]',
+              'text-caption font-sans font-medium',
+              trendUp ? 'text-success-text' : trendDown ? 'text-danger-text' : 'text-text-muted',
             ].join(' ')}
           >
             {trendUp ? '↑' : trendDown ? '↓' : '→'}
@@ -51,7 +51,7 @@ export default function KPICard({ label, value, trend, icon, accent }: KPICardPr
             {Math.abs(trend.value)}%
           </span>
           {trend.label && (
-            <span className="text-[11px] text-[#6b6050]">{trend.label}</span>
+            <span className="text-caption text-text-muted">{trend.label}</span>
           )}
         </div>
       )}

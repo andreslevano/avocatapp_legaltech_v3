@@ -100,7 +100,7 @@ export default function AppShellClient({ children }: AppShellClientProps) {
   if (loading) {
     return (
       <div data-theme="dark" className="min-h-screen bg-bg flex items-center justify-center">
-        <div className="h-8 w-8 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+        <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
       </div>
     );
   }

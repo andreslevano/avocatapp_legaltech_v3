@@ -223,7 +223,7 @@ ${text.slice(0, 12000)}`;
     !pickerSearch || d.name.toLowerCase().includes(pickerSearch.toLowerCase())
   );
 
-  const INPUT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
+  const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border';
 
   return (
     <div className="flex flex-col h-full">
@@ -235,9 +235,9 @@ ${text.slice(0, 12000)}`;
         <div className="max-w-4xl mx-auto space-y-5">
 
           {/* Upload area */}
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
+          <div className="bg-surface border border-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-sans font-semibold text-[13px] text-[#e8d4a0]">Documentos</h3>
+              <h3 className="font-sans font-semibold text-small text-text-heading">Documentos</h3>
               <div className="flex items-center gap-2">
                 <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" multiple className="hidden"
                   onChange={e => e.target.files && addFiles(e.target.files)} />
@@ -253,10 +253,10 @@ ${text.slice(0, 12000)}`;
               onDrop={handleDrop}
               onClick={() => fileRef.current?.click()}
               className={`border-2 border-dashed rounded-xl py-8 text-center cursor-pointer transition-colors ${
-                dragging ? 'border-avocat-gold bg-avocat-gold/5' : 'border-[#2e2b20] hover:border-avocat-gold/30'
+                dragging ? 'border-accent bg-accent-subtle' : 'border-border hover:border-accent-border'
               }`}
             >
-              <p className="text-[12px] text-[#6b6050]">
+              <p className="text-caption text-text-muted">
                 Arrastra aquí PDF, DOCX o TXT · múltiples archivos
               </p>
             </div>
@@ -265,21 +265,21 @@ ${text.slice(0, 12000)}`;
             {files.length > 0 && (
               <div className="mt-3 space-y-1">
                 {files.map(f => (
-                  <div key={f.name} className="flex items-center justify-between px-3 py-1.5 bg-[#161410] border border-[#2e2b20] rounded-lg">
-                    <span className="text-[12px] text-[#c8c0ac] truncate">{f.name}</span>
+                  <div key={f.name} className="flex items-center justify-between px-3 py-1.5 bg-bg border border-border rounded-lg">
+                    <span className="text-caption text-text truncate">{f.name}</span>
                     <button onClick={() => { setFiles(p => p.filter(x => x.name !== f.name)); setResults([]); setSaved(false); }}
-                      className="text-[#8a7f68] hover:text-red-400 ml-2 shrink-0">×</button>
+                      className="text-text-muted hover:text-danger-text ml-2 shrink-0">×</button>
                   </div>
                 ))}
               </div>
             )}
 
-            {error && <p className="mt-2 text-[12px] text-red-400">{error}</p>}
+            {error && <p className="mt-2 text-caption text-danger-text">{error}</p>}
 
             {extracting && (
               <div className="mt-3 flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin shrink-0" />
-                <span className="text-[12px] text-[#6b6050]">{processing}</span>
+                <div className="h-3 w-3 rounded-full border-2 border-accent border-t-transparent animate-spin shrink-0" />
+                <span className="text-caption text-text-muted">{processing}</span>
               </div>
             )}
 
@@ -294,17 +294,17 @@ ${text.slice(0, 12000)}`;
           {showPicker && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-black/60" onClick={() => setShowPicker(false)} />
-              <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 w-full max-w-md shadow-elevated space-y-3">
-                <h2 className="font-sans font-semibold text-[14px] text-[#e8d4a0]">Seleccionar documento</h2>
+              <div className="relative bg-surface border border-border rounded-2xl p-5 w-full max-w-md shadow-elevated space-y-3">
+                <h2 className="font-sans font-semibold text-body-sm text-text-heading">Seleccionar documento</h2>
                 <input className={INPUT} placeholder="Buscar..." value={pickerSearch} onChange={e => setPickerSearch(e.target.value)} />
                 <div className="space-y-1 max-h-64 overflow-y-auto">
-                  {loadingDocs && <p className="text-[12px] text-[#6b6050] py-4 text-center">Cargando...</p>}
-                  {!loadingDocs && filteredDocs.length === 0 && <p className="text-[12px] text-[#3a3630] py-4 text-center">Sin documentos.</p>}
+                  {loadingDocs && <p className="text-caption text-text-muted py-4 text-center">Cargando...</p>}
+                  {!loadingDocs && filteredDocs.length === 0 && <p className="text-caption text-text-muted py-4 text-center">Sin documentos.</p>}
                   {filteredDocs.map(d => (
                     <button key={d.id} onClick={() => handlePickDoc(d)}
-                      className="w-full text-left px-3 py-2 rounded-lg bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/30 text-[12px] text-[#c8c0ac] transition-colors">
+                      className="w-full text-left px-3 py-2 rounded-lg bg-bg border border-border hover:border-accent-border text-caption text-text transition-colors">
                       <span className="font-medium truncate block">{d.name}</span>
-                      <span className="text-[10px] text-[#3a3630] uppercase">{d.type}</span>
+                      <span className="text-label text-text-muted uppercase">{d.type}</span>
                     </button>
                   ))}
                 </div>
@@ -319,12 +319,12 @@ ${text.slice(0, 12000)}`;
           {results.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">
                   {results.length} documento{results.length !== 1 ? 's' : ''} procesado{results.length !== 1 ? 's' : ''}
                 </p>
                 <div className="flex items-center gap-2">
                   {saved ? (
-                    <Link href="/documents" className="text-[12px] text-avocat-gold hover:underline">Ver documento →</Link>
+                    <Link href="/documents" className="text-caption text-accent-text hover:underline">Ver documento →</Link>
                   ) : (
                     <Button variant="secondary" size="sm" loading={saving} onClick={handleSaveWord}>
                       Guardar Word
@@ -337,24 +337,24 @@ ${text.slice(0, 12000)}`;
               </div>
 
               {results.map((r, ri) => (
-                <div key={ri} className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-[#2e2b20]">
-                    <h3 className="text-[13px] font-sans font-semibold text-[#e8d4a0]">{r.fileName}</h3>
-                    <p className="text-[11px] text-[#6b6050]">{r.documentType} · {r.country}</p>
+                <div key={ri} className="bg-surface border border-border rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-border">
+                    <h3 className="text-small font-sans font-semibold text-text-heading">{r.fileName}</h3>
+                    <p className="text-caption text-text-muted">{r.documentType} · {r.country}</p>
                   </div>
-                  <div className="px-5 py-3 border-b border-[#2e2b20] grid grid-cols-2 gap-3 text-[12px]">
-                    <div><span className="text-[#6b6050]">Emisor: </span><span className="text-[#c8c0ac]">{r.emisor}</span></div>
-                    <div><span className="text-[#6b6050]">Receptor: </span><span className="text-[#c8c0ac]">{r.receptor}</span></div>
+                  <div className="px-5 py-3 border-b border-border grid grid-cols-2 gap-3 text-caption">
+                    <div><span className="text-text-muted">Emisor: </span><span className="text-text">{r.emisor}</span></div>
+                    <div><span className="text-text-muted">Receptor: </span><span className="text-text">{r.receptor}</span></div>
                   </div>
-                  <div className="divide-y divide-[#2e2b20]">
+                  <div className="divide-y divide-border">
                     {r.fields.map((f, i) => (
-                      <div key={i} className="flex items-center px-5 py-2.5 text-[12px]">
-                        <span className="w-1/2 text-[#6b6050] font-medium">{f.key}</span>
-                        <span className="w-1/2 text-[#c8c0ac]">{f.value}</span>
+                      <div key={i} className="flex items-center px-5 py-2.5 text-caption">
+                        <span className="w-1/2 text-text-muted font-medium">{f.key}</span>
+                        <span className="w-1/2 text-text">{f.value}</span>
                       </div>
                     ))}
                     {r.fields.length === 0 && (
-                      <p className="px-5 py-3 text-[12px] text-[#3a3630]">Sin campos extraídos.</p>
+                      <p className="px-5 py-3 text-caption text-text-muted">Sin campos extraídos.</p>
                     )}
                   </div>
                 </div>

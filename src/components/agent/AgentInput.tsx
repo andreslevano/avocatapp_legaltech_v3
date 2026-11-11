@@ -202,7 +202,7 @@ export default function AgentInput({
 
   return (
     <div
-      className={`border-t border-[#2e2b20] bg-[#161410] relative transition-colors ${dragActive ? 'bg-avocat-gold/5 border-avocat-gold/40' : ''}`}
+      className={`border-t border-border bg-bg relative transition-colors ${dragActive ? 'bg-accent-subtle border-accent-border' : ''}`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -210,12 +210,12 @@ export default function AgentInput({
     >
       {/* Drag overlay */}
       {dragActive && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[#161410]/90 border-2 border-dashed border-avocat-gold/50 rounded-t-xl pointer-events-none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8 text-avocat-gold">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-bg border-2 border-dashed border-accent-border rounded-t-xl pointer-events-none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8 text-accent-text">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
-          <p className="text-[13px] font-sans text-avocat-gold font-medium">Suelta aquí para adjuntar</p>
-          <p className="text-[11px] text-[#6b6050]">Imágenes, PDF, Word, Excel</p>
+          <p className="text-small font-sans text-accent-text font-medium">Suelta aquí para adjuntar</p>
+          <p className="text-caption text-text-muted">Imágenes, PDF, Word, Excel</p>
         </div>
       )}
 
@@ -231,22 +231,22 @@ export default function AgentInput({
                   <img
                     src={att.preview}
                     alt={att.name}
-                    className="h-14 w-14 object-cover rounded-lg border border-[#2e2b20]"
+                    className="h-14 w-14 object-cover rounded-lg border border-border"
                   />
                   <button
                     onClick={() => removeAttachment(i)}
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#161410] border border-[#2e2b20] text-[#6b6050] hover:text-red-400 flex items-center justify-center text-[10px] leading-none"
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-bg border border-border text-text-muted hover:text-danger-text flex items-center justify-center text-caption leading-none"
                   >
                     ×
                   </button>
                 </>
               ) : (
-                <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-lg bg-avocat-gold/10 border border-avocat-gold/20 text-[11px] font-sans text-avocat-gold max-w-[160px]">
+                <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-lg bg-accent-subtle border border-accent-border text-caption font-sans text-accent-text max-w-[160px]">
                   <span className="flex-shrink-0"><FileTypeIcon mimeType={att.mimeType} name={att.name} size={14} /></span>
                   <span className="truncate">{att.name}</span>
                   <button
                     onClick={() => removeAttachment(i)}
-                    className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-avocat-gold/60 hover:text-red-400 text-[12px] leading-none"
+                    className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-accent-text hover:text-danger-text text-caption leading-none"
                   >
                     ×
                   </button>
@@ -263,7 +263,7 @@ export default function AgentInput({
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
           title="Adjuntar archivo (imagen, PDF, Word, Excel)"
-          className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl text-[#3a3630] hover:text-[#c8c0ac] hover:bg-[#252218] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl text-text-muted hover:text-text hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
@@ -288,7 +288,7 @@ export default function AgentInput({
           disabled={disabled}
           placeholder={placeholder}
           rows={1}
-          className="flex-1 resize-none bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40 transition-colors disabled:opacity-50 leading-relaxed min-h-[40px] max-h-[160px]"
+          className="flex-1 resize-none bg-surface border border-border rounded-xl px-4 py-2.5 text-small font-sans text-text  focus:border-accent-border transition-colors disabled:opacity-50 leading-relaxed min-h-[40px] max-h-[160px]"
         />
 
         {streaming && onStop ? (
@@ -296,7 +296,7 @@ export default function AgentInput({
             onClick={onStop}
             aria-label="Detener respuesta"
             title="Detener (podrás editar tu mensaje)"
-            className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-[#2e2b20] text-[#e8d4a0] border border-avocat-gold/40 hover:bg-[#3a3528] transition-colors"
+            className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-border text-text-heading border border-accent-border hover:bg-surface-muted transition-colors"
           >
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
           </button>
@@ -305,7 +305,7 @@ export default function AgentInput({
           onClick={handleSend}
           disabled={!canSend}
           aria-label="Enviar mensaje"
-          className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-avocat-gold text-white hover:bg-[#a07824] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-accent text-text-on-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />

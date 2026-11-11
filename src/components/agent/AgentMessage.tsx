@@ -31,7 +31,7 @@ export default function AgentMessage({ message }: { message: Message }) {
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
       {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-avocat-gold/20 border border-avocat-gold/30 flex items-center justify-center mr-2.5 mt-0.5 flex-shrink-0">
+        <div className="w-7 h-7 rounded-full bg-accent-subtle border border-accent-border flex items-center justify-center mr-2.5 mt-0.5 flex-shrink-0">
           <Sparkles size={14} className="text-accent-text" aria-hidden />
         </div>
       )}
@@ -55,10 +55,10 @@ export default function AgentMessage({ message }: { message: Message }) {
                   key={i}
                   src={att.preview ?? `data:${att.mimeType};base64,${att.base64}`}
                   alt={att.name}
-                  className="max-w-[200px] max-h-[150px] rounded-xl object-cover border border-avocat-gold/20"
+                  className="max-w-[200px] max-h-[150px] rounded-xl object-cover border border-accent-border"
                 />
               ) : (
-                <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-avocat-gold/10 border border-avocat-gold/20 text-[11px] font-sans text-avocat-gold max-w-[180px]">
+                <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent-subtle border border-accent-border text-caption font-sans text-accent-text max-w-[180px]">
                   <span className="flex-shrink-0"><FileTypeIcon mimeType={att.mimeType} name={att.name} size={14} /></span>
                   <span className="truncate">{att.name}</span>
                 </span>
@@ -69,24 +69,24 @@ export default function AgentMessage({ message }: { message: Message }) {
 
         {/* Message bubble */}
         <div className={[
-          'rounded-2xl px-4 py-2.5 text-[13px] font-sans leading-relaxed whitespace-pre-wrap break-words',
+          'rounded-2xl px-4 py-2.5 text-small font-sans leading-relaxed whitespace-pre-wrap break-words',
           isUser
-            ? 'bg-avocat-gold text-white rounded-tr-sm'
-            : 'bg-[#252218] border border-[#2e2b20] text-[#c8c0ac] rounded-tl-sm',
+            ? 'bg-accent text-text-on-accent rounded-tr-sm'
+            : 'bg-surface-raised border border-border text-text rounded-tl-sm',
         ].join(' ')}>
           {message.content}
           {message.streaming && (
             <span className="inline-block w-1 h-3.5 bg-current ml-0.5 animate-pulse rounded-sm align-middle" />
           )}
         </div>
-        {message.stopped && <p className="mt-1 text-[10px] text-[#8a7f68]">Respuesta detenida</p>}
+        {message.stopped && <p className="mt-1 text-caption text-text-muted">Respuesta detenida</p>}
 
         {/* Copy button */}
         {showCopy && (
           <div className="flex gap-1.5 mt-1.5">
             <button
               onClick={() => navigator.clipboard.writeText(message.content)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1e1c16] border border-[#2e2b20] text-[11px] font-sans text-[#6b6050] hover:text-avocat-gold hover:border-avocat-gold/30 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface border border-border text-caption font-sans text-text-muted hover:text-accent-text hover:border-accent-border transition-colors"
             >
               <Copy size={12} className="flex-shrink-0" aria-hidden />
               Copiar

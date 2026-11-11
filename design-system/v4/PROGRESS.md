@@ -12,7 +12,9 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 | 2 | AI disclaimer | done | 15efbd6e | 5,781 |
 | 3 | Public chrome, legal id, consent | done | a12925cf | 5,756 |
 | 4 | Single pricing source | done | 89c42c7f | 5,677 |
-| 5 | Logo & icons | done | (this commit) | 5,633 |
+| 5 | Logo & icons | done | 0f7828fe | 5,633 |
+| fix | Opacity modifiers on var colours | done | 929512df | — |
+| 6 | Dark app: raw hex sweep | done | (this commit) | 2,770 |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
@@ -68,3 +70,14 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 - Deleted unreferenced `components/LanguageSelector.tsx`.
 - Not converted here (rebuilt/deleted later): `TutelaProcessSimple`, `ReclamacionProcess*` (Phase 8), `dashboard/*`, `profile`, `DashboardNavigation`, `PurchaseHistory` (Phase 9). Emoji in `src/lib/*` are server log prefixes, not UI — left as is.
 - tsc 20 (Rail `pathname` null fixes).
+
+## Fix — opacity modifiers (929512df)
+- Found after Phase 0: v4 colours are `var(--…)`, so Tailwind silently dropped every `/NN` opacity class on them (e.g. 227 × `border-avocat-gold/40`, `bg-avocat-gold/10` → no CSS; borders/backgrounds vanished). `tailwind.config.js` now wraps var colours so a modifier compiles to `color-mix(in srgb, var(--x) NN%, transparent)`; unmodified classes stay plain `var(--x)`.
+
+## Phase 6 — Dark app: raw hex sweep
+- Scope: `src/app/(app)/**`, `src/components/{layout,agent,dashboard}/**` (43 files). Mechanical pass with the PLAN.md find/replace map (hex → roles, v3 aliases → roles, red/green/amber/blue palettes → danger/success/warning/info roles and `status-*` borders, gold fills carry `text-text-on-accent`, `focus:outline-none`/`focus:ring-*` removed, arbitrary `text-[Npx]` → type scale with 12px floor, uppercase eyebrows → `text-label`, `placeholder-[…]` removed).
+- New `ui/StatusTag.tsx` (8 legal statuses, icon + word + colour). `dashboard/DeadlineList.tsx` now uses `deadlineStatus()` + `StatusTag` and DeadlineItem copy ("Vence mañana", "Venció hace 2 días") — its private `deadlineColor/daysColor` copy of the rule is gone.
+- Charts (`CasesChart`, `StatusDonut`) read `themes.dark` / `chartTheme('dark')` instead of hex.
+- Scope violations: ~1,050 → 0. Total 5,633 → 2,770.
+- Note: `bg-[#161410]/90` overlays became opaque `bg-bg`. One unit-test run failed once during the build and passed 3/3 on rerun (flaky timing, not related).
+- Not subagent-delegated: the map is mechanical, so one script applied it consistently; reviewed the diff by sampling.

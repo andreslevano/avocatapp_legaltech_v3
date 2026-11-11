@@ -46,19 +46,19 @@ export default function PreviewVerifyBanner() {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 bg-avocat-gold/10 border-b border-avocat-gold/20 text-[12px] font-sans">
-      <span className="text-[#e8d4a0]">Verifica tu email para activar las funciones en vista previa de tu organización (firma DocuSign, OneDrive / SharePoint, contratos y avisos).</span>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 bg-accent-subtle border-b border-accent-border text-caption font-sans">
+      <span className="text-text-heading">Verifica tu email para activar las funciones en vista previa de tu organización (firma DocuSign, OneDrive / SharePoint, contratos y avisos).</span>
       <span className="flex gap-3">
-        <button onClick={send} disabled={state === 'sending'} className="text-avocat-gold hover:underline disabled:opacity-50">
+        <button onClick={send} disabled={state === 'sending'} className="text-accent-text hover:underline disabled:opacity-50">
           {state === 'sending' ? 'Enviando…' : state === 'sent' ? 'Reenviar email' : 'Enviar email de verificación'}
         </button>
         {(state === 'sent' || state === 'checking') && (
-          <button onClick={check} disabled={state === 'checking'} className="text-avocat-gold hover:underline disabled:opacity-50">
+          <button onClick={check} disabled={state === 'checking'} className="text-accent-text hover:underline disabled:opacity-50">
             {state === 'checking' ? 'Comprobando…' : 'Ya lo he verificado'}
           </button>
         )}
       </span>
-      {msg && <span className={`w-full text-[11px] ${state === 'error' ? 'text-red-400' : 'text-[#c8c0ac]'}`}>{msg}</span>}
+      {msg && <span className={`w-full text-caption ${state === 'error' ? 'text-danger-text' : 'text-text'}`}>{msg}</span>}
     </div>
   );
 }

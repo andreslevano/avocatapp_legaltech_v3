@@ -35,7 +35,7 @@ export default function AgentV2Page() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center h-full">
-        <div className="w-5 h-5 border-2 border-avocat-gold/30 border-t-avocat-gold rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-accent-border border-t-accent rounded-full animate-spin" />
       </div>
     }>
       <AgentV2Content />

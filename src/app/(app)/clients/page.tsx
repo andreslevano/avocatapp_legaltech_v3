@@ -143,11 +143,11 @@ export default function ClientsPage() {
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {loading ? (
           <div className="flex items-center justify-center h-40">
-            <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+            <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           </div>
         ) : clients.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-[13px] text-[#6b6050] mb-4">No hay clientes registrados aún.</p>
+            <p className="text-small text-text-muted mb-4">No hay clientes registrados aún.</p>
             <Button variant="accent" size="md" onClick={openCreate}>Añadir primer cliente</Button>
           </div>
         ) : (
@@ -160,33 +160,33 @@ export default function ClientsPage() {
                 return acc;
               }, {});
               return (
-            <table className="w-full text-[12px] font-sans">
+            <table className="w-full text-caption font-sans">
               <thead>
-                <tr className="border-b border-[#2e2b20]">
+                <tr className="border-b border-border">
                   {['Cliente', 'Email', 'Casos activos', 'Último caso', 'Estado', ''].map(h => (
-                    <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold tracking-widest uppercase text-[#6b6050]">{h}</th>
+                    <th key={h} className="text-left px-4 py-2.5 text-label font-semibold tracking-widest uppercase text-text-muted">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#2e2b20]">
+              <tbody className="divide-y divide-border">
                 {clients.map(c => (
-                  <tr key={c.id} className="hover:bg-[#252218] transition-colors group">
-                    <td className="px-4 py-3 font-medium text-[#c8c0ac]">
+                  <tr key={c.id} className="hover:bg-surface-muted transition-colors group">
+                    <td className="px-4 py-3 font-medium text-text">
                       <div>{c.name}</div>
-                      {c.company && <div className="text-[11px] text-[#6b6050]">{c.company}</div>}
+                      {c.company && <div className="text-caption text-text-muted">{c.company}</div>}
                     </td>
-                    <td className="px-4 py-3 text-[#6b6050]">{c.email || '—'}</td>
-                    <td className="px-4 py-3 text-[#c8c0ac]">{activeCasesByClientId[c.id] ?? 0}</td>
-                    <td className="px-4 py-3 text-[#6b6050]">{formatDate(c.lastCaseDate)}</td>
+                    <td className="px-4 py-3 text-text-muted">{c.email || '—'}</td>
+                    <td className="px-4 py-3 text-text">{activeCasesByClientId[c.id] ?? 0}</td>
+                    <td className="px-4 py-3 text-text-muted">{formatDate(c.lastCaseDate)}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${c.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-[#252218] text-[#6b6050] border-[#2e2b20]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-caption font-medium border ${c.status === 'active' ? 'bg-success-subtle text-success-text border-status-a-tiempo-border' : 'bg-surface-raised text-text-muted border-border'}`}>
                         {c.status === 'active' ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => openEdit(c)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-[#6b6050] hover:text-avocat-gold border border-transparent hover:border-avocat-gold/30 px-2.5 py-1 rounded-md"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-caption text-text-muted hover:text-accent-text border border-transparent hover:border-accent-border px-2.5 py-1 rounded-md"
                       >
                         Editar
                       </button>
@@ -205,71 +205,71 @@ export default function ClientsPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowModal(false)} />
-          <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-6 w-full max-w-md shadow-elevated">
-            <h2 className="font-display text-h3 text-[#e8d4a0] mb-5">
+          <div className="relative bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-elevated">
+            <h2 className="font-display text-h3 text-text-heading mb-5">
               {editingClient ? 'Editar cliente' : 'Nuevo cliente'}
             </h2>
             <form onSubmit={handleSave} className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
-              {error && <p className="text-[12px] text-red-400">{error}</p>}
+              {error && <p className="text-caption text-danger-text">{error}</p>}
 
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6050]">Datos de contacto</p>
+              <p className="text-label font-semibold uppercase tracking-widest text-text-muted">Datos de contacto</p>
               {[
                 { label: 'Nombre *', field: 'name', type: 'text', placeholder: 'Nombre completo' },
                 { label: 'Email', field: 'email', type: 'email', placeholder: 'email@dominio.com' },
                 { label: 'Teléfono', field: 'phone', type: 'tel', placeholder: '+56 9 0000 0000' },
               ].map(({ label, field, type, placeholder }) => (
                 <div key={field}>
-                  <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">{label}</label>
+                  <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">{label}</label>
                   <input type={type} placeholder={placeholder}
                     value={form[field as keyof NewClientForm]}
                     onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value }))}
-                    className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border"
                   />
                 </div>
               ))}
 
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6050] pt-2">Información legal</p>
+              <p className="text-label font-semibold uppercase tracking-widest text-text-muted pt-2">Información legal</p>
               <div>
-                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Empresa / Organización</label>
+                <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Empresa / Organización</label>
                 <input type="text" placeholder="Nombre de la empresa"
                   value={form.company}
                   onChange={e => setForm(p => ({ ...p, company: e.target.value }))}
-                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Tipo ID</label>
+                  <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Tipo ID</label>
                   <select value={form.idType} onChange={e => setForm(p => ({ ...p, idType: e.target.value }))}
-                    className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40">
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border">
                     {['RUT', 'DNI', 'Pasaporte', 'Cédula', 'CUIT', 'NIF', 'Otro'].map(t => (
-                      <option key={t} value={t} className="bg-[#161410]">{t}</option>
+                      <option key={t} value={t} className="bg-bg">{t}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Número ID</label>
+                  <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Número ID</label>
                   <input type="text" placeholder="12.345.678-9"
                     value={form.idNumber}
                     onChange={e => setForm(p => ({ ...p, idNumber: e.target.value }))}
-                    className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Cargo / Calidad</label>
+                <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Cargo / Calidad</label>
                 <input type="text" placeholder="Ej: Gerente General, Representante Legal"
                   value={form.representativeCapacity}
                   onChange={e => setForm(p => ({ ...p, representativeCapacity: e.target.value }))}
-                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Dirección</label>
+                <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Dirección</label>
                 <input type="text" placeholder="Calle, número, ciudad, país"
                   value={form.address}
                   onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
-                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border"
                 />
               </div>
 

@@ -16,10 +16,10 @@ const STATUS_LABEL: Record<CaseStatus, string> = {
 };
 
 const STATUS_STYLE: Record<CaseStatus, string> = {
-  active:   'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  urgent:   'bg-red-500/10 text-red-400 border-red-500/20',
-  closed:   'bg-[#252218] text-[#6b6050] border-[#2e2b20]',
-  archived: 'bg-[#1a1812] text-[#3a3630] border-[#2e2b20]',
+  active:   'bg-success-subtle text-success-text border-status-a-tiempo-border',
+  urgent:   'bg-danger-subtle text-danger-text border-status-urgente-border',
+  closed:   'bg-surface-raised text-text-muted border-border',
+  archived: 'bg-bg text-text-muted border-border',
 };
 
 const FILTERS: { label: string; value: CaseStatus | 'all' }[] = [
@@ -74,7 +74,7 @@ export default function CasesPage() {
         actions={
           <Link
             href="/cases/new"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-avocat-gold text-white text-[12px] font-sans font-medium hover:bg-[#a07824] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-text-on-accent text-caption font-sans font-medium hover:bg-accent-hover transition-colors"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -86,7 +86,7 @@ export default function CasesPage() {
 
       <div className="flex-1 overflow-y-auto">
         {/* Toolbar */}
-        <div className="px-6 py-4 border-b border-[#2e2b20] flex flex-wrap items-center gap-3">
+        <div className="px-6 py-4 border-b border-border flex flex-wrap items-center gap-3">
           {/* Filter tabs */}
           <div className="flex gap-1">
             {FILTERS.map(f => (
@@ -94,10 +94,10 @@ export default function CasesPage() {
                 key={f.value}
                 onClick={() => setFilter(f.value)}
                 className={[
-                  'px-3 py-1.5 rounded-lg text-[12px] font-sans font-medium transition-colors',
+                  'px-3 py-1.5 rounded-lg text-caption font-sans font-medium transition-colors',
                   filter === f.value
-                    ? 'bg-avocat-gold text-white'
-                    : 'text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#252218]',
+                    ? 'bg-accent text-text-on-accent'
+                    : 'text-text-muted hover:text-text hover:bg-surface-muted',
                 ].join(' ')}
               >
                 {f.label}
@@ -111,7 +111,7 @@ export default function CasesPage() {
             placeholder="Buscar por título, referencia o cliente..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="flex-1 min-w-[200px] bg-[#1e1c16] border border-[#2e2b20] rounded-lg px-3 py-1.5 text-[12px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40 transition-colors"
+            className="flex-1 min-w-[200px] bg-surface border border-border rounded-lg px-3 py-1.5 text-caption font-sans text-text  focus:border-accent-border transition-colors"
           />
         </div>
 
@@ -119,17 +119,17 @@ export default function CasesPage() {
         <div className="p-6">
           {loading ? (
             <div className="flex items-center justify-center h-40">
-              <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+              <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
             </div>
           ) : visible.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-[13px] text-[#6b6050]">
+              <p className="text-small text-text-muted">
                 {search || filter !== 'all' ? 'Sin resultados para este filtro' : 'No hay casos aún. Crea el primero.'}
               </p>
               {!search && filter === 'all' && (
                 <Link
                   href="/cases/new"
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-avocat-gold text-white text-[13px] font-sans font-medium hover:bg-[#a07824] transition-colors"
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-text-on-accent text-small font-sans font-medium hover:bg-accent-hover transition-colors"
                 >
                   Crear caso
                 </Link>
@@ -143,21 +143,21 @@ export default function CasesPage() {
                   <Link
                     key={c.id}
                     href={`/cases/${c.id}`}
-                    className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-4 hover:border-avocat-gold/30 hover:bg-[#252218] transition-colors group"
+                    className="bg-surface border border-border rounded-xl p-4 hover:border-accent-border hover:bg-surface-muted transition-colors group"
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="font-sans font-medium text-[13px] text-[#c8c0ac] group-hover:text-[#e8d4a0] leading-snug line-clamp-2">
+                      <h3 className="font-sans font-medium text-small text-text group-hover:text-text-heading leading-snug line-clamp-2">
                         {c.title}
                       </h3>
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-sans font-medium border flex-shrink-0 ${STATUS_STYLE[c.status]}`}>
+                      <span className={`px-1.5 py-0.5 rounded text-caption font-sans font-medium border flex-shrink-0 ${STATUS_STYLE[c.status]}`}>
                         {STATUS_LABEL[c.status]}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#6b6050] mb-3">{c.ref}</p>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-[#6b6050]">{c.client || '—'}</span>
+                    <p className="text-caption text-text-muted mb-3">{c.ref}</p>
+                    <div className="flex items-center justify-between text-caption">
+                      <span className="text-text-muted">{c.client || '—'}</span>
                       {deadline && (
-                        <span className="text-[#6b6050] inline-flex items-center gap-1"><CalendarDays size={12} aria-hidden /> {deadline}</span>
+                        <span className="text-text-muted inline-flex items-center gap-1"><CalendarDays size={12} aria-hidden /> {deadline}</span>
                       )}
                     </div>
                   </Link>

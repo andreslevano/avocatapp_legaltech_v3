@@ -205,7 +205,7 @@ async function extractRefDocText(file: File): Promise<string> {
 
 // ── Constants ────────────────────────────────────────────────────
 
-const INPUT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
+const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border';
 const ROLES = ['Demandante','Demandado','Actor','Parte actora','Parte demandada','Empleador','Trabajador','Comprador','Vendedor','Arrendador','Arrendatario','Denunciante','Denunciado','Acusado','Defensa','Solicitante','Interesado','Otro'];
 
 // ── Component ────────────────────────────────────────────────────
@@ -383,16 +383,16 @@ export default function GeneracionPage() {
           {step === 'select' && (
             <div className="space-y-4">
               {/* Area tabs */}
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
-                <div className="flex border-b border-[#2e2b20] overflow-x-auto">
+              <div className="bg-surface border border-border rounded-xl overflow-hidden">
+                <div className="flex border-b border-border overflow-x-auto">
                   {AREAS.map(area => (
                     <button
                       key={area}
                       onClick={() => setActiveArea(area)}
-                      className={`flex-1 min-w-[100px] px-4 py-3 text-[12px] font-sans font-semibold whitespace-nowrap transition-colors ${
+                      className={`flex-1 min-w-[100px] px-4 py-3 text-caption font-sans font-semibold whitespace-nowrap transition-colors ${
                         activeArea === area
-                          ? 'text-avocat-gold border-b-2 border-avocat-gold bg-avocat-gold/5'
-                          : 'text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#252218]'
+                          ? 'text-accent-text border-b-2 border-accent bg-accent-subtle'
+                          : 'text-text-muted hover:text-text hover:bg-surface-muted'
                       }`}
                     >
                       {area}
@@ -405,17 +405,17 @@ export default function GeneracionPage() {
                     <button
                       key={dt.value}
                       onClick={() => selectType(dt)}
-                      className="text-left px-4 py-3 rounded-lg bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/40 hover:bg-avocat-gold/5 transition-colors group"
+                      className="text-left px-4 py-3 rounded-lg bg-bg border border-border hover:border-accent-border hover:bg-accent-subtle transition-colors group"
                     >
-                      <p className="text-[13px] font-sans font-medium text-[#c8c0ac] group-hover:text-[#e8d4a0] leading-snug">{dt.label}</p>
+                      <p className="text-small font-sans font-medium text-text group-hover:text-text-heading leading-snug">{dt.label}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Otro tipo */}
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-4">
-                <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">Otro tipo de documento</p>
+              <div className="bg-surface border border-border rounded-xl p-4">
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3">Otro tipo de documento</p>
                 <div className="flex gap-2">
                   <input
                     className={`${INPUT} flex-1`}
@@ -435,21 +435,21 @@ export default function GeneracionPage() {
           {step === 'form' && selectedType && (
             <div className="space-y-4">
               {/* Type header */}
-              <div className="bg-avocat-gold/10 border border-avocat-gold/20 rounded-xl px-5 py-3 flex items-center justify-between">
+              <div className="bg-accent-subtle border border-accent-border rounded-xl px-5 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">{selectedType.area}</p>
-                  <p className="text-[14px] font-sans font-semibold text-[#e8d4a0]">{docLabel}</p>
+                  <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">{selectedType.area}</p>
+                  <p className="text-body-sm font-sans font-semibold text-text-heading">{docLabel}</p>
                 </div>
-                <button onClick={() => setStep('select')} className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">← Cambiar</button>
+                <button onClick={() => setStep('select')} className="text-caption text-text-muted hover:text-accent-text transition-colors">← Cambiar</button>
               </div>
 
               {/* Parties */}
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-3">
+              <div className="bg-surface border border-border rounded-xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">Partes involucradas</p>
+                  <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Partes involucradas</p>
                   <button
                     onClick={() => setParties(prev => [...prev, { id: Date.now(), name: '', role: 'Otro', nif: '' }])}
-                    className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors"
+                    className="text-caption text-text-muted hover:text-accent-text transition-colors"
                   >
                     + Añadir parte
                   </button>
@@ -461,7 +461,7 @@ export default function GeneracionPage() {
                     </div>
                     <div className="col-span-4">
                       <select className={INPUT} value={p.role} onChange={e => setParties(prev => prev.map(x => x.id === p.id ? { ...x, role: e.target.value } : x))}>
-                        {ROLES.map(r => <option key={r} value={r} className="bg-[#161410]">{r}</option>)}
+                        {ROLES.map(r => <option key={r} value={r} className="bg-bg">{r}</option>)}
                       </select>
                     </div>
                     <div className="col-span-2">
@@ -469,7 +469,7 @@ export default function GeneracionPage() {
                     </div>
                     <div className="col-span-1 flex justify-center pt-2">
                       {parties.length > 1 && (
-                        <button onClick={() => setParties(prev => prev.filter(x => x.id !== p.id))} className="text-[#8a7f68] hover:text-red-400 transition-colors text-[13px]">×</button>
+                        <button onClick={() => setParties(prev => prev.filter(x => x.id !== p.id))} className="text-text-muted hover:text-danger-text transition-colors text-small">×</button>
                       )}
                     </div>
                   </div>
@@ -477,43 +477,43 @@ export default function GeneracionPage() {
               </div>
 
               {/* Facts */}
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-3">
-                <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">Hechos y descripción *</p>
+              <div className="bg-surface border border-border rounded-xl p-5 space-y-3">
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Hechos y descripción *</p>
                 <textarea rows={5} className={`${INPUT} resize-none leading-relaxed`} placeholder="Describe los hechos relevantes, la situación y las pretensiones. Cuanto más detallado, mejor será el documento generado." value={facts} onChange={e => setFacts(e.target.value)} />
               </div>
 
               {/* Key dates */}
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-3">
+              <div className="bg-surface border border-border rounded-xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">Fechas relevantes</p>
-                  <button onClick={() => setKeyDates(prev => [...prev, { id: Date.now(), label: '', date: '' }])} className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">+ Añadir fecha</button>
+                  <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Fechas relevantes</p>
+                  <button onClick={() => setKeyDates(prev => [...prev, { id: Date.now(), label: '', date: '' }])} className="text-caption text-text-muted hover:text-accent-text transition-colors">+ Añadir fecha</button>
                 </div>
                 {keyDates.map(d => (
                   <div key={d.id} className="flex gap-2 items-center">
                     <input className={`${INPUT} flex-1`} placeholder="Descripción (ej: Fecha del contrato)" value={d.label} onChange={e => setKeyDates(prev => prev.map(x => x.id === d.id ? { ...x, label: e.target.value } : x))} />
                     <input type="date" className={`${INPUT} w-40`} value={d.date} onChange={e => setKeyDates(prev => prev.map(x => x.id === d.id ? { ...x, date: e.target.value } : x))} />
-                    {keyDates.length > 1 && <button onClick={() => setKeyDates(prev => prev.filter(x => x.id !== d.id))} className="text-[#8a7f68] hover:text-red-400 transition-colors text-[13px] flex-shrink-0">×</button>}
+                    {keyDates.length > 1 && <button onClick={() => setKeyDates(prev => prev.filter(x => x.id !== d.id))} className="text-text-muted hover:text-danger-text transition-colors text-small flex-shrink-0">×</button>}
                   </div>
                 ))}
               </div>
 
               {/* Jurisdiction */}
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-2">
-                <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">Jurisdicción / tribunal</p>
+              <div className="bg-surface border border-border rounded-xl p-5 space-y-2">
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Jurisdicción / tribunal</p>
                 <input className={INPUT} placeholder="Juzgado de Primera Instancia nº X de Madrid / Tribunal Supremo..." value={jurisdiction} onChange={e => setJurisdiction(e.target.value)} />
               </div>
 
               {/* Specific fields */}
               {sfFields.length > 0 && (
-                <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-3">
-                  <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">Datos específicos — {docLabel}</p>
+                <div className="bg-surface border border-border rounded-xl p-5 space-y-3">
+                  <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Datos específicos — {docLabel}</p>
                   {sfFields.map(f => (
                     <div key={f.key}>
-                      <label className="block text-[11px] text-[#6b6050] mb-1">{f.label}</label>
+                      <label className="block text-caption text-text-muted mb-1">{f.label}</label>
                       {f.type === 'select' ? (
                         <select className={INPUT} value={specificFields[f.key] ?? ''} onChange={e => setSpecificFields(prev => ({ ...prev, [f.key]: e.target.value }))}>
-                          <option value="" className="bg-[#161410]">— Seleccionar —</option>
-                          {f.options!.map(o => <option key={o} value={o} className="bg-[#161410]">{o}</option>)}
+                          <option value="" className="bg-bg">— Seleccionar —</option>
+                          {f.options!.map(o => <option key={o} value={o} className="bg-bg">{o}</option>)}
                         </select>
                       ) : f.type === 'textarea' ? (
                         <textarea rows={3} className={`${INPUT} resize-none`} placeholder={f.placeholder} value={specificFields[f.key] ?? ''} onChange={e => setSpecificFields(prev => ({ ...prev, [f.key]: e.target.value }))} />
@@ -526,25 +526,25 @@ export default function GeneracionPage() {
               )}
 
               {/* Reference doc */}
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-3">
+              <div className="bg-surface border border-border rounded-xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">Documento de referencia <span className="normal-case font-normal">(opcional)</span></p>
-                  <button onClick={openDocPicker} className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">Mis documentos</button>
+                  <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Documento de referencia <span className="normal-case font-normal">(opcional)</span></p>
+                  <button onClick={openDocPicker} className="text-caption text-text-muted hover:text-accent-text transition-colors">Mis documentos</button>
                 </div>
                 <input ref={refFileRef} type="file" accept=".pdf,.docx,.txt,.md" className="hidden" onChange={handleRefFileChange} />
                 {refDocName ? (
-                  <div className="flex items-center justify-between gap-3 bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-3 bg-bg border border-border rounded-lg px-3 py-2.5">
                     <div className="flex items-center gap-2 min-w-0">
                       {loadingRefDoc
-                        ? <div className="h-3.5 w-3.5 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin flex-shrink-0" />
-                        : <Check size={14} className="text-emerald-400 flex-shrink-0" aria-hidden />
+                        ? <div className="h-3.5 w-3.5 rounded-full border-2 border-accent border-t-transparent animate-spin flex-shrink-0" />
+                        : <Check size={14} className="text-success-text flex-shrink-0" aria-hidden />
                       }
-                      <span className="text-[12px] text-[#c8c0ac] truncate">{refDocName}</span>
+                      <span className="text-caption text-text truncate">{refDocName}</span>
                     </div>
-                    <button onClick={() => { setRefDocName(''); setRefDocText(''); }} className="text-[11px] text-[#8a7f68] hover:text-red-400 transition-colors flex-shrink-0">Quitar</button>
+                    <button onClick={() => { setRefDocName(''); setRefDocText(''); }} className="text-caption text-text-muted hover:text-danger-text transition-colors flex-shrink-0">Quitar</button>
                   </div>
                 ) : (
-                  <button onClick={() => refFileRef.current?.click()} className="w-full border border-dashed border-[#2e2b20] rounded-lg py-4 text-center text-[12px] text-[#8a7f68] hover:border-avocat-gold/30 hover:text-[#6b6050] transition-colors">
+                  <button onClick={() => refFileRef.current?.click()} className="w-full border border-dashed border-border rounded-lg py-4 text-center text-caption text-text-muted hover:border-accent-border hover:text-text-muted transition-colors">
                     Subir PDF, DOCX o TXT como referencia
                   </button>
                 )}
@@ -553,25 +553,25 @@ export default function GeneracionPage() {
               {/* Validation card */}
               {validation && (
                 <div className={`rounded-xl border p-5 space-y-3 ${
-                  validation.status === 'complete'   ? 'bg-emerald-500/5 border-emerald-500/20' :
-                  validation.status === 'partial'    ? 'bg-amber-500/5 border-amber-500/20' :
-                                                       'bg-[#1e1c16] border-[#2e2b20]'
+                  validation.status === 'complete'   ? 'bg-success-subtle border-status-a-tiempo-border' :
+                  validation.status === 'partial'    ? 'bg-warning-subtle border-status-proximo-border' :
+                                                       'bg-surface border-border'
                 }`}>
                   <div className="flex items-center gap-2">
-                    <span className="text-[14px]">
+                    <span className="text-body-sm">
                       {validation.status === 'complete' ? <CircleCheck size={16} aria-hidden /> : validation.status === 'partial' ? <TriangleAlert size={16} aria-hidden /> : <CircleX size={16} aria-hidden />}
                     </span>
-                    <span className={`text-[12px] font-sans font-semibold ${
-                      validation.status === 'complete' ? 'text-emerald-400' :
-                      validation.status === 'partial'  ? 'text-amber-400' : 'text-[#6b6050]'
+                    <span className={`text-caption font-sans font-semibold ${
+                      validation.status === 'complete' ? 'text-success-text' :
+                      validation.status === 'partial'  ? 'text-warning-text' : 'text-text-muted'
                     }`}>{validation.label}</span>
-                    <span className="text-[12px] text-[#6b6050]">— {validation.msg}</span>
+                    <span className="text-caption text-text-muted">— {validation.msg}</span>
                   </div>
-                  {tip && <p className="text-[11px] text-[#6b6050] leading-relaxed border-t border-[#2e2b20] pt-3">{tip}</p>}
-                  {error && <p className="text-[12px] text-red-400">{error}</p>}
+                  {tip && <p className="text-caption text-text-muted leading-relaxed border-t border-border pt-3">{tip}</p>}
+                  {error && <p className="text-caption text-danger-text">{error}</p>}
                   {orgNda && (selectedType?.value === 'nda' || selectedType?.value === 'contrato_servicios') ? (
-                    <div className="rounded-lg border border-avocat-gold/30 bg-avocat-gold/5 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-[12px] text-[#c8c0ac]">
+                    <div className="rounded-lg border border-accent-border bg-accent-subtle px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-caption text-text">
                         {selectedType?.value === 'nda'
                           ? 'Mobility for Work tiene un NDA validado por su abogado. Se genera desde el Generador de NDA para que sea idéntico a la versión aprobada.'
                           : 'Mobility for Work tiene una plantilla de contrato de servicios. Se genera desde el Generador de contrato de servicios para que sea idéntico a la plantilla.'}
@@ -602,14 +602,14 @@ export default function GeneracionPage() {
           {step === 'result' && (
             <div className="space-y-4">
               {/* Status bar */}
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-5 py-3 flex items-center justify-between flex-wrap gap-3">
+              <div className="bg-surface border border-border rounded-xl px-5 py-3 flex items-center justify-between flex-wrap gap-3">
                 <div>
-                  <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">{selectedType?.area}</p>
-                  <p className="text-[13px] font-sans font-semibold text-[#e8d4a0]">{docLabel}</p>
+                  <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">{selectedType?.area}</p>
+                  <p className="text-small font-sans font-semibold text-text-heading">{docLabel}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {autoSaved && (
-                    <Link href="/documents" className="text-[12px] text-emerald-400 hover:underline">Guardado en Mis Documentos →</Link>
+                    <Link href="/documents" className="text-caption text-success-text hover:underline">Guardado en Mis Documentos →</Link>
                   )}
                   {result && !generating && (
                     <>
@@ -634,20 +634,20 @@ export default function GeneracionPage() {
               <AIDisclaimer />
 
               {/* Streaming result */}
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
+              <div className="bg-surface border border-border rounded-xl overflow-hidden">
                 {generating && !result && (
                   <div className="px-5 py-12 flex flex-col items-center gap-3">
-                    <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
-                    <p className="text-[12px] text-[#6b6050]">Generando {docLabel}…</p>
+                    <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+                    <p className="text-caption text-text-muted">Generando {docLabel}…</p>
                   </div>
                 )}
                 {result && (
-                  <pre className="px-5 py-5 text-[12px] font-sans text-[#c8c0ac] whitespace-pre-wrap leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto">
+                  <pre className="px-5 py-5 text-caption font-sans text-text whitespace-pre-wrap leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto">
                     {result}
-                    {generating && <span className="inline-block w-1 h-3 bg-avocat-gold animate-pulse ml-0.5 align-middle" />}
+                    {generating && <span className="inline-block w-1 h-3 bg-accent animate-pulse ml-0.5 align-middle" />}
                   </pre>
                 )}
-                {error && <p className="px-5 py-4 text-[12px] text-red-400">{error}</p>}
+                {error && <p className="px-5 py-4 text-caption text-danger-text">{error}</p>}
               </div>
 
               {/* Post-generation actions */}
@@ -670,16 +670,16 @@ export default function GeneracionPage() {
       {showDocPicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowDocPicker(false)} />
-          <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 w-full max-w-md shadow-xl space-y-3">
-            <h2 className="font-sans font-semibold text-[14px] text-[#e8d4a0]">Mis documentos</h2>
+          <div className="relative bg-surface border border-border rounded-2xl p-5 w-full max-w-md shadow-xl space-y-3">
+            <h2 className="font-sans font-semibold text-body-sm text-text-heading">Mis documentos</h2>
             <input className={INPUT} placeholder="Buscar..." value={pickerSearch} onChange={e => setPickerSearch(e.target.value)} />
             <div className="space-y-1 max-h-72 overflow-y-auto">
-              {loadingPicker && <div className="py-6 flex justify-center"><div className="h-5 w-5 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" /></div>}
-              {!loadingPicker && filteredPickerDocs.length === 0 && <p className="text-[12px] text-[#3a3630] py-6 text-center">Sin documentos guardados.</p>}
+              {loadingPicker && <div className="py-6 flex justify-center"><div className="h-5 w-5 rounded-full border-2 border-accent border-t-transparent animate-spin" /></div>}
+              {!loadingPicker && filteredPickerDocs.length === 0 && <p className="text-caption text-text-muted py-6 text-center">Sin documentos guardados.</p>}
               {filteredPickerDocs.map(d => (
-                <button key={d.id} onClick={() => handlePickDoc(d)} className="w-full text-left px-3 py-2.5 rounded-lg bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/30 transition-colors">
-                  <p className="text-[12px] font-medium text-[#c8c0ac] truncate">{d.name}</p>
-                  <p className="text-[10px] text-[#3a3630] uppercase mt-0.5">{d.type}</p>
+                <button key={d.id} onClick={() => handlePickDoc(d)} className="w-full text-left px-3 py-2.5 rounded-lg bg-bg border border-border hover:border-accent-border transition-colors">
+                  <p className="text-caption font-medium text-text truncate">{d.name}</p>
+                  <p className="text-label text-text-muted uppercase mt-0.5">{d.type}</p>
                 </button>
               ))}
             </div>

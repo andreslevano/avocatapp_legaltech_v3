@@ -14,7 +14,7 @@ import { contractAction, markNotificationsRead, runAlertsNow, watchContracts, wa
 import { formatContractDate } from '@/lib/contracts/dates';
 import { LIFECYCLE_LABEL, type Contract } from '@/lib/contracts/types';
 
-const SEVERITY_DOT: Record<string, string> = { high: 'bg-red-400', medium: 'bg-avocat-gold', low: 'bg-[#6b6050]' };
+const SEVERITY_DOT: Record<string, string> = { high: 'bg-danger', medium: 'bg-accent', low: 'bg-text-muted' };
 
 type Act = 'snooze' | 'let_expire' | 'terminate';
 const ACT_DONE: Record<Act, string> = {
@@ -45,7 +45,7 @@ export default function NotificationsPage() {
     return (
       <div className="flex flex-col h-full">
         <AppHeader title="Avisos" />
-        <p className="p-6 text-[13px] text-[#6b6050]">Los avisos de vencimiento de contratos no están disponibles en tu plan.</p>
+        <p className="p-6 text-small text-text-muted">Los avisos de vencimiento de contratos no están disponibles en tu plan.</p>
       </div>
     );
   }
@@ -94,14 +94,14 @@ export default function NotificationsPage() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-3xl mx-auto space-y-3">
-          {notice && <p className={`text-[12px] ${notice.kind === 'ok' ? 'text-emerald-400' : 'text-red-400'}`}>{notice.text}</p>}
+          {notice && <p className={`text-caption ${notice.kind === 'ok' ? 'text-success-text' : 'text-danger-text'}`}>{notice.text}</p>}
 
           {items === null ? (
-            <p className="text-[12px] text-[#6b6050]">Cargando…</p>
+            <p className="text-caption text-text-muted">Cargando…</p>
           ) : items.length === 0 ? (
-            <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl px-5 py-10 text-center space-y-2">
-              <p className="text-[13px] text-[#c8c0ac]">No tienes avisos.</p>
-              <p className="text-[12px] text-[#6b6050]">
+            <div className="bg-surface border border-border rounded-xl px-5 py-10 text-center space-y-2">
+              <p className="text-small text-text">No tienes avisos.</p>
+              <p className="text-caption text-text-muted">
                 Te avisaremos antes de que venzan tus NDAs. Los generados en Avocat se registran solos; para los subidos, usa
                 «Analizar como contrato» en Documentos.
               </p>
@@ -111,19 +111,19 @@ export default function NotificationsPage() {
             const c = contracts.get(n.contractId);
             const closed = c && (c.lifecycle === 'terminated' || c.lifecycle === 'renewed' || c.lifecycle === 'superseded');
             return (
-              <div key={n.id} className={`bg-[#1e1c16] border rounded-xl px-4 py-3 space-y-2 ${n.readAt ? 'border-[#2e2b20]' : 'border-avocat-gold/30'}`}>
+              <div key={n.id} className={`bg-surface border rounded-xl px-4 py-3 space-y-2 ${n.readAt ? 'border-border' : 'border-accent-border'}`}>
                 <div className="flex items-start gap-2.5">
                   <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${SEVERITY_DOT[n.severity] ?? SEVERITY_DOT.low}`} />
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[13px] leading-snug ${n.readAt ? 'text-[#c8c0ac]' : 'text-[#e8d4a0] font-medium'}`}>{n.title}</p>
-                    <p className="text-[12px] text-[#6b6050] mt-0.5">{n.body}</p>
-                    <p className="text-[10px] text-[#3a3630] mt-1">
+                    <p className={`text-small leading-snug ${n.readAt ? 'text-text' : 'text-text-heading font-medium'}`}>{n.title}</p>
+                    <p className="text-caption text-text-muted mt-0.5">{n.body}</p>
+                    <p className="text-caption text-text-muted mt-1">
                       {formatContractDate(n.dueDate)}{c ? ` · ${LIFECYCLE_LABEL[c.lifecycle]}` : ''}{c?.snoozedUntil && c.snoozedUntil > new Date().toISOString().slice(0, 10) ? ` · pospuesto hasta ${formatContractDate(c.snoozedUntil)}` : ''}
                     </p>
                   </div>
                   {!n.readAt && (
                     <button onClick={() => markNotificationsRead([n.id])} title="Marcar como leído"
-                      className="text-[10px] text-[#6b6050] hover:text-[#c8c0ac] flex-shrink-0">Leído</button>
+                      className="text-caption text-text-muted hover:text-text flex-shrink-0">Leído</button>
                   )}
                 </div>
                 {!closed && (
@@ -141,14 +141,14 @@ export default function NotificationsPage() {
             );
           })}
 
-          <div className="pt-4 flex items-center justify-between gap-3 text-[11px] text-[#3a3630]">
+          <div className="pt-4 flex items-center justify-between gap-3 text-caption text-text-muted">
             <span className="flex gap-4">
-              <Link href="/profile#notificaciones" className="hover:text-avocat-gold">Configurar avisos</Link>
+              <Link href="/profile#notificaciones" className="hover:text-accent-text">Configurar avisos</Link>
               {(userDoc as unknown as { isAdmin?: boolean }).isAdmin === true && (
-                <Link href="/admin/legal-changes" className="hover:text-avocat-gold">Revisar cambios legales (admin)</Link>
+                <Link href="/admin/legal-changes" className="hover:text-accent-text">Revisar cambios legales (admin)</Link>
               )}
             </span>
-            <button onClick={testNow} disabled={!!busy} className="hover:text-avocat-gold disabled:opacity-50">
+            <button onClick={testNow} disabled={!!busy} className="hover:text-accent-text disabled:opacity-50">
               {busy === 'test' ? 'Revisando…' : 'Revisar ahora'}
             </button>
           </div>
@@ -161,17 +161,17 @@ export default function NotificationsPage() {
 /** F2: "Cambio normativo: N NDAs pueden requerir actualización". */
 function LegalChangeItem({ n, onOpen }: { n: AppNotification; onOpen: (n: AppNotification, href: string) => void }) {
   return (
-    <div className={`bg-[#1e1c16] border rounded-xl px-4 py-3 space-y-2 ${n.readAt ? 'border-[#2e2b20]' : 'border-avocat-gold/30'}`}>
+    <div className={`bg-surface border rounded-xl px-4 py-3 space-y-2 ${n.readAt ? 'border-border' : 'border-accent-border'}`}>
       <div className="flex items-start gap-2.5">
         <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${SEVERITY_DOT[n.severity] ?? SEVERITY_DOT.low}`} />
         <div className="flex-1 min-w-0">
-          <p className={`text-[13px] leading-snug ${n.readAt ? 'text-[#c8c0ac]' : 'text-[#e8d4a0] font-medium'}`}>{n.title}</p>
-          <p className="text-[12px] text-[#6b6050] mt-0.5">{n.body}</p>
-          <p className="text-[10px] text-[#3a3630] mt-1">Cambio legal · en vigor {formatContractDate(n.dueDate)}</p>
+          <p className={`text-small leading-snug ${n.readAt ? 'text-text' : 'text-text-heading font-medium'}`}>{n.title}</p>
+          <p className="text-caption text-text-muted mt-0.5">{n.body}</p>
+          <p className="text-caption text-text-muted mt-1">Cambio legal · en vigor {formatContractDate(n.dueDate)}</p>
         </div>
         {!n.readAt && (
           <button onClick={() => markNotificationsRead([n.id])} title="Marcar como leído"
-            className="text-[10px] text-[#6b6050] hover:text-[#c8c0ac] flex-shrink-0">Leído</button>
+            className="text-caption text-text-muted hover:text-text flex-shrink-0">Leído</button>
         )}
       </div>
       <div className="flex flex-wrap gap-2 pl-[18px]">

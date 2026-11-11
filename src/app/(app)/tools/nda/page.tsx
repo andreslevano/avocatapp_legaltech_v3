@@ -50,7 +50,7 @@ const ID_TYPES = ['RUT', 'DNI', 'Pasaporte', 'Cédula', 'CUIT', 'NIF', 'Otro'];
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const stripEmail = ({ email, ...rest }: Parte) => rest;
 
-const INPUT_CLS = 'bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
+const INPUT_CLS = 'bg-bg border border-border rounded-lg px-3 py-2.5 text-small font-sans text-text  focus:border-accent-border';
 
 interface ParteFieldsProps {
   label: string;
@@ -63,7 +63,7 @@ function ParteFields({ label, value, onChange, headerAction }: ParteFieldsProps)
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-avocat-gold/70">{label}</p>
+        <p className="text-label font-sans font-semibold uppercase tracking-widest text-accent-text">{label}</p>
         {headerAction}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -77,7 +77,7 @@ function ParteFields({ label, value, onChange, headerAction }: ParteFieldsProps)
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <select value={value.idType} onChange={e => onChange({ ...value, idType: e.target.value })}
           className={INPUT_CLS}>
-          {ID_TYPES.map(t => <option key={t} value={t} className="bg-[#161410]">{t}</option>)}
+          {ID_TYPES.map(t => <option key={t} value={t} className="bg-bg">{t}</option>)}
         </select>
         <input type="text" placeholder="Número de identificación" value={value.idNumber}
           onChange={e => onChange({ ...value, idNumber: e.target.value })} className={INPUT_CLS} />
@@ -395,7 +395,7 @@ export default function NdaPage() {
         <div className="max-w-4xl mx-auto space-y-5">
 
           {/* Form */}
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5 space-y-6">
+          <div className="bg-surface border border-border rounded-xl p-5 space-y-6">
 
             {orgTpl ? (
               <MfwNdaFields receptor={mfwReceptor} onReceptor={setMfwReceptor} productos={objeto} onProductos={setObjeto}
@@ -405,16 +405,16 @@ export default function NdaPage() {
             <div className="flex flex-wrap gap-4 items-start">
               {/* Language toggle */}
               <div>
-                <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-2">
                   Idioma / Language
                 </p>
                 <div className="flex gap-2">
                   {(['es', 'en'] as Lang[]).map(l => (
                     <button key={l} onClick={() => setLanguage(l)}
-                      className={`px-3 py-1.5 rounded-lg text-[12px] font-sans border transition-colors ${
+                      className={`px-3 py-1.5 rounded-lg text-caption font-sans border transition-colors ${
                         language === l
-                          ? 'border-avocat-gold/50 bg-avocat-gold/10 text-avocat-gold'
-                          : 'border-[#2e2b20] text-[#6b6050] hover:text-[#c8c0ac]'
+                          ? 'border-accent-border bg-accent-subtle text-accent-text'
+                          : 'border-border text-text-muted hover:text-text'
                       }`}>
                       {l === 'es' ? 'Español' : 'English'}
                     </button>
@@ -424,16 +424,16 @@ export default function NdaPage() {
 
               {/* Tipo */}
               <div>
-                <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-2">
                   Tipo de NDA
                 </p>
                 <div className="flex gap-2">
                   {(['unilateral', 'bilateral'] as Tipo[]).map(t => (
                     <button key={t} onClick={() => setTipo(t)}
-                      className={`px-3 py-1.5 rounded-lg text-[12px] font-sans border transition-colors ${
+                      className={`px-3 py-1.5 rounded-lg text-caption font-sans border transition-colors ${
                         tipo === t
-                          ? 'border-avocat-gold/50 bg-avocat-gold/10 text-avocat-gold'
-                          : 'border-[#2e2b20] text-[#6b6050] hover:text-[#c8c0ac]'
+                          ? 'border-accent-border bg-accent-subtle text-accent-text'
+                          : 'border-border text-text-muted hover:text-text'
                       }`}>
                       {t === 'unilateral' ? 'Unilateral' : 'Bilateral / Mutuo'}
                     </button>
@@ -452,7 +452,7 @@ export default function NdaPage() {
                   <button
                     type="button"
                     onClick={fillFromProfile}
-                    className="text-[11px] font-sans text-avocat-gold/70 hover:text-avocat-gold border border-avocat-gold/20 hover:border-avocat-gold/40 px-2.5 py-1 rounded-md transition-colors"
+                    className="text-caption font-sans text-accent-text hover:text-accent-text border border-accent-border hover:border-accent-border px-2.5 py-1 rounded-md transition-colors"
                   >
                     Usar mis datos de perfil
                   </button>
@@ -468,11 +468,11 @@ export default function NdaPage() {
                     <select
                       value={selectedClientId}
                       onChange={e => fillFromClient(e.target.value)}
-                      className="text-[11px] font-sans bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/30 text-[#6b6050] px-2.5 py-1 rounded-md transition-colors focus:outline-none"
+                      className="text-caption font-sans bg-bg border border-border hover:border-accent-border text-text-muted px-2.5 py-1 rounded-md transition-colors "
                     >
                       <option value="">Seleccionar cliente…</option>
                       {clients.map(c => (
-                        <option key={c.id} value={c.id} className="bg-[#161410]">
+                        <option key={c.id} value={c.id} className="bg-bg">
                           {c.name}{c.company ? ` — ${c.company}` : ''}
                         </option>
                       ))}
@@ -484,44 +484,44 @@ export default function NdaPage() {
 
             {/* Objeto */}
             <div>
-              <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
+              <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">
                 Objeto de la confidencialidad *
               </label>
               <textarea rows={4} value={objeto} onChange={e => setObjeto(e.target.value)}
                 placeholder="Describe el proyecto, negociación o información que se quiere proteger.&#10;Ej: Proyecto de desarrollo de software para gestión de inventarios. Se compartirán especificaciones técnicas, código fuente, datos de clientes y proyecciones financieras con el propósito de evaluar una potencial alianza comercial."
-                className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-3 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40 resize-none leading-relaxed"
+                className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-small font-sans text-text  focus:border-accent-border resize-none leading-relaxed"
               />
             </div>
 
             {/* Duración + Jurisdicción + Ciudad */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
+                <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">
                   Duración de la confidencialidad
                 </label>
                 <select value={duracion} onChange={e => setDuracion(e.target.value)}
-                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40">
+                  className="w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-small font-sans text-text  focus:border-accent-border">
                   {DURACIONES.map(d => (
-                    <option key={d.value} value={d.value} className="bg-[#161410]">{d.label}</option>
+                    <option key={d.value} value={d.value} className="bg-bg">{d.label}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
+                <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">
                   Jurisdicción / Ley aplicable
                 </label>
                 <input type="text" value={jurisdiccion} onChange={e => setJurisdiccion(e.target.value)}
                   placeholder="Ej: España, Chile, Argentina..."
-                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                  className="w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-small font-sans text-text  focus:border-accent-border"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
+                <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">
                   Ciudad de los tribunales
                 </label>
                 <input type="text" value={ciudadJurisdiccion} onChange={e => setCiudadJurisdiccion(e.target.value)}
                   placeholder={`Ej: Madrid, Barcelona…`}
-                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                  className="w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-small font-sans text-text  focus:border-accent-border"
                 />
               </div>
             </div>
@@ -529,18 +529,18 @@ export default function NdaPage() {
             {/* Reference document */}
             {userDocs.length > 0 && (
               <div>
-                <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1.5">
+                <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">
                   Documento de referencia (opcional)
                 </label>
                 <select value={referenceDocId} onChange={e => setReferenceDocId(e.target.value)}
-                  className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-2.5 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40">
-                  <option value="" className="bg-[#161410]">Sin referencia</option>
+                  className="w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-small font-sans text-text  focus:border-accent-border">
+                  <option value="" className="bg-bg">Sin referencia</option>
                   {userDocs.map(d => (
-                    <option key={d.id} value={d.id} className="bg-[#161410]">{d.name}</option>
+                    <option key={d.id} value={d.id} className="bg-bg">{d.name}</option>
                   ))}
                 </select>
                 {referenceDocId && (
-                  <p className="mt-1 text-[11px] font-sans text-[#6b6050]">
+                  <p className="mt-1 text-caption font-sans text-text-muted">
                     La IA usará este documento como referencia de estilo y estructura.
                   </p>
                 )}
@@ -549,7 +549,7 @@ export default function NdaPage() {
 
             {/* Cláusulas adicionales */}
             <div>
-              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">
+              <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3">
                 Cláusulas adicionales
               </p>
               <div className="flex flex-wrap gap-4 items-center">
@@ -560,28 +560,28 @@ export default function NdaPage() {
                   <label key={opt.key} className="flex items-center gap-2.5 cursor-pointer">
                     <div onClick={() => opt.set(!opt.value)}
                       className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                        opt.value ? 'bg-avocat-gold border-avocat-gold' : 'border-[#3a3630] bg-[#161410]'
+                        opt.value ? 'bg-accent border-accent' : 'border-border-strong bg-bg'
                       }`}>
                       {opt.value && (
                         <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3">
-                          <path d="M2 6l3 3 5-5" stroke="#161410" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       )}
                     </div>
-                    <span className="text-[13px] font-sans text-[#c8c0ac]">{opt.label}</span>
+                    <span className="text-small font-sans text-text">{opt.label}</span>
                   </label>
                 ))}
                 {penalizacion && (
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] text-[#6b6050]">€</span>
+                    <span className="text-caption text-text-muted">€</span>
                     <input
                       type="text"
                       value={penalizacionMonto}
                       onChange={e => setPenalizacionMonto(e.target.value)}
                       placeholder="5.000"
-                      className="w-24 bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-1.5 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40"
+                      className="w-24 bg-bg border border-border rounded-lg px-3 py-1.5 text-small font-sans text-text  focus:border-accent-border"
                     />
-                    <span className="text-[11px] text-[#6b6050]">por infracción</span>
+                    <span className="text-caption text-text-muted">por infracción</span>
                   </div>
                 )}
               </div>
@@ -589,16 +589,16 @@ export default function NdaPage() {
 
             </>)}
 
-            {error && <p className="text-[12px] text-red-400">{error}</p>}
-            {notice && <p className="text-[12px] text-amber-400">{notice}</p>}
+            {error && <p className="text-caption text-danger-text">{error}</p>}
+            {notice && <p className="text-caption text-warning-text">{notice}</p>}
             {legalUpdates.length > 0 && (
-              <div className="rounded-lg border border-sky-400/20 bg-sky-400/5 px-3 py-2 space-y-1">
-                <p className="text-[11px] text-sky-400 font-medium">
+              <div className="rounded-lg border border-status-en-revision-border bg-info-subtle px-3 py-2 space-y-1">
+                <p className="text-caption text-info-text font-medium">
                   {orgTpl
                     ? `La plantilla validada no se modifica automáticamente. Revisa estos ${legalUpdates.length} ${legalUpdates.length === 1 ? 'ajuste' : 'ajustes'} con vuestro abogado:`
                     : `Versión actualizada: se incluirán ${legalUpdates.length} ${legalUpdates.length === 1 ? 'ajuste legal' : 'ajustes legales'}`}
                 </p>
-                <ul className="text-[11px] text-[#c8c0ac] list-disc pl-4 space-y-0.5">
+                <ul className="text-caption text-text list-disc pl-4 space-y-0.5">
                   {legalUpdates.map((u, i) => <li key={i} className="line-clamp-2">{u}</li>)}
                 </ul>
               </div>
@@ -606,11 +606,11 @@ export default function NdaPage() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <p className="text-[11px] text-[#6b6050]">
+                <p className="text-caption text-text-muted">
                   El NDA se guardará automáticamente en tu repositorio de documentos
                 </p>
                 {signatureUrl && !orgTpl && (
-                  <p className="text-[11px] text-avocat-gold/60">
+                  <p className="text-caption text-accent-text">
                     Tu firma se incluirá en la sección de firmas del Word y PDF
                   </p>
                 )}
@@ -623,12 +623,12 @@ export default function NdaPage() {
 
           {/* Streaming result */}
           {result && (
-            <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
-              <div className="px-5 py-3 border-b border-[#2e2b20] flex items-center justify-between flex-wrap gap-2">
+            <div className="bg-surface border border-border rounded-xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-border flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-sans font-semibold text-[#e8d4a0]">{ndaTitle}</span>
+                  <span className="text-small font-sans font-semibold text-text-heading">{ndaTitle}</span>
                   {saved && (
-                    <span className="text-[10px] bg-avocat-gold/10 border border-avocat-gold/20 text-avocat-gold/70 px-2 py-0.5 rounded-full">
+                    <span className="text-caption bg-accent-subtle border border-accent-border text-accent-text px-2 py-0.5 rounded-full">
                       Guardado en documentos
                     </span>
                   )}
@@ -661,13 +661,13 @@ export default function NdaPage() {
               {/* AI drafts only — the org template is lawyer-validated text, not AI output. */}
               {!orgTpl && <AIDisclaimer className="mx-5 mt-4" />}
               {generating ? (
-                <pre className="px-5 py-4 text-[12px] font-sans text-[#c8c0ac] whitespace-pre-wrap leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto">
+                <pre className="px-5 py-4 text-caption font-sans text-text whitespace-pre-wrap leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto">
                   {result}
-                  <span className="inline-block w-1 h-3 bg-avocat-gold animate-pulse ml-0.5 align-middle" />
+                  <span className="inline-block w-1 h-3 bg-accent animate-pulse ml-0.5 align-middle" />
                 </pre>
               ) : (
                 // Same HTML as the Word/PDF downloads — what the lawyer sees is what gets sent.
-                <div className="bg-[#161410] p-3 sm:p-5">
+                <div className="bg-bg p-3 sm:p-5">
                   <iframe
                     title={ndaTitle}
                     srcDoc={buildDocHtml(result, ndaTitle, signatureUrl, meta)

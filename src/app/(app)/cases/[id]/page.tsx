@@ -37,10 +37,10 @@ const STATUS_OPTIONS = [
 ] as const;
 
 const STATUS_STYLE: Record<string, string> = {
-  active:   'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  urgent:   'bg-red-500/10 text-red-400 border-red-500/20',
-  closed:   'bg-[#252218] text-[#6b6050] border-[#2e2b20]',
-  archived: 'bg-[#1a1812] text-[#3a3630] border-[#2e2b20]',
+  active:   'bg-success-subtle text-success-text border-status-a-tiempo-border',
+  urgent:   'bg-danger-subtle text-danger-text border-status-urgente-border',
+  closed:   'bg-surface-raised text-text-muted border-border',
+  archived: 'bg-bg text-text-muted border-border',
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -304,7 +304,7 @@ export default function CaseDetailPage() {
       <div className="flex flex-col h-full">
         <AppHeader title="Caso" />
         <div className="flex-1 flex items-center justify-center">
-          <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+          <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
         </div>
       </div>
     );
@@ -315,8 +315,8 @@ export default function CaseDetailPage() {
       <div className="flex flex-col h-full">
         <AppHeader title="Caso no encontrado" />
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <p className="text-[13px] text-[#6b6050]">Este caso no existe o no tienes acceso.</p>
-          <Link href="/cases" className="text-avocat-gold text-[13px] hover:underline">← Volver a casos</Link>
+          <p className="text-small text-text-muted">Este caso no existe o no tienes acceso.</p>
+          <Link href="/cases" className="text-accent-text text-small hover:underline">← Volver a casos</Link>
         </div>
       </div>
     );
@@ -330,7 +330,7 @@ export default function CaseDetailPage() {
     c.email.toLowerCase().includes(clientSearch.toLowerCase())
   );
 
-  const INPUT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40';
+  const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border';
 
   return (
     <div className="flex flex-col h-full">
@@ -341,14 +341,14 @@ export default function CaseDetailPage() {
           <div className="flex items-center gap-2">
             <Link
               href={`/agent?caseId=${caseDoc.id}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-avocat-gold/10 border border-avocat-gold/20 text-avocat-gold text-[12px] font-sans font-medium hover:bg-avocat-gold/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-subtle border border-accent-border text-accent-text text-caption font-sans font-medium hover:bg-accent-subtle transition-colors"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
               Consultar con IA
             </Link>
-            <button onClick={() => router.push('/cases')} className="px-3 py-1.5 rounded-lg text-[12px] font-sans text-[#6b6050] hover:text-[#c8c0ac] hover:bg-[#252218] transition-colors">
+            <button onClick={() => router.push('/cases')} className="px-3 py-1.5 rounded-lg text-caption font-sans text-text-muted hover:text-text hover:bg-surface-muted transition-colors">
               ← Casos
             </button>
           </div>
@@ -359,64 +359,64 @@ export default function CaseDetailPage() {
         <div className="max-w-4xl mx-auto space-y-5">
 
           {/* ── Case info ─────────────────────────────────── */}
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
+          <div className="bg-surface border border-border rounded-xl p-5">
             <div className="flex flex-wrap items-start gap-4 mb-5">
               <div className="flex-1 min-w-0">
-                <h2 className="font-display text-[20px] text-[#e8d4a0] leading-snug">{caseDoc.title}</h2>
-                <p className="text-[12px] text-[#6b6050] mt-1">{caseDoc.ref}</p>
+                <h2 className="font-display text-h3 text-text-heading leading-snug">{caseDoc.title}</h2>
+                <p className="text-caption text-text-muted mt-1">{caseDoc.ref}</p>
               </div>
               <select
                 value={caseDoc.status}
                 onChange={e => handleStatusChange(e.target.value)}
                 disabled={saving}
-                className={`px-2.5 py-1 rounded-lg text-[12px] font-sans font-medium border cursor-pointer focus:outline-none ${STATUS_STYLE[caseDoc.status]} bg-transparent`}
+                className={`px-2.5 py-1 rounded-lg text-caption font-sans font-medium border cursor-pointer  ${STATUS_STYLE[caseDoc.status]} bg-transparent`}
               >
                 {STATUS_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value} className="bg-[#1e1c16] text-[#c8c0ac]">{o.label}</option>
+                  <option key={o.value} value={o.value} className="bg-surface text-text">{o.label}</option>
                 ))}
               </select>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Tipo</p>
-                <p className="text-[13px] text-[#c8c0ac]">{TYPE_LABELS[caseDoc.type] ?? caseDoc.type}</p>
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Tipo</p>
+                <p className="text-small text-text">{TYPE_LABELS[caseDoc.type] ?? caseDoc.type}</p>
               </div>
               <div>
-                <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Cliente</p>
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Cliente</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   {linkedClient ? (
-                    <Link href={`/clients`} className="text-[13px] text-avocat-gold hover:underline">{linkedClient.name}</Link>
+                    <Link href={`/clients`} className="text-small text-accent-text hover:underline">{linkedClient.name}</Link>
                   ) : caseDoc.client ? (
-                    <span className="text-[13px] text-[#c8c0ac]">{caseDoc.client}</span>
+                    <span className="text-small text-text">{caseDoc.client}</span>
                   ) : (
-                    <span className="text-[13px] text-[#3a3630]">—</span>
+                    <span className="text-small text-text-muted">—</span>
                   )}
                   <button
                     onClick={() => setShowClientPicker(v => !v)}
-                    className="text-[10px] text-[#6b6050] hover:text-avocat-gold transition-colors"
+                    className="text-caption text-text-muted hover:text-accent-text transition-colors"
                   >
                     {linkedClient ? '↔ cambiar' : '+ vincular'}
                   </button>
                   {linkedClient && (
-                    <button onClick={handleUnlinkClient} className="text-[10px] text-[#8a7f68] hover:text-red-400 transition-colors">desvincular</button>
+                    <button onClick={handleUnlinkClient} className="text-caption text-text-muted hover:text-danger-text transition-colors">desvincular</button>
                   )}
                 </div>
               </div>
               <div>
-                <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Vencimiento</p>
-                <p className="text-[13px] text-[#c8c0ac]">{formatDate(caseDoc.deadline)}</p>
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Vencimiento</p>
+                <p className="text-small text-text">{formatDate(caseDoc.deadline)}</p>
               </div>
               <div>
-                <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-1">Actualizado</p>
-                <p className="text-[13px] text-[#c8c0ac]">{formatDate(caseDoc.updatedAt)}</p>
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Actualizado</p>
+                <p className="text-small text-text">{formatDate(caseDoc.updatedAt)}</p>
               </div>
             </div>
 
             {/* Client picker */}
             {showClientPicker && (
-              <div className="mt-4 pt-4 border-t border-[#2e2b20]">
-                <p className="text-[11px] text-[#6b6050] mb-2">Selecciona un cliente existente:</p>
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-caption text-text-muted mb-2">Selecciona un cliente existente:</p>
                 <input
                   className={`${INPUT} mb-2`}
                   placeholder="Buscar cliente..."
@@ -425,9 +425,9 @@ export default function CaseDetailPage() {
                 />
                 <div className="space-y-1 max-h-40 overflow-y-auto">
                   {filteredClients.length === 0 && (
-                    <p className="text-[12px] text-[#3a3630] px-2">
+                    <p className="text-caption text-text-muted px-2">
                       Sin coincidencias —{' '}
-                      <Link href="/clients" className="text-avocat-gold hover:underline">crear nuevo cliente</Link>
+                      <Link href="/clients" className="text-accent-text hover:underline">crear nuevo cliente</Link>
                     </p>
                   )}
                   {filteredClients.map(c => (
@@ -435,35 +435,35 @@ export default function CaseDetailPage() {
                       key={c.id}
                       onClick={() => handleLinkClient(c)}
                       disabled={savingClient}
-                      className="w-full text-left px-3 py-2 rounded-lg bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/30 text-[12px] text-[#c8c0ac] transition-colors disabled:opacity-40"
+                      className="w-full text-left px-3 py-2 rounded-lg bg-bg border border-border hover:border-accent-border text-caption text-text transition-colors disabled:opacity-40"
                     >
                       <span className="font-medium">{c.name}</span>
-                      {c.company && <span className="text-[#6b6050] ml-2">{c.company}</span>}
-                      <span className="text-[#3a3630] ml-2">{c.email}</span>
+                      {c.company && <span className="text-text-muted ml-2">{c.company}</span>}
+                      <span className="text-text-muted ml-2">{c.email}</span>
                     </button>
                   ))}
                 </div>
                 <div className="mt-2 flex justify-between items-center">
-                  <Link href="/clients" className="text-[11px] text-avocat-gold hover:underline">+ Crear nuevo cliente</Link>
-                  <button onClick={() => setShowClientPicker(false)} className="text-[11px] text-[#6b6050] hover:text-[#c8c0ac]">Cerrar</button>
+                  <Link href="/clients" className="text-caption text-accent-text hover:underline">+ Crear nuevo cliente</Link>
+                  <button onClick={() => setShowClientPicker(false)} className="text-caption text-text-muted hover:text-text">Cerrar</button>
                 </div>
               </div>
             )}
 
             {caseDoc.notes && (
-              <div className="mt-5 pt-5 border-t border-[#2e2b20]">
-                <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">Notas</p>
-                <p className="text-[13px] text-[#c8c0ac] whitespace-pre-wrap leading-relaxed">{caseDoc.notes}</p>
+              <div className="mt-5 pt-5 border-t border-border">
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-2">Notas</p>
+                <p className="text-small text-text whitespace-pre-wrap leading-relaxed">{caseDoc.notes}</p>
               </div>
             )}
           </div>
 
           {/* ── Documents ─────────────────────────────────── */}
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#2e2b20] flex items-center justify-between">
-              <h3 className="text-[13px] font-sans font-semibold text-[#e8d4a0]">Documentos adjuntos</h3>
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <h3 className="text-small font-sans font-semibold text-text-heading">Documentos adjuntos</h3>
               <div className="flex items-center gap-2">
-                {uploadMsg && <span className={`text-[11px] ${uploadMsg.startsWith('Error') ? 'text-red-400' : 'text-emerald-400'}`}>{uploadMsg}</span>}
+                {uploadMsg && <span className={`text-caption ${uploadMsg.startsWith('Error') ? 'text-danger-text' : 'text-success-text'}`}>{uploadMsg}</span>}
                 <input
                   ref={fileRef}
                   type="file"
@@ -472,11 +472,11 @@ export default function CaseDetailPage() {
                   className="hidden"
                   onChange={e => handleFileUpload(e.target.files)}
                 />
-                <button onClick={openDocPicker} className="text-[12px] text-[#6b6050] hover:text-avocat-gold transition-colors">
+                <button onClick={openDocPicker} className="text-caption text-text-muted hover:text-accent-text transition-colors">
                   Mis documentos
                 </button>
                 {msEnabled && (
-                  <button onClick={() => setMsImportOpen(true)} className="text-[12px] text-[#6b6050] hover:text-avocat-gold transition-colors">
+                  <button onClick={() => setMsImportOpen(true)} className="text-caption text-text-muted hover:text-accent-text transition-colors">
                     OneDrive / SharePoint
                   </button>
                 )}
@@ -492,10 +492,10 @@ export default function CaseDetailPage() {
             </div>
             {caseDocs.length === 0 ? (
               <div className="px-5 py-6 text-center">
-                <p className="text-[12px] text-[#3a3630]">Sin documentos adjuntos.</p>
+                <p className="text-caption text-text-muted">Sin documentos adjuntos.</p>
               </div>
             ) : (
-              <div className="divide-y divide-[#2e2b20]">
+              <div className="divide-y divide-border">
                 {caseDocs.map(d => {
                   const ext = (d.pdfDownloadUrl ? 'pdf' : d.type).toLowerCase();
                   return (
@@ -503,27 +503,27 @@ export default function CaseDetailPage() {
                     <div className="flex items-center gap-3 px-5 py-3">
                       <FileTypeIcon name={`f.${ext}`} size={20} className="flex-shrink-0 text-text-muted" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-sans font-medium text-[#c8c0ac] truncate">
+                        <p className="text-caption font-sans font-medium text-text truncate">
                           {d.name}
                           {d.signatureStatus && (
                             <button onClick={() => setSigOpen(o => o === d.id ? null : d.id)} title="Ver firma"
-                              className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium border align-middle ${statusChip(d).className}`}>
+                              className={`ml-2 px-1.5 py-0.5 rounded text-caption font-medium border align-middle ${statusChip(d).className}`}>
                               {statusChip(d).label}
                             </button>
                           )}
                         </p>
-                        <p className="text-[10px] text-[#6b6050] mt-0.5">
+                        <p className="text-caption text-text-muted mt-0.5">
                           {ext.toUpperCase()} · {formatBytes(d.size)} · {d.source === 'generated' ? 'Generado' : inferOrigin(d)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <a href={d.pdfDownloadUrl ?? d.downloadUrl} target="_blank" rel="noopener noreferrer"
-                          className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">↓</a>
+                          className="text-caption text-text-muted hover:text-accent-text transition-colors">↓</a>
                         <button onClick={() => router.push(`/tools/analisis?docId=${d.id}`)}
-                          className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">IA</button>
+                          className="text-caption text-text-muted hover:text-accent-text transition-colors">IA</button>
                         {canUseDocusign(userDoc.plan, user) && canSendForSignature(d) && (
                           <button onClick={() => setSignDoc(d)} title="Firmar y enviar con DocuSign"
-                            className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">Firmar</button>
+                            className="text-caption text-text-muted hover:text-accent-text transition-colors">Firmar</button>
                         )}
                       </div>
                     </div>
@@ -549,9 +549,9 @@ export default function CaseDetailPage() {
           )}
 
           {/* ── Comments ──────────────────────────────────── */}
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#2e2b20]">
-              <h3 className="text-[13px] font-sans font-semibold text-[#e8d4a0]">Comentarios</h3>
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h3 className="text-small font-sans font-semibold text-text-heading">Comentarios</h3>
             </div>
             <div className="px-5 py-4 space-y-3">
               <textarea
@@ -559,7 +559,7 @@ export default function CaseDetailPage() {
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
                 placeholder="Añade una nota o comentario al caso..."
-                className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40 resize-none leading-relaxed"
+                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border resize-none leading-relaxed"
               />
               <div className="flex justify-end">
                 <Button
@@ -574,11 +574,11 @@ export default function CaseDetailPage() {
               </div>
             </div>
             {comments && comments.length > 0 && (
-              <div className="divide-y divide-[#2e2b20] border-t border-[#2e2b20]">
+              <div className="divide-y divide-border border-t border-border">
                 {[...comments].reverse().map((c, i) => (
                   <div key={i} className="px-5 py-3">
-                    <p className="text-[12px] text-[#c8c0ac] whitespace-pre-wrap leading-relaxed">{c.text}</p>
-                    <p className="text-[10px] text-[#3a3630] mt-1.5">
+                    <p className="text-caption text-text whitespace-pre-wrap leading-relaxed">{c.text}</p>
+                    <p className="text-caption text-text-muted mt-1.5">
                       {c.createdAt ? formatDateTime(c.createdAt) : 'Ahora'}
                     </p>
                   </div>
@@ -590,41 +590,41 @@ export default function CaseDetailPage() {
           {/* ── AI Assessment ──────────────────────────────── */}
           {assessment && (
             <div className="space-y-3">
-              <h3 className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">Assessment de documentos</h3>
-              <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
-                <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">Resumen ejecutivo</p>
-                <p className="text-[13px] text-[#c8c0ac] leading-relaxed">{assessment.resumen}</p>
+              <h3 className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Assessment de documentos</h3>
+              <div className="bg-surface border border-border rounded-xl p-5">
+                <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-2">Resumen ejecutivo</p>
+                <p className="text-small text-text leading-relaxed">{assessment.resumen}</p>
                 {assessment.partes.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {assessment.partes.map((p, i) => (
-                      <span key={i} className="px-2 py-0.5 rounded-full bg-[#252218] border border-[#2e2b20] text-[11px] text-[#6b6050]">{p}</span>
+                      <span key={i} className="px-2 py-0.5 rounded-full bg-surface-raised border border-border text-caption text-text-muted">{p}</span>
                     ))}
                   </div>
                 )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {assessment.riesgos.length > 0 && (
-                  <div className="bg-red-500/5 border border-red-500/15 rounded-xl p-5">
-                    <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-red-400 mb-3 flex items-center gap-1.5"><TriangleAlert size={14} aria-hidden /> Riesgos y puntos de atención</p>
+                  <div className="bg-danger-subtle border border-status-urgente-border rounded-xl p-5">
+                    <p className="text-label font-sans font-semibold uppercase tracking-widest text-danger-text mb-3 flex items-center gap-1.5"><TriangleAlert size={14} aria-hidden /> Riesgos y puntos de atención</p>
                     <ul className="space-y-2">{assessment.riesgos.map((r, i) => (
-                      <li key={i} className="flex items-start gap-2"><span className="text-red-400 mt-0.5 flex-shrink-0 text-[12px]">•</span><span className="text-[12px] text-red-300 leading-snug">{r}</span></li>
+                      <li key={i} className="flex items-start gap-2"><span className="text-danger-text mt-0.5 flex-shrink-0 text-caption">•</span><span className="text-caption text-danger-text leading-snug">{r}</span></li>
                     ))}</ul>
                   </div>
                 )}
                 {assessment.puntosClave.length > 0 && (
-                  <div className="bg-avocat-gold/5 border border-avocat-gold/15 rounded-xl p-5">
-                    <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-avocat-gold mb-3 flex items-center gap-1.5"><Sparkle size={14} aria-hidden /> Puntos jurídicos clave</p>
+                  <div className="bg-accent-subtle border border-accent-border rounded-xl p-5">
+                    <p className="text-label font-sans font-semibold uppercase tracking-widest text-accent-text mb-3 flex items-center gap-1.5"><Sparkle size={14} aria-hidden /> Puntos jurídicos clave</p>
                     <ul className="space-y-2">{assessment.puntosClave.map((p, i) => (
-                      <li key={i} className="flex items-start gap-2"><span className="text-avocat-gold mt-0.5 flex-shrink-0 text-[12px]">•</span><span className="text-[12px] text-[#c8c0ac] leading-snug">{p}</span></li>
+                      <li key={i} className="flex items-start gap-2"><span className="text-accent-text mt-0.5 flex-shrink-0 text-caption">•</span><span className="text-caption text-text leading-snug">{p}</span></li>
                     ))}</ul>
                   </div>
                 )}
               </div>
               {assessment.fechasClave.length > 0 && (
-                <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
-                  <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3 flex items-center gap-1.5"><CalendarDays size={14} aria-hidden /> Fechas y plazos relevantes</p>
+                <div className="bg-surface border border-border rounded-xl p-5">
+                  <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3 flex items-center gap-1.5"><CalendarDays size={14} aria-hidden /> Fechas y plazos relevantes</p>
                   <ul className="space-y-1.5">{assessment.fechasClave.map((f, i) => (
-                    <li key={i} className="text-[12px] text-[#c8c0ac]">• {f}</li>
+                    <li key={i} className="text-caption text-text">• {f}</li>
                   ))}</ul>
                 </div>
               )}
@@ -632,28 +632,28 @@ export default function CaseDetailPage() {
           )}
 
           {/* ── Conversations ──────────────────────────────── */}
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#2e2b20] flex items-center justify-between">
-              <h3 className="text-[13px] font-sans font-semibold text-[#e8d4a0]">Conversaciones con IA</h3>
-              <span className="text-[11px] text-[#6b6050]">{conversations.length}</span>
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <h3 className="text-small font-sans font-semibold text-text-heading">Conversaciones con IA</h3>
+              <span className="text-caption text-text-muted">{conversations.length}</span>
             </div>
             {conversations.length === 0 ? (
               <div className="px-5 py-8 text-center">
-                <p className="text-[12px] text-[#6b6050] mb-3">Sin conversaciones registradas para este caso.</p>
-                <Link href={`/agent?caseId=${caseDoc.id}`} className="text-avocat-gold text-[12px] hover:underline">
+                <p className="text-caption text-text-muted mb-3">Sin conversaciones registradas para este caso.</p>
+                <Link href={`/agent?caseId=${caseDoc.id}`} className="text-accent-text text-caption hover:underline">
                   Iniciar consulta con IA →
                 </Link>
               </div>
             ) : (
-              <div className="divide-y divide-[#2e2b20]">
+              <div className="divide-y divide-border">
                 {conversations.map(conv => (
                   <div key={conv.id} className="px-5 py-3">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] text-[#6b6050]">{conv.messages.length} mensaje{conv.messages.length !== 1 ? 's' : ''}</span>
-                      <span className="text-[11px] text-[#3a3630]">{formatDateTime(conv.updatedAt)}</span>
+                      <span className="text-caption text-text-muted">{conv.messages.length} mensaje{conv.messages.length !== 1 ? 's' : ''}</span>
+                      <span className="text-caption text-text-muted">{formatDateTime(conv.updatedAt)}</span>
                     </div>
                     {conv.messages[0] && (
-                      <p className="text-[12px] text-[#c8c0ac] line-clamp-2 leading-snug">{conv.messages[0].content}</p>
+                      <p className="text-caption text-text line-clamp-2 leading-snug">{conv.messages[0].content}</p>
                     )}
                   </div>
                 ))}
@@ -668,9 +668,9 @@ export default function CaseDetailPage() {
       {showDocPicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowDocPicker(false)} />
-          <div className="relative bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 w-full max-w-md shadow-xl space-y-3">
-            <h2 className="font-sans font-semibold text-[14px] text-[#e8d4a0]">Vincular documento existente</h2>
-            <p className="text-[11px] text-[#6b6050] -mt-1">El documento se vinculará a este caso sin volver a subirse.</p>
+          <div className="relative bg-surface border border-border rounded-2xl p-5 w-full max-w-md shadow-xl space-y-3">
+            <h2 className="font-sans font-semibold text-body-sm text-text-heading">Vincular documento existente</h2>
+            <p className="text-caption text-text-muted -mt-1">El documento se vinculará a este caso sin volver a subirse.</p>
             <input
               className={INPUT}
               placeholder="Buscar..."
@@ -680,19 +680,19 @@ export default function CaseDetailPage() {
             <div className="space-y-1 max-h-72 overflow-y-auto">
               {loadingPickerDocs && (
                 <div className="py-6 flex justify-center">
-                  <div className="h-5 w-5 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+                  <div className="h-5 w-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
                 </div>
               )}
               {!loadingPickerDocs && pickerDocs.filter(d => !pickerDocSearch || d.name.toLowerCase().includes(pickerDocSearch.toLowerCase())).length === 0 && (
-                <p className="text-[12px] text-[#3a3630] py-6 text-center">Sin documentos guardados.</p>
+                <p className="text-caption text-text-muted py-6 text-center">Sin documentos guardados.</p>
               )}
               {pickerDocs
                 .filter(d => !pickerDocSearch || d.name.toLowerCase().includes(pickerDocSearch.toLowerCase()))
                 .map(d => (
                   <button key={d.id} onClick={() => handlePickDoc(d)}
-                    className="w-full text-left px-3 py-2.5 rounded-lg bg-[#161410] border border-[#2e2b20] hover:border-avocat-gold/30 transition-colors">
-                    <p className="text-[12px] font-medium text-[#c8c0ac] truncate">{d.name}</p>
-                    <p className="text-[10px] text-[#3a3630] uppercase mt-0.5">{d.type}</p>
+                    className="w-full text-left px-3 py-2.5 rounded-lg bg-bg border border-border hover:border-accent-border transition-colors">
+                    <p className="text-caption font-medium text-text truncate">{d.name}</p>
+                    <p className="text-label text-text-muted uppercase mt-0.5">{d.type}</p>
                   </button>
                 ))}
             </div>

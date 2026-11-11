@@ -277,28 +277,28 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
     <div className="flex flex-col flex-1 overflow-hidden relative">
       {/* Document saved toast */}
       {savedToast && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#1e1c16] border border-avocat-gold/40 shadow-lg whitespace-nowrap">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-surface border border-accent-border shadow-lg whitespace-nowrap">
           <FileText size={16} className="text-accent-text" aria-hidden />
-          <span className="text-[12px] text-[#c8c0ac] font-sans">
-            Guardado en <strong className="text-[#e8d4a0]">Documentos</strong>
+          <span className="text-caption text-text font-sans">
+            Guardado en <strong className="text-text-heading">Documentos</strong>
           </span>
           <a
             href={savedToast.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] text-avocat-gold hover:underline"
+            className="text-caption text-accent-text hover:underline"
           >
             Descargar
           </a>
           {docusignOn && (
             <button onClick={() => { setSignDoc(savedToast.doc); setSavedToast(null); }}
-              className="text-[11px] text-avocat-gold hover:underline">
+              className="text-caption text-accent-text hover:underline">
               Firmar y enviar
             </button>
           )}
           <button
             onClick={() => setSavedToast(null)}
-            className="text-[#6b6050] hover:text-[#c8c0ac] ml-1"
+            className="text-text-muted hover:text-text ml-1"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

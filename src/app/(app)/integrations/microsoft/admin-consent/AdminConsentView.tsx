@@ -85,26 +85,26 @@ export default function AdminConsentView({ adminConsentUrl, tid = null, returnTo
     <div className="flex flex-col h-full">
       <AppHeader title="Conectar con Microsoft" />
       <div className="flex-1 overflow-y-auto flex items-start md:items-center justify-center p-4">
-        <div className="w-full max-w-lg bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-6 space-y-4">
-          <h2 className="font-display text-[22px] text-[#e8d4a0] leading-tight">
+        <div className="w-full max-w-lg bg-surface border border-border rounded-2xl p-6 space-y-4">
+          <h2 className="font-display text-h3 text-text-heading leading-tight">
             {declined ? '¿Microsoft te pidió la aprobación de un administrador?' : 'Tu organización requiere que un administrador apruebe Avocat.'}
           </h2>
           {declined && (
-            <p className="text-[13px] text-[#c8c0ac] leading-relaxed">
+            <p className="text-small text-text leading-relaxed">
               Si viste «Se necesita la aprobación del administrador», tu organización no permite que cada usuario
               autorice aplicaciones: un administrador de Microsoft 365 debe aprobar Avocat una sola vez para todos.
             </p>
           )}
-          <p className="text-[13px] text-[#c8c0ac] leading-relaxed">
+          <p className="text-small text-text leading-relaxed">
             Envía este enlace a la persona que administra Microsoft 365 en tu organización. Cuando lo apruebe,
             vuelve aquí y pulsa «Reintentar».
           </p>
           {declined && (
-            <p className="text-[12px] text-[#6b6050] leading-relaxed">
+            <p className="text-caption text-text-muted leading-relaxed">
               Si solo cancelaste los permisos, pulsa «Reintentar» y acéptalos.
             </p>
           )}
-          <p className="text-[11px] text-[#6b6050] leading-relaxed">
+          <p className="text-caption text-text-muted leading-relaxed">
             Avocat solo pide permisos de lectura y nunca modifica ni borra nada en OneDrive o SharePoint.
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -112,26 +112,26 @@ export default function AdminConsentView({ adminConsentUrl, tid = null, returnTo
             <Button variant="secondary" size="sm" onClick={() => { setMailOpen(o => !o); setMailResult(null); }}>Enviar por email</Button>
           </div>
           {mailOpen && (
-            <div className="rounded-xl border border-[#2e2b20] bg-[#161410] p-3 space-y-2">
-              <label htmlFor="admin-email" className="block text-[11px] text-[#c8c0ac]">Email del administrador de Microsoft 365</label>
+            <div className="rounded-xl border border-border bg-bg p-3 space-y-2">
+              <label htmlFor="admin-email" className="block text-caption text-text">Email del administrador de Microsoft 365</label>
               <div className="flex flex-col sm:flex-row gap-2">
                 <input id="admin-email" type="email" autoFocus value={adminEmail} placeholder="it@tuempresa.com"
                   onChange={e => setAdminEmail(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && adminEmail.trim()) send(); }}
-                  className="flex-1 bg-[#1e1c16] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40" />
+                  className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-small text-text  focus:border-accent-border" />
                 <Button variant="accent" size="sm" loading={sending} disabled={!adminEmail.trim()} onClick={send}>Enviar</Button>
               </div>
-              <p className="text-[11px] text-[#6b6050]">Lo enviamos desde Avocat con el enlace de aprobación; las respuestas te llegarán a ti.</p>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#6b6050]">
+              <p className="text-caption text-text-muted">Lo enviamos desde Avocat con el enlace de aprobación; las respuestas te llegarán a ti.</p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-muted">
                 <span>O escríbelo tú desde:</span>
-                <a href={outlookWeb} target="_blank" rel="noopener noreferrer" className="text-avocat-gold hover:underline">Outlook web</a>
-                <a href={gmailWeb} target="_blank" rel="noopener noreferrer" className="text-avocat-gold hover:underline">Gmail</a>
-                <a href={mailto} className="text-avocat-gold hover:underline">Tu programa de correo</a>
+                <a href={outlookWeb} target="_blank" rel="noopener noreferrer" className="text-accent-text hover:underline">Outlook web</a>
+                <a href={gmailWeb} target="_blank" rel="noopener noreferrer" className="text-accent-text hover:underline">Gmail</a>
+                <a href={mailto} className="text-accent-text hover:underline">Tu programa de correo</a>
               </div>
             </div>
           )}
-          {mailResult && <p className={`text-[12px] ${mailResult.ok ? 'text-emerald-400' : 'text-red-400'}`}>{mailResult.text}</p>}
-          <div className="flex items-center justify-between pt-2 border-t border-[#2e2b20]">
-            <Link href={returnTo} className="text-[12px] text-[#6b6050] hover:text-[#c8c0ac]">← Volver</Link>
+          {mailResult && <p className={`text-caption ${mailResult.ok ? 'text-success-text' : 'text-danger-text'}`}>{mailResult.text}</p>}
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            <Link href={returnTo} className="text-caption text-text-muted hover:text-text">← Volver</Link>
             <Button variant="ghost" size="sm" loading={retrying} onClick={retry}>Reintentar</Button>
           </div>
         </div>

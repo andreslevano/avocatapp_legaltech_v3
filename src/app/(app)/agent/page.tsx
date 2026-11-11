@@ -68,7 +68,7 @@ export default function AgentPage() {
       <div className="flex flex-col h-full">
         <AppHeader title="Agente IA" />
         <div className="flex-1 flex items-center justify-center">
-          <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+          <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
         </div>
       </div>
     }>
