@@ -11,6 +11,7 @@ import { getUserDocuments, getDocumentById, type DocumentRecord } from '@/lib/st
 import { saveAnalysisDocument } from '@/lib/agent-export';
 import { getCases, type CaseDoc } from '@/lib/firestore';
 import type { OcrPdfProgress } from '@/lib/ocr-pdf-client';
+import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
 
 interface AnalisisResult {
   resumen: string;
@@ -321,9 +322,7 @@ function AnalisisPageContent() {
             {ready && (
               <div className="mt-4 flex items-center justify-between gap-4 bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-[18px] shrink-0">
-                    {selectedName.endsWith('.pdf') ? '📄' : selectedName.endsWith('.docx') || selectedName.endsWith('.doc') ? '📝' : '📋'}
-                  </span>
+                  <FileTypeIcon name={selectedName} size={18} className="shrink-0 text-accent-text" />
                   <div className="min-w-0">
                     <p className="text-[13px] font-medium text-[#c8c0ac] truncate">{selectedName}</p>
                     <p className="text-[11px] text-emerald-400">Texto extraído — listo para analizar</p>

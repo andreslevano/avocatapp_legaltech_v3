@@ -88,11 +88,6 @@ export const TIPO_STYLE: Record<string, string> = {
   Otro:        'bg-[#252218] text-[#6b6050] border-[#2e2b20]',
 };
 
-const FILE_ICON: Record<string, string> = {
-  pdf: '📄', docx: '📝', doc: '📝', xlsx: '📊', xls: '📊',
-  jpg: '🖼️', jpeg: '🖼️', png: '🖼️', webp: '🖼️',
-};
-export function fileIcon(ext: string): string { return FILE_ICON[ext?.toLowerCase()] ?? '📎'; }
 
 // ── Date helpers ─────────────────────────────────────────────────
 

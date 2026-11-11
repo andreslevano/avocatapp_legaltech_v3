@@ -11,7 +11,8 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 | 1 | Buttons & focus | done | 4b0dfb9d | 5,784 |
 | 2 | AI disclaimer | done | 15efbd6e | 5,781 |
 | 3 | Public chrome, legal id, consent | done | a12925cf | 5,756 |
-| 4 | Single pricing source | done | (this commit) | 5,677 |
+| 4 | Single pricing source | done | 89c42c7f | 5,677 |
+| 5 | Logo & icons | done | (this commit) | 5,633 |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
@@ -58,3 +59,12 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 - Removed unsourced claims: "1,200 casos", "85 %", "80 % tiempo ahorrado", "100+/50+/10+" stat grids, "GDPR Compliant", "99.9% Uptime", "Cifrado bancario", "Soporte 24/7", "Sin tarjeta de crédito" (TODO: restore only if the trial truly needs no card). TrustBand now lists 3 verifiable product facts.
 - Deleted unreferenced legacy `components/Hero.tsx`, `Pricing.tsx`, `Features.tsx`.
 - Glossary applied in touched public files: Dashboard → Panel, Template → Plantilla, Modo Agente → Agente IA, CTAs per persona, México/Perú labels (stored values unchanged).
+
+## Phase 5 — Logo & icons
+- `brand/Logo.tsx` v4: `variant` mark | wordmark | lockup, `tone` ink | cream | gold → `/brand/avocat-mark-{tone}.png`, wordmark Cormorant 600 +0.14em; no CSS filters. Usages updated (Navbar, Footer, Rail, Hero). TODO(ds-v4): vector SVG of the monogram.
+- `src/app/icon.svg`: 32px neutral-900 rounded square with the gold mark (PNG embedded as data URI).
+- Deleted: `public/images/avocat-logo.svg`, `avocat-logo-full.svg`, `avocat-logo 2.svg`, `avocat logo white v1.png`, `public/logos/*`. Kept `avocat-logo-white-v1.png` (still used by legacy `components/Sidebar.tsx`, removed in Phase 9).
+- Emoji → Lucide in layout/ (Rail inline Heroicons → Lucide; Rail also moved to role tokens, `aria-current`, labels, "Dashboard" → "Panel"), landing/, auth/ + signup page, agent/ (attachments via new `ui/FileTypeIcon.tsx`, ToolCallBadge running/done icons, AgentMessage Heroicons → Lucide), `(app)` pages (tools tiles, cases, documents, signatures return, generacion, estudiantes, revision-email, nda, analisis) and components (documents, integrations, legal verdict icons, signatures, AnalisisExitoModal). Country flags in the profile panel → plain names (ISO codes in data).
+- Deleted unreferenced `components/LanguageSelector.tsx`.
+- Not converted here (rebuilt/deleted later): `TutelaProcessSimple`, `ReclamacionProcess*` (Phase 8), `dashboard/*`, `profile`, `DashboardNavigation`, `PurchaseHistory` (Phase 9). Emoji in `src/lib/*` are server log prefixes, not UI — left as is.
+- tsc 20 (Rail `pathname` null fixes).

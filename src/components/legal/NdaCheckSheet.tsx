@@ -11,6 +11,7 @@ import { formatContractDate } from '@/lib/contracts/dates';
 import { VERDICT_LABEL, type CheckFinding, type CheckVerdict } from '@/lib/legal/check';
 import { SEVERITY_LABEL } from '@/lib/legal/types';
 import type { NdaCheckResult } from '@/lib/legal/check-client';
+import { CircleAlert, CircleCheck, CircleX } from 'lucide-react';
 
 export const VERDICT_STYLE: Record<CheckVerdict, string> = {
   ok: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/5',
@@ -18,7 +19,12 @@ export const VERDICT_STYLE: Record<CheckVerdict, string> = {
   outdated: 'text-red-400 border-red-400/30 bg-red-400/5',
   no_rules: 'text-[#6b6050] border-[#2e2b20] bg-transparent',
 };
-export const VERDICT_ICON: Record<CheckVerdict, string> = { ok: '✅', review: '🟡', outdated: '🔴', no_rules: '—' };
+export const VERDICT_ICON: Record<CheckVerdict, React.ReactNode> = {
+  ok: <CircleCheck size={14} className="inline -mt-0.5" aria-hidden />,
+  review: <CircleAlert size={14} className="inline -mt-0.5" aria-hidden />,
+  outdated: <CircleX size={14} className="inline -mt-0.5" aria-hidden />,
+  no_rules: '—',
+};
 
 const STATUS_LABEL: Record<CheckFinding['status'], string> = {
   ok: 'Cumple', not_applicable: 'No aplica', missing: 'Falta', conflict: 'Contradice',

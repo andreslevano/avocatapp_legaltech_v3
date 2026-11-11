@@ -16,6 +16,7 @@ import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 import { createImportJob, previewMicrosoftImport, type ImportPreview } from '@/lib/integrations/microsoft/client';
 import { CHECK_LABEL, CONTRACT_NAME_RE } from '@/lib/integrations/microsoft/import';
 import { canUseContracts } from '@/lib/contracts/config';
+import { FileText, Folder } from 'lucide-react';
 
 const SOURCE_LABEL = { onedrive: 'OneDrive', sharepoint: 'SharePoint' } as const;
 const SELECT = 'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3 py-2 text-[12px] text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40';
@@ -99,7 +100,7 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
           <div className="space-y-1">
             <div className="flex justify-between text-[11px] text-[#6b6050]">
               <span>{processed} de {c?.total ?? toImport.length}</span>
-              <span>✓ {c?.done ?? 0}{c?.error ? ` · ⚠️ ${c.error}` : ''}</span>
+              <span>{c?.done ?? 0} importados{c?.error ? ` · ${c.error} con error` : ''}</span>
             </div>
             <div className="h-1.5 rounded-full bg-[#161410] overflow-hidden">
               <div className="h-full bg-avocat-gold transition-all" style={{ width: `${c?.total ? (processed / c.total) * 100 : 0}%` }} />
@@ -110,7 +111,7 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
               <li key={i} className="flex items-center gap-2 text-[11px]">
                 <span className="truncate flex-1 text-[#c8c0ac]" title={it.name}>{it.name}</span>
                 <span className={`flex-shrink-0 ${it.status === 'done' ? 'text-emerald-400' : it.status === 'error' ? 'text-red-400' : it.status === 'running' ? 'text-avocat-gold' : 'text-[#6b6050]'}`}>
-                  {it.status === 'done' ? '✓' : it.status === 'error' ? (it.error ?? 'Error') : it.status === 'running' ? 'Importando…' : it.status === 'skipped' ? 'Omitido' : 'En cola'}
+                  {it.status === 'done' ? 'Importado' : it.status === 'error' ? (it.error ?? 'Error') : it.status === 'running' ? 'Importando…' : it.status === 'skipped' ? 'Omitido' : 'En cola'}
                 </span>
               </li>
             ))}
@@ -135,7 +136,7 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
               return (
                 <li key={`${r.driveId}:${r.itemId}`} className="rounded-lg border border-[#2e2b20] px-3 py-2 space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="flex-shrink-0">{r.folder ? '📁' : '📄'}</span>
+                    {r.folder ? <Folder size={16} className="flex-shrink-0" aria-hidden /> : <FileText size={16} className="flex-shrink-0" aria-hidden />}
                     <span className="truncate flex-1 text-[#c8c0ac]" title={r.name}>{r.name}</span>
                     <span className="text-[10px] text-[#6b6050] flex-shrink-0">
                       {r.folder ? `${r.folder.files} ${r.folder.files === 1 ? 'archivo' : 'archivos'}` : r.check === 'ok' ? formatBytes(r.size) : ''}

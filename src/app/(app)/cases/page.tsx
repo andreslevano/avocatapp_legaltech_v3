@@ -6,6 +6,7 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCases, type CaseDoc, type CaseStatus } from '@/lib/firestore';
 import AppHeader from '@/components/layout/AppHeader';
 import type { Timestamp } from 'firebase/firestore';
+import { CalendarDays } from 'lucide-react';
 
 const STATUS_LABEL: Record<CaseStatus, string> = {
   active:   'Activo',
@@ -156,7 +157,7 @@ export default function CasesPage() {
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-[#6b6050]">{c.client || '—'}</span>
                       {deadline && (
-                        <span className="text-[#6b6050]">📅 {deadline}</span>
+                        <span className="text-[#6b6050] inline-flex items-center gap-1"><CalendarDays size={12} aria-hidden /> {deadline}</span>
                       )}
                     </div>
                   </Link>

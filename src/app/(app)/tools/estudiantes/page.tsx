@@ -16,6 +16,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
+import { CircleCheck, GraduationCap, X } from 'lucide-react';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -260,7 +261,7 @@ function EstudiantesContent() {
         />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-8 max-w-sm text-center space-y-3">
-            <div className="text-3xl">🎓</div>
+            <GraduationCap size={32} className="text-accent-text" aria-hidden />
             <h3 className="font-display text-lg text-[#e8d4a0]">Módulo exclusivo para Estudiantes</h3>
             <p className="text-[12px] text-[#6b6050] leading-relaxed">
               Accede a más de 44 modelos de escritos académicos de las 8 áreas del derecho español por €3 cada uno.
@@ -285,7 +286,7 @@ function EstudiantesContent() {
         />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-8 max-w-sm text-center space-y-4">
-            <div className="text-4xl">✅</div>
+            <CircleCheck size={40} className="text-success-text" aria-hidden />
             <h3 className="font-display text-lg text-[#e8d4a0]">¡Pago completado!</h3>
             <p className="text-[12px] text-[#6b6050] leading-relaxed">
               Tus documentos se están generando. Aparecerán en el historial de compras en unos momentos.
@@ -412,7 +413,7 @@ function EstudiantesContent() {
                     className="text-[#6b6050] hover:text-red-400 transition-colors shrink-0"
                     aria-label="Eliminar"
                   >
-                    ✕
+                    <X size={16} aria-hidden />
                   </button>
                 </div>
               ))}

@@ -42,6 +42,7 @@ import { analyzeAsContract, watchContract } from '@/lib/contracts/client';
 import { madridToday, nextContractEvent } from '@/lib/contracts/dates';
 import type { Contract } from '@/lib/contracts/types';
 import LegalCheckRunner, { type CheckTarget } from '@/components/legal/LegalCheckRunner';
+import { X } from 'lucide-react';
 
 async function triggerEmbed(docId: string, idToken: string) {
   fetch('/api/documents/embed', {
@@ -544,7 +545,7 @@ function DocumentsView() {
       const idToken = await user.getIdToken();
       const res  = await fetch('/api/documents/embed-all', { method: 'POST', headers: { Authorization: `Bearer ${idToken}` } });
       const data = await res.json() as { ok: boolean; embedded: number; failed: number };
-      setIndexMsg(data.ok ? `✓ ${data.embedded} indexado${data.embedded !== 1 ? 's' : ''}` : 'Error al indexar.');
+      setIndexMsg(data.ok ? `${data.embedded} indexado${data.embedded !== 1 ? 's' : ''}` : 'Error al indexar.');
     } catch { setIndexMsg('Error de red.'); }
     finally  { setIndexing(false); }
   };
@@ -662,7 +663,7 @@ function DocumentsView() {
           <span>No pudimos conectar con Microsoft</span>
           <span className="flex gap-3 flex-shrink-0">
             <button onClick={() => { setMsError(false); setMsImportOpen(true); }} className="text-avocat-gold hover:underline">Reintentar</button>
-            <button onClick={() => setMsError(false)} aria-label="Cerrar">✕</button>
+            <button onClick={() => setMsError(false)} aria-label="Cerrar"><X size={14} aria-hidden /></button>
           </span>
         </div>
       )}
@@ -695,7 +696,7 @@ function DocumentsView() {
           <button onClick={() => ws.openDialog({ type: 'auto-organize' })} className="text-avocat-gold hover:underline flex-shrink-0">
             Ver propuesta
           </button>
-          <button onClick={dismissOrganize} aria-label="Descartar" className="text-[#6b6050] hover:text-[#c8c0ac] flex-shrink-0">✕</button>
+          <button onClick={dismissOrganize} aria-label="Descartar" className="text-[#6b6050] hover:text-[#c8c0ac] flex-shrink-0"><X size={14} aria-hidden /></button>
         </div>
       )}
 

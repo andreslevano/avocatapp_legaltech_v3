@@ -10,6 +10,7 @@ import { auth, db } from '@/lib/firebase';
 import type { UserPlan } from '@/lib/auth';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { canUseContracts } from '@/lib/contracts/config';
+import { X } from 'lucide-react';
 
 // ── Plan metadata ──────────────────────────────────────────────────
 
@@ -38,19 +39,19 @@ const PLAN_META: Record<UserPlan, { label: string; price: string; desc: string; 
 };
 
 const COUNTRIES = [
-  { label: 'España',    flag: '🇪🇸' },
-  { label: 'Colombia',  flag: '🇨🇴' },
-  { label: 'México',    flag: '🇲🇽' },
-  { label: 'Chile',     flag: '🇨🇱' },
-  { label: 'Perú',      flag: '🇵🇪' },
-  { label: 'Ecuador',   flag: '🇪🇨' },
-  { label: 'Argentina', flag: '🇦🇷' },
+  { label: 'España',    code: 'ES' },
+  { label: 'Colombia',  code: 'CO' },
+  { label: 'México',    code: 'MX' },
+  { label: 'Chile',     code: 'CL' },
+  { label: 'Perú',      code: 'PE' },
+  { label: 'Ecuador',   code: 'EC' },
+  { label: 'Argentina', code: 'AR' },
 ];
 
-function countryDisplay(stored?: string): { label: string; flag: string } | null {
+function countryDisplay(stored?: string): { label: string; code: string } | null {
   if (!stored) return null;
   const match = COUNTRIES.find(c => c.label.toLowerCase() === stored.toLowerCase());
-  return match ?? { label: stored, flag: '🌍' };
+  return match ?? { label: stored, code: '' };
 }
 
 // ── Component ──────────────────────────────────────────────────────
@@ -199,7 +200,7 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
             >
               <option value="">Seleccionar...</option>
               {COUNTRIES.map(c => (
-                <option key={c.label} value={c.label} className="bg-[#161410]">{c.flag} {c.label}</option>
+                <option key={c.label} value={c.label} className="bg-[#161410]">{c.label}</option>
               ))}
             </select>
             <button
@@ -209,11 +210,11 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
             >
               {savingCountry ? '…' : 'OK'}
             </button>
-            <button onClick={() => setEditingCountry(false)} className="px-2 py-1.5 rounded-lg text-[11px] text-[#6b6050] hover:text-[#c8c0ac] transition-colors">✕</button>
+            <button onClick={() => setEditingCountry(false)} aria-label="Cancelar" className="px-2 py-1.5 rounded-lg text-[#6b6050] hover:text-[#c8c0ac] transition-colors"><X size={14} aria-hidden /></button>
           </div>
         ) : (
           <p className="mt-1.5 text-[13px] text-[#c8c0ac]">
-            {country ? `${country.flag} ${country.label}` : <span className="text-[#3a3630] italic">No configurado</span>}
+            {country ? country.label : <span className="text-[#3a3630] italic">No configurado</span>}
           </p>
         )}
       </div>

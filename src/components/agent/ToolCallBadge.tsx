@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Check, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 
 interface Citation {
   lawName: string;
@@ -47,10 +48,12 @@ export default function ToolCallBadge({ name, status = 'done', result }: ToolCal
           citations ? 'cursor-pointer hover:border-avocat-gold/30 hover:text-avocat-gold transition-colors' : 'cursor-default',
         ].join(' ')}
       >
-        <span className={status === 'running' ? 'animate-pulse' : ''}>⚡</span>
+        {status === 'running'
+          ? <Loader2 size={12} className="animate-spin" aria-hidden />
+          : <Check size={12} aria-hidden />}
         {name}
         {citations && (
-          <span className="ml-1 text-avocat-gold">{citations.length} fuentes {expanded ? '▴' : '▾'}</span>
+          <span className="ml-1 text-avocat-gold">{citations.length} fuentes {expanded ? <ChevronUp size={12} className="inline" aria-hidden /> : <ChevronDown size={12} className="inline" aria-hidden />}</span>
         )}
       </button>
 

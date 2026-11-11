@@ -1,12 +1,13 @@
 import AnimatedSection from './AnimatedSection';
+import { FileText, Lock, PenLine, RefreshCw, Scale, Zap } from 'lucide-react';
 
 const FEATURES = [
-  { icon: '⚡', text: 'Contexto de casos en tiempo real — el agente sabe en qué caso estás' },
-  { icon: '📄', text: 'Lee y analiza tus PDFs — incluidos documentos escaneados con OCR' },
-  { icon: '⚖️', text: 'Jurisprudencia real — cita sentencias del TS, AP y TC' },
-  { icon: '✍️', text: 'Redacta en el formato legal correcto para tu país' },
-  { icon: '🔁', text: 'Itera y perfecciona — conversa hasta obtener exactamente lo que necesitas' },
-  { icon: '🔒', text: 'Tus datos son privados — nunca se usan para entrenar modelos' },
+  { icon: Zap, text: 'Contexto de casos en tiempo real — el agente sabe en qué caso estás' },
+  { icon: FileText, text: 'Lee y analiza tus PDFs — incluidos documentos escaneados con OCR' },
+  { icon: Scale, text: 'Jurisprudencia real — cita sentencias del TS, AP y TC' },
+  { icon: PenLine, text: 'Redacta en el formato legal correcto para tu país' },
+  { icon: RefreshCw, text: 'Itera y perfecciona — conversa hasta obtener exactamente lo que necesitas' },
+  { icon: Lock, text: 'Tus datos son privados — nunca se usan para entrenar modelos' },
 ];
 
 export default function AgentSection() {
@@ -41,7 +42,7 @@ export default function AgentSection() {
             <ul className="space-y-3">
               {FEATURES.map((f, i) => (
                 <AnimatedSection key={f.text} delay={i * 80} className="flex items-start gap-3">
-                  <span className="text-[16px] flex-shrink-0 mt-0.5">{f.icon}</span>
+                  <f.icon size={18} className="flex-shrink-0 mt-0.5 text-accent-text" aria-hidden />
                   <span className="font-sans text-[13px] text-[#8a8070] leading-relaxed">{f.text}</span>
                 </AnimatedSection>
               ))}

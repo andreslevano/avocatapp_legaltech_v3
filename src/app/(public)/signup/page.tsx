@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import SignupForm from '@/components/auth/SignupForm';
+import { BookOpen, Scale, UserRound } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Crear cuenta — Avocat',
@@ -20,12 +21,12 @@ export default function SignupPage() {
 
         <div className="space-y-6">
           {[
-            { emoji: '⚖️', text: 'Gestiona casos con un agente IA que conoce tu práctica.' },
-            { emoji: '📚', text: 'Aprende Derecho con un tutor socrático impulsado por IA.' },
-            { emoji: '🧑‍💼', text: 'Entiende tus derechos en lenguaje llano, sin tecnicismos.' },
-          ].map(({ emoji, text }) => (
+            { icon: Scale, text: 'Gestiona casos con un agente IA que conoce tu práctica.' },
+            { icon: BookOpen, text: 'Aprende Derecho con un tutor socrático impulsado por IA.' },
+            { icon: UserRound, text: 'Entiende tus derechos en lenguaje llano, sin tecnicismos.' },
+          ].map(({ icon: Icon, text }) => (
             <div key={text} className="flex items-start gap-4">
-              <span className="text-2xl">{emoji}</span>
+              <Icon size={24} className="shrink-0 text-accent-text" aria-hidden />
               <p className="text-body text-ds-text leading-relaxed">{text}</p>
             </div>
           ))}

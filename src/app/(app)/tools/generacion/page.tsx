@@ -11,6 +11,7 @@ import { consumirCredito } from '@/lib/creditos';
 import SignAndSendButton from '@/components/signatures/SignAndSendButton';
 import { getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
 import { orgNdaTemplateFor } from '@/lib/org-templates';
+import { Check, CircleCheck, CircleX, TriangleAlert } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -536,7 +537,7 @@ export default function GeneracionPage() {
                     <div className="flex items-center gap-2 min-w-0">
                       {loadingRefDoc
                         ? <div className="h-3.5 w-3.5 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin flex-shrink-0" />
-                        : <span className="text-emerald-400 text-[11px] flex-shrink-0">✓</span>
+                        : <Check size={14} className="text-emerald-400 flex-shrink-0" aria-hidden />
                       }
                       <span className="text-[12px] text-[#c8c0ac] truncate">{refDocName}</span>
                     </div>
@@ -558,7 +559,7 @@ export default function GeneracionPage() {
                 }`}>
                   <div className="flex items-center gap-2">
                     <span className="text-[14px]">
-                      {validation.status === 'complete' ? '✅' : validation.status === 'partial' ? '⚠️' : '🔴'}
+                      {validation.status === 'complete' ? <CircleCheck size={16} aria-hidden /> : validation.status === 'partial' ? <TriangleAlert size={16} aria-hidden /> : <CircleX size={16} aria-hidden />}
                     </span>
                     <span className={`text-[12px] font-sans font-semibold ${
                       validation.status === 'complete' ? 'text-emerald-400' :

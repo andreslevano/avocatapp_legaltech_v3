@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { Button } from '@/components/ui/Button';
 import { ConnectorError, getPickerToken, type MicrosoftIntegrationInfo } from '@/lib/integrations/microsoft/client';
+import { X } from 'lucide-react';
 
 export const IMPORTABLE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.png', '.jpg', '.jpeg'];
 
@@ -185,7 +186,7 @@ export default function MicrosoftPicker({ info, onPick, onClose, onReconnect }: 
             Importar desde {info.accountType === 'personal' ? 'OneDrive' : 'OneDrive / SharePoint'}
             <span className="ml-2 text-[11px] font-normal text-[#6b6050]">{info.email}</span>
           </p>
-          <button onClick={onClose} aria-label="Cerrar" className="text-[#6b6050] hover:text-[#c8c0ac] p-1">✕</button>
+          <button onClick={onClose} aria-label="Cerrar" className="text-[#6b6050] hover:text-[#c8c0ac] p-1"><X size={16} aria-hidden /></button>
         </div>
         <div className="relative flex-1 min-h-0 bg-[#161410]">
           {!info.pickerBaseUrl ? (

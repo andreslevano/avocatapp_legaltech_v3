@@ -68,7 +68,7 @@ export default function LegalChangesPage() {
                 <p className="text-[13px] text-[#e8d4a0]">Mis NDAs</p>
                 <p className="text-[11px] text-[#6b6050]">
                   {ndas.length} {ndas.length === 1 ? 'NDA vigente con datos confirmados' : 'NDAs vigentes con datos confirmados'}
-                  {' '}· ✅ {count('ok')} · 🟡 {count('review')} · 🔴 {count('outdated')}
+                  {' '}· {count('ok')} vigentes · {count('review')} a revisar · {count('outdated')} desactualizados
                 </p>
               </div>
               <Button variant="accent" size="sm" disabled={!ndas.length}

@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect, type KeyboardEvent, type Drag
 import AgentContextChips from './AgentContextChips';
 import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
 import type { MessageAttachment } from './AgentMessage';
+import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
 
 interface Chip {
   label: string;
@@ -58,13 +59,6 @@ function isBinaryDoc(mimeType: string, name: string): boolean {
   );
 }
 
-function fileIcon(mimeType: string, name: string): string {
-  const ext = name.split('.').pop()?.toLowerCase() ?? '';
-  if (mimeType === 'application/pdf' || ext === 'pdf') return '📄';
-  if (mimeType.includes('word') || ['docx', 'doc'].includes(ext)) return '📝';
-  if (mimeType.includes('sheet') || mimeType.includes('excel') || ['xlsx', 'xls'].includes(ext)) return '📊';
-  return '📎';
-}
 
 async function readFile(file: File): Promise<MessageAttachment> {
   const mimeType = resolveMime(file);
@@ -248,7 +242,7 @@ export default function AgentInput({
                 </>
               ) : (
                 <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-lg bg-avocat-gold/10 border border-avocat-gold/20 text-[11px] font-sans text-avocat-gold max-w-[160px]">
-                  <span className="flex-shrink-0">{fileIcon(att.mimeType, att.name)}</span>
+                  <span className="flex-shrink-0"><FileTypeIcon mimeType={att.mimeType} name={att.name} size={14} /></span>
                   <span className="truncate">{att.name}</span>
                   <button
                     onClick={() => removeAttachment(i)}

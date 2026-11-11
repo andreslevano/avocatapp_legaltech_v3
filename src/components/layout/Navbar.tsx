@@ -39,10 +39,7 @@ export default function Navbar() {
     <header data-theme="dark" className="sticky top-0 z-nav bg-bg border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="Avocat — inicio">
-            <Logo variant="symbol" theme="gold" size={36} href="" />
-            <span className="font-display text-h3 font-semibold text-accent-text tracking-[0.14em] leading-none">AVOCAT</span>
-          </Link>
+          <Logo variant="lockup" tone="gold" size={32} href="/" />
 
           <nav aria-label="Principal" className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map(({ href, label }) => {

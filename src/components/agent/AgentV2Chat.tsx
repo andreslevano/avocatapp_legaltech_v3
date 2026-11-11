@@ -267,9 +267,9 @@ export default function AgentV2Chat({ user, userDoc, caseId }: AgentV2ChatProps)
         </div>
         <div className="flex items-center gap-1.5 mt-1.5 px-1">
           {[
-            { icon: '⚡', label: 'buscar_casos' },
-            { icon: '⚡', label: 'buscar_documentos_caso' },
-            { icon: '⚡', label: 'buscar_normativa_jurisprudencia' },
+            { label: 'buscar_casos' },
+            { label: 'buscar_documentos_caso' },
+            { label: 'buscar_normativa_jurisprudencia' },
           ].map(t => (
             <ToolCallBadge key={t.label} name={t.label} />
           ))}

@@ -108,7 +108,7 @@ export default function AdminConsentView({ adminConsentUrl, tid = null, returnTo
             Avocat solo pide permisos de lectura y nunca modifica ni borra nada en OneDrive o SharePoint.
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="accent" size="sm" onClick={copy}>{copied ? 'Enlace copiado ✓' : 'Copiar enlace para tu administrador'}</Button>
+            <Button variant="accent" size="sm" onClick={copy}>{copied ? 'Enlace copiado' : 'Copiar enlace para tu administrador'}</Button>
             <Button variant="secondary" size="sm" onClick={() => { setMailOpen(o => !o); setMailResult(null); }}>Enviar por email</Button>
           </div>
           {mailOpen && (

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import type { DocumentRecord } from '@/lib/storage-client';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 import {
-  fileIcon, formatDate, inferDocType, inferOrigin, statusChip,
+  formatDate, inferDocType, inferOrigin, statusChip,
   getCaseForDoc, getClientForDoc,
   TIPO_STYLE,
 } from './helpers';
@@ -14,6 +14,8 @@ import type { DocAction } from './DocTable';
 import SignaturePanel from '@/components/signatures/SignaturePanel';
 import ContractCard from '@/components/contracts/ContractCard';
 import type { Contract } from '@/lib/contracts/types';
+import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
+import { Cloud } from 'lucide-react';
 
 interface Props {
   doc: DocumentRecord;
@@ -49,7 +51,7 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-start gap-3 px-4 py-3 border-b border-[#2e2b20] flex-shrink-0">
-        <span className="text-2xl mt-0.5 flex-shrink-0">{fileIcon(ext)}</span>
+        <FileTypeIcon name={`f.${ext}`} size={24} className="mt-0.5 flex-shrink-0 text-accent-text" />
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-sans font-semibold text-[#e8d4a0] truncate" title={d.name}>{d.name}</p>
           <p className="text-[10px] text-[#6b6050] mt-0.5">{ext.toUpperCase()} · {formatBytes(d.size)}</p>
@@ -72,7 +74,7 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
         )}
         {!isPdf && !isImage && (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-4">
-            <span className="text-5xl">{fileIcon(ext)}</span>
+            <FileTypeIcon name={`f.${ext}`} size={48} className="text-text-muted" />
             <p className="text-[12px] text-[#6b6050]">
               {isWord ? 'Vista previa no disponible para Word.' : `Formato ${ext.toUpperCase()} no tiene previsualización.`}
             </p>
@@ -106,7 +108,7 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
         {d.externalRef && (
           <div className="rounded-lg border border-sky-400/20 bg-sky-400/5 px-2.5 py-2 space-y-0.5 text-[11px]">
             <p className="text-sky-300">
-              ☁️ Importado de {d.externalRef.provider === 'sharepoint' ? 'SharePoint' : 'OneDrive'}
+              <Cloud size={14} className="inline -mt-0.5" aria-hidden /> Importado de {d.externalRef.provider === 'sharepoint' ? 'SharePoint' : 'OneDrive'}
               {d.externalRef.importedAt ? ` · ${formatDate(d.externalRef.importedAt)}` : ''}
             </p>
             {d.externalRef.path && <p className="text-[#c8c0ac] truncate" title={d.externalRef.path}>{d.externalRef.path}</p>}

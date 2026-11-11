@@ -1,6 +1,8 @@
 'use client';
 
 import ToolCallBadge from './ToolCallBadge';
+import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
+import { Copy, Sparkles } from 'lucide-react';
 
 export interface MessageAttachment {
   name: string;
@@ -20,13 +22,6 @@ export interface Message {
   stopped?: boolean;     // "Detener": answer cut short by the user
 }
 
-function fileIcon(mimeType: string, name: string): string {
-  const ext = name.split('.').pop()?.toLowerCase() ?? '';
-  if (mimeType === 'application/pdf' || ext === 'pdf') return '📄';
-  if (mimeType.includes('word') || ['docx', 'doc'].includes(ext)) return '📝';
-  if (mimeType.includes('sheet') || mimeType.includes('excel') || ['xlsx', 'xls'].includes(ext)) return '📊';
-  return '📎';
-}
 
 export default function AgentMessage({ message }: { message: Message }) {
   const isUser = message.role === 'user';
@@ -37,9 +32,7 @@ export default function AgentMessage({ message }: { message: Message }) {
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
       {!isUser && (
         <div className="w-7 h-7 rounded-full bg-avocat-gold/20 border border-avocat-gold/30 flex items-center justify-center mr-2.5 mt-0.5 flex-shrink-0">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-avocat-gold">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-          </svg>
+          <Sparkles size={14} className="text-accent-text" aria-hidden />
         </div>
       )}
 
@@ -66,7 +59,7 @@ export default function AgentMessage({ message }: { message: Message }) {
                 />
               ) : (
                 <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-avocat-gold/10 border border-avocat-gold/20 text-[11px] font-sans text-avocat-gold max-w-[180px]">
-                  <span className="flex-shrink-0">{fileIcon(att.mimeType, att.name)}</span>
+                  <span className="flex-shrink-0"><FileTypeIcon mimeType={att.mimeType} name={att.name} size={14} /></span>
                   <span className="truncate">{att.name}</span>
                 </span>
               )
@@ -95,9 +88,7 @@ export default function AgentMessage({ message }: { message: Message }) {
               onClick={() => navigator.clipboard.writeText(message.content)}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1e1c16] border border-[#2e2b20] text-[11px] font-sans text-[#6b6050] hover:text-avocat-gold hover:border-avocat-gold/30 transition-colors"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3 h-3 flex-shrink-0">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
-              </svg>
+              <Copy size={12} className="flex-shrink-0" aria-hidden />
               Copiar
             </button>
           </div>

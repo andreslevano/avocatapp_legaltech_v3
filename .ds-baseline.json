@@ -84,7 +84,7 @@
   "raw-hex": 41,
   "arbitrary-color": 41,
   "tw-default-color": 7,
-  "arbitrary-text-size": 26,
+  "arbitrary-text-size": 25,
   "v3-alias": 17
  },
  "src/app/(app)/tools/contrato-servicios/page.tsx": {
@@ -112,7 +112,7 @@
   "raw-hex": 77,
   "arbitrary-color": 77,
   "tw-default-color": 13,
-  "arbitrary-text-size": 39,
+  "arbitrary-text-size": 38,
   "v3-alias": 20
  },
  "src/app/(app)/tools/nda/page.tsx": {
@@ -133,7 +133,7 @@
   "raw-hex": 79,
   "arbitrary-color": 79,
   "tw-default-color": 31,
-  "arbitrary-text-size": 58,
+  "arbitrary-text-size": 57,
   "v3-alias": 11
  },
  "src/app/(public)/acerca-de/page.tsx": {
@@ -231,7 +231,7 @@
  "src/components/agent/AgentChat.tsx": {
   "raw-hex": 5,
   "arbitrary-color": 5,
-  "arbitrary-text-size": 4,
+  "arbitrary-text-size": 3,
   "v3-alias": 3
  },
  "src/components/agent/AgentContextChips.tsx": {
@@ -249,7 +249,7 @@
   "raw-hex": 7,
   "arbitrary-color": 7,
   "arbitrary-text-size": 4,
-  "v3-alias": 10
+  "v3-alias": 9
  },
  "src/components/agent/AgentV2Chat.tsx": {
   "raw-hex": 17,
@@ -414,7 +414,7 @@
   "raw-hex": 20,
   "arbitrary-color": 17,
   "tw-default-color": 2,
-  "arbitrary-text-size": 10,
+  "arbitrary-text-size": 9,
   "v3-alias": 11
  },
  "src/components/landing/CtaSection.tsx": {
@@ -427,7 +427,7 @@
   "raw-hex": 39,
   "arbitrary-color": 36,
   "tw-default-color": 3,
-  "arbitrary-text-size": 18,
+  "arbitrary-text-size": 17,
   "v3-alias": 22
  },
  "src/components/landing/HowItWorks.tsx": {
@@ -468,12 +468,6 @@
   "arbitrary-text-size": 2,
   "v3-alias": 4
  },
- "src/components/layout/Rail.tsx": {
-  "raw-hex": 10,
-  "arbitrary-color": 10,
-  "arbitrary-text-size": 4,
-  "v3-alias": 12
- },
  "src/components/layout/Sidebar.tsx": {
   "raw-hex": 27,
   "arbitrary-color": 27,
@@ -485,7 +479,7 @@
   "raw-hex": 30,
   "arbitrary-color": 30,
   "tw-default-color": 8,
-  "arbitrary-text-size": 18,
+  "arbitrary-text-size": 17,
   "v3-alias": 10
  },
  "src/components/legal/LegalCheckRunner.tsx": {

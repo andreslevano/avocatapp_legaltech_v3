@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Logo from '@/components/brand/Logo';
 import { Button } from '@/components/ui/Button';
+import { FileText, Globe, Zap } from 'lucide-react';
 
 const DEMO_CASES = [
   { id: 'lopez', title: 'López vs. Ibérica SA', type: 'Civil', status: 'Urgente', statusColor: 'text-red-400' },
@@ -82,12 +83,12 @@ export default function HeroSection() {
           {/* Trust items */}
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-9">
             {[
-              { icon: '📄', text: 'Borradores editables en Word y PDF' },
-              { icon: '⚡', text: 'Resultados en segundos' },
-              { icon: '🌍', text: 'España y Latinoamérica' },
-            ].map(({ icon, text }) => (
+              { icon: FileText, text: 'Borradores editables en Word y PDF' },
+              { icon: Zap, text: 'Resultados en segundos' },
+              { icon: Globe, text: 'España y Latinoamérica' },
+            ].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-1.5">
-                <span className="text-[13px]">{icon}</span>
+                <Icon size={16} className="text-accent-text" aria-hidden />
                 <span className="text-[12px] font-sans text-[#6b6050]">{text}</span>
               </div>
             ))}
@@ -178,7 +179,7 @@ export default function HeroSection() {
                   {generating ? (
                     <div className="flex items-start gap-2">
                       <div className="w-5 h-5 rounded-full bg-avocat-gold/20 border border-avocat-gold/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Logo variant="symbol" theme="gold" size={10} />
+                        <Logo variant="mark" tone="gold" size={20} href="" />
                       </div>
                       <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl rounded-tl-sm px-3 py-2">
                         <div className="flex items-center gap-1.5">
@@ -192,7 +193,7 @@ export default function HeroSection() {
                   ) : (
                     <div className="flex items-start gap-2">
                       <div className="w-5 h-5 rounded-full bg-avocat-gold/20 border border-avocat-gold/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Logo variant="symbol" theme="gold" size={10} />
+                        <Logo variant="mark" tone="gold" size={20} href="" />
                       </div>
                       <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl rounded-tl-sm px-3 py-2 max-w-[85%]">
                         <p className="text-[10px] font-sans text-[#c8c0ac] leading-snug">
@@ -201,7 +202,7 @@ export default function HeroSection() {
                           Incluye los fundamentos del Art. 11 LAU.
                         </p>
                         <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-avocat-gold/10 border border-avocat-gold/20">
-                          <span className="text-[8px] font-sans text-avocat-gold">📄 Escrito_impugnacion.pdf</span>
+                          <span className="text-[8px] font-sans text-avocat-gold">Escrito_impugnacion.pdf</span>
                         </div>
                       </div>
                     </div>

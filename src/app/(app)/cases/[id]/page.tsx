@@ -24,6 +24,8 @@ import { inferOrigin, statusChip } from '@/components/documents/helpers';
 import MicrosoftImportFlow from '@/components/integrations/MicrosoftImportFlow';
 import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 import { useImportJobs } from '@/contexts/ImportJobsContext';
+import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
+import { CalendarDays, Sparkle, TriangleAlert } from 'lucide-react';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -51,9 +53,6 @@ const STRATEGY_LABEL: Record<string, string> = {
   txt: 'Texto plano', docx: 'Word', unsupported: 'Formato no soportado',
 };
 
-const FILE_ICON: Record<string, string> = {
-  pdf: '📄', txt: '📝', md: '📝', docx: '📝', doc: '📝',
-};
 
 const MIN_USEFUL_CHARS = 150;
 
@@ -81,9 +80,6 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function fileIcon(ext: string): string {
-  return FILE_ICON[ext.toLowerCase()] ?? '📎';
-}
 
 function usefulChars(text: string): number {
   return (text.match(/[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9]/g) ?? []).length;
@@ -505,7 +501,7 @@ export default function CaseDetailPage() {
                   return (
                     <div key={d.id}>
                     <div className="flex items-center gap-3 px-5 py-3">
-                      <span className="text-xl flex-shrink-0">{fileIcon(ext)}</span>
+                      <FileTypeIcon name={`f.${ext}`} size={20} className="flex-shrink-0 text-text-muted" />
                       <div className="flex-1 min-w-0">
                         <p className="text-[12px] font-sans font-medium text-[#c8c0ac] truncate">
                           {d.name}
@@ -609,7 +605,7 @@ export default function CaseDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {assessment.riesgos.length > 0 && (
                   <div className="bg-red-500/5 border border-red-500/15 rounded-xl p-5">
-                    <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-red-400 mb-3">⚠ Riesgos y puntos de atención</p>
+                    <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-red-400 mb-3 flex items-center gap-1.5"><TriangleAlert size={14} aria-hidden /> Riesgos y puntos de atención</p>
                     <ul className="space-y-2">{assessment.riesgos.map((r, i) => (
                       <li key={i} className="flex items-start gap-2"><span className="text-red-400 mt-0.5 flex-shrink-0 text-[12px]">•</span><span className="text-[12px] text-red-300 leading-snug">{r}</span></li>
                     ))}</ul>
@@ -617,7 +613,7 @@ export default function CaseDetailPage() {
                 )}
                 {assessment.puntosClave.length > 0 && (
                   <div className="bg-avocat-gold/5 border border-avocat-gold/15 rounded-xl p-5">
-                    <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-avocat-gold mb-3">✦ Puntos jurídicos clave</p>
+                    <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-avocat-gold mb-3 flex items-center gap-1.5"><Sparkle size={14} aria-hidden /> Puntos jurídicos clave</p>
                     <ul className="space-y-2">{assessment.puntosClave.map((p, i) => (
                       <li key={i} className="flex items-start gap-2"><span className="text-avocat-gold mt-0.5 flex-shrink-0 text-[12px]">•</span><span className="text-[12px] text-[#c8c0ac] leading-snug">{p}</span></li>
                     ))}</ul>
@@ -626,7 +622,7 @@ export default function CaseDetailPage() {
               </div>
               {assessment.fechasClave.length > 0 && (
                 <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-5">
-                  <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">📅 Fechas y plazos relevantes</p>
+                  <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3 flex items-center gap-1.5"><CalendarDays size={14} aria-hidden /> Fechas y plazos relevantes</p>
                   <ul className="space-y-1.5">{assessment.fechasClave.map((f, i) => (
                     <li key={i} className="text-[12px] text-[#c8c0ac]">• {f}</li>
                   ))}</ul>

@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { FOCUSED_SIGNING_EVENT, getSigningUrl, type FocusedSigningDetail } from '@/lib/signatures/client';
+import { X } from 'lucide-react';
 
 interface DsSigning {
   on(event: 'ready' | 'sessionEnd', cb: (e?: { sessionEndType?: string }) => void): void;
@@ -117,7 +118,7 @@ export default function FocusedSigningHost() {
           <p className="text-[12px] font-sans font-semibold text-[#e8d4a0]">Firma con DocuSign</p>
           <button onClick={() => finish(session.requestId, 'cancel')}
             className="text-[11px] font-sans text-[#9a9a9a] hover:text-[#e8d4a0] transition-colors">
-            Firmar más tarde ✕
+            Firmar más tarde <X size={14} className="inline -mt-0.5" aria-hidden />
           </button>
         </div>
         <div className="relative flex-1 min-h-0">

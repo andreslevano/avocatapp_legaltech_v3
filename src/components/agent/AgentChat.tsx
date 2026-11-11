@@ -10,6 +10,7 @@ import { isLegalDocument, buildWordBlob, buildPdfBlob } from '@/lib/agent-export
 import { saveDocumentToStorage, type DocumentRecord } from '@/lib/storage-client';
 import { canUseDocusign } from '@/lib/docusign/config';
 import SignDocumentSheet from '@/components/signatures/SignDocumentSheet';
+import { FileText } from 'lucide-react';
 
 interface AgentChatProps {
   user: User;
@@ -277,7 +278,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
       {/* Document saved toast */}
       {savedToast && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#1e1c16] border border-avocat-gold/40 shadow-lg whitespace-nowrap">
-          <span className="text-[13px]">📄</span>
+          <FileText size={16} className="text-accent-text" aria-hidden />
           <span className="text-[12px] text-[#c8c0ac] font-sans">
             Guardado en <strong className="text-[#e8d4a0]">Documentos</strong>
           </span>

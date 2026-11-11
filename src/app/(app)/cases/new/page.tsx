@@ -9,6 +9,7 @@ import { saveDocumentToStorage } from '@/lib/storage-client';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import type { OcrPdfProgress } from '@/lib/ocr-pdf-client';
+import { CalendarDays, Check, FileText, Hourglass, Paperclip, Search, Sparkle, TriangleAlert, X } from 'lucide-react';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -97,18 +98,18 @@ function FileChip({ name, onRemove }: { name: string; onRemove: () => void }) {
     <div className="flex items-center gap-2 bg-[#252218] border border-[#2e2b20] rounded-lg px-3 py-1.5">
       <span className="text-[10px] font-sans font-semibold text-avocat-gold">{ext}</span>
       <span className="text-[12px] font-sans text-[#c8c0ac] max-w-[160px] truncate">{name}</span>
-      <button type="button" onClick={onRemove} className="text-[#6b6050] hover:text-red-400 ml-1">×</button>
+      <button type="button" onClick={onRemove} aria-label="Quitar" className="text-[#6b6050] hover:text-red-400 ml-1"><X size={14} aria-hidden /></button>
     </div>
   );
 }
 
 function FileRow({ state }: { state: FileState }) {
-  const statusIcon: Record<FileStatus, string> = {
-    waiting:      '⏳',
-    'text-extract': '📄',
-    ocr:          '🔍',
-    done:         '✓',
-    error:        '✗',
+  const statusIcon: Record<FileStatus, React.ReactNode> = {
+    waiting:      <Hourglass size={16} aria-hidden />,
+    'text-extract': <FileText size={16} aria-hidden />,
+    ocr:          <Search size={16} aria-hidden />,
+    done:         <Check size={16} aria-hidden />,
+    error:        <X size={16} aria-hidden />,
   };
   const statusColor: Record<FileStatus, string> = {
     waiting:      'text-[#6b6050]',
@@ -171,7 +172,7 @@ function AssessmentPanel({ result }: { result: IntakeResult }) {
 
       {result.riesgos.length > 0 && (
         <div className="bg-red-500/5 border border-red-500/15 rounded-xl p-4">
-          <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-red-400 mb-3">⚠ Riesgos y puntos de atención</p>
+          <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-red-400 mb-3 flex items-center gap-1.5"><TriangleAlert size={14} aria-hidden /> Riesgos y puntos de atención</p>
           <ul className="space-y-2">
             {result.riesgos.map((r, i) => (
               <li key={i} className="flex items-start gap-2">
@@ -185,7 +186,7 @@ function AssessmentPanel({ result }: { result: IntakeResult }) {
 
       {result.puntosClave.length > 0 && (
         <div className="bg-avocat-gold/5 border border-avocat-gold/15 rounded-xl p-4">
-          <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-avocat-gold mb-3">✦ Puntos jurídicos clave</p>
+          <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-avocat-gold mb-3 flex items-center gap-1.5"><Sparkle size={14} aria-hidden /> Puntos jurídicos clave</p>
           <ul className="space-y-2">
             {result.puntosClave.map((p, i) => (
               <li key={i} className="flex items-start gap-2">
@@ -199,7 +200,7 @@ function AssessmentPanel({ result }: { result: IntakeResult }) {
 
       {result.fechasClave.length > 0 && (
         <div className="bg-[#161410] border border-[#2e2b20] rounded-xl p-4">
-          <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3">📅 Fechas y plazos relevantes</p>
+          <p className="text-[10px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-3 flex items-center gap-1.5"><CalendarDays size={14} aria-hidden /> Fechas y plazos relevantes</p>
           <ul className="space-y-1.5">
             {result.fechasClave.map((f, i) => (
               <li key={i} className="text-[12px] text-[#c8c0ac]">• {f}</li>
@@ -510,7 +511,7 @@ export default function NewCasePage() {
                       : 'border-[#2e2b20] hover:border-avocat-gold/40 hover:bg-[#252218]',
                   ].join(' ')}
                 >
-                  <div className="text-4xl mb-3">📎</div>
+                  <Paperclip size={40} className="mx-auto mb-3 text-text-muted" aria-hidden />
                   <p className="text-[13px] font-sans font-medium text-[#c8c0ac] mb-1">
                     Arrastra documentos aquí o haz clic para seleccionar
                   </p>

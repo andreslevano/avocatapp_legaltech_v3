@@ -416,7 +416,7 @@ export default function NdaPage() {
                           ? 'border-avocat-gold/50 bg-avocat-gold/10 text-avocat-gold'
                           : 'border-[#2e2b20] text-[#6b6050] hover:text-[#c8c0ac]'
                       }`}>
-                      {l === 'es' ? '🇪🇸 Español' : '🇬🇧 English'}
+                      {l === 'es' ? 'Español' : 'English'}
                     </button>
                   ))}
                 </div>

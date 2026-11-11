@@ -56,7 +56,7 @@ export default function LegalCheckRunner({ targets, onClose }: { targets: CheckT
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[11px] text-[#6b6050]">
             <span>{done} de {rows.length} {rows.length === 1 ? 'NDA revisado' : 'NDAs revisados'}</span>
-            <span>✅ {count('ok')} · 🟡 {count('review')} · 🔴 {count('outdated')}</span>
+            <span>{count('ok')} vigentes · {count('review')} a revisar · {count('outdated')} desactualizados</span>
           </div>
           <div className="h-1.5 rounded-full bg-[#161410] overflow-hidden">
             <div className="h-full bg-avocat-gold transition-all" style={{ width: `${rows.length ? (done / rows.length) * 100 : 0}%` }} />

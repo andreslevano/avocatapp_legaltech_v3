@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/Button';
+import { CircleCheck, FileText, Target, TriangleAlert } from 'lucide-react';
 
 interface AnalisisExitoModalProps {
   isOpen: boolean;
@@ -94,7 +95,7 @@ export default function AnalisisExitoModal({ isOpen, onClose, analisis, loading 
         <div className="grid md:grid-cols-2 gap-6 mb-6">
           {datos?.fortalezas && datos.fortalezas.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-text-primary mb-3">✅ Fortalezas</h3>
+              <h3 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2"><CircleCheck size={18} aria-hidden /> Fortalezas</h3>
               <ul className="space-y-2">
                 {datos.fortalezas.map((fortaleza: string, index: number) => (
                   <li key={index} className="text-text-secondary bg-surface-muted/20 p-3 rounded-lg">
@@ -107,7 +108,7 @@ export default function AnalisisExitoModal({ isOpen, onClose, analisis, loading 
 
           {datos?.debilidades && datos.debilidades.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-text-primary mb-3">⚠️ Debilidades</h3>
+              <h3 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2"><TriangleAlert size={18} aria-hidden /> Debilidades</h3>
               <ul className="space-y-2">
                 {datos.debilidades.map((debilidad: string, index: number) => (
                   <li key={index} className="text-text-secondary bg-surface-muted/20 p-3 rounded-lg">
@@ -157,7 +158,7 @@ export default function AnalisisExitoModal({ isOpen, onClose, analisis, loading 
             
             {recomendacionesEspecificas.documentosAdicionales && recomendacionesEspecificas.documentosAdicionales.length > 0 && (
               <div className="mb-4">
-                <h4 className="font-semibold text-text-primary mb-2">📄 Documentos Adicionales</h4>
+                <h4 className="font-semibold text-text-primary mb-2 flex items-center gap-2"><FileText size={16} aria-hidden /> Documentos Adicionales</h4>
                 <ul className="space-y-1">
                   {recomendacionesEspecificas.documentosAdicionales.map((doc: string, index: number) => (
                     <li key={index} className="text-text-secondary bg-surface-muted/20 p-2 rounded">
@@ -170,7 +171,7 @@ export default function AnalisisExitoModal({ isOpen, onClose, analisis, loading 
 
             {recomendacionesEspecificas.argumentosReforzar && recomendacionesEspecificas.argumentosReforzar.length > 0 && (
               <div className="mb-4">
-                <h4 className="font-semibold text-text-primary mb-2">💪 Argumentos a Reforzar</h4>
+                <h4 className="font-semibold text-text-primary mb-2 flex items-center gap-2">Argumentos a Reforzar</h4>
                 <ul className="space-y-1">
                   {recomendacionesEspecificas.argumentosReforzar.map((arg: string, index: number) => (
                     <li key={index} className="text-text-secondary bg-surface-muted/20 p-2 rounded">
@@ -183,7 +184,7 @@ export default function AnalisisExitoModal({ isOpen, onClose, analisis, loading 
 
             {recomendacionesEspecificas.riesgosIdentificados && recomendacionesEspecificas.riesgosIdentificados.length > 0 && (
               <div className="mb-4">
-                <h4 className="font-semibold text-text-primary mb-2">⚠️ Riesgos Identificados</h4>
+                <h4 className="font-semibold text-text-primary mb-2 flex items-center gap-2"><TriangleAlert size={16} aria-hidden /> Riesgos Identificados</h4>
                 <ul className="space-y-1">
                   {recomendacionesEspecificas.riesgosIdentificados.map((riesgo: string, index: number) => (
                     <li key={index} className="text-text-secondary bg-surface-muted/20 p-2 rounded">
@@ -196,7 +197,7 @@ export default function AnalisisExitoModal({ isOpen, onClose, analisis, loading 
 
             {recomendacionesEspecificas.estrategiaRecomendada && (
               <div>
-                <h4 className="font-semibold text-text-primary mb-2">🎯 Estrategia Recomendada</h4>
+                <h4 className="font-semibold text-text-primary mb-2 flex items-center gap-2"><Target size={16} aria-hidden /> Estrategia Recomendada</h4>
                 <p className="text-text-secondary bg-surface-muted/20 p-3 rounded-lg">
                   {recomendacionesEspecificas.estrategiaRecomendada}
                 </p>

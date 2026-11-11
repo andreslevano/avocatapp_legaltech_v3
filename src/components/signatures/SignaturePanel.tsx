@@ -15,6 +15,7 @@ import {
   type SignatureRecipient, type SignatureRequest,
 } from '@/lib/signatures/types';
 import { recipientKey } from '@/lib/signatures/recipients';
+import { Lock } from 'lucide-react';
 
 const RECIPIENT_LABEL: Record<SignatureRecipient['status'], string> = {
   created: 'En espera', sent: 'Enviado', delivered: 'Abierto', completed: 'Firmado', declined: 'Rechazado',
@@ -130,7 +131,7 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
             <li key={`${x.role}-${k}`} className="flex items-center justify-between gap-2 text-[11px]">
               <span className="min-w-0 truncate text-[#c8c0ac]" title={x.email}>
                 {x.role === 'cc' ? 'CC' : `${x.routingOrder}.`} {x.role === 'owner' ? 'Tú' : x.name}
-                {x.accessCode && <span title="Con código de acceso"> 🔒</span>}
+                {x.accessCode && <span title="Con código de acceso" className="inline-flex ml-1 align-middle"><Lock size={12} aria-label="Con código de acceso" /></span>}
                 <span className="text-[#6b6050]"> · {x.email}</span>
               </span>
               <span className="flex-shrink-0 flex items-center gap-2">

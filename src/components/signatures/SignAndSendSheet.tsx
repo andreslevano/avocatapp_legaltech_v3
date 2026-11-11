@@ -12,6 +12,7 @@ import { docusignInfo, startDocusignConnect } from '@/lib/docusign/client';
 import { createSignatureRequest, getSigningUrl, openOwnerSigning, saveSignResume, SignatureClientError } from '@/lib/signatures/client';
 import { DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, type SignatureOptions } from '@/lib/signatures/types';
 import { ACCESS_CODE_RE, MAX_CC, MAX_SIGNERS, type SigningOrder } from '@/lib/signatures/recipients';
+import { Lock } from 'lucide-react';
 
 export interface SignAndSendSheetProps {
   documentId: string;
@@ -180,7 +181,7 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
                     </div>
                   ) : (
                     <button type="button" onClick={() => setSigner(r.key, { useCode: true })}
-                      className="text-[11px] text-avocat-gold/70 hover:text-avocat-gold">🔒 Pedir código de acceso</button>
+                      className="text-[11px] text-avocat-gold/70 hover:text-avocat-gold inline-flex items-center gap-1"><Lock size={12} aria-hidden /> Pedir código de acceso</button>
                   )}
                 </div>
               ))}
@@ -277,7 +278,7 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
             </section>
 
             <p className="rounded-lg bg-[#161410] border border-[#2e2b20] px-3 py-2 text-[11px] text-[#9a9a9a]">
-              🔒 Mientras esté en firma, el documento queda bloqueado. Para cambiarlo habrá que anular el envío y crear una nueva versión.
+              <Lock size={12} className="inline -mt-0.5" aria-hidden /> Mientras esté en firma, el documento queda bloqueado. Para cambiarlo habrá que anular el envío y crear una nueva versión.
             </p>
           </>
         )}

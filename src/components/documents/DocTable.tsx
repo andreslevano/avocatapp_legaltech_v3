@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { DocumentRecord } from '@/lib/storage-client';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 import {
-  inferDocType, inferOrigin, statusChip, fileIcon, formatDate,
+  inferDocType, inferOrigin, statusChip, formatDate,
   getCaseForDoc, getClientForDoc,
   TIPO_STYLE,
   type SortCol, type SortDir,
@@ -13,6 +13,7 @@ import { formatBytes } from '@/lib/storage-client';
 import { IconFolder } from './FolderTree';
 import { isItemDrag, readDragPayload, setDragPayload, type DragPayload } from './workspace';
 import { formatContractDate } from '@/lib/contracts/dates';
+import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
 
 export type DocAction = 'preview' | 'sign' | 'contract' | 'link-case' | 'link-client' | 'rename' | 'move' | 'download' | 'analyze' | 'delete';
 export type FolderAction = 'open' | 'rename' | 'move' | 'delete';
@@ -268,7 +269,7 @@ export default function DocTable({
                 className="rounded border-[#2e2b20] bg-[#161410] accent-avocat-gold flex-shrink-0"
               />
               {/* Icon */}
-              <span className="text-xl flex-shrink-0">{fileIcon(displayExt)}</span>
+              <FileTypeIcon name={`f.${displayExt}`} size={20} className="flex-shrink-0 text-text-muted" />
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-sans font-medium text-[#c8c0ac] truncate">{d.name}</p>
@@ -372,7 +373,7 @@ export default function DocTable({
 
                   <td className={`${TD} max-w-[260px]`}>
                     <div className="flex items-center gap-2">
-                      <span className="text-base flex-shrink-0">{fileIcon(displayExt)}</span>
+                      <FileTypeIcon name={`f.${displayExt}`} size={16} className="flex-shrink-0 text-text-muted" />
                       {isRenaming ? renameInput(() => commitRename(d)) : (
                         <span className="truncate text-[#c8c0ac] group-hover:text-[#e8d4a0] font-medium">{d.name}</span>
                       )}

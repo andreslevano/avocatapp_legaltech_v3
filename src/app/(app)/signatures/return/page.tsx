@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getSigningUrl, openOwnerSigning, reportSigningReturn } from '@/lib/signatures/client';
 import { outcomeForEvent, type SignatureRecipient, type SignatureStatus } from '@/lib/signatures/types';
+import { Check, CircleAlert, Pause, Timer, X } from 'lucide-react';
 
 type View = 'loading' | 'signed' | 'pending' | 'expired' | 'declined' | 'error' | 'done';
 
@@ -56,20 +57,20 @@ function ReturnInner() {
   const who = others.length === 1 ? `${others[0].name} (${others[0].email})`
     : many ? others.map(o => o.name).join(', ') : 'la otra parte';
 
-  const content: Record<Exclude<View, 'loading'>, { icon: string; title: string; text: string; resume?: boolean }> = {
-    signed:   { icon: '✓', title: `Firmado por ti. Enviado a ${who}.`,
+  const content: Record<Exclude<View, 'loading'>, { icon: React.ReactNode; title: string; text: string; resume?: boolean }> = {
+    signed:   { icon: <Check size={18} aria-hidden />, title: `Firmado por ti. Enviado a ${who}.`,
                 text: many
                   ? 'DocuSign les enviará un email para firmar (por turnos o a la vez, según elegiste). Cuando firmen todos, el documento quedará firmado.'
                   : 'DocuSign le ha enviado un email para firmar. Cuando firme, el documento quedará firmado por ambas partes.' },
-    pending:  { icon: '⏸', title: 'Pendiente de tu firma',
+    pending:  { icon: <Pause size={18} aria-hidden />, title: 'Pendiente de tu firma',
                 text: 'Has salido sin firmar. La otra parte todavía no ha recibido nada: puedes continuar cuando quieras.', resume: true },
-    expired:  { icon: '⏱', title: 'La sesión de firma caducó',
+    expired:  { icon: <Timer size={18} aria-hidden />, title: 'La sesión de firma caducó',
                 text: 'Por seguridad, la sesión de DocuSign tiene un tiempo límite. Tu envío sigue pendiente de tu firma.', resume: true },
-    declined: { icon: '✕', title: 'Has rechazado firmar',
+    declined: { icon: <X size={18} aria-hidden />, title: 'Has rechazado firmar',
                 text: 'Hemos anulado el envío y la otra parte no recibirá nada. El documento vuelve a estar desbloqueado.' },
-    error:    { icon: '!', title: 'No pudimos completar la firma',
+    error:    { icon: <CircleAlert size={18} aria-hidden />, title: 'No pudimos completar la firma',
                 text: 'Algo falló en DocuSign. Tu envío sigue pendiente de tu firma; inténtalo de nuevo.', resume: true },
-    done:     { icon: '✓', title: 'Este envío ya está en curso',
+    done:     { icon: <Check size={18} aria-hidden />, title: 'Este envío ya está en curso',
                 text: 'No hay nada pendiente de tu firma en esta solicitud.' },
   };
 

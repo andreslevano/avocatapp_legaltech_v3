@@ -10,6 +10,7 @@ import { getCases, createCase, updateCase, type CaseDoc } from '@/lib/firestore'
 import { saveAnalysisDocument } from '@/lib/agent-export';
 import type { GmailMessage, GmailMessageFull } from '@/lib/gmail';
 import type { EmailAnalysisResult } from '@/app/api/gmail/analyze/route';
+import { Mail, Paperclip, X } from 'lucide-react';
 
 function analysisToMarkdown(a: EmailAnalysisResult, subject: string, from: string, date: string): string {
   const lines: string[] = [
@@ -239,7 +240,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
   if (!connected) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center max-w-sm mx-auto gap-5">
-        <div className="w-14 h-14 rounded-2xl bg-[#1e1c16] border border-[#2e2b20] flex items-center justify-center text-2xl">✉️</div>
+        <div className="w-14 h-14 rounded-2xl bg-[#1e1c16] border border-[#2e2b20] flex items-center justify-center "><Mail size={24} className="text-accent-text" aria-hidden /></div>
         <div>
           <p className="text-[15px] font-sans font-semibold text-[#e8d4a0] mb-1">Conecta tu cuenta de Gmail</p>
           <p className="text-[12px] text-[#6b6050] leading-relaxed">
@@ -315,7 +316,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      {m.hasAttachments && <span className="text-[10px] text-[#6b6050]">📎</span>}
+                      {m.hasAttachments && <Paperclip size={12} className="text-[#6b6050]" aria-label="Con adjuntos" />}
                       <p className="text-[13px] font-medium text-[#e8d4a0] truncate">{m.subject}</p>
                     </div>
                     <p className="text-[11px] text-[#6b6050] truncate">{m.from}</p>
@@ -605,8 +606,8 @@ export default function RevisionEmailPage() {
   }, [searchParams]);
 
   const TABS = [
-    { key: 'gmail',  label: '✉️  Gmail' },
-    { key: 'manual', label: '📋  Manual' },
+    { key: 'gmail',  label: 'Gmail' },
+    { key: 'manual', label: 'Manual' },
   ] as const;
 
   return (
@@ -622,7 +623,7 @@ export default function RevisionEmailPage() {
           {banner && (
             <div className={`px-4 py-2.5 rounded-lg text-[12px] border ${banner.startsWith('Error') ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
               {banner}
-              <button onClick={() => setBanner('')} className="ml-3 opacity-60 hover:opacity-100">✕</button>
+              <button onClick={() => setBanner('')} aria-label="Cerrar" className="ml-3 opacity-60 hover:opacity-100"><X size={14} aria-hidden /></button>
             </div>
           )}
 
