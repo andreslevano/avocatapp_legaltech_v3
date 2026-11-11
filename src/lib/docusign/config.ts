@@ -1,11 +1,11 @@
 // DocuSign "Firmar y enviar" — configuration (plan: docs/docusign/DOCUSIGN_IMPLEMENTATION_PLAN.md).
 // Pure module: client-safe except dsServerConfig(), which reads server-only env vars.
 
-import { inPreview, type Identity } from '@/lib/preview';
+import { inPreview, PREVIEW_NAMED_EMAILS, type Identity } from '@/lib/preview';
 
 export const DOCUSIGN_PLAN = 'Abogados';   // D10 — feature gating (single constant)
 /** Preview allow-list while the integration key is still a demo key (pre go-live). Empty = all Abogados. */
-export const DOCUSIGN_PREVIEW_EMAILS: string[] = ['andres.levano@mobilityforwork.es'];
+export const DOCUSIGN_PREVIEW_EMAILS: string[] = PREVIEW_NAMED_EMAILS;
 
 /** Plan + preview (named emails, or a verified email at a PREVIEW_DOMAINS organisation — src/lib/preview.ts). */
 export function canUseDocusign(plan: string | null | undefined, who: Identity): boolean {

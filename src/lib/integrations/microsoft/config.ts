@@ -1,13 +1,13 @@
 // Microsoft connector (F1) — configuration and the read-only guarantees (decision M2).
 // Pure module: safe to import from client code (no secrets read here except in msServerConfig).
 
-import { inPreview, type Identity } from '@/lib/preview';
+import { inPreview, PREVIEW_NAMED_EMAILS, type Identity } from '@/lib/preview';
 
 export const MICROSOFT_PLAN = 'Abogados';   // feature gating (single constant)
 
 // Preview: while F1 is incomplete, only these accounts see the connector in production.
 // Empty the list to release it to every Abogados user.
-export const MICROSOFT_PREVIEW_EMAILS: string[] = ['andres.levano@mobilityforwork.es'];
+export const MICROSOFT_PREVIEW_EMAILS: string[] = PREVIEW_NAMED_EMAILS;
 
 /** Plan + preview (named emails, or a verified email at a PREVIEW_DOMAINS organisation — src/lib/preview.ts). */
 export function canUseMicrosoft(plan: string | null | undefined, who: Identity): boolean {

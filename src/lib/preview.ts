@@ -7,6 +7,12 @@
 
 export const PREVIEW_DOMAINS: string[] = ['mobilityforwork.es'];
 
+/** Named testers: get every preview feature (and their organisation's templates) without verifying. */
+export const PREVIEW_NAMED_EMAILS: string[] = [
+  'andres.levano@mobilityforwork.es',
+  'felix.dia@mobilityforwork.es',
+];
+
 /** A signed-in user (Firebase `User`, an ID-token-derived object) or just an email. */
 export type Identity = string | null | undefined | { email?: string | null; emailVerified?: boolean | null };
 

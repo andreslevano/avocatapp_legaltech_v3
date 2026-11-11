@@ -29,3 +29,12 @@ test.describe('preview access', () => {
     }
   });
 });
+
+test.describe('named testers', () => {
+  test('felix.dia@mobilityforwork.es gets everything without verifying', async () => {
+    const { orgNdaTemplateFor } = await import('@/lib/org-templates');
+    const felix = { email: 'felix.dia@mobilityforwork.es', emailVerified: false };
+    for (const gate of [canUseContracts, canUseDocusign, canUseMicrosoft]) expect(gate('Abogados', felix)).toBe(true);
+    expect(orgNdaTemplateFor(felix)).toBe('mobilityforwork');
+  });
+});
