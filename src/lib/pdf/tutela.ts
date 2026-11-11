@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { TutelaModel } from '../validate-tutela';
+import { registerDocumentFonts, DOC_FONT } from './fonts';
 
 export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
   const doc = new PDFDocument({
@@ -11,6 +12,7 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
       right: 60
     }
   });
+  registerDocumentFonts(doc); // DS v4: EB Garamond (falls back to Times)
 
   const buffers: Buffer[] = [];
   doc.on('data', buffers.push.bind(buffers));
@@ -25,40 +27,40 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
 
     // TÍTULO PRINCIPAL
     doc.fontSize(16)
-       .font('Helvetica-Bold')
+       .font(DOC_FONT.heading)
        .text('ACCIÓN DE TUTELA', { align: 'center' });
     
     doc.moveDown(2);
 
     // ENCABEZADO
     doc.fontSize(12)
-       .font('Helvetica-Bold')
+       .font(DOC_FONT.heading)
        .text('ENCABEZADO', { underline: true });
     
     doc.fontSize(10)
-       .font('Helvetica')
+       .font(DOC_FONT.body)
        .text(modelo.encabezado);
     
     doc.moveDown(1);
 
     // PARTES
     doc.fontSize(12)
-       .font('Helvetica-Bold')
+       .font(DOC_FONT.heading)
        .text('PARTES', { underline: true });
     
     doc.fontSize(10)
-       .font('Helvetica')
+       .font(DOC_FONT.body)
        .text(modelo.partes);
     
     doc.moveDown(1);
 
     // HECHOS
     doc.fontSize(12)
-       .font('Helvetica-Bold')
+       .font(DOC_FONT.heading)
        .text('HECHOS', { underline: true });
     
     doc.fontSize(10)
-       .font('Helvetica');
+       .font(DOC_FONT.body);
     
     modelo.hechos.forEach((hecho, index) => {
       doc.text(`${index + 1}. ${hecho}`);
@@ -69,15 +71,15 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
 
     // FUNDAMENTOS
     doc.fontSize(12)
-       .font('Helvetica-Bold')
+       .font(DOC_FONT.heading)
        .text('FUNDAMENTOS DE DERECHO', { underline: true });
     
     doc.fontSize(10)
-       .font('Helvetica');
+       .font(DOC_FONT.body);
 
     // Competencia
-    doc.font('Helvetica-Bold').text('COMPETENCIA:', { continued: true });
-    doc.font('Helvetica').text(` ${modelo.competencia.juez}`);
+    doc.font(DOC_FONT.heading).text('COMPETENCIA:', { continued: true });
+    doc.font(DOC_FONT.body).text(` ${modelo.competencia.juez}`);
     doc.moveDown(0.3);
     
     modelo.competencia.razones.forEach(razon => {
@@ -86,8 +88,8 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
     doc.moveDown(0.5);
 
     // Legitimación
-    doc.font('Helvetica-Bold').text('LEGITIMACIÓN:', { continued: true });
-    doc.font('Helvetica').text(' En la activa y en la pasiva');
+    doc.font(DOC_FONT.heading).text('LEGITIMACIÓN:', { continued: true });
+    doc.font(DOC_FONT.body).text(' En la activa y en la pasiva');
     doc.moveDown(0.3);
     
     modelo.fundamentos.legitimacion.forEach(legitimacion => {
@@ -96,8 +98,8 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
     doc.moveDown(0.5);
 
     // Subsidiariedad
-    doc.font('Helvetica-Bold').text('SUBSIDIARIEDAD:', { continued: true });
-    doc.font('Helvetica').text(' Procedencia preferente e inmediata');
+    doc.font(DOC_FONT.heading).text('SUBSIDIARIEDAD:', { continued: true });
+    doc.font(DOC_FONT.body).text(' Procedencia preferente e inmediata');
     doc.moveDown(0.3);
     
     modelo.fundamentos.subsidiariedad.forEach(subsidiariedad => {
@@ -106,8 +108,8 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
     doc.moveDown(0.5);
 
     // Inmediatez
-    doc.font('Helvetica-Bold').text('INMEDIATEZ:', { continued: true });
-    doc.font('Helvetica').text(' Oportunidad de la acción');
+    doc.font(DOC_FONT.heading).text('INMEDIATEZ:', { continued: true });
+    doc.font(DOC_FONT.body).text(' Oportunidad de la acción');
     doc.moveDown(0.3);
     
     modelo.fundamentos.inmediatez.forEach(inmediatez => {
@@ -116,8 +118,8 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
     doc.moveDown(0.5);
 
     // Fondo
-    doc.font('Helvetica-Bold').text('FONDO:', { continued: true });
-    doc.font('Helvetica').text(' Derecho fundamental invocado');
+    doc.font(DOC_FONT.heading).text('FONDO:', { continued: true });
+    doc.font(DOC_FONT.body).text(' Derecho fundamental invocado');
     doc.moveDown(0.3);
     
     modelo.fundamentos.fondo.forEach(fondo => {
@@ -127,11 +129,11 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
 
     // PETICIONES
     doc.fontSize(12)
-       .font('Helvetica-Bold')
+       .font(DOC_FONT.heading)
        .text('PETICIONES', { underline: true });
     
     doc.fontSize(10)
-       .font('Helvetica');
+       .font(DOC_FONT.body);
     
     modelo.peticiones.forEach((peticion, index) => {
       doc.text(`${index + 1}. ${peticion}`);
@@ -143,11 +145,11 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
     // MEDIDA PROVISIONAL (si aplica)
     if (modelo.medidaProvisional && modelo.medidaProvisional.length > 0) {
       doc.fontSize(12)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('MEDIDA PROVISIONAL', { underline: true });
       
       doc.fontSize(10)
-         .font('Helvetica');
+         .font(DOC_FONT.body);
       
       modelo.medidaProvisional.forEach((medida, index) => {
         doc.text(`${index + 1}. ${medida}`);
@@ -159,11 +161,11 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
 
     // PRUEBAS
     doc.fontSize(12)
-       .font('Helvetica-Bold')
+       .font(DOC_FONT.heading)
        .text('PRUEBAS', { underline: true });
     
     doc.fontSize(10)
-       .font('Helvetica');
+       .font(DOC_FONT.body);
     
     modelo.pruebas.forEach((prueba, index) => {
       doc.text(`${index + 1}. ${prueba}`);
@@ -175,11 +177,11 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
     // ANEXOS
     if (modelo.anexos.length > 0) {
       doc.fontSize(12)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('ANEXOS', { underline: true });
       
       doc.fontSize(10)
-         .font('Helvetica');
+         .font(DOC_FONT.body);
       
       modelo.anexos.forEach((anexo, index) => {
         doc.text(`${index + 1}. ${anexo}`);
@@ -191,22 +193,22 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
 
     // JURAMENTO
     doc.fontSize(12)
-       .font('Helvetica-Bold')
+       .font(DOC_FONT.heading)
        .text('JURAMENTO', { underline: true });
     
     doc.fontSize(10)
-       .font('Helvetica')
+       .font(DOC_FONT.body)
        .text(modelo.juramento);
     
     doc.moveDown(1);
 
     // LUGAR Y FECHA
     doc.fontSize(12)
-       .font('Helvetica-Bold')
+       .font(DOC_FONT.heading)
        .text('LUGAR Y FECHA', { underline: true });
     
     doc.fontSize(10)
-       .font('Helvetica')
+       .font(DOC_FONT.body)
        .text(modelo.lugarFecha);
     
     doc.moveDown(2);
@@ -216,13 +218,13 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
       doc.addPage();
       
       doc.fontSize(14)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('NOTAS IMPORTANTES', { align: 'center' });
       
       doc.moveDown(1);
       
       doc.fontSize(10)
-         .font('Helvetica');
+         .font(DOC_FONT.body);
       
       modelo.notas.forEach((nota, index) => {
         doc.text(`${index + 1}. ${nota}`);
@@ -233,7 +235,7 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
     // Pie de página
     const pageNumber = (page: number, totalPages: number) => {
       doc.fontSize(8)
-         .font('Helvetica')
+         .font(DOC_FONT.body)
          .text(`Página ${page} de ${totalPages}`, 
                doc.page.width - 100, 
                doc.page.height - 30, 

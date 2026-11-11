@@ -220,6 +220,8 @@
   h1, h2 { font-family: var(--font-display); color: var(--text-heading); }
   h3, h4 { font-family: var(--font-sans); color: var(--text-heading); }
   h1 { @apply text-h1; }  h2 { @apply text-h2; }  h3 { @apply text-h3; }  h4 { @apply text-h4; }
+  /* A nested theme container must re-resolve the inherited text colour (body computed it with the outer theme). */
+  [data-theme] { color: var(--text); }
   ::placeholder { color: var(--text-muted); opacity: 1; }
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   ::selection { background: var(--accent-subtle); color: var(--text); }

@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { ModelOutput } from '../validate-reclamacion';
+import { registerDocumentFonts, DOC_FONT } from './fonts';
 
 export async function renderReclamacionPDF(
   model: ModelOutput, 
@@ -17,6 +18,7 @@ export async function renderReclamacionPDF(
           right: 60
         }
       });
+      registerDocumentFonts(doc); // DS v4: EB Garamond (falls back to Times)
 
       const buffers: Buffer[] = [];
       doc.on('data', buffers.push.bind(buffers));
@@ -28,12 +30,12 @@ export async function renderReclamacionPDF(
 
       // Título principal
       doc.fontSize(14)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text(model.encabezado.toUpperCase(), { align: 'center' });
       
       // Información de cuantía y precisión
       doc.fontSize(8)
-         .font('Helvetica')
+         .font(DOC_FONT.body)
          .text(`Cuantía reclamada: ${cuantia.toLocaleString('es-ES')} €`, { align: 'center' });
       
       if (precision > 0) {
@@ -44,22 +46,22 @@ export async function renderReclamacionPDF(
 
       // Partes
       doc.fontSize(12)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('PARTES', { underline: true });
       
       doc.fontSize(10)
-         .font('Helvetica')
+         .font(DOC_FONT.body)
          .text(model.partes);
 
       doc.moveDown(1);
 
       // Hechos
       doc.fontSize(12)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('HECHOS', { underline: true });
       
       doc.fontSize(10)
-         .font('Helvetica');
+         .font(DOC_FONT.body);
       
       model.hechos.forEach((hecho, index) => {
         doc.text(`${index + 1}. ${hecho}`);
@@ -70,16 +72,16 @@ export async function renderReclamacionPDF(
 
       // Fundamentos de Derecho
       doc.fontSize(12)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('FUNDAMENTOS DE DERECHO', { underline: true });
 
       // Competencia y Procedimiento
       doc.fontSize(10)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('Competencia y Procedimiento:');
       
       doc.fontSize(10)
-         .font('Helvetica');
+         .font(DOC_FONT.body);
       model.fundamentos.competencia.forEach(fundamento => {
         doc.text(`• ${fundamento}`);
       });
@@ -88,11 +90,11 @@ export async function renderReclamacionPDF(
 
       // Legitimación
       doc.fontSize(10)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('Legitimación:');
       
       doc.fontSize(10)
-         .font('Helvetica');
+         .font(DOC_FONT.body);
       model.fundamentos.legitimacion.forEach(fundamento => {
         doc.text(`• ${fundamento}`);
       });
@@ -101,11 +103,11 @@ export async function renderReclamacionPDF(
 
       // Fondo del Asunto
       doc.fontSize(10)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('Fondo del Asunto:');
       
       doc.fontSize(10)
-         .font('Helvetica');
+         .font(DOC_FONT.body);
       model.fundamentos.fondo.forEach(fundamento => {
         doc.text(`• ${fundamento}`);
       });
@@ -114,11 +116,11 @@ export async function renderReclamacionPDF(
 
       // Intereses y Costas
       doc.fontSize(10)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('Intereses y Costas:');
       
       doc.fontSize(10)
-         .font('Helvetica');
+         .font(DOC_FONT.body);
       model.fundamentos.interesesYCostas.forEach(fundamento => {
         doc.text(`• ${fundamento}`);
       });
@@ -127,11 +129,11 @@ export async function renderReclamacionPDF(
 
       // Súplica
       doc.fontSize(12)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('SÚPLICA', { underline: true });
       
       doc.fontSize(10)
-         .font('Helvetica');
+         .font(DOC_FONT.body);
       model.suplico.forEach((suplico, index) => {
         doc.text(`${index + 1}. ${suplico}`);
         doc.moveDown(0.5);
@@ -142,11 +144,11 @@ export async function renderReclamacionPDF(
       // Otrosí
       if (model.otrosi && model.otrosi.length > 0) {
         doc.fontSize(12)
-           .font('Helvetica-Bold')
+           .font(DOC_FONT.heading)
            .text('OTROSÍ DIGO', { underline: true });
         
         doc.fontSize(10)
-           .font('Helvetica');
+           .font(DOC_FONT.body);
         model.otrosi.forEach((otrosi, index) => {
           doc.text(`${index + 1}. ${otrosi}`);
           doc.moveDown(0.5);
@@ -157,11 +159,11 @@ export async function renderReclamacionPDF(
 
       // Documentos
       doc.fontSize(12)
-         .font('Helvetica-Bold')
+         .font(DOC_FONT.heading)
          .text('DOCUMENTOS APORTADOS', { underline: true });
       
       doc.fontSize(10)
-         .font('Helvetica');
+         .font(DOC_FONT.body);
       model.documentos.forEach((docItem, index) => {
         doc.text(`• ${docItem}`);
       });
@@ -170,7 +172,7 @@ export async function renderReclamacionPDF(
 
       // Lugar, Fecha y Firma
       doc.fontSize(10)
-         .font('Helvetica')
+         .font(DOC_FONT.body)
          .text(model.lugarFecha, { align: 'right' });
 
       doc.moveDown(1);
@@ -179,11 +181,11 @@ export async function renderReclamacionPDF(
       if (model.notasProSe && model.notasProSe.length > 0) {
         doc.addPage();
         doc.fontSize(12)
-           .font('Helvetica-Bold')
+           .font(DOC_FONT.heading)
            .text('NOTAS PARA PRESENTACIÓN "PRO SE" (SIN ABOGADO/PROCURADOR)', { underline: true });
         
         doc.fontSize(10)
-           .font('Helvetica');
+           .font(DOC_FONT.body);
         model.notasProSe.forEach((nota, index) => {
           doc.text(`• ${nota}`);
           doc.moveDown(0.5);
@@ -194,10 +196,10 @@ export async function renderReclamacionPDF(
       if (model.citas && model.citas.length > 0) {
         doc.addPage();
         doc.fontSize(12)
-           .font('Helvetica-Bold')
+           .font(DOC_FONT.heading)
            .text('CITAS LEGALES:', { underline: true });
         
-        doc.font('Helvetica');
+        doc.font(DOC_FONT.body);
         model.citas.forEach(cita => {
           doc.text(`• ${cita}`);
         });

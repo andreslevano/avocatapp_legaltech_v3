@@ -1,5 +1,5 @@
 import PDFDocument from './pdfkit';
-import { applyPdfFonts, PDF_FONT_FAMILY, PDF_FONT_PATHS } from './fonts';
+import { applyPdfFonts, PDF_FONT_FAMILY, PDF_FONT_PATHS, registerDocumentFonts, DOC_FONT } from './fonts';
 
 export interface StudyMaterialData {
   title: string;
@@ -11,7 +11,7 @@ export interface StudyMaterialData {
 export function renderStudyMaterialPDF(data: StudyMaterialData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      // Use default Helvetica font (works everywhere)
+      // Document fonts are registered right after creation (EB Garamond, Times fallback)
       const doc = new PDFDocument({
         size: 'A4',
         margins: {
@@ -21,6 +21,7 @@ export function renderStudyMaterialPDF(data: StudyMaterialData): Promise<Buffer>
           right: 50
         }
       });
+      registerDocumentFonts(doc); // DS v4: EB Garamond (falls back to Times)
 
       const buffers: Buffer[] = [];
       doc.on('data', buffers.push.bind(buffers));
@@ -30,12 +31,12 @@ export function renderStudyMaterialPDF(data: StudyMaterialData): Promise<Buffer>
       });
       doc.on('error', reject);
 
-      // Helper function to safely set font (always use Helvetica)
+      // Helper: document fonts (EB Garamond via registerDocumentFonts)
       const setFont = (fontName: string, size: number) => {
         if (fontName.includes('Bold') || fontName === PDF_FONT_FAMILY.bold) {
-          doc.fontSize(size).font('Helvetica-Bold');
+          doc.fontSize(size).font(DOC_FONT.heading);
         } else {
-          doc.fontSize(size).font('Helvetica');
+          doc.fontSize(size).font(DOC_FONT.body);
         }
       };
 
@@ -83,9 +84,9 @@ export function renderStudyMaterialPDF(data: StudyMaterialData): Promise<Buffer>
                          (paragraph.length < 100 && paragraph.split('\n').length === 1);
         
         if (isHeading) {
-          doc.font('Helvetica-Bold').fontSize(12);
+          doc.font(DOC_FONT.heading).fontSize(12);
         } else {
-          doc.font('Helvetica').fontSize(11);
+          doc.font(DOC_FONT.body).fontSize(11);
         }
         
         // Clean up the paragraph
@@ -104,7 +105,7 @@ export function renderStudyMaterialPDF(data: StudyMaterialData): Promise<Buffer>
         const pageCount = doc.bufferedPageRange();
         const currentPage = pageCount.count;
         doc.switchToPage(currentPage - 1); // pages are 0-indexed
-        doc.fontSize(8).font('Helvetica');
+        doc.fontSize(8).font(DOC_FONT.body);
         doc.text(
           `Página ${currentPage} de ${currentPage}`,
           50,

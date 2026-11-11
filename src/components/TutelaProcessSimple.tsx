@@ -1,12 +1,18 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { UploadedDocument, DocumentCategory, DocumentSummary, GeneratedDocument } from '@/types';
 import AnalisisExitoModal from './AnalisisExitoModal';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 import { isPilotUser } from '@/lib/pilot-users';
 import { Button } from '@/components/ui/Button';
 import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
+import { Alert } from '@/components/ui/Alert';
+import { CircleCheck, FileText, Minus, Plus, X } from 'lucide-react';
+import DocumentWizard, { type WizardStep } from '@/components/wizard/DocumentWizard';
+import FileDropzone from '@/components/wizard/FileDropzone';
+import DocumentPreview, { Mark } from '@/components/wizard/DocumentPreview';
+import AIJobProgress from '@/components/wizard/AIJobProgress';
 
 interface TutelaProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -20,35 +26,35 @@ const DOCUMENT_CATEGORIES: DocumentCategory[] = [
     name: 'Identificación',
     description: 'DNI, NIE o documentos de identidad',
     required: true,
-    color: 'bg-blue-100 text-blue-800'
+    color: 'bg-surface-muted text-text'
   },
   {
     id: 'evidencia',
     name: 'Evidencias',
     description: 'Documentos que prueban la vulneración',
     required: true,
-    color: 'bg-red-100 text-red-800'
+    color: 'bg-surface-muted text-text'
   },
   {
     id: 'comunicaciones',
     name: 'Comunicaciones',
     description: 'Emails, cartas, notificaciones',
     required: false,
-    color: 'bg-green-100 text-green-800'
+    color: 'bg-surface-muted text-text'
   },
   {
     id: 'testimonios',
     name: 'Testimonios',
     description: 'Declaraciones de testigos',
     required: false,
-    color: 'bg-yellow-100 text-yellow-800'
+    color: 'bg-surface-muted text-text'
   },
   {
     id: 'juridicos',
     name: 'Documentos Jurídicos',
     description: 'Leyes, jurisprudencia, precedentes',
     required: false,
-    color: 'bg-purple-100 text-purple-800'
+    color: 'bg-surface-muted text-text'
   },
   {
     id: 'otros',
@@ -58,6 +64,9 @@ const DOCUMENT_CATEGORIES: DocumentCategory[] = [
     color: 'bg-surface-muted/30 text-text-primary'
   }
 ];
+
+const STEP = { datos: 1, documentos: 2, revision: 3, pago: 4, descarga: 5 } as const;
+const UNIT_PRICE_COP = 50000; // display only — the charged amount is set in handlePayment (unchanged)
 
 const DERECHOS_OPTIONS = [
   { value: 'vida', label: 'Derecho a la vida' },
@@ -97,7 +106,6 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
   const [paymentDocId, setPaymentDocId] = useState<string | null>(null);
   const [currentTutelaId, setCurrentTutelaId] = useState<string | null>(null);
   const [uploadedFilesInfo, setUploadedFilesInfo] = useState<Array<{ fileName: string; storagePath: string; downloadUrl?: string }>>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -116,6 +124,11 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [useOcrData, setUseOcrData] = useState(false);
   const [quantity, setQuantity] = useState(1); // ⭐ NUEVO: Cantidad de documentos
+  // v4 wizard UI state
+  const [generating, setGenerating] = useState(false);
+  const [confirmData, setConfirmData] = useState(false);
+  const [confirmSelf, setConfirmSelf] = useState(false);
+  const [showMissing, setShowMissing] = useState(false);
 
   // Automatic document categorization based on filename keywords
   const categorizeDocument = (filename: string): DocumentCategory => {
@@ -209,18 +222,6 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const files = e.dataTransfer.files;
-    handleFileUpload(files);
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      handleFileUpload(e.target.files);
-    }
-  };
-
   // OCR file handling
   const handleOcrFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -265,30 +266,9 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
     }
   };
 
-  const applyOcrData = async () => {
-    if (ocrFiles.length === 0) return;
-
-    const firstFile = ocrFiles[0];
-    const extractedText = firstFile.extractedText;
-
-    // Simulación de extracción de datos (en producción usarías NLP)
-    const mockExtractedData = {
-      vulnerador: 'Entidad extraída del documento',
-      hechos: 'Hechos extraídos del documento PDF mediante OCR',
-      derecho: 'salud',
-      peticiones: 'Peticiones extraídas del documento'
-    };
-
-    setFormData(prev => ({
-      ...prev,
-      vulnerador: mockExtractedData.vulnerador,
-      hechos: mockExtractedData.hechos,
-      derecho: mockExtractedData.derecho,
-      peticiones: mockExtractedData.peticiones
-    }));
-
-    setUseOcrData(true);
-  };
+  // "Aplicar datos extraídos" was removed in DS v4: it filled the form with placeholder text
+  // ("Entidad extraída del documento") instead of real extraction, and would now overwrite the
+  // user's own answers (Datos comes first). TODO(ds-v4): real field extraction from the OCR text.
 
   const removeDocument = (documentId: string) => {
     setUploadedDocuments(prev => {
@@ -308,12 +288,6 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
   };
 
   const generateSummary = () => {
-    // Validate required form fields
-    if (!formData.vulnerador || !formData.hechos || !formData.derecho || !formData.peticiones) {
-      alert('Por favor, completa todos los campos requeridos antes de continuar.');
-      return;
-    }
-
     const categorizedDocuments: { [categoryId: string]: UploadedDocument[] } = {};
     const missingRequired: string[] = [];
 
@@ -334,7 +308,6 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
     };
 
     setDocumentSummary(summary);
-    setCurrentStep(2);
   };
 
   const analizarExito = async () => {
@@ -399,61 +372,6 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
     }
   };
 
-  // Calculate accuracy percentage
-  const calculateAccuracy = () => {
-    if (!documentSummary) return 0;
-    
-    const totalRequired = DOCUMENT_CATEGORIES.filter(cat => cat.required).length;
-    const missingRequired = documentSummary.missingRequired.length;
-    const documentAccuracy = Math.round(((totalRequired - missingRequired) / totalRequired) * 100);
-    
-    // Form quality accuracy (50% weight)
-    let formScore = 0;
-    const maxFormScore = 4;
-    
-    if (formData.vulnerador && formData.vulnerador.length > 5) formScore += 1;
-    if (formData.hechos && formData.hechos.length > 50) formScore += 1;
-    if (formData.derecho && formData.derecho !== '') formScore += 1;
-    if (formData.peticiones && formData.peticiones.length > 30) formScore += 1;
-    
-    const formAccuracy = Math.round((formScore / maxFormScore) * 100);
-    
-    // Combined accuracy (50% documents + 50% form quality)
-    const combinedAccuracy = Math.round((documentAccuracy * 0.5) + (formAccuracy * 0.5));
-    
-    return Math.max(0, combinedAccuracy);
-  };
-
-  const getAccuracyInfo = () => {
-    const accuracy = calculateAccuracy();
-    
-    if (accuracy >= 80) {
-      return {
-        level: 'Alta',
-        color: 'text-green-600',
-        bgColor: 'bg-green-50',
-        borderColor: 'border-green-200',
-        iconColor: 'text-green-600'
-      };
-    } else if (accuracy >= 60) {
-      return {
-        level: 'Media',
-        color: 'text-yellow-600',
-        bgColor: 'bg-yellow-50',
-        borderColor: 'border-yellow-200',
-        iconColor: 'text-yellow-600'
-      };
-    } else {
-      return {
-        level: 'Baja',
-        color: 'text-red-600',
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200',
-        iconColor: 'text-red-600'
-      };
-    }
-  };
-
   const handlePayment = async () => {
     try {
       setIsProcessing(true);
@@ -481,7 +399,9 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
       if (isPilotUser(userEmail)) {
         try {
           console.log('🧪 Pilot user detected, skipping Stripe payment for acción de tutela');
-          await generateDocument(docId, tutelaId);
+          setGenerating(true);
+          setCurrentStep(STEP.descarga);
+          await generateDocument(docId, tutelaId).finally(() => setGenerating(false));
           setIsPaymentComplete(true);
           return;
         } catch (error) {
@@ -727,7 +647,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
       };
 
       setGeneratedDocument(generated);
-      setCurrentStep(3);
+      setCurrentStep(STEP.descarga);
       setIsProcessing(false);
       
       if (typeof window !== 'undefined') {
@@ -772,481 +692,357 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
     setUseOcrData(false);
     setSelectedFiles(null);
     setQuantity(1); // ⭐ NUEVO: Reset cantidad
+    setConfirmData(false);
+    setConfirmSelf(false);
   };
 
-  return (
-    <div className="bg-card rounded-lg shadow-lg p-6">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-text-primary mb-2">
-          Proceso de Acción de Tutela
-        </h2>
-        <p className="text-text-secondary">
-          Sigue estos pasos para generar tu acción de tutela
-        </p>
-      </div>
+  const requiredOk = !!(formData.vulnerador && formData.hechos && formData.derecho && formData.peticiones);
+  const derechoLabel = DERECHOS_OPTIONS.find(o => o.value === formData.derecho)?.label ?? '';
+  const fieldCls = (invalid: boolean) =>
+    `w-full px-3 py-2 rounded-md border bg-surface text-text ${invalid ? 'border-danger' : 'border-border-strong'}`;
+  const missing = (v: string) => showMissing && !v.trim();
+  const errorText = (id: string, v: string) =>
+    missing(v) ? <p id={`${id}-err`} className="mt-1 text-caption text-danger-text">Este campo es obligatorio.</p> : null;
 
-      {/* Progress Steps */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          {[1, 2, 3].map((step) => (
-            <div key={step} className="flex items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= step 
-                  ? 'bg-red-600 text-white' 
-                  : 'bg-gray-200 text-text-secondary'
-              }`}>
-                {step}
-              </div>
-              {step < 3 && (
-                <div className={`w-16 h-1 mx-2 ${
-                  currentStep > step ? 'bg-red-600' : 'bg-gray-200'
-                }`} />
-              )}
-            </div>
-          ))}
+  const datosStep: WizardStep = {
+    id: 'datos',
+    label: 'Datos',
+    title: 'Cuéntanos qué ha pasado',
+    description: 'Con estos datos redactaremos tu acción de tutela. Los campos con * son obligatorios.',
+    content: (
+      <div className="space-y-5">
+        {showMissing && !requiredOk && (
+          <Alert tone="danger" title="Faltan campos obligatorios">Revisa los campos marcados en rojo.</Alert>
+        )}
+        <div>
+          <label htmlFor="vulnerador" className="block text-small font-medium text-text mb-1">
+            Persona o entidad que vulnera el derecho <span className="text-danger-text" aria-hidden>*</span>
+          </label>
+          <input
+            type="text" id="vulnerador" required
+            value={formData.vulnerador}
+            onChange={(e) => setFormData(prev => ({ ...prev, vulnerador: e.target.value }))}
+            aria-invalid={missing(formData.vulnerador) || undefined}
+            aria-describedby={missing(formData.vulnerador) ? 'vulnerador-err' : undefined}
+            className={`${fieldCls(missing(formData.vulnerador))} h-control-md`}
+            placeholder="Ej.: Alcaldía de Bogotá, Empresa XYZ…"
+          />
+          {errorText('vulnerador', formData.vulnerador)}
         </div>
-        <div className="flex justify-between mt-2 text-xs text-text-secondary">
-          <span>Subir y Analizar</span>
-          <span>Pago</span>
-          <span>Descargar</span>
+        <div>
+          <label htmlFor="hechos" className="block text-small font-medium text-text mb-1">
+            Relato detallado de los hechos <span className="text-danger-text" aria-hidden>*</span>
+          </label>
+          <textarea
+            id="hechos" rows={6} required
+            value={formData.hechos}
+            onChange={(e) => setFormData(prev => ({ ...prev, hechos: e.target.value }))}
+            aria-invalid={missing(formData.hechos) || undefined}
+            aria-describedby={missing(formData.hechos) ? 'hechos-err' : undefined}
+            className={fieldCls(missing(formData.hechos))}
+            placeholder="Qué sucedió, cuándo, dónde y cómo se vulneró el derecho…"
+          />
+          {errorText('hechos', formData.hechos)}
+        </div>
+        <div>
+          <label htmlFor="derecho" className="block text-small font-medium text-text mb-1">
+            Derecho vulnerado <span className="text-danger-text" aria-hidden>*</span>
+          </label>
+          <select
+            id="derecho" required
+            value={formData.derecho}
+            onChange={(e) => setFormData(prev => ({ ...prev, derecho: e.target.value }))}
+            aria-invalid={missing(formData.derecho) || undefined}
+            aria-describedby={missing(formData.derecho) ? 'derecho-err' : undefined}
+            className={`${fieldCls(missing(formData.derecho))} h-control-md`}
+          >
+            <option value="">Selecciona un derecho</option>
+            {DERECHOS_OPTIONS.map(option => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+          {errorText('derecho', formData.derecho)}
+        </div>
+        <div>
+          <label htmlFor="peticiones" className="block text-small font-medium text-text mb-1">
+            ¿Qué le pides al juez? (órdenes concretas) <span className="text-danger-text" aria-hidden>*</span>
+          </label>
+          <textarea
+            id="peticiones" rows={4} required
+            value={formData.peticiones}
+            onChange={(e) => setFormData(prev => ({ ...prev, peticiones: e.target.value }))}
+            aria-invalid={missing(formData.peticiones) || undefined}
+            aria-describedby={missing(formData.peticiones) ? 'peticiones-err' : undefined}
+            className={fieldCls(missing(formData.peticiones))}
+            placeholder="Especifica claramente qué órdenes solicitas…"
+          />
+          {errorText('peticiones', formData.peticiones)}
+        </div>
+        <label className="flex items-start gap-3 text-body-sm text-text">
+          <input
+            type="checkbox"
+            checked={formData.medidasProvisionales}
+            onChange={(e) => setFormData(prev => ({ ...prev, medidasProvisionales: e.target.checked }))}
+            className="mt-1 h-4 w-4 accent-accent"
+          />
+          Solicitar medidas provisionales
+        </label>
+        <div>
+          <label htmlFor="ciudad" className="block text-small font-medium text-text mb-1">
+            Ciudad <span className="text-text-muted font-normal">(opcional)</span>
+          </label>
+          <input
+            type="text" id="ciudad"
+            value={formData.ciudad}
+            onChange={(e) => setFormData(prev => ({ ...prev, ciudad: e.target.value }))}
+            className={`${fieldCls(false)} h-control-md`}
+            placeholder="Bogotá"
+          />
         </div>
       </div>
+    ),
+    cta: {
+      label: 'Continuar',
+      onClick: () => {
+        if (!requiredOk) { setShowMissing(true); return; }
+        setShowMissing(false);
+        setCurrentStep(STEP.documentos);
+      },
+    },
+  };
 
-      {/* Step 1: Document Upload and Form */}
-      {currentStep === 1 && (
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-text-primary">Paso 1: Subir y Analizar Documentos PDF (Opcional)</h3>
-          
-          {/* PDF Upload Section */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h4 className="text-lg font-semibold text-blue-900 mb-4">
-              📄 Cargar Documentos PDF (Opcional)
-            </h4>
-            <p className="text-blue-700 mb-4">
-              Sube documentos PDF para extraer automáticamente los datos y completar el formulario.
-            </p>
-            
-            <div className="space-y-4">
-              <div
-                className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
-                onDrop={handleDrop}
-                onDragOver={(e) => e.preventDefault()}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <svg className="mx-auto h-12 w-12 text-blue-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <p className="mt-2 text-sm text-blue-600">
-                  Arrastra archivos PDF aquí o haz clic para seleccionar
-                </p>
-                <p className="text-xs text-blue-500 mt-1">
-                  Máximo 10MB por archivo. Se permiten múltiples archivos PDF.
-                </p>
-              </div>
+  const documentosStep: WizardStep = {
+    id: 'documentos',
+    label: 'Documentos',
+    title: 'Aporta tus pruebas (opcional)',
+    description: 'Identificación, evidencias de la vulneración, comunicaciones… Solo PDF, máx. 10 MB por archivo.',
+    content: (
+      <div className="space-y-6">
+        <FileDropzone onFiles={handleFileUpload} accept=".pdf" acceptLabel="Solo PDF · máx. 10 MB por archivo" />
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf"
-                onChange={handleFileInput}
-                className="hidden"
-              />
-
-              {/* OCR File Input */}
-              <div>
-                <label className="block text-sm font-medium text-blue-900 mb-2">
-                  O procesar archivos con OCR:
-                </label>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  multiple
-                  onChange={handleOcrFileSelect}
-                  className="block w-full text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-                {selectedFiles && selectedFiles.length > 0 && (
-                  <div className="flex space-x-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={processOcrFiles}
-                      disabled={isProcessingOcr}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isProcessingOcr ? 'Procesando...' : `Procesar ${selectedFiles.length} archivo(s)`}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFiles(null)}
-                      className="px-4 py-2 border border-border text-text-secondary rounded-md hover:bg-app"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                )}
-
-                {ocrFiles.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {ocrFiles.map((file) => (
-                      <div key={file.id} className="flex items-center justify-between bg-card p-3 rounded border">
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{file.originalName}</p>
-                          <p className="text-xs text-text-secondary">
-                            {file.pages} página(s) • Confianza: {(file.confidence * 100).toFixed(1)}%
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeOcrFile(file.id)}
-                          className="text-red-600 hover:text-red-800 ml-2"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                    <div className="flex space-x-2">
-                      <button
-                        type="button"
-                        onClick={applyOcrData}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                      >
-                        Aplicar Datos Extraídos
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setUseOcrData(!useOcrData)}
-                        className={`px-4 py-2 rounded-md ${
-                          useOcrData 
-                            ? 'bg-green-100 text-green-800 border border-green-300' 
-                            : 'bg-surface-muted/30 text-text-primary border border-border'
-                        }`}
-                      >
-                        {useOcrData ? '✓ Usando datos OCR' : 'Usar datos OCR'}
-                      </button>
+        {uploadedDocuments.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-h4">Archivos subidos ({uploadedDocuments.length})</h4>
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {uploadedDocuments.map((doc) => (
+                <li key={doc.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText size={18} className="shrink-0 text-accent-text" aria-hidden />
+                    <div className="min-w-0">
+                      <p className="text-body-sm font-medium text-text truncate">{doc.name}</p>
+                      {doc.category && <p className="text-caption text-text-muted">{doc.category.name}</p>}
                     </div>
                   </div>
-                )}
-              </div>
-
-              {uploadedDocuments.length > 0 && (
-                <div className="mt-4">
-                  <h5 className="font-medium text-blue-900 mb-2">Archivos subidos ({uploadedDocuments.length})</h5>
-                  <div className="space-y-2">
-                    {uploadedDocuments.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between bg-card p-3 rounded border">
-                        <div className="flex items-center">
-                          <span className="text-sm font-medium">{doc.name}</span>
-                          {doc.category && (
-                            <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${doc.category.color}`}>
-                              {doc.category.name}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeDocument(doc.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+                  <Button variant="ghost" size="sm" onClick={() => removeDocument(doc.id)} aria-label={`Quitar ${doc.name}`}>Quitar</Button>
+                </li>
+              ))}
+            </ul>
           </div>
+        )}
 
-          {/* Form Fields */}
-          <div className="space-y-6">
-            <div>
-              <label htmlFor="vulnerador" className="block text-sm font-medium text-text-secondary mb-2">
-                Nombre de persona o entidad que vulnera el derecho *
-              </label>
-              <input
-                type="text"
-                id="vulnerador"
-                value={formData.vulnerador}
-                onChange={(e) => setFormData(prev => ({ ...prev, vulnerador: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Ej: Alcaldía de Bogotá, Empresa XYZ, etc."
-                required
-              />
+        <section className="rounded-lg border border-border p-4 space-y-3">
+          <div>
+            <h4 className="text-h4">Leer el texto de documentos escaneados (OCR)</h4>
+            <p className="text-caption text-text-muted">Opcional: el texto reconocido se incluirá en el escrito.</p>
+          </div>
+          <FileDropzone
+            onFiles={files => setSelectedFiles(files)}
+            accept=".pdf"
+            acceptLabel={selectedFiles?.length ? `${selectedFiles.length} archivo(s) listos para leer` : 'PDF escaneados'}
+            busy={isProcessingOcr}
+            busyLabel="Leyendo el texto de tus documentos…"
+            privacy={false}
+          />
+          {selectedFiles && selectedFiles.length > 0 && !isProcessingOcr && (
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={processOcrFiles}>{`Leer ${selectedFiles.length} archivo(s)`}</Button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedFiles(null)}>Cancelar</Button>
             </div>
-
-            <div>
-              <label htmlFor="hechos" className="block text-sm font-medium text-text-secondary mb-2">
-                Relato detallado de los hechos *
-              </label>
-              <textarea
-                id="hechos"
-                value={formData.hechos}
-                onChange={(e) => setFormData(prev => ({ ...prev, hechos: e.target.value }))}
-                rows={6}
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Describe detalladamente qué sucedió, cuándo, dónde y cómo se vulneró el derecho..."
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="derecho" className="block text-sm font-medium text-text-secondary mb-2">
-                ¿Qué derecho piensa que ha sido vulnerado? *
-              </label>
-              <select
-                id="derecho"
-                value={formData.derecho}
-                onChange={(e) => setFormData(prev => ({ ...prev, derecho: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                required
-              >
-                <option value="">Seleccione un derecho</option>
-                {DERECHOS_OPTIONS.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+          )}
+          {error && <Alert tone="danger" title="No se pudo leer el archivo" onDismiss={() => setError(null)}>{error}</Alert>}
+          {ocrFiles.length > 0 && (
+            <div className="space-y-2">
+              <ul className="divide-y divide-border rounded-md border border-border">
+                {ocrFiles.map((file) => (
+                  <li key={file.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="text-body-sm font-medium text-text truncate">{file.originalName}</p>
+                      <p className="text-caption text-text-muted">
+                        {file.pages} página(s) · confianza {(file.confidence * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %
+                      </p>
+                    </div>
+                    <button type="button" onClick={() => removeOcrFile(file.id)} aria-label={`Quitar ${file.originalName}`} className="text-text-muted hover:text-danger-text">
+                      <X size={16} aria-hidden />
+                    </button>
+                  </li>
                 ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="peticiones" className="block text-sm font-medium text-text-secondary mb-2">
-                ¿Qué se solicita? (órdenes concretas) *
-              </label>
-              <textarea
-                id="peticiones"
-                value={formData.peticiones}
-                onChange={(e) => setFormData(prev => ({ ...prev, peticiones: e.target.value }))}
-                rows={4}
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Especifique claramente qué órdenes solicita al juez..."
-                required
-              />
-            </div>
-
-            <div>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.medidasProvisionales}
-                  onChange={(e) => setFormData(prev => ({ ...prev, medidasProvisionales: e.target.checked }))}
-                  className="mr-2"
-                />
-                <span className="text-sm font-medium text-text-secondary">
-                  Solicitar medidas provisionales
-                </span>
+              </ul>
+              <label className="flex items-start gap-3 text-body-sm text-text">
+                <input type="checkbox" checked={useOcrData} onChange={e => setUseOcrData(e.target.checked)} className="mt-1 h-4 w-4 accent-accent" />
+                Usar el texto reconocido al redactar el escrito
               </label>
             </div>
+          )}
+        </section>
+      </div>
+    ),
+    cta: {
+      label: 'Revisar',
+      disabled: isProcessingOcr,
+      onClick: () => { generateSummary(); setCurrentStep(STEP.revision); },
+    },
+  };
 
-            <div>
-              <label htmlFor="ciudad" className="block text-sm font-medium text-text-secondary mb-2">
-                Ciudad
-              </label>
-              <input
-                type="text"
-                id="ciudad"
-                value={formData.ciudad}
-                onChange={(e) => setFormData(prev => ({ ...prev, ciudad: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Bogotá"
-              />
-            </div>
-          </div>
+  const revisionStep: WizardStep = {
+    id: 'revision',
+    label: 'Revisión',
+    title: 'Revisa antes de pagar',
+    description: 'Así usaremos tus respuestas en el escrito. Lo resaltado lo has escrito tú: compruébalo.',
+    content: (
+      <div className="space-y-5">
+        <DocumentPreview
+          title="Acción de tutela — borrador"
+          note="Vista previa de los datos. El escrito completo se redacta tras el pago y debes revisarlo antes de presentarlo."
+        >
+          <h1>Señor Juez de la República{formData.ciudad ? <> — <Mark>{formData.ciudad}</Mark></> : null}</h1>
+          <p>
+            Referencia: acción de tutela contra <Mark>{formData.vulnerador || '—'}</Mark> por vulneración del{' '}
+            <Mark>{derechoLabel || '—'}</Mark>, conforme al artículo 86 de la Constitución Política y el Decreto 2591 de 1991.
+          </p>
+          <h2>Hechos</h2>
+          <p className="whitespace-pre-wrap"><Mark>{formData.hechos || '—'}</Mark></p>
+          <h2>Peticiones</h2>
+          <p className="whitespace-pre-wrap"><Mark>{formData.peticiones || '—'}</Mark></p>
+          {formData.medidasProvisionales && <p>Se solicitan medidas provisionales.</p>}
+        </DocumentPreview>
 
-          {/* Action Buttons */}
-          <div className="flex space-x-4 pt-4">
-            <Button onClick={generateSummary}
-              disabled={!formData.vulnerador || !formData.hechos || !formData.derecho || !formData.peticiones}
-              variant="primary" className="flex-1"
-            >
-              Continuar al Pago
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: Payment */}
-      {currentStep === 2 && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-text-primary">Paso 2: Procesar Pago</h3>
-            <button
-              onClick={() => setCurrentStep(1)}
-              className="text-sm text-red-600 hover:text-red-700"
-            >
-              ← Volver al Paso 1
-            </button>
-          </div>
-
-          <div className="bg-app rounded-lg p-6">
-            <h4 className="font-semibold text-text-primary mb-4">Resumen de la Acción de Tutela</h4>
-            
-            {documentSummary && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-text-secondary">Total documentos:</span>
-                    <span className="ml-2 font-medium">{documentSummary.totalDocuments}</span>
-                  </div>
-                  <div>
-                    <span className="text-text-secondary">Documentos requeridos:</span>
-                    <span className="ml-2 font-medium">
-                      {DOCUMENT_CATEGORIES.filter(cat => cat.required).length - documentSummary.missingRequired.length}/
-                      {DOCUMENT_CATEGORIES.filter(cat => cat.required).length}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Accuracy Indicator */}
-                <div className={`${getAccuracyInfo().bgColor} ${getAccuracyInfo().borderColor} border rounded-lg p-4`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h5 className={`font-medium ${getAccuracyInfo().color}`}>Precisión del Resultado</h5>
-                    <span className={`font-semibold ${getAccuracyInfo().color}`}>
-                      {getAccuracyInfo().level} ({calculateAccuracy()}%)
-                    </span>
-                  </div>
-                  
-                  <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                    <div 
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        getAccuracyInfo().level === 'Alta' ? 'bg-green-500' :
-                        getAccuracyInfo().level === 'Media' ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${calculateAccuracy()}%` }}
-                    ></div>
-                  </div>
-                  
-                  <p className={`text-sm ${getAccuracyInfo().color}`}>
-                    {getAccuracyInfo().level === 'Alta' && 'Excelente precisión. El resultado será muy preciso basado en los documentos proporcionados y la calidad del formulario completado.'}
-                    {getAccuracyInfo().level === 'Media' && 'Buena precisión. El resultado será preciso, pero algunos detalles podrían necesitar verificación manual.'}
-                    {getAccuracyInfo().level === 'Baja' && 'Precisión limitada. El resultado será básico y requerirá revisión y completado manual.'}
-                  </p>
-                </div>
-              </div>
+        {documentSummary && (
+          <section className="rounded-lg border border-border p-4 space-y-2">
+            <h4 className="text-h4">Pruebas aportadas</h4>
+            <p className="text-body-sm text-text">
+              {documentSummary.totalDocuments} {documentSummary.totalDocuments === 1 ? 'documento' : 'documentos'}
+              {ocrFiles.length > 0 && useOcrData ? ` · texto reconocido de ${ocrFiles.length} archivo(s)` : ''}
+            </p>
+            {documentSummary.missingRequired.length > 0 && (
+              <Alert tone="warning" title="Pruebas recomendadas que faltan">
+                {documentSummary.missingRequired.join(', ')}. Puedes continuar, pero el escrito será más sólido si las aportas.
+              </Alert>
             )}
+          </section>
+        )}
+
+        <fieldset className="space-y-3">
+          <legend className="sr-only">Confirmaciones antes del pago</legend>
+          <label className="flex items-start gap-3 text-body-sm text-text">
+            <input type="checkbox" checked={confirmData} onChange={e => setConfirmData(e.target.checked)} className="mt-1 h-4 w-4 accent-accent" />
+            He revisado los datos resaltados y son correctos.
+          </label>
+          <label className="flex items-start gap-3 text-body-sm text-text">
+            <input type="checkbox" checked={confirmSelf} onChange={e => setConfirmSelf(e.target.checked)} className="mt-1 h-4 w-4 accent-accent" />
+            Entiendo que Avocat genera un borrador con IA y que debo revisarlo y presentarlo yo.
+          </label>
+        </fieldset>
+      </div>
+    ),
+    cta: {
+      label: 'Continuar al pago',
+      disabled: !confirmData || !confirmSelf,
+      hint: !confirmData || !confirmSelf ? 'Marca las dos confirmaciones para continuar.' : undefined,
+      onClick: () => setCurrentStep(STEP.pago),
+    },
+  };
+
+  const total = (UNIT_PRICE_COP * quantity).toLocaleString('es-CO');
+  const pagoStep: WizardStep = {
+    id: 'pago',
+    label: 'Pago',
+    title: 'Pago',
+    description: 'Pago único. Te llevaremos a la pasarela segura de Stripe.',
+    content: (
+      <div className="space-y-4">
+        <div className="rounded-lg border border-border p-4 space-y-4">
+          <div>
+            <label htmlFor="quantity" className="block text-small font-medium text-text mb-1">Cantidad de documentos</label>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" icon={Minus} aria-label="Uno menos" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1} />
+              <input
+                type="number" id="quantity" min="1" max="99" value={quantity}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 1;
+                  setQuantity(Math.max(1, Math.min(99, val)));
+                }}
+                className="w-20 h-control-sm text-center rounded-md border border-border-strong bg-surface text-text"
+              />
+              <Button variant="secondary" size="sm" icon={Plus} aria-label="Uno más" onClick={() => setQuantity(Math.min(99, quantity + 1))} disabled={quantity >= 99} />
+              <span className="text-caption text-text-muted">máx. 99</span>
+            </div>
           </div>
-
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h4 className="font-semibold text-red-800 mb-2">Generación de Acción de Tutela</h4>
-            <p className="text-red-700 text-sm mb-4">
-              Para generar tu acción de tutela personalizada, necesitamos procesar un pago único.
-            </p>
-            
-            {/* ⭐ NUEVO: Selector de cantidad */}
-            <div className="mb-4">
-              <label htmlFor="quantity" className="block text-sm font-medium text-text-secondary mb-2">
-                Cantidad de documentos
-              </label>
-              <div className="flex items-center space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1}
-                  className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  id="quantity"
-                  min="1"
-                  max="99"
-                  value={quantity}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) || 1;
-                    setQuantity(Math.max(1, Math.min(99, val)));
-                  }}
-                  className="w-20 text-center px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setQuantity(Math.min(99, quantity + 1))}
-                  disabled={quantity >= 99}
-                  className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  +
-                </button>
-                <span className="text-sm text-text-secondary">(máx. 99)</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-semibold text-text-primary">Precio unitario:</span>
-              <span className="text-xl font-bold text-red-600">50.000 COP</span>
-            </div>
-            
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-red-200">
-              <span className="text-lg font-semibold text-text-primary">Total ({quantity} documento{quantity !== 1 ? 's' : ''}):</span>
-              <span className="text-2xl font-bold text-red-600">
-                {(50000 * quantity).toLocaleString('es-CO')} COP
-              </span>
-            </div>
-
-            <Button onClick={handlePayment}
-              disabled={isProcessing}
-              variant="primary" block
-            >
-              {isProcessing ? 'Procesando Pago...' : 'Procesar Pago'}
-            </Button>
+          <div className="flex items-center justify-between text-body-sm">
+            <span className="text-text-muted">Precio unitario</span>
+            <span className="text-text">{UNIT_PRICE_COP.toLocaleString('es-CO')} COP</span>
+          </div>
+          <div className="flex items-center justify-between border-t border-border pt-3">
+            <span className="text-body-sm font-semibold text-text-heading">Total ({quantity} documento{quantity !== 1 ? 's' : ''})</span>
+            <span className="font-display text-h2 text-text-heading">{total} COP</span>
           </div>
         </div>
-      )}
+      </div>
+    ),
+    cta: {
+      label: `Pagar ${total} COP`,
+      onClick: handlePayment,
+      loading: isProcessing && !generating,
+      loadingText: 'Preparando el pago…',
+    },
+  };
 
-      {/* Step 3: Document Generation and Download */}
-      {currentStep === 3 && generatedDocument && (
-        <div className="space-y-6">
-          <AIDisclaimer />
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-text-primary">Paso 3: Descargar Documento</h3>
-            <button
-              onClick={resetProcess}
-              className="text-sm text-red-600 hover:text-red-700"
-            >
-              Crear Nueva Acción de Tutela
-            </button>
-          </div>
-
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-            <div className="flex items-center mb-4">
-              <svg className="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h4 className="font-semibold text-green-800">¡Acción de Tutela Generada Exitosamente!</h4>
-            </div>
-            <p className="text-green-700 mb-4">
-              Tu acción de tutela ha sido generada y está lista para su uso.
-            </p>
-            <div className="text-sm text-green-600">
-              <p><strong>Título:</strong> {generatedDocument.title}</p>
-              <p><strong>Generado:</strong> {generatedDocument.generatedAt.toLocaleString('es-ES')}</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex space-x-4">
+  const descargaStep: WizardStep = {
+    id: 'descarga',
+    label: 'Descarga',
+    title: generatedDocument ? 'Tu acción de tutela está lista' : 'Generando tu acción de tutela',
+    content: (
+      <div className="space-y-4">
+        {!generatedDocument && (
+          <>
+            {/* TODO(ds-v4): drive the steps from generation events; /api/accion-tutela is a single request today. */}
+            <AIJobProgress
+              title="Generando tu acción de tutela"
+              steps={['Pago confirmado', 'Analizando tus documentos', 'Redactando hechos, fundamentos y peticiones', 'Preparando el PDF']}
+              current={generating ? 1 : 0}
+              typicalSeconds={90}
+              canLeave={false}
+            />
+            {error && <Alert tone="danger" title="No se pudo generar el documento" onDismiss={() => setError(null)}>{error}</Alert>}
+          </>
+        )}
+        {generatedDocument && (
+          <>
+            <AIDisclaimer />
+            <Alert tone="success" title="Acción de tutela generada">
+              El PDF se ha descargado y se ha guardado en tu historial.
+              <span className="block text-caption text-text-muted mt-1">
+                {generatedDocument.title} · {generatedDocument.generatedAt.toLocaleString('es-ES')}
+              </span>
+            </Alert>
+            <div className="flex flex-wrap gap-2">
               <Button
                 onClick={async () => {
                   try {
                     const { default: jsPDF } = await import('jspdf');
                     const doc = new jsPDF();
-                    
+                    // TODO(ds-v4): this exports the summary note, not the tutela itself (that PDF is
+                    // downloaded during generation). Embed EB Garamond here when jsPDF fonts are added.
                     doc.setFont('helvetica');
                     doc.setFontSize(12);
-                    
                     const lines = doc.splitTextToSize(generatedDocument.content, 170);
                     let y = 20;
                     const lineHeight = 7;
                     const pageHeight = 280;
-                    
                     lines.forEach((line: string) => {
-                      if (y > pageHeight) {
-                        doc.addPage();
-                        y = 20;
-                      }
+                      if (y > pageHeight) { doc.addPage(); y = 20; }
                       doc.text(line, 20, y);
                       y += lineHeight;
                     });
-                    
                     doc.save(`${generatedDocument.title}.pdf`);
                   } catch (error) {
                     console.error('Error generando PDF:', error);
@@ -1262,7 +1058,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   }
                 }}
                 disabled={!isPaymentComplete}
-                variant="primary" className="flex-1"
+                variant="primary"
               >
                 Descargar PDF
               </Button>
@@ -1273,10 +1069,8 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                     const doc = new Document({
                       sections: [{
                         properties: {},
-                        children: generatedDocument.content.split('\n').map(line => 
-                          new Paragraph({
-                            children: [new TextRun({ text: line, size: 24 })]
-                          })
+                        children: generatedDocument.content.split('\n').map(line =>
+                          new Paragraph({ children: [new TextRun({ text: line, size: 24, font: 'EB Garamond' })] })
                         )
                       }]
                     });
@@ -1296,44 +1090,38 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   }
                 }}
                 disabled={!isPaymentComplete}
-                variant="secondary" className="flex-1"
+                variant="secondary"
               >
                 Descargar Word
               </Button>
+              <Button variant="ghost" onClick={resetProcess}>Crear otra acción de tutela</Button>
             </div>
-          </div>
+            <section className="rounded-lg border border-border p-4">
+              <h4 className="text-h4 mb-2 flex items-center gap-2"><CircleCheck size={18} className="text-success-text" aria-hidden /> Próximos pasos</h4>
+              <ul className="list-disc pl-5 text-body-sm text-text space-y-1">
+                <li>Revisa el documento generado.</li>
+                <li>Ajusta el contenido a tu caso.</li>
+                <li>Presenta la acción de tutela ante el juez competente.</li>
+                <li>Guarda una copia para tus registros.</li>
+              </ul>
+            </section>
+          </>
+        )}
+      </div>
+    ),
+    back: false,
+  };
 
-          <div className="bg-app rounded-lg p-4">
-            <h5 className="font-medium text-text-secondary mb-2">Próximos Pasos:</h5>
-            <ul className="text-sm text-text-secondary space-y-1">
-              <li>• Revisa el documento generado</li>
-              <li>• Personaliza el contenido según tus necesidades</li>
-              <li>• Presenta la acción de tutela ante el juez competente</li>
-              <li>• Guarda una copia para tus registros</li>
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* Processing State */}
-      {isProcessing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-lg p-8 max-w-md w-full mx-4">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold text-text-primary mb-2">
-                {currentStep === 2 ? 'Procesando Pago' : 'Generando Acción de Tutela'}
-              </h3>
-              <p className="text-text-secondary">
-                {currentStep === 2 
-                  ? 'Procesando tu pago...' 
-                  : 'Estamos analizando tus documentos y generando tu acción de tutela...'
-                }
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+  return (
+    <>
+      <DocumentWizard
+        title="Acción de tutela"
+        subtitle="Sigue estos pasos para preparar tu escrito."
+        steps={[datosStep, documentosStep, revisionStep, pagoStep, descargaStep]}
+        current={currentStep}
+        onStepChange={setCurrentStep}
+        locked={isPaymentComplete || generating}
+      />
 
       {/* Modal de Análisis de Éxito */}
       <AnalisisExitoModal
@@ -1342,6 +1130,6 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
         analisis={analisisExito}
         loading={isAnalyzing}
       />
-    </div>
+    </>
   );
 }

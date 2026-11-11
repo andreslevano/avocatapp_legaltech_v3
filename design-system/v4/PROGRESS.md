@@ -15,7 +15,8 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 | 5 | Logo & icons | done | 0f7828fe | 5,633 |
 | fix | Opacity modifiers on var colours | done | 929512df | — |
 | 6 | Dark app: raw hex sweep | done | e06ab228 | 2,770 |
-| 7 | Agent | done | (this commit) | 2,770 |
+| 7 | Agent | done | a0c34d8b | 2,770 |
+| 8 | Document wizard | done | (this commit) | 2,435 |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
@@ -92,3 +93,12 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 - `AgentContextChips`: list semantics, X icon, "Quitar … del contexto". AgentChat passes a "Caso: …" chip when opened from a case.
 - Composer (`AgentInput`): visually hidden label, Enter sends / Shift+Enter new line / ⌘-Ctrl+Enter sends (IME-safe), visible placeholder, focus-within ring on the whole box, max 8 lines, Detener button while streaming, attachments removable with labels, keyboard hint, inline disclaimer. Upload/drag/paste/draft logic unchanged.
 - `AgentChat`: log centred at 760px with `role="log" aria-live="polite"`; auto-scroll only when the user is at the bottom; request/stream/auto-save/abort logic unchanged.
+
+## Phase 8 — Document wizard
+- New generic `wizard/DocumentWizard.tsx` (Stepper + step body + sticky 48px CTA on mobile, "Atrás", locked after payment) and parts: `ui/Stepper.tsx` (aria-current="step", "(completado)", done steps clickable), `wizard/FileDropzone.tsx` (drop zone is also a button, polite busy text, privacy note next to the upload — TODO(ds-v4) counsel to confirm wording), `wizard/DocumentPreview.tsx` (always-light paper, `.legal-doc` EB Garamond, `<Mark>` highlights, disclaimer), `wizard/AIJobProgress.tsx` (named steps, typical duration, "Está tardando más de lo normal" after 2×; no fake timer), `ui/Alert.tsx` (from Phase 7).
+- `ReclamacionProcessSimple.tsx` ported: **Datos → Documentos → Revisión → Pago → Descarga** (was Subir → Datos → Pago → Confirmación). Review now comes before payment: paper preview of the data with highlights + document summary + two confirmations ("He revisado los datos…", "Entiendo que… debo revisarlo y presentarlo yo") gate "Continuar al pago". Inline field errors instead of `alert()`; payment errors/cancel as Alerts ("No se ha cobrado nada"); form autosaved to localStorage ("Guardado hace N min"). API calls (`/api/reclamacion-cantidades`, checkout session, 1000-cent charge, success/cancel URLs) unchanged. Removed the pseudo "Precisión del resultado %" score (unsourced).
+- `TutelaProcessSimple.tsx` ported to the same 5 steps (Datos → Documentos (optional upload + OCR) → Revisión → Pago (quantity, 50.000 COP) → Descarga). Payment metadata, Stripe checkout, pilot-user path, `/api/accion-tutela` generation unchanged. Removed "Aplicar datos extraídos" (it filled the form with placeholder text — TODO real extraction) and the pseudo accuracy score. Word export now sets EB Garamond.
+- Deleted `ReclamacionProcess.tsx` (no imports).
+- PDFs: EB Garamond Regular/SemiBold/Italic TTFs (OFL, Fontsource 5.0.0, Latin) in `public/fonts/` with `OFL-EBGaramond.txt` + README. `lib/pdf/fonts.ts` → `registerDocumentFonts(doc)` (Body / Heading / Body-Italic, Times fallback); all 7 pdfkit generators switched from Helvetica. Verified: generated sample PDF embeds EBGaramond, no Helvetica. Note: none of `src/lib/pdf/*` is imported by the app today (dead code or used elsewhere); `src/assets/fonts/SourceSans3-*.otf` are HTML files, not fonts (pre-existing).
+- **Global fix**: `[data-theme] { color: var(--text) }` — nested theme containers (dark Navbar/Footer/featured price card inside light pages, and the reverse) inherited the outer theme's computed text colour, making plain text invisible. Found via the wizard visual check.
+- Dev-only harness `/e2e/wizard` (`?proc=tutela`, `?theme=light`; 404 in production) used for screenshots at 375/1280 in both themes.

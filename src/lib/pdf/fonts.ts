@@ -25,3 +25,34 @@ export const applyPdfFonts = (doc: any) => {
 };
 
 
+
+// ── DS v4 document typeface: EB Garamond (OFL, public/fonts) ──────────────────────────────
+// pdfkit names used by the legal-document generators. If the TTFs are missing at runtime the
+// standard PDF fonts are used instead, so generation never fails because of typography.
+const DOC_FONT_DIR = path.join(process.cwd(), 'public', 'fonts');
+const DOC_FONT_FILES = {
+  body: path.join(DOC_FONT_DIR, 'EBGaramond-Regular.ttf'),
+  heading: path.join(DOC_FONT_DIR, 'EBGaramond-SemiBold.ttf'),
+  italic: path.join(DOC_FONT_DIR, 'EBGaramond-Italic.ttf'),
+};
+
+export const DOC_FONT = { body: 'Body', heading: 'Heading', italic: 'Body-Italic' } as const;
+
+const STANDARD_FALLBACK: Record<keyof typeof DOC_FONT, string> = {
+  body: 'Times-Roman',
+  heading: 'Times-Bold',
+  italic: 'Times-Italic',
+};
+
+/** Register Body / Heading / Body-Italic on a pdfkit document. Call right after `new PDFDocument()`. */
+export function registerDocumentFonts(doc: any): void {
+  (Object.keys(DOC_FONT) as (keyof typeof DOC_FONT)[]).forEach(k => {
+    const file = DOC_FONT_FILES[k];
+    try {
+      if (fs.existsSync(file)) doc.registerFont(DOC_FONT[k], file);
+      else doc.registerFont(DOC_FONT[k], STANDARD_FALLBACK[k]);
+    } catch {
+      doc.registerFont(DOC_FONT[k], STANDARD_FALLBACK[k]);
+    }
+  });
+}

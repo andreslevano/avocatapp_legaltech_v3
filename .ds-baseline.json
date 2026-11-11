@@ -77,19 +77,8 @@
  "src/components/CustomerStatistics.tsx": {
   "raw-hex": 6
  },
- "src/components/ReclamacionProcess.tsx": {
-  "raw-hex": 3,
-  "tw-default-color": 59,
-  "raw-font": 2
- },
- "src/components/ReclamacionProcessSimple.tsx": {
-  "tw-default-color": 3
- },
  "src/components/SpainMap.tsx": {
   "raw-hex": 21
- },
- "src/components/TutelaProcessSimple.tsx": {
-  "tw-default-color": 85
  },
  "src/components/auth/LoginForm.tsx": {
   "raw-hex": 4,
@@ -340,25 +329,6 @@
   "raw-hex": 23
  },
  "src/lib/pdf/email-generator.ts": {
-  "raw-hex": 27,
-  "raw-font": 25
- },
- "src/lib/pdf/reclamacion-cantidades.ts": {
-  "raw-font": 40
- },
- "src/lib/pdf/reclamacion-simple.ts": {
-  "raw-font": 26
- },
- "src/lib/pdf/reclamacion.ts": {
-  "raw-font": 27
- },
- "src/lib/pdf/study-material.ts": {
-  "raw-font": 7
- },
- "src/lib/pdf/tutela-sample.ts": {
-  "raw-font": 24
- },
- "src/lib/pdf/tutela.ts": {
-  "raw-font": 34
+  "raw-hex": 27
  }
 }
