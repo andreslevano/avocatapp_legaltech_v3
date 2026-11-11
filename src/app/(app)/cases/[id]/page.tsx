@@ -485,7 +485,7 @@ export default function CaseDetailPage() {
                   </button>
                 )}
                 <Button
-                  variant="BtnGold"
+                  variant="accent"
                   size="sm"
                   loading={uploading}
                   onClick={() => fileRef.current?.click()}
@@ -567,7 +567,7 @@ export default function CaseDetailPage() {
               />
               <div className="flex justify-end">
                 <Button
-                  variant="BtnGold"
+                  variant="accent"
                   size="sm"
                   loading={addingComment}
                   disabled={!commentText.trim()}
@@ -701,7 +701,7 @@ export default function CaseDetailPage() {
                 ))}
             </div>
             <div className="flex justify-end pt-1">
-              <Button variant="BtnGhost" size="sm" onClick={() => setShowDocPicker(false)}>Cerrar</Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowDocPicker(false)}>Cerrar</Button>
             </div>
           </div>
         </div>

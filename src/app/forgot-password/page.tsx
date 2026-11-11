@@ -5,6 +5,7 @@ import { sendPasswordResetEmail, Auth } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/Button';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -134,15 +135,14 @@ export default function ForgotPassword() {
               </div>
 
               <div className="text-center space-y-4">
-                <button
-                  onClick={() => {
+                <Button onClick={() => {
                     setSuccess(false);
                     setEmail('');
                   }}
-                  className="w-full btn-secondary py-2 px-4 text-sm font-medium"
+                  variant="secondary" block className="py-2 px-4 text-sm"
                 >
                   Enviar otro email
-                </button>
+                </Button>
                 <Link
                   href="/login"
                   className="block text-sm text-text-primary hover:text-text-secondary"
@@ -186,13 +186,12 @@ export default function ForgotPassword() {
               )}
 
               <div>
-                <button
-                  type="submit"
+                <Button type="submit"
                   disabled={isLoading}
-                  className="w-full btn-primary py-3 px-4 text-base font-medium disabled:opacity-50"
+                  variant="primary" block className="py-3 px-4 text-base"
                 >
                   {isLoading ? 'Enviando...' : 'Enviar enlace de recuperación'}
-                </button>
+                </Button>
               </div>
 
               <div className="text-center">

@@ -118,10 +118,10 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
                 <input type="email" value={editing.email} onChange={e => setEditing({ key: k, email: e.target.value })} autoFocus
                   className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-2.5 py-1.5 text-[12px] text-[#c8c0ac] focus:outline-none focus:border-avocat-gold" />
                 <div className="flex gap-2">
-                  <Button variant="BtnGold" size="sm" fullWidth disabled={busy !== null} onClick={onEmail}>
+                  <Button variant="accent" size="sm" fullWidth disabled={busy !== null} onClick={onEmail}>
                     {busy === 'email' ? 'Reenviando…' : 'Guardar y reenviar'}
                   </Button>
-                  <Button variant="BtnGhost" size="sm" disabled={busy !== null} onClick={() => setEditing(null)}>Cancelar</Button>
+                  <Button variant="ghost" size="sm" disabled={busy !== null} onClick={() => setEditing(null)}>Cancelar</Button>
                 </div>
               </li>
             );
@@ -149,7 +149,7 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
 
       {/* Actions */}
       {r.status === 'completed' && r.signedDocumentId && (
-        <Button variant="BtnGold" size="sm" fullWidth disabled={busy !== null} onClick={onOpenSigned}>
+        <Button variant="accent" size="sm" fullWidth disabled={busy !== null} onClick={onOpenSigned}>
           {busy === 'open' ? 'Abriendo…' : 'Abrir PDF firmado'}
         </Button>
       )}
@@ -161,12 +161,12 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
         </p>
       )}
       {r.status === 'pending_owner' && (
-        <Button variant="BtnGold" size="sm" fullWidth disabled={busy !== null} onClick={onSign}>
+        <Button variant="accent" size="sm" fullWidth disabled={busy !== null} onClick={onSign}>
           {busy === 'sign' ? 'Abriendo DocuSign…' : 'Continuar firma'}
         </Button>
       )}
       {waitingOnOther && pending.length > 0 && editing === null && (
-        <Button variant="BtnOutlineDark" size="sm" fullWidth disabled={busy !== null} onClick={onRemind}>
+        <Button variant="secondary" size="sm" fullWidth disabled={busy !== null} onClick={onRemind}>
           {busy === 'remind' ? 'Enviando…' : pending.length > 1 ? `Recordar (${pending.length})` : 'Recordar'}
         </Button>
       )}

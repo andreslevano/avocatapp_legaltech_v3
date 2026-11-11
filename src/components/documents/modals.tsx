@@ -40,7 +40,7 @@ export function LinkCaseModal({
         ))}
       </div>
       <div className="flex justify-end pt-1">
-        <Button variant="BtnGhost" size="sm" onClick={onClose}>Cancelar</Button>
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
       </div>
     </ModalShell>
   );
@@ -80,7 +80,7 @@ export function LinkClientModal({
         ))}
       </div>
       <div className="flex justify-end pt-1">
-        <Button variant="BtnGhost" size="sm" onClick={onClose}>Cancelar</Button>
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
       </div>
     </ModalShell>
   );
@@ -110,8 +110,8 @@ export function DeleteConfirmModal({
         </ul>
       )}
       <div className="flex gap-2 justify-end pt-2">
-        <Button variant="BtnGhost" size="sm" onClick={onClose}>Cancelar</Button>
-        <Button variant="BtnGold" size="sm" loading={loading} onClick={onConfirm}
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+        <Button variant="accent" size="sm" loading={loading} onClick={onConfirm}
           className="!bg-red-500/80 hover:!bg-red-500 !border-red-500/30">
           Eliminar
         </Button>

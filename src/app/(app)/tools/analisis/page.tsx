@@ -272,7 +272,7 @@ function AnalisisPageContent() {
     <div className="flex flex-col h-full">
       <AppHeader
         title="Análisis de Documentos"
-        actions={<Link href="/tools"><Button variant="BtnGhost" size="sm">← Herramientas</Button></Link>}
+        actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto space-y-5">
@@ -329,7 +329,7 @@ function AnalisisPageContent() {
                     <p className="text-[11px] text-emerald-400">Texto extraído — listo para analizar</p>
                   </div>
                 </div>
-                <Button variant="BtnGold" size="md" loading={analyzing} onClick={handleAnalyze}>
+                <Button variant="accent" size="md" loading={analyzing} onClick={handleAnalyze}>
                   Analizar
                 </Button>
               </div>
@@ -358,10 +358,10 @@ function AnalisisPageContent() {
                       </div>
                     ) : (
                       <>
-                        <Button variant="BtnOutlineDark" size="sm" loading={saving} onClick={() => setShowCasePicker(v => !v)}>
+                        <Button variant="secondary" size="sm" loading={saving} onClick={() => setShowCasePicker(v => !v)}>
                           Guardar y asignar a caso
                         </Button>
-                        <Button variant="BtnGold" size="sm" loading={saving} onClick={() => handleSave()}>
+                        <Button variant="accent" size="sm" loading={saving} onClick={() => handleSave()}>
                           Guardar documento
                         </Button>
                       </>
@@ -451,7 +451,7 @@ function AnalisisPageContent() {
               ))}
             </div>
             <div className="flex justify-end pt-1">
-              <Button variant="BtnGhost" size="sm" onClick={() => setShowPicker(false)}>Cerrar</Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowPicker(false)}>Cerrar</Button>
             </div>
           </div>
         </div>

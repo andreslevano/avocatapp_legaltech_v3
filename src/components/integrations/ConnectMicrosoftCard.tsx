@@ -78,7 +78,7 @@ export default function ConnectMicrosoftCard() {
       {notice && <p className={`text-[12px] font-sans ${notice.kind === 'ok' ? 'text-emerald-400' : 'text-red-400'}`}>{notice.text}</p>}
 
       {!info ? (
-        <Button variant="BtnGold" size="sm" loading={busy === 'connect'} onClick={connect}>Conectar con Microsoft</Button>
+        <Button variant="accent" size="sm" loading={busy === 'connect'} onClick={connect}>Conectar con Microsoft</Button>
       ) : (
         <>
           <div className="text-[12px] font-sans text-[#c8c0ac] space-y-0.5">
@@ -94,16 +94,16 @@ export default function ConnectMicrosoftCard() {
                 {imported ? `Los ${imported} archivos importados seguirán en Avocat. ` : ''}Ya no podrás importar desde OneDrive o SharePoint hasta que vuelvas a conectar.
               </p>
               <div className="flex gap-2">
-                <Button variant="BtnOutlineDark" size="sm" loading={busy === 'disconnect'} onClick={disconnect}>Desconectar</Button>
-                <Button variant="BtnGhost" size="sm" onClick={() => setConfirming(false)}>Cancelar</Button>
+                <Button variant="secondary" size="sm" loading={busy === 'disconnect'} onClick={disconnect}>Desconectar</Button>
+                <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>Cancelar</Button>
               </div>
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <Button variant={info.status === 'reauth_required' ? 'BtnGold' : 'BtnOutlineDark'} size="sm" loading={busy === 'connect'} onClick={connect}>
+              <Button variant={info.status === 'reauth_required' ? 'accent' : 'secondary'} size="sm" loading={busy === 'connect'} onClick={connect}>
                 {info.status === 'reauth_required' ? 'Reconectar' : 'Cambiar de cuenta'}
               </Button>
-              <Button variant="BtnGhost" size="sm" onClick={() => setConfirming(true)}>Desconectar</Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>Desconectar</Button>
             </div>
           )}
         </>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/Button';
 
 // Legal areas and document types (same structure as Estudiantes)
 const legalAreas: Record<string, { name: string; price: number }[]> = {
@@ -204,9 +205,9 @@ export default function GeneracionEscritosPage() {
 
             {selectedLegalArea && selectedDocumentType && (
               <div className="mt-6">
-                <button onClick={handleContinuar} className="btn-primary">
+                <Button onClick={handleContinuar} variant="primary">
                   Continuar a generar escrito
-                </button>
+                </Button>
               </div>
             )}
           </div>

@@ -573,8 +573,8 @@ function DocumentsView() {
       <p className="text-[13px] text-[#c8c0ac] font-medium">Carpeta vacía</p>
       <p className="text-[12px] text-[#6b6050] mt-1 mb-4">Arrastra archivos aquí o súbelos desde tu equipo.</p>
       <div className="flex gap-2">
-        <Button variant="BtnGold" size="sm" onClick={() => fileRef.current?.click()}>Subir</Button>
-        <Button variant="BtnOutlineDark" size="sm" onClick={openNewFolder}>Nueva carpeta</Button>
+        <Button variant="accent" size="sm" onClick={() => fileRef.current?.click()}>Subir</Button>
+        <Button variant="secondary" size="sm" onClick={openNewFolder}>Nueva carpeta</Button>
       </div>
       {msEnabled && (
         <button onClick={() => setMsImportOpen(true)} className="mt-4 text-[12px] text-avocat-gold hover:underline">
@@ -622,7 +622,7 @@ function DocumentsView() {
               onChange={handleFileInput} className="hidden" />
             {enabled ? (
               <div className="relative" ref={addMenuRef}>
-                <Button variant="BtnGold" size="sm" loading={uploading} onClick={() => setAddMenu(o => !o)}>
+                <Button variant="accent" size="sm" loading={uploading} onClick={() => setAddMenu(o => !o)}>
                   Añadir ▾
                 </Button>
                 {addMenu && (
@@ -645,7 +645,7 @@ function DocumentsView() {
                 )}
               </div>
             ) : (
-              <Button variant="BtnGold" size="sm" loading={uploading} onClick={() => fileRef.current?.click()}>
+              <Button variant="accent" size="sm" loading={uploading} onClick={() => fileRef.current?.click()}>
                 Subir documento
               </Button>
             )}
@@ -721,10 +721,10 @@ function DocumentsView() {
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <p className="text-[13px] text-[#6b6050] mb-4">No hay documentos subidos aún.</p>
               <div className="flex gap-2">
-                <Button variant="BtnGold" size="md" onClick={() => fileRef.current?.click()}>
+                <Button variant="accent" size="md" onClick={() => fileRef.current?.click()}>
                   Subir primer documento
                 </Button>
-                {enabled && <Button variant="BtnOutlineDark" size="md" onClick={openNewFolder}>Nueva carpeta</Button>}
+                {enabled && <Button variant="secondary" size="md" onClick={openNewFolder}>Nueva carpeta</Button>}
               </div>
             </div>
           ) : (
@@ -793,17 +793,17 @@ function DocumentsView() {
       {selectedDocs.length > 0 && (
         <div className="border-t border-[#2e2b20] bg-[#161410] px-4 py-3 flex items-center gap-3 flex-wrap">
           <span className="text-[12px] text-avocat-gold font-medium">{selectedDocs.length} seleccionado{selectedDocs.length !== 1 ? 's' : ''}</span>
-          {enabled && <Button variant="BtnOutlineDark" size="sm" onClick={handleBulkMove}>Mover a…</Button>}
-          <Button variant="BtnOutlineDark" size="sm" onClick={handleBulkLinkCase}>Vincular a caso</Button>
-          <Button variant="BtnOutlineDark" size="sm" onClick={handleBulkZip}>Descargar ZIP</Button>
+          {enabled && <Button variant="secondary" size="sm" onClick={handleBulkMove}>Mover a…</Button>}
+          <Button variant="secondary" size="sm" onClick={handleBulkLinkCase}>Vincular a caso</Button>
+          <Button variant="secondary" size="sm" onClick={handleBulkZip}>Descargar ZIP</Button>
           {contractsOn && (
-            <Button variant="BtnOutlineDark" size="sm" onClick={() => {
+            <Button variant="secondary" size="sm" onClick={() => {
               const t = selectedDocs.filter(d => d.contractId && d.contractConfirmed).map(d => ({ contractId: d.contractId!, title: d.name.replace(/\.[^.]+$/, '') }));
               if (t.length) setLegalTargets(t);
               else ws.notify({ kind: 'ok', text: 'Ninguno de los seleccionados tiene datos de contrato confirmados. Usa «Analizar como contrato» primero.' });
             }}>Revisar cambios legales</Button>
           )}
-          <Button variant="BtnOutlineDark" size="sm" onClick={handleBulkDelete}>Eliminar</Button>
+          <Button variant="secondary" size="sm" onClick={handleBulkDelete}>Eliminar</Button>
           <button onClick={() => setSelected(new Set())} className="ml-auto text-[11px] text-[#6b6050] hover:text-[#c8c0ac] transition-colors">
             Deseleccionar todo
           </button>

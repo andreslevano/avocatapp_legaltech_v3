@@ -116,7 +116,7 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
             ))}
           </ul>
           {!finished && <p className="text-[11px] text-[#6b6050]">Puedes cerrar esta ventana o seguir trabajando: la importación continúa y verás el progreso abajo a la izquierda.</p>}
-          <Button variant="BtnGold" size="sm" fullWidth onClick={onClose}>{finished ? 'Ver en Documentos' : 'Seguir en segundo plano'}</Button>
+          <Button variant="accent" size="sm" fullWidth onClick={onClose}>{finished ? 'Ver en Documentos' : 'Seguir en segundo plano'}</Button>
         </div>
       </ModalShell>
     );
@@ -205,10 +205,10 @@ export default function ImportOptionsSheet({ items, folderId, folderLabel, caseI
             </div>
             {error && <p className="text-[11px] text-red-400">{error}</p>}
             <div className="flex gap-2 pt-1">
-              <Button variant="BtnGold" size="sm" fullWidth loading={starting} disabled={!toImport.length || !runner} onClick={start}>
+              <Button variant="accent" size="sm" fullWidth loading={starting} disabled={!toImport.length || !runner} onClick={start}>
                 {toImport.length ? `Importar ${toImport.length} ${toImport.length === 1 ? 'archivo' : 'archivos'} →` : 'Nada que importar'}
               </Button>
-              <Button variant="BtnGhost" size="sm" onClick={onBack}>Volver al selector</Button>
+              <Button variant="ghost" size="sm" onClick={onBack}>Volver al selector</Button>
             </div>
           </>
         )}

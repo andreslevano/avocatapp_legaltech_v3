@@ -570,12 +570,6 @@
   "arbitrary-text-size": 11,
   "v3-alias": 3
  },
- "src/components/ui/Button.tsx": {
-  "raw-hex": 4,
-  "arbitrary-color": 4,
-  "arbitrary-text-size": 1,
-  "v3-alias": 13
- },
  "src/components/ui/Card.tsx": {
   "v3-alias": 10
  },

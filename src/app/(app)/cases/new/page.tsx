@@ -481,7 +481,7 @@ export default function NewCasePage() {
         subtitle={step === 'review' && intakeResult ? 'Análisis completado — revisa y confirma' : undefined}
         actions={
           <Link href="/cases">
-            <Button variant="BtnGhost" size="sm">← Cancelar</Button>
+            <Button variant="ghost" size="sm">← Cancelar</Button>
           </Link>
         }
       />
@@ -562,7 +562,7 @@ export default function NewCasePage() {
             {!isProcessing && (
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  variant="BtnGold"
+                  variant="accent"
                   size="lg"
                   fullWidth
                   disabled={files.length === 0}
@@ -570,7 +570,7 @@ export default function NewCasePage() {
                 >
                   {`Analizar con IA (${files.length} archivo${files.length !== 1 ? 's' : ''})`}
                 </Button>
-                <Button variant="BtnGhost" size="lg" fullWidth onClick={handleSkipToForm}>
+                <Button variant="ghost" size="lg" fullWidth onClick={handleSkipToForm}>
                   Crear sin documentos
                 </Button>
               </div>
@@ -654,7 +654,7 @@ export default function NewCasePage() {
                     <textarea rows={5} value={form.notes} onChange={set('notes')} placeholder="Descripción, antecedentes, observaciones..." className={`${inputCls} resize-none leading-relaxed`} />
                   </div>
 
-                  <Button type="submit" variant="BtnGold" size="lg" fullWidth loading={saving}>
+                  <Button type="submit" variant="accent" size="lg" fullWidth loading={saving}>
                     Crear caso
                   </Button>
                 </form>

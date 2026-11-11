@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 import { saveUploadedFile } from '@/lib/storage';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
+import { Button, buttonClasses } from '@/components/ui/Button';
 
 interface ReclamacionProcessProps {
   userId?: string;
@@ -625,13 +626,12 @@ export default function ReclamacionProcessSimple({ userId, userEmail }: Reclamac
               )}
 
               <div className="space-y-3">
-                <button
-                  onClick={generateSummary}
+                <Button onClick={generateSummary}
                   disabled={uploadedDocuments.length === 0}
-                  className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="primary" block
                 >
                   Analizar Documentos y Continuar
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -698,18 +698,17 @@ export default function ReclamacionProcessSimple({ userId, userEmail }: Reclamac
             </div>
           </div>
 
-          <button
-            onClick={() => {
+          <Button onClick={() => {
               if (missingFormFields.length > 0) {
                 alert('Por favor completa todos los campos obligatorios marcados con *.');
                 return;
               }
               setCurrentStep(3);
             }}
-            className="btn-primary w-full"
+            variant="primary" block
           >
             Continuar al Pago
-          </button>
+          </Button>
         </div>
       )}
 
@@ -836,13 +835,12 @@ export default function ReclamacionProcessSimple({ userId, userEmail }: Reclamac
               <span className="text-2xl font-bold text-text-primary">€10.00</span>
             </div>
 
-            <button
-              onClick={handlePayment}
+            <Button onClick={handlePayment}
               disabled={isProcessing}
-              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary" block
             >
               {isProcessing ? 'Procesando Pago...' : 'Procesar Pago'}
-            </button>
+            </Button>
 
             {documentSummary && documentSummary.missingRequired.length > 0 && (
               <div className="mt-3 p-3 bg-surface-muted/20 border border-border rounded-lg">
@@ -889,7 +887,7 @@ export default function ReclamacionProcessSimple({ userId, userEmail }: Reclamac
               momentos el documento (Word y PDF) estará disponible en tu repositorio de documentos
               y en tu historial de compras.
             </p>
-            <a href="/documents" className="btn-primary inline-block">
+            <a href="/documents" className={`${buttonClasses({ variant: 'primary' })}`}>
               Ir a Mis Documentos
             </a>
           </div>

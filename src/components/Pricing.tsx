@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useI18n } from '@/hooks/useI18n';
+import { buttonClasses } from '@/components/ui/Button';
 
 export default function Pricing() {
   const { t } = useI18n();
@@ -145,11 +146,7 @@ export default function Pricing() {
 
               <Link
                 href={plan.href}
-                className={`block w-full text-center py-3 px-4 rounded-lg font-medium transition-colors mt-auto ${
-                  plan.popular
-                    ? 'btn-primary'
-                    : 'btn-secondary'
-                }`}
+                className={`${buttonClasses({ variant: plan.popular ? 'primary' : 'secondary', block: true })} mt-auto`}
               >
                 {plan.cta}
               </Link>
@@ -168,7 +165,7 @@ export default function Pricing() {
               Contacta a nuestro equipo de ventas para discutir tus necesidades.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/contact" className="btn-primary">
+              <Link href="/contact" className={`${buttonClasses({ variant: 'primary' })}`}>
                 Contactar Ventas
               </Link>
             </div>

@@ -164,7 +164,7 @@ export default function LoginForm() {
         />
       </div>
 
-      <Button type="submit" variant="BtnDark" size="lg" fullWidth loading={isLoading}>
+      <Button type="submit" variant="primary" size="lg" fullWidth loading={isLoading}>
         {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
       </Button>
 

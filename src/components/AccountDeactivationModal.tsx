@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { User } from 'firebase/auth';
 import { deactivateUserAccount } from '@/lib/user-management';
+import { Button } from '@/components/ui/Button';
 
 interface AccountDeactivationModalProps {
   isOpen: boolean;
@@ -179,17 +180,15 @@ export default function AccountDeactivationModal({
 
         {/* Footer */}
         <div className="flex items-center justify-end space-x-3 p-6 border-t border-border">
-          <button
-            onClick={handleClose}
+          <Button onClick={handleClose}
             disabled={isLoading}
-            className="btn-secondary px-4 py-2 text-sm disabled:opacity-50"
+            variant="secondary" className="px-4 py-2 text-sm"
           >
             Cancelar
-          </button>
-          <button
-            onClick={handleDeactivate}
+          </Button>
+          <Button onClick={handleDeactivate}
             disabled={isLoading || confirmText !== requiredConfirmText || !confirmCheckbox}
-            className="btn-primary px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="primary" className="px-4 py-2 text-sm"
           >
             {isLoading ? (
               <div className="flex items-center">
@@ -199,7 +198,7 @@ export default function AccountDeactivationModal({
             ) : (
               'Desactivar Cuenta'
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

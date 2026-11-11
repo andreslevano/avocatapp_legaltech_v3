@@ -74,8 +74,8 @@ export default function LegalChangesAdminPage() {
         title="Cambios legales"
         subtitle="Revisión de cambios normativos detectados (BOE · DOUE)"
         actions={<>
-          <Button variant="BtnGhost" size="sm" onClick={() => setManualOpen(o => !o)}>{manualOpen ? 'Cerrar' : 'Añadir manualmente'}</Button>
-          <Button variant="BtnOutlineDark" size="sm" loading={busy === 'search'} disabled={!!busy} onClick={searchNow}>Buscar ahora</Button>
+          <Button variant="ghost" size="sm" onClick={() => setManualOpen(o => !o)}>{manualOpen ? 'Cerrar' : 'Añadir manualmente'}</Button>
+          <Button variant="secondary" size="sm" loading={busy === 'search'} disabled={!!busy} onClick={searchNow}>Buscar ahora</Button>
         </>}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
@@ -192,14 +192,14 @@ function ChangeCard({ c, busy, onRun }: { c: LegalChange; busy: string | null; o
           </div>
           {editable && (
             <div className="flex flex-wrap gap-2 pt-1">
-              <Button variant="BtnGold" size="sm" disabled={!!busy} loading={busy === `${c.id}:approve`}
+              <Button variant="accent" size="sm" disabled={!!busy} loading={busy === `${c.id}:approve`}
                 onClick={() => onRun(`${c.id}:approve`, async () => {
                   const r = await reviewChange(user!, c.id, 'approve', edit());
                   return `Aprobado. ${r.flagged ?? 0} NDAs marcados · ${r.users ?? 0} usuarios avisados.`;
                 })}>Aprobar</Button>
-              <Button variant="BtnOutlineDark" size="sm" disabled={!!busy} loading={busy === `${c.id}:save`}
+              <Button variant="secondary" size="sm" disabled={!!busy} loading={busy === `${c.id}:save`}
                 onClick={() => onRun(`${c.id}:save`, async () => { await reviewChange(user!, c.id, 'save', edit()); return 'Cambios guardados.'; })}>Guardar</Button>
-              <Button variant="BtnGhost" size="sm" disabled={!!busy} loading={busy === `${c.id}:dismiss`}
+              <Button variant="ghost" size="sm" disabled={!!busy} loading={busy === `${c.id}:dismiss`}
                 onClick={() => onRun(`${c.id}:dismiss`, async () => { await reviewChange(user!, c.id, 'dismiss'); return 'Descartado.'; })}>Descartar</Button>
             </div>
           )}
@@ -244,7 +244,7 @@ function ManualForm({ onDone }: { onDone: (msg: string) => void }) {
       </div>
       <textarea className={FIELD} rows={6} placeholder="Texto de la norma (o de los artículos relevantes)" value={text} onChange={e => setText(e.target.value)} />
       {error && <p className="text-[11px] text-red-400">{error}</p>}
-      <Button variant="BtnGold" size="sm" loading={busy} disabled={!title.trim() || text.trim().length < 200} onClick={submit}>
+      <Button variant="accent" size="sm" loading={busy} disabled={!title.trim() || text.trim().length < 200} onClick={submit}>
         {busy ? 'Analizando…' : 'Analizar y añadir'}
       </Button>
     </div>
@@ -289,7 +289,7 @@ function BaselineAdmin({ onNotice }: { onNotice: (n: { kind: 'ok' | 'err'; text:
         (mientras no lo estén, los resultados lo indican).
       </p>
       {items.length === 0 ? (
-        <Button variant="BtnGold" size="sm" loading={busy === 'seed'} onClick={() => post('seed', { action: 'seed' }, 'Cargados {n} requisitos iniciales.')}>
+        <Button variant="accent" size="sm" loading={busy === 'seed'} onClick={() => post('seed', { action: 'seed' }, 'Cargados {n} requisitos iniciales.')}>
           Cargar requisitos iniciales
         </Button>
       ) : items.map(b => <BaselineCard key={b.id} b={b} busy={busy} onSave={(patch, msg) => post(b.id, { action: 'save', id: b.id, patch }, msg)} />)}
@@ -324,14 +324,14 @@ function BaselineCard({ b, busy, onSave }: { b: BaselineItem; busy: string | nul
           {(Object.keys(SEVERITY_LABEL) as ChangeSeverity[]).map(s => <option key={s} value={s} className="bg-[#161410]">{SEVERITY_LABEL[s]}</option>)}
         </select>
         {dirty && (
-          <Button variant="BtnGold" size="sm" disabled={!!busy} loading={busy === b.id}
+          <Button variant="accent" size="sm" disabled={!!busy} loading={busy === b.id}
             onClick={() => onSave({ requirement, suggestedClause: clause.trim() || null, severity }, 'Requisito guardado.')}>Guardar</Button>
         )}
-        <Button variant="BtnOutlineDark" size="sm" disabled={!!busy}
+        <Button variant="secondary" size="sm" disabled={!!busy}
           onClick={() => onSave({ validatedByLawyer: !b.validatedByLawyer }, b.validatedByLawyer ? 'Validación retirada.' : 'Marcado como validado.')}>
           {b.validatedByLawyer ? 'Quitar validación' : 'Marcar como validado'}
         </Button>
-        <Button variant="BtnGhost" size="sm" disabled={!!busy}
+        <Button variant="ghost" size="sm" disabled={!!busy}
           onClick={() => onSave({ active: !b.active }, b.active ? 'Requisito desactivado.' : 'Requisito activado.')}>
           {b.active ? 'Desactivar' : 'Activar'}
         </Button>

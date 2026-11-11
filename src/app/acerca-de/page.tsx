@@ -155,10 +155,10 @@ export default function AboutPage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link href="/signup">
-              <Button variant="BtnGold" size="lg">Comenzar ahora</Button>
+              <Button variant="accent" size="lg">Comenzar ahora</Button>
             </Link>
             <Link href="/contacto">
-              <Button variant="BtnOutlineDark" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
+              <Button variant="secondary" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
                 Contactar
               </Button>
             </Link>

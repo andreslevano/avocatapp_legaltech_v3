@@ -387,7 +387,7 @@ export default function NdaPage() {
       <AppHeader
         title="Generador de NDA"
         subtitle="Acuerdo de Confidencialidad asistido por IA"
-        actions={<Link href="/tools"><Button variant="BtnGhost" size="sm">← Herramientas</Button></Link>}
+        actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
       />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
@@ -614,7 +614,7 @@ export default function NdaPage() {
                   </p>
                 )}
               </div>
-              <Button variant="BtnGold" size="md" loading={generating} onClick={orgTpl ? handleGenerateFromTemplate : handleGenerate}>
+              <Button variant="accent" size="md" loading={generating} onClick={orgTpl ? handleGenerateFromTemplate : handleGenerate}>
                 {orgTpl ? 'Generar NDA (plantilla validada)' : 'Generar NDA'}
               </Button>
             </div>
@@ -646,13 +646,13 @@ export default function NdaPage() {
                       autoOpen={resumeSign}
                     />
                   )}
-                  <Button variant="BtnGhost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>
+                  <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>
                     Copiar
                   </Button>
-                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsWord(result, ndaTitle, signatureUrl, meta)}>
+                  <Button variant="secondary" size="sm" onClick={() => downloadAsWord(result, ndaTitle, signatureUrl, meta)}>
                     Word
                   </Button>
-                  <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsPdf(result, ndaTitle, signatureUrl, meta)}>
+                  <Button variant="secondary" size="sm" onClick={() => downloadAsPdf(result, ndaTitle, signatureUrl, meta)}>
                     PDF
                   </Button>
                 </div>

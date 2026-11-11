@@ -108,8 +108,8 @@ export default function AdminConsentView({ adminConsentUrl, tid = null, returnTo
             Avocat solo pide permisos de lectura y nunca modifica ni borra nada en OneDrive o SharePoint.
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="BtnGold" size="sm" onClick={copy}>{copied ? 'Enlace copiado ✓' : 'Copiar enlace para tu administrador'}</Button>
-            <Button variant="BtnOutlineDark" size="sm" onClick={() => { setMailOpen(o => !o); setMailResult(null); }}>Enviar por email</Button>
+            <Button variant="accent" size="sm" onClick={copy}>{copied ? 'Enlace copiado ✓' : 'Copiar enlace para tu administrador'}</Button>
+            <Button variant="secondary" size="sm" onClick={() => { setMailOpen(o => !o); setMailResult(null); }}>Enviar por email</Button>
           </div>
           {mailOpen && (
             <div className="rounded-xl border border-[#2e2b20] bg-[#161410] p-3 space-y-2">
@@ -118,7 +118,7 @@ export default function AdminConsentView({ adminConsentUrl, tid = null, returnTo
                 <input id="admin-email" type="email" autoFocus value={adminEmail} placeholder="it@tuempresa.com"
                   onChange={e => setAdminEmail(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && adminEmail.trim()) send(); }}
                   className="flex-1 bg-[#1e1c16] border border-[#2e2b20] rounded-lg px-3 py-2 text-[13px] text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40" />
-                <Button variant="BtnGold" size="sm" loading={sending} disabled={!adminEmail.trim()} onClick={send}>Enviar</Button>
+                <Button variant="accent" size="sm" loading={sending} disabled={!adminEmail.trim()} onClick={send}>Enviar</Button>
               </div>
               <p className="text-[11px] text-[#6b6050]">Lo enviamos desde Avocat con el enlace de aprobación; las respuestas te llegarán a ti.</p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#6b6050]">
@@ -132,7 +132,7 @@ export default function AdminConsentView({ adminConsentUrl, tid = null, returnTo
           {mailResult && <p className={`text-[12px] ${mailResult.ok ? 'text-emerald-400' : 'text-red-400'}`}>{mailResult.text}</p>}
           <div className="flex items-center justify-between pt-2 border-t border-[#2e2b20]">
             <Link href={returnTo} className="text-[12px] text-[#6b6050] hover:text-[#c8c0ac]">← Volver</Link>
-            <Button variant="BtnGhost" size="sm" loading={retrying} onClick={retry}>Reintentar</Button>
+            <Button variant="ghost" size="sm" loading={retrying} onClick={retry}>Reintentar</Button>
           </div>
         </div>
       </div>

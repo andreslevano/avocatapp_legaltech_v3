@@ -86,8 +86,8 @@ export default function AppShellClient({ children }: AppShellClientProps) {
       .catch(() => {});
   }, [user]);
 
-  // Dark-surface button styles (globals.css) for the app and its portaled modals. Portals render
-  // into <body>, outside the shell div, so <body> carries the dark theme too while the shell is up.
+  // Portaled modals render into <body>, outside the shell div, so <body> carries the dark theme
+  // too while the shell is up (`app-surface` stays as a hook for app-only CSS).
   useEffect(() => {
     document.body.classList.add('app-surface');
     document.body.dataset.theme = 'dark';

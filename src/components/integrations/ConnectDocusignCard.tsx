@@ -77,7 +77,7 @@ export default function ConnectDocusignCard() {
           <p className="text-[11px] font-sans text-[#6b6050]">
             Necesitas una cuenta de DocuSign. Los sobres se envían desde tu cuenta y cuentan en tu plan de DocuSign.
           </p>
-          <Button variant="BtnGold" size="sm" loading={busy === 'connect'} onClick={() => connect()}>
+          <Button variant="accent" size="sm" loading={busy === 'connect'} onClick={() => connect()}>
             Conectar DocuSign
           </Button>
         </div>
@@ -86,7 +86,7 @@ export default function ConnectDocusignCard() {
           {info.status === 'reauth_required' && (
             <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 flex items-center justify-between gap-3">
               <span className="text-[12px] text-amber-400">La conexión con DocuSign ha caducado.</span>
-              <Button variant="BtnGold" size="sm" loading={busy === 'connect'} onClick={() => connect()}>Reconectar</Button>
+              <Button variant="accent" size="sm" loading={busy === 'connect'} onClick={() => connect()}>Reconectar</Button>
             </div>
           )}
 
@@ -121,8 +121,8 @@ export default function ConnectDocusignCard() {
                 los sobres ya enviados siguen su curso en DocuSign.
               </p>
               <div className="flex gap-2 justify-end">
-                <Button variant="BtnGhost" size="sm" onClick={() => setConfirmDisconnect(false)}>Cancelar</Button>
-                <Button variant="BtnGold" size="sm" loading={busy === 'disconnect'}
+                <Button variant="ghost" size="sm" onClick={() => setConfirmDisconnect(false)}>Cancelar</Button>
+                <Button variant="accent" size="sm" loading={busy === 'disconnect'}
                   className="!bg-red-500/80 hover:!bg-red-500 !border-red-500/30"
                   onClick={() => run('disconnect', async () => { await disconnectDocusign(user); setConfirmDisconnect(false); })}>
                   Desconectar
@@ -131,10 +131,10 @@ export default function ConnectDocusignCard() {
             </div>
           ) : (
             <div className="flex gap-2">
-              <Button variant="BtnOutlineGold" size="sm" loading={busy === 'switch'} onClick={() => connect(true)}>
+              <Button variant="secondary" size="sm" loading={busy === 'switch'} onClick={() => connect(true)}>
                 Cambiar de cuenta
               </Button>
-              <Button variant="BtnGhost" size="sm" onClick={() => setConfirmDisconnect(true)}>Desconectar</Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirmDisconnect(true)}>Desconectar</Button>
             </div>
           )}
         </div>

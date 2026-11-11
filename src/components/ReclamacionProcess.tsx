@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { UploadedDocument, DocumentCategory, DocumentSummary, GeneratedDocument } from '@/types';
+import { Button } from '@/components/ui/Button';
 
 interface ReclamacionProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -534,13 +535,12 @@ Sin otro particular, reciba un cordial saludo.
                 </div>
               )}
               
-              <button
-                onClick={generateSummary}
+              <Button onClick={generateSummary}
                 disabled={uploadedDocuments.length === 0}
-                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary" block
               >
                 Analizar Documentos y Continuar
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -613,13 +613,12 @@ Sin otro particular, reciba un cordial saludo.
               <span className="text-2xl font-bold text-orange-600">€10.00</span>
             </div>
 
-            <button
-              onClick={handlePayment}
+            <Button onClick={handlePayment}
               disabled={!stripe || !documentSummary?.analysisComplete}
-              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary" block
             >
               {!stripe ? 'Cargando...' : 'Procesar Pago con Stripe'}
-            </button>
+            </Button>
             
             <p className="text-xs text-orange-600 mt-2 text-center">
               Pago seguro procesado por Stripe
@@ -659,7 +658,7 @@ Sin otro particular, reciba un cordial saludo.
 
           <div className="space-y-4">
             <div className="flex space-x-4">
-              <button
+              <Button
                 onClick={() => {
                   const newWindow = window.open('', '_blank');
                   if (newWindow) {
@@ -683,17 +682,16 @@ Sin otro particular, reciba un cordial saludo.
                   }
                 }}
                 disabled={!isPaymentComplete}
-                className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary" className="flex-1"
               >
                 Ver Documento
-              </button>
-              <button
-                onClick={downloadDocument}
+              </Button>
+              <Button onClick={downloadDocument}
                 disabled={!isPaymentComplete}
-                className="btn-secondary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="secondary" className="flex-1"
               >
                 Descargar PDF
-              </button>
+              </Button>
             </div>
             
             {!isPaymentComplete && (

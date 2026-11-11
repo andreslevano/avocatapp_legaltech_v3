@@ -5,6 +5,7 @@ import { confirmPasswordReset, Auth, verifyPasswordResetCode } from 'firebase/au
 import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '@/components/ui/Button';
 
 // This page needs to be dynamic because it handles password reset codes from email links
 export const dynamic = 'force-dynamic';
@@ -261,13 +262,12 @@ function ResetPasswordContent() {
               )}
 
               <div>
-                <button
-                  type="submit"
+                <Button type="submit"
                   disabled={isLoading}
-                  className="w-full btn-primary py-3 px-4 text-base font-medium disabled:opacity-50"
+                  variant="primary" block className="py-3 px-4 text-base"
                 >
                   {isLoading ? 'Restableciendo...' : 'Restablecer Contraseña'}
-                </button>
+                </Button>
               </div>
 
               <div className="text-center">

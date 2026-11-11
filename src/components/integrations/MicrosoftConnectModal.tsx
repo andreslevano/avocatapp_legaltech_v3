@@ -32,8 +32,8 @@ export default function MicrosoftConnectModal({ onContinue, onClose, reconnect =
       </p>
       {error && <p className="text-[11px] text-red-400">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
-        <Button variant="BtnGhost" size="sm" onClick={onClose}>Cancelar</Button>
-        <Button variant="BtnGold" size="sm" loading={loading} onClick={go}>Continuar</Button>
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+        <Button variant="accent" size="sm" loading={loading} onClick={go}>Continuar</Button>
       </div>
     </ModalShell>
   );

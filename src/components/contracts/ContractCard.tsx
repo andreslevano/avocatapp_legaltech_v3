@@ -72,7 +72,7 @@ export default function ContractCard({ documentId, documentType, onOpenSheet }: 
     if (!ANALYZABLE_TYPES.has(documentType.toLowerCase())) return null;
     return (
       <div className="border-t border-[#2e2b20] px-4 py-3 flex-shrink-0 bg-[#1a1812] space-y-2">
-        <Button variant="BtnOutlineDark" size="sm" fullWidth loading={busy} onClick={analyze}>
+        <Button variant="secondary" size="sm" fullWidth loading={busy} onClick={analyze}>
           {busy ? 'Leyendo el contrato…' : 'Analizar como contrato'}
         </Button>
         <p className="text-[10px] text-[#3a3630]">Extrae partes y fechas para avisarte antes de que venza.</p>
@@ -118,7 +118,7 @@ export default function ContractCard({ documentId, documentType, onOpenSheet }: 
       )}
       {c.confirmedByUser && (
         <div className="flex items-center gap-2">
-          <Button variant="BtnOutlineDark" size="sm" fullWidth onClick={() => setChecking(true)}>Revisar cambios legales</Button>
+          <Button variant="secondary" size="sm" fullWidth onClick={() => setChecking(true)}>Revisar cambios legales</Button>
           {c.legal?.verdict && c.legal.lastCheckId && (
             <button title={`Última revisión: ${formatContractDate(c.legal.checkedAt?.slice(0, 10))}`}
               onClick={() => getNdaCheck(c.legal!.lastCheckId!).then(r => r && setResult(r)).catch(() => {})}
@@ -133,7 +133,7 @@ export default function ContractCard({ documentId, documentType, onOpenSheet }: 
       {c.confirmedByUser ? (
         <button onClick={() => onOpenSheet(c)} className="text-[11px] text-[#6b6050] hover:text-avocat-gold transition-colors">Editar datos del contrato</button>
       ) : (
-        <Button variant="BtnGold" size="sm" fullWidth onClick={() => onOpenSheet(c)}>Revisar y confirmar</Button>
+        <Button variant="accent" size="sm" fullWidth onClick={() => onOpenSheet(c)}>Revisar y confirmar</Button>
       )}
       {error && <p className="text-[11px] text-red-400">{error}</p>}
     </div>

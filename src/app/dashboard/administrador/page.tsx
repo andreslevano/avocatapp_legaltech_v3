@@ -7,6 +7,7 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { Button } from '@/components/ui/Button';
 
 interface User {
   uid: string;
@@ -315,12 +316,11 @@ export default function AdminDashboard() {
           </div>
           <h2 className="text-2xl font-bold text-text-primary mb-2">Acceso Denegado</h2>
           <p className="text-text-secondary mb-4">No tienes permisos para acceder a esta sección.</p>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="btn-primary"
+          <Button onClick={() => router.push('/dashboard')}
+            variant="primary"
           >
             Volver al Dashboard
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -419,28 +419,25 @@ export default function AdminDashboard() {
                     <div>
                       <h4 className="text-md font-medium text-text-primary mb-3">Acciones</h4>
                       <div className="space-y-3">
-                        <button
-                          onClick={generateEmail}
+                        <Button onClick={generateEmail}
                           disabled={!selectedUser || isGeneratingEmail}
-                          className="w-full btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                          variant="secondary" block
                         >
                           {isGeneratingEmail ? 'Generando...' : 'Generar Email'}
-                        </button>
+                        </Button>
                         
-                        <button
-                          onClick={sendEmail}
+                        <Button onClick={sendEmail}
                           disabled={!selectedUser}
-                          className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                          variant="primary" block
                         >
                           Enviar Email
-                        </button>
+                        </Button>
                         
-                        <button
-                          onClick={syncUsers}
-                          className="w-full btn-secondary"
+                        <Button onClick={syncUsers}
+                          variant="secondary" block
                         >
                           Sincronizar Usuarios
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>

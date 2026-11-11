@@ -365,11 +365,11 @@ export default function GeneracionPage() {
         actions={
           <div className="flex items-center gap-2">
             {step !== 'select' && (
-              <Button variant="BtnGhost" size="sm" onClick={() => setStep(step === 'result' ? 'form' : 'select')}>
+              <Button variant="ghost" size="sm" onClick={() => setStep(step === 'result' ? 'form' : 'select')}>
                 ← {step === 'result' ? 'Editar formulario' : 'Cambiar tipo'}
               </Button>
             )}
-            <Link href="/tools"><Button variant="BtnGhost" size="sm">Herramientas</Button></Link>
+            <Link href="/tools"><Button variant="ghost" size="sm">Herramientas</Button></Link>
           </div>
         }
       />
@@ -421,7 +421,7 @@ export default function GeneracionPage() {
                     value={customType}
                     onChange={e => setCustomType(e.target.value)}
                   />
-                  <Button variant="BtnGold" size="sm" onClick={selectOtro} disabled={!customType.trim()}>
+                  <Button variant="accent" size="sm" onClick={selectOtro} disabled={!customType.trim()}>
                     Continuar
                   </Button>
                 </div>
@@ -575,13 +575,13 @@ export default function GeneracionPage() {
                           : 'Mobility for Work tiene una plantilla de contrato de servicios. Se genera desde el Generador de contrato de servicios para que sea idéntico a la plantilla.'}
                       </p>
                       <Link href={selectedType?.value === 'nda' ? '/tools/nda' : '/tools/contrato-servicios'}>
-                        <Button variant="BtnGold" size="sm">{selectedType?.value === 'nda' ? 'Ir al Generador de NDA' : 'Ir al Generador de contrato de servicios'}</Button>
+                        <Button variant="accent" size="sm">{selectedType?.value === 'nda' ? 'Ir al Generador de NDA' : 'Ir al Generador de contrato de servicios'}</Button>
                       </Link>
                     </div>
                   ) : (
                   <div className="flex justify-end">
                     <Button
-                      variant="BtnGold"
+                      variant="accent"
                       size="md"
                       loading={generating}
                       disabled={validation.status === 'incomplete'}
@@ -621,9 +621,9 @@ export default function GeneracionPage() {
                           returnTo="/documents"
                         />
                       )}
-                      <Button variant="BtnGhost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>Copiar</Button>
-                      <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsWord(result, docLabel)}>Word</Button>
-                      <Button variant="BtnOutlineDark" size="sm" onClick={() => downloadAsPdf(result, docLabel)}>PDF</Button>
+                      <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>Copiar</Button>
+                      <Button variant="secondary" size="sm" onClick={() => downloadAsWord(result, docLabel)}>Word</Button>
+                      <Button variant="secondary" size="sm" onClick={() => downloadAsPdf(result, docLabel)}>PDF</Button>
                     </>
                   )}
                 </div>
@@ -649,11 +649,11 @@ export default function GeneracionPage() {
               {/* Post-generation actions */}
               {!generating && result && (
                 <div className="flex gap-3 justify-end">
-                  <Button variant="BtnGhost" size="sm" onClick={() => { setResult(''); setError(''); setAutoSaved(false); setSavedDocId(null); setStep('form'); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setResult(''); setError(''); setAutoSaved(false); setSavedDocId(null); setStep('form'); }}>
                     Regenerar con cambios
                   </Button>
                   <Link href="/documents">
-                    <Button variant="BtnGold" size="sm">Ver en Mis Documentos →</Button>
+                    <Button variant="accent" size="sm">Ver en Mis Documentos →</Button>
                   </Link>
                 </div>
               )}
@@ -680,7 +680,7 @@ export default function GeneracionPage() {
               ))}
             </div>
             <div className="flex justify-end pt-1">
-              <Button variant="BtnGhost" size="sm" onClick={() => setShowDocPicker(false)}>Cerrar</Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowDocPicker(false)}>Cerrar</Button>
             </div>
           </div>
         </div>

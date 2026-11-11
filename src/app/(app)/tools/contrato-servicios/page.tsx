@@ -139,7 +139,7 @@ export default function ServicesContractPage() {
       <AppHeader
         title="Generador de contrato de servicios"
         subtitle="Contrato de Prestación de Servicios · plantilla de MOBIFORWORK"
-        actions={<Link href="/tools"><Button variant="BtnGhost" size="sm">← Herramientas</Button></Link>}
+        actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto space-y-5">
@@ -213,7 +213,7 @@ export default function ServicesContractPage() {
             {notice && <p className="text-[12px] text-amber-400">{notice}</p>}
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-[#6b6050]">El contrato se guardará automáticamente en tus documentos (Word y PDF).</p>
-              <Button variant="BtnGold" size="md" loading={generating} onClick={generate}>Generar contrato</Button>
+              <Button variant="accent" size="md" loading={generating} onClick={generate}>Generar contrato</Button>
             </div>
           </div>
 
@@ -236,8 +236,8 @@ export default function ServicesContractPage() {
                       autoOpen={resumeSign}
                     />
                   )}
-                  <Button variant="BtnGhost" size="sm" onClick={() => downloadAsWord(result, docTitle || title, undefined, META)}>Word</Button>
-                  <Button variant="BtnGhost" size="sm" onClick={() => downloadAsPdf(result, docTitle || title, undefined, META)}>PDF</Button>
+                  <Button variant="ghost" size="sm" onClick={() => downloadAsWord(result, docTitle || title, undefined, META)}>Word</Button>
+                  <Button variant="ghost" size="sm" onClick={() => downloadAsPdf(result, docTitle || title, undefined, META)}>PDF</Button>
                 </div>
               </div>
               <pre className="px-5 py-4 text-[12px] text-[#c8c0ac] whitespace-pre-wrap font-sans leading-relaxed max-h-[60vh] overflow-y-auto">{result}</pre>

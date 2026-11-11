@@ -134,7 +134,7 @@ export default function ClientsPage() {
         title="Clientes"
         subtitle={`${clients.length} cliente${clients.length !== 1 ? 's' : ''}`}
         actions={
-          <Button variant="BtnGold" size="sm" onClick={openCreate}>
+          <Button variant="accent" size="sm" onClick={openCreate}>
             + Nuevo cliente
           </Button>
         }
@@ -148,7 +148,7 @@ export default function ClientsPage() {
         ) : clients.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-[13px] text-[#6b6050] mb-4">No hay clientes registrados aún.</p>
-            <Button variant="BtnGold" size="md" onClick={openCreate}>Añadir primer cliente</Button>
+            <Button variant="accent" size="md" onClick={openCreate}>Añadir primer cliente</Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -274,8 +274,8 @@ export default function ClientsPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="button" variant="BtnGhost" size="md" fullWidth onClick={() => setShowModal(false)}>Cancelar</Button>
-                <Button type="submit" variant="BtnGold" size="md" fullWidth loading={saving}>
+                <Button type="button" variant="ghost" size="md" fullWidth onClick={() => setShowModal(false)}>Cancelar</Button>
+                <Button type="submit" variant="accent" size="md" fullWidth loading={saving}>
                   {editingClient ? 'Guardar cambios' : 'Guardar'}
                 </Button>
               </div>

@@ -5,6 +5,7 @@ import { UploadedDocument, DocumentCategory, DocumentSummary, GeneratedDocument 
 import AnalisisExitoModal from './AnalisisExitoModal';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 import { isPilotUser } from '@/lib/pilot-users';
+import { Button } from '@/components/ui/Button';
 
 interface TutelaProcessProps {
   onComplete?: (document: GeneratedDocument) => void;
@@ -1053,13 +1054,12 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
 
           {/* Action Buttons */}
           <div className="flex space-x-4 pt-4">
-            <button
-              onClick={generateSummary}
+            <Button onClick={generateSummary}
               disabled={!formData.vulnerador || !formData.hechos || !formData.derecho || !formData.peticiones}
-              className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary" className="flex-1"
             >
               Continuar al Pago
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1181,13 +1181,12 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
               </span>
             </div>
 
-            <button
-              onClick={handlePayment}
+            <Button onClick={handlePayment}
               disabled={isProcessing}
-              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary" block
             >
               {isProcessing ? 'Procesando Pago...' : 'Procesar Pago'}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1223,7 +1222,7 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
 
           <div className="space-y-4">
             <div className="flex space-x-4">
-              <button
+              <Button
                 onClick={async () => {
                   try {
                     const { default: jsPDF } = await import('jspdf');
@@ -1261,11 +1260,11 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   }
                 }}
                 disabled={!isPaymentComplete}
-                className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary" className="flex-1"
               >
                 Descargar PDF
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={async () => {
                   try {
                     const { Document, Packer, Paragraph, TextRun } = await import('docx');
@@ -1295,10 +1294,10 @@ El PDF ha sido descargado y guardado en tu historial. Está listo para su revisi
                   }
                 }}
                 disabled={!isPaymentComplete}
-                className="btn-secondary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="secondary" className="flex-1"
               >
                 Descargar Word
-              </button>
+              </Button>
             </div>
           </div>
 

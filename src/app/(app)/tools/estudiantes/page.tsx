@@ -256,7 +256,7 @@ function EstudiantesContent() {
       <div className="flex flex-col h-full">
         <AppHeader
           title="Documentos por Área Legal"
-          actions={<Link href="/tools"><Button variant="BtnGhost" size="sm">← Herramientas</Button></Link>}
+          actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
         />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-8 max-w-sm text-center space-y-3">
@@ -266,7 +266,7 @@ function EstudiantesContent() {
               Accede a más de 44 modelos de escritos académicos de las 8 áreas del derecho español por €3 cada uno.
             </p>
             <Link href="/subscription">
-              <Button variant="BtnGold" size="sm" className="mt-2">Ver planes</Button>
+              <Button variant="accent" size="sm" className="mt-2">Ver planes</Button>
             </Link>
           </div>
         </div>
@@ -281,7 +281,7 @@ function EstudiantesContent() {
       <div className="flex flex-col h-full">
         <AppHeader
           title="Documentos por Área Legal"
-          actions={<Link href="/tools"><Button variant="BtnGhost" size="sm">← Herramientas</Button></Link>}
+          actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
         />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-xl p-8 max-w-sm text-center space-y-4">
@@ -291,11 +291,11 @@ function EstudiantesContent() {
               Tus documentos se están generando. Aparecerán en el historial de compras en unos momentos.
             </p>
             <div className="flex gap-2 justify-center">
-              <Button variant="BtnGhost" size="sm" onClick={() => setShowSuccess(false)}>
+              <Button variant="ghost" size="sm" onClick={() => setShowSuccess(false)}>
                 Comprar más
               </Button>
               <Link href="/documents">
-                <Button variant="BtnGold" size="sm">Mis documentos</Button>
+                <Button variant="accent" size="sm">Mis documentos</Button>
               </Link>
             </div>
           </div>
@@ -314,7 +314,7 @@ function EstudiantesContent() {
       <AppHeader
         title="Documentos por Área Legal"
         subtitle="Selecciona un área y añade escritos al carrito · €3 / documento"
-        actions={<Link href="/tools"><Button variant="BtnGhost" size="sm">← Herramientas</Button></Link>}
+        actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
       />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
@@ -424,7 +424,7 @@ function EstudiantesContent() {
                 <p className="text-[18px] font-display font-semibold text-[#e8d4a0]">{fmt.format(cartTotal)}</p>
               </div>
               <Button
-                variant="BtnGold"
+                variant="accent"
                 size="md"
                 loading={isProcessing}
                 onClick={handleProceedToPayment}

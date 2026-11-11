@@ -135,34 +135,34 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
       {/* Actions */}
       <div className="border-t border-[#2e2b20] px-4 py-3 flex flex-col gap-2 flex-shrink-0">
         {canSign && (
-          <Button variant="BtnGold" size="sm" fullWidth onClick={() => onAction('sign', d)}>Firmar y enviar</Button>
+          <Button variant="accent" size="sm" fullWidth onClick={() => onAction('sign', d)}>Firmar y enviar</Button>
         )}
         {/* Download row */}
         <div className="flex gap-2">
           {d.pdfDownloadUrl ? (
             <>
               <a href={d.downloadUrl} download={d.name} target="_blank" rel="noopener noreferrer" className="flex-1">
-                <Button variant="BtnGhost" size="sm" fullWidth>Word</Button>
+                <Button variant="ghost" size="sm" fullWidth>Word</Button>
               </a>
               <a href={d.pdfDownloadUrl} download target="_blank" rel="noopener noreferrer" className="flex-1">
-                <Button variant="BtnGold" size="sm" fullWidth>PDF</Button>
+                <Button variant="accent" size="sm" fullWidth>PDF</Button>
               </a>
             </>
           ) : (
             <a href={d.downloadUrl} download={d.name} target="_blank" rel="noopener noreferrer" className="flex-1">
-              <Button variant="BtnGold" size="sm" fullWidth>Descargar</Button>
+              <Button variant="accent" size="sm" fullWidth>Descargar</Button>
             </a>
           )}
           {isPdf && (
             <a href={previewUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="BtnGhost" size="sm">↗</Button>
+              <Button variant="ghost" size="sm">↗</Button>
             </a>
           )}
         </div>
         {/* Other actions */}
         <div className="flex gap-2">
-          <Button variant="BtnOutlineDark" size="sm" fullWidth onClick={() => onAction('link-case', d)}>Vincular caso</Button>
-          <Button variant="BtnOutlineDark" size="sm" fullWidth onClick={() => onAction('analyze', d)}>Analizar con IA</Button>
+          <Button variant="secondary" size="sm" fullWidth onClick={() => onAction('link-case', d)}>Vincular caso</Button>
+          <Button variant="secondary" size="sm" fullWidth onClick={() => onAction('analyze', d)}>Analizar con IA</Button>
         </div>
         <button onClick={() => onAction('delete', d)} className="text-[11px] text-[#8a7f68] hover:text-red-400 transition-colors text-center pt-1">
           Eliminar documento

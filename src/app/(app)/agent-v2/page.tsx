@@ -20,7 +20,7 @@ function AgentV2Content() {
         subtitle="Claude · herramientas nativas · persistencia"
         actions={
           <Link href="/agent">
-            <Button variant="BtnGhost" size="sm">← Agente clásico</Button>
+            <Button variant="ghost" size="sm">← Agente clásico</Button>
           </Link>
         }
       />

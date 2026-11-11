@@ -90,10 +90,10 @@ function ReturnInner() {
       </div>
       {error && <p className="text-[12px] text-red-400">{error}</p>}
       <div className="flex flex-wrap gap-2 justify-end">
-        <Link href="/documents"><Button variant="BtnOutlineGold" size="sm">Ver en Documentos</Button></Link>
+        <Link href="/documents"><Button variant="secondary" size="sm">Ver en Documentos</Button></Link>
         {c.resume
-          ? <Button variant="BtnGold" size="sm" loading={busy} onClick={resume}>Continuar firma</Button>
-          : <Link href="/tools/nda"><Button variant="BtnGold" size="sm">Nuevo NDA</Button></Link>}
+          ? <Button variant="accent" size="sm" loading={busy} onClick={resume}>Continuar firma</Button>
+          : <Link href="/tools/nda"><Button variant="accent" size="sm">Nuevo NDA</Button></Link>}
       </div>
     </div>
   );

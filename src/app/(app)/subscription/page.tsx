@@ -132,7 +132,7 @@ export default function SubscriptionPage() {
 
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
-                variant="BtnGold"
+                variant="accent"
                 size="md"
                 loading={loading}
                 onClick={openPortal}
@@ -140,7 +140,7 @@ export default function SubscriptionPage() {
                 Gestionar suscripción
               </Button>
               <Button
-                variant="BtnOutlineDark"
+                variant="secondary"
                 size="md"
                 loading={loading}
                 onClick={openPortal}

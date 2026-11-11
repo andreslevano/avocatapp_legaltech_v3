@@ -61,8 +61,8 @@ function NameDialog({ mode, folder, parentId, onClose }: {
       />
       {error && <p className="text-[11px] text-red-400">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
-        <Button variant="BtnGhost" size="sm" onClick={onClose}>Cancelar</Button>
-        <Button variant="BtnGold" size="sm" loading={saving} onClick={submit} disabled={!name.trim()}>
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+        <Button variant="accent" size="sm" loading={saving} onClick={submit} disabled={!name.trim()}>
           {mode === 'new' ? 'Crear' : 'Guardar'}
         </Button>
       </div>
@@ -154,8 +154,8 @@ function MoveToModal({ payload, onClose }: { payload: DragPayload; onClose: () =
       </div>
       <p className="text-[11px] text-[#6b6050] truncate">Destino: {folderPathLabel(target, foldersById)}</p>
       <div className="flex justify-end gap-2 pt-1">
-        <Button variant="BtnGhost" size="sm" onClick={onClose}>Cancelar</Button>
-        <Button variant="BtnGold" size="sm" loading={saving} disabled={target === current} onClick={submit}>Mover aquí</Button>
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+        <Button variant="accent" size="sm" loading={saving} disabled={target === current} onClick={submit}>Mover aquí</Button>
       </div>
     </ModalShell>
   );
@@ -221,8 +221,8 @@ function DeleteFolderDialog({ folder, onClose }: { folder: FolderRecord; onClose
       )}
       {error && <p className="text-[11px] text-red-400">{error}</p>}
       <div className="flex gap-2 justify-end pt-1">
-        <Button variant="BtnGhost" size="sm" onClick={onClose}>Cancelar</Button>
-        <Button variant="BtnGold" size="sm" loading={saving} disabled={mode === 'delete-all' && !empty && !ack} onClick={submit}
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+        <Button variant="accent" size="sm" loading={saving} disabled={mode === 'delete-all' && !empty && !ack} onClick={submit}
           className="!bg-red-500/80 hover:!bg-red-500 !border-red-500/30">
           {mode === 'delete-all' && !empty ? 'Eliminar todo' : 'Eliminar carpeta'}
         </Button>
@@ -306,8 +306,8 @@ function AutoOrganizeModal({ onClose }: { onClose: () => void }) {
       )}
       {error && <p className="text-[11px] text-red-400">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
-        <Button variant="BtnGhost" size="sm" onClick={onClose}>Cancelar</Button>
-        {groups.length > 0 && <Button variant="BtnGold" size="sm" loading={saving} onClick={apply}>Aplicar</Button>}
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+        {groups.length > 0 && <Button variant="accent" size="sm" loading={saving} onClick={apply}>Aplicar</Button>}
       </div>
     </ModalShell>
   );

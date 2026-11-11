@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/ui/Button';
 
 interface AccountReactivationModalProps {
   isOpen: boolean;
@@ -63,20 +64,18 @@ export default function AccountReactivationModal({
           </div>
           <div className="items-center px-4 py-3">
             <div className="flex space-x-3">
-              <button
-                onClick={onClose}
+              <Button onClick={onClose}
                 disabled={isLoading}
-                className="btn-secondary px-4 py-2 text-base disabled:opacity-50"
+                variant="secondary" className="px-4 py-2 text-base"
               >
                 Cancelar
-              </button>
-              <button
-                onClick={onConfirm}
+              </Button>
+              <Button onClick={onConfirm}
                 disabled={isLoading}
-                className="btn-primary px-4 py-2 text-base disabled:opacity-50"
+                variant="primary" className="px-4 py-2 text-base"
               >
                 {isLoading ? 'Reactivando...' : 'Reactivar Cuenta'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -43,12 +43,12 @@ export default function Navbar() {
           {/* CTA group */}
           <div className="hidden md:flex items-center gap-3">
             <Link href="/login">
-              <Button variant="BtnGhost" size="sm" className="text-ds-text hover:text-white hover:bg-ds-card">
+              <Button variant="ghost" size="sm" className="text-ds-text hover:text-white hover:bg-ds-card">
                 Iniciar sesión
               </Button>
             </Link>
             <Link href="/signup">
-              <Button variant="BtnGold" size="sm">
+              <Button variant="accent" size="sm">
                 Comenzar gratis
               </Button>
             </Link>
@@ -88,12 +88,12 @@ export default function Navbar() {
           ))}
           <div className="pt-3 flex flex-col gap-2">
             <Link href="/login" onClick={() => setMenuOpen(false)}>
-              <Button variant="BtnOutlineGold" size="md" fullWidth>
+              <Button variant="secondary" size="md" fullWidth>
                 Iniciar sesión
               </Button>
             </Link>
             <Link href="/signup" onClick={() => setMenuOpen(false)}>
-              <Button variant="BtnGold" size="md" fullWidth>
+              <Button variant="accent" size="md" fullWidth>
                 Comenzar gratis
               </Button>
             </Link>

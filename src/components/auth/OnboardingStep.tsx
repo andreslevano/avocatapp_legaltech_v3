@@ -66,7 +66,7 @@ export default function OnboardingStep({ uid, displayName }: OnboardingStepProps
           )}
 
           <Button
-            variant="BtnGold"
+            variant="accent"
             size="lg"
             fullWidth
             loading={isLoading}

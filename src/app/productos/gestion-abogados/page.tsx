@@ -93,10 +93,10 @@ export default function GestionAbogadosPage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link href="/signup?plan=Abogados">
-              <Button variant="BtnGold" size="lg">Empezar ahora</Button>
+              <Button variant="accent" size="lg">Empezar ahora</Button>
             </Link>
             <Link href="/login">
-              <Button variant="BtnOutlineDark" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
+              <Button variant="secondary" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
                 Iniciar sesión
               </Button>
             </Link>
@@ -185,7 +185,7 @@ export default function GestionAbogadosPage() {
             Únete a los abogados que ya trabajan de forma más inteligente con Avocat.
           </p>
           <Link href="/signup?plan=Abogados">
-            <Button variant="BtnGold" size="lg">Comenzar ahora</Button>
+            <Button variant="accent" size="lg">Comenzar ahora</Button>
           </Link>
           <p className="font-sans text-small text-avocat-cream/40 mt-4">Sin tarjeta de crédito requerida</p>
         </div>

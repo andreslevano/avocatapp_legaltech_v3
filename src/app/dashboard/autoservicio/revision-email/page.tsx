@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/Button';
 
 // Types for the revision email workflow
 type ScheduleFrequency = 'manual' | 'daily' | 'weekly' | 'custom';
@@ -179,9 +180,9 @@ export default function RevisionEmailPage() {
                 </button>
               </div>
             ) : (
-              <button onClick={connectEmail} className="btn-primary">
+              <Button onClick={connectEmail} variant="primary">
                 Conectar cuenta de correo
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -246,13 +247,12 @@ export default function RevisionEmailPage() {
               )}
             </div>
             <div className="mt-6">
-              <button
-                onClick={runJob}
+              <Button onClick={runJob}
                 disabled={!emailAccount.connected || progress.status === 'running'}
-                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
               >
                 {progress.status === 'running' ? 'Ejecutando...' : 'Ejecutar ahora'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -291,9 +291,9 @@ export default function RevisionEmailPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                   <h2 className="text-h2 text-text-primary">Resultados</h2>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={() => exportToExcel(results)} className="btn-primary text-sm">
+                    <Button onClick={() => exportToExcel(results)} variant="primary" className="text-sm">
                       Descargar Excel
-                    </button>
+                    </Button>
                     <select
                       value={attachmentsFilter}
                       onChange={(e) => setAttachmentsFilter(e.target.value as 'all' | 'with')}

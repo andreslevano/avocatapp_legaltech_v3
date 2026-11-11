@@ -259,13 +259,3 @@
 zapier-interfaces-chatbot-embed {
   --zapier-primary: var(--accent) !important;
 }
-
-/* ── Dark app surface (v3 Button variants) ─────────────────────────
-   TODO(ds-v4): remove once ui/Button v4 (Phase 1) no longer emits btn-Btn* classes.
-   AppShellClient adds `app-surface` to <body> (so portaled modals are covered too). */
-body.app-surface .btn-BtnOutlineDark { color: var(--gold-200); border-color: var(--gold-800); background-color: transparent; }
-body.app-surface .btn-BtnOutlineDark:hover:not(:disabled) { border-color: var(--gold-500); background-color: var(--gold-950); }
-body.app-surface .btn-BtnGhost { color: var(--neutral-300); }
-body.app-surface .btn-BtnGhost:hover:not(:disabled) { color: var(--gold-200); background-color: var(--neutral-850); }
-body.app-surface .btn-BtnDark { color: var(--gold-200); background-color: var(--neutral-800); }
-body.app-surface .btn-BtnDark:hover:not(:disabled) { background-color: var(--neutral-700); }

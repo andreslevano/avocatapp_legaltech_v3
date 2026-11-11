@@ -43,10 +43,10 @@ export default function MaterialEstudiantesPage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link href="/signup?plan=Estudiantes">
-              <Button variant="BtnGold" size="lg">Explorar material</Button>
+              <Button variant="accent" size="lg">Explorar material</Button>
             </Link>
             <Link href="/login">
-              <Button variant="BtnOutlineDark" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
+              <Button variant="secondary" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
                 Ya tengo cuenta
               </Button>
             </Link>
@@ -143,7 +143,7 @@ export default function MaterialEstudiantesPage() {
             Más de 50 documentos disponibles. Precios desde €3.
           </p>
           <Link href="/signup?plan=Estudiantes">
-            <Button variant="BtnGold" size="lg">Ver catálogo</Button>
+            <Button variant="accent" size="lg">Ver catálogo</Button>
           </Link>
         </div>
       </section>

@@ -203,7 +203,7 @@ export default function MicrosoftPicker({ info, onPick, onClose, onReconnect }: 
           {status === 'error' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#161410] text-center px-6">
               <p className="text-[13px] text-[#c8c0ac]">{errorText}</p>
-              <Button variant="BtnGold" size="sm" onClick={() => { setStatus('loading'); setAttempt(a => a + 1); }}>Reintentar</Button>
+              <Button variant="accent" size="sm" onClick={() => { setStatus('loading'); setAttempt(a => a + 1); }}>Reintentar</Button>
             </div>
           )}
         </div>

@@ -59,10 +59,10 @@ export default function AutoservicioPage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link href="/signup?plan=Autoservicio">
-              <Button variant="BtnGold" size="lg">Crear mi documento</Button>
+              <Button variant="accent" size="lg">Crear mi documento</Button>
             </Link>
             <Link href="/login">
-              <Button variant="BtnOutlineDark" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
+              <Button variant="secondary" size="lg" className="border-avocat-cream/40 text-avocat-cream hover:bg-avocat-cream/10">
                 Ya tengo cuenta
               </Button>
             </Link>
@@ -151,7 +151,7 @@ export default function AutoservicioPage() {
             Proceso rápido y seguro. Documentos listos para usar en minutos.
           </p>
           <Link href="/signup?plan=Autoservicio">
-            <Button variant="BtnGold" size="lg">Empezar ahora</Button>
+            <Button variant="accent" size="lg">Empezar ahora</Button>
           </Link>
         </div>
       </section>

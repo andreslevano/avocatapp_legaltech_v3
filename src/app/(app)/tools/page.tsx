@@ -136,7 +136,7 @@ export default function ToolsPage() {
               </p>
             </div>
             <Button
-              variant="BtnOutlineDark"
+              variant="secondary"
               size="sm"
               loading={topping}
               onClick={handleTopup}

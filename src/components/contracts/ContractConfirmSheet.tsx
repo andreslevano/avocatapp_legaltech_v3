@@ -212,10 +212,10 @@ export default function ContractConfirmSheet({ contract: c, onClose, onSaved }: 
         {error && <p className="text-[11px] text-red-400">{error}</p>}
 
         <div className="flex gap-2 pt-1">
-          <Button variant="BtnGold" size="sm" fullWidth loading={busy} onClick={submit}>
+          <Button variant="accent" size="sm" fullWidth loading={busy} onClick={submit}>
             {c.confirmedByUser ? 'Guardar cambios' : 'Confirmar datos'}
           </Button>
-          <Button variant="BtnGhost" size="sm" disabled={busy} onClick={onClose}>Cancelar</Button>
+          <Button variant="ghost" size="sm" disabled={busy} onClick={onClose}>Cancelar</Button>
         </div>
       </div>
     </ModalShell>

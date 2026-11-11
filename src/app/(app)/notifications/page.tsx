@@ -88,7 +88,7 @@ export default function NotificationsPage() {
         title="Avisos"
         subtitle={unread.length ? `${unread.length} sin leer` : 'Vencimientos de tus contratos'}
         actions={unread.length > 0 ? (
-          <Button variant="BtnGhost" size="sm" onClick={() => markNotificationsRead(unread.map(n => n.id))}>Marcar todo como leído</Button>
+          <Button variant="ghost" size="sm" onClick={() => markNotificationsRead(unread.map(n => n.id))}>Marcar todo como leído</Button>
         ) : undefined}
       />
 
@@ -129,12 +129,12 @@ export default function NotificationsPage() {
                 {!closed && (
                   <div className="flex flex-wrap gap-2 pl-[18px]">
                     {c?.type === 'nda' && (
-                      <Button variant="BtnGold" size="sm" onClick={() => open(n, `/tools/nda?renew=${encodeURIComponent(n.contractId)}`)}>Renovar</Button>
+                      <Button variant="accent" size="sm" onClick={() => open(n, `/tools/nda?renew=${encodeURIComponent(n.contractId)}`)}>Renovar</Button>
                     )}
-                    <Button variant="BtnOutlineDark" size="sm" disabled={!!busy} loading={busy === `${n.id}:snooze`} onClick={() => act(n, 'snooze')}>Posponer 7 días</Button>
-                    <Button variant="BtnOutlineDark" size="sm" disabled={!!busy} loading={busy === `${n.id}:let_expire`} onClick={() => act(n, 'let_expire')}>Dejar vencer</Button>
-                    <Button variant="BtnOutlineDark" size="sm" disabled={!!busy} loading={busy === `${n.id}:terminate`} onClick={() => act(n, 'terminate')}>Marcar como terminado</Button>
-                    <Button variant="BtnGhost" size="sm" onClick={() => open(n, `/documents?doc=${encodeURIComponent(n.documentId)}`)}>Ver documento</Button>
+                    <Button variant="secondary" size="sm" disabled={!!busy} loading={busy === `${n.id}:snooze`} onClick={() => act(n, 'snooze')}>Posponer 7 días</Button>
+                    <Button variant="secondary" size="sm" disabled={!!busy} loading={busy === `${n.id}:let_expire`} onClick={() => act(n, 'let_expire')}>Dejar vencer</Button>
+                    <Button variant="secondary" size="sm" disabled={!!busy} loading={busy === `${n.id}:terminate`} onClick={() => act(n, 'terminate')}>Marcar como terminado</Button>
+                    <Button variant="ghost" size="sm" onClick={() => open(n, `/documents?doc=${encodeURIComponent(n.documentId)}`)}>Ver documento</Button>
                   </div>
                 )}
               </div>
@@ -175,10 +175,10 @@ function LegalChangeItem({ n, onOpen }: { n: AppNotification; onOpen: (n: AppNot
         )}
       </div>
       <div className="flex flex-wrap gap-2 pl-[18px]">
-        <Button variant="BtnGold" size="sm" onClick={() => onOpen(n, '/legal-changes')}>Ver NDAs afectados</Button>
+        <Button variant="accent" size="sm" onClick={() => onOpen(n, '/legal-changes')}>Ver NDAs afectados</Button>
         {n.url && (
           <a href={n.url} target="_blank" rel="noopener noreferrer" onClick={() => { if (!n.readAt) markNotificationsRead([n.id]).catch(() => {}); }}>
-            <Button variant="BtnGhost" size="sm">Texto oficial ↗</Button>
+            <Button variant="ghost" size="sm">Texto oficial ↗</Button>
           </a>
         )}
       </div>

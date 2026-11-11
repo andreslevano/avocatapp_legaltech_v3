@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Button } from '@/components/ui/Button';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -35,12 +36,11 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
               <h2 className="font-bold">Error de aplicación</h2>
               <p className="text-sm">Ha ocurrido un error inesperado. Por favor, recarga la página.</p>
             </div>
-            <button 
-              onClick={() => window.location.reload()}
-              className="btn-primary"
+            <Button onClick={() => window.location.reload()}
+              variant="primary"
             >
               Recargar página
-            </button>
+            </Button>
           </div>
         </div>
       );

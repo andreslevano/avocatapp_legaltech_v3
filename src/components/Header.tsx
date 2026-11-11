@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useI18n } from '@/hooks/useI18n';
 import LanguageSelector from './LanguageSelector';
 import ProductsDropdown from './ProductsDropdown';
+import { buttonClasses } from '@/components/ui/Button';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -55,7 +56,7 @@ export default function Header() {
             <div className="hidden" aria-hidden="true"><LanguageSelector /></div>
             {isLoggedIn ? (
               <div className="flex items-center space-x-4">
-                <Link href="/dashboard" className="btn-secondary">
+                <Link href="/dashboard" className={`${buttonClasses({ variant: 'secondary' })}`}>
                   {t('navigation.dashboard')}
                 </Link>
                 <button
@@ -70,7 +71,7 @@ export default function Header() {
                 <Link href="/login" className="text-text-on-dark font-medium hover:opacity-90 transition-opacity">
                   {t('navigation.login')}
                 </Link>
-                <Link href="/signup" className="btn-primary">
+                <Link href="/signup" className={`${buttonClasses({ variant: 'primary' })}`}>
                   {t('navigation.signup')}
                 </Link>
               </div>

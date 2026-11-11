@@ -7,7 +7,8 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 
 | Phase | Title | Status | Commit | lint:tokens after |
 |---|---|---|---|---|
-| 0 | Foundations | done | (this commit) | 5,806 |
+| 0 | Foundations | done | 6ea8c23b | 5,806 |
+| 1 | Buttons & focus | done | (this commit) | 5,784 |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
@@ -20,3 +21,11 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 - `README-INSTALL.md` from the zip moved into `design-system/v4/` (it isn't part of the app).
 - Build: pass. tsc: 23 (unchanged).
 - Visually risky: h3/h4 switch from Cormorant to DM Sans globally; `rounded-2xl` 24→16px; `shadow-xl/2xl` → `shadow-lg`; body text colour now `var(--text)`; `bg-card`/`bg-app` follow the theme (dark inside the app).
+
+## Phase 1 — Buttons & focus
+- `ui/Button.tsx` v4: variants primary/accent/secondary/ghost/destructive, sizes sm/md/lg, `icon`/`iconRight` (Lucide), `loading`+`loadingText`, `block`, `href` (renders `<a>`). Legacy `Btn*` names still accepted (dev `console.warn`); `fullWidth` kept as a deprecated alias of `block`. Exported `buttonClasses()` for `<Link>`s styled as buttons. Native `type` default kept (forms that rely on submit keep working).
+- All `variant="Btn*"` call sites (185) renamed to v4 variants. Accent = gold + ink text (was white on gold).
+- `.btn-primary/.btn-secondary` usages in TSX (~45) → `<Button>` / `buttonClasses()`; the CSS classes remain in globals.css for now (deleted in Phase 10).
+- Removed the `body.app-surface .btn-Btn*` dark overrides: v4 variants are role-based and correct in both themes.
+- New `ui/IconButton.tsx` (required `label` → aria-label + title, `pressed`) and `ui/TextLink.tsx`.
+- Build pass · tsc 23 · unit 217 pass.

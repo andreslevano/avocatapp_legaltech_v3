@@ -79,7 +79,7 @@ export default function LegalCheckRunner({ targets, onClose }: { targets: CheckT
           ))}
         </ul>
         <p className="text-[10px] text-[#3a3630]">Herramienta de asistencia: no sustituye la revisión de un profesional. Pulsa un resultado para ver el detalle.</p>
-        <Button variant="BtnGhost" size="sm" fullWidth onClick={() => { stopped.current = true; onClose(); }}>
+        <Button variant="ghost" size="sm" fullWidth onClick={() => { stopped.current = true; onClose(); }}>
           {finished ? 'Cerrar' : 'Detener y cerrar'}
         </Button>
       </div>

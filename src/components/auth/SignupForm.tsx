@@ -292,7 +292,7 @@ export default function SignupForm() {
           <input type="password" required autoComplete="new-password" value={form.confirmPassword} onChange={set('confirmPassword')} placeholder="Repite tu contraseña" className="input-field" />
         </div>
 
-        <Button type="submit" variant="BtnGold" size="lg" fullWidth loading={isLoading}>
+        <Button type="submit" variant="accent" size="lg" fullWidth loading={isLoading}>
           {isLoading ? 'Creando cuenta...' : 'Crear cuenta'}
         </Button>
 

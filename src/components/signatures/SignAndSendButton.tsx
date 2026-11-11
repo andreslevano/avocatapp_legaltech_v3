@@ -15,7 +15,7 @@ export default function SignAndSendButton({ autoOpen = false, disabled, ...sheet
   if (!canUseDocusign(userDoc.plan, user)) return null;
   return (
     <>
-      <Button variant="BtnGold" size="sm" disabled={disabled} onClick={() => setOpen(true)}>Firmar y enviar</Button>
+      <Button variant="accent" size="sm" disabled={disabled} onClick={() => setOpen(true)}>Firmar y enviar</Button>
       {open && <SignAndSendSheet {...sheet} onClose={() => setOpen(false)} />}
     </>
   );

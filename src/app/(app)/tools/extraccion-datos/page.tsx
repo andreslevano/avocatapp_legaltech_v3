@@ -229,7 +229,7 @@ ${text.slice(0, 12000)}`;
     <div className="flex flex-col h-full">
       <AppHeader
         title="Extracción de Datos"
-        actions={<Link href="/tools"><Button variant="BtnGhost" size="sm">← Herramientas</Button></Link>}
+        actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto space-y-5">
@@ -241,8 +241,8 @@ ${text.slice(0, 12000)}`;
               <div className="flex items-center gap-2">
                 <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" multiple className="hidden"
                   onChange={e => e.target.files && addFiles(e.target.files)} />
-                <Button variant="BtnOutlineDark" size="sm" onClick={() => fileRef.current?.click()}>+ Subir archivos</Button>
-                <Button variant="BtnGhost" size="sm" onClick={openPicker}>Mis documentos</Button>
+                <Button variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>+ Subir archivos</Button>
+                <Button variant="ghost" size="sm" onClick={openPicker}>Mis documentos</Button>
               </div>
             </div>
 
@@ -284,7 +284,7 @@ ${text.slice(0, 12000)}`;
             )}
 
             <div className="mt-4 flex justify-end">
-              <Button variant="BtnGold" size="md" loading={extracting} disabled={!files.length} onClick={handleExtract}>
+              <Button variant="accent" size="md" loading={extracting} disabled={!files.length} onClick={handleExtract}>
                 {`Extraer datos${files.length > 1 ? ` (${files.length} archivos)` : ''}`}
               </Button>
             </div>
@@ -309,7 +309,7 @@ ${text.slice(0, 12000)}`;
                   ))}
                 </div>
                 <div className="flex justify-end">
-                  <Button variant="BtnGhost" size="sm" onClick={() => setShowPicker(false)}>Cancelar</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowPicker(false)}>Cancelar</Button>
                 </div>
               </div>
             </div>
@@ -326,11 +326,11 @@ ${text.slice(0, 12000)}`;
                   {saved ? (
                     <Link href="/documents" className="text-[12px] text-avocat-gold hover:underline">Ver documento →</Link>
                   ) : (
-                    <Button variant="BtnOutlineDark" size="sm" loading={saving} onClick={handleSaveWord}>
+                    <Button variant="secondary" size="sm" loading={saving} onClick={handleSaveWord}>
                       Guardar Word
                     </Button>
                   )}
-                  <Button variant="BtnGold" size="sm" onClick={() => exportXlsx(results)}>
+                  <Button variant="accent" size="sm" onClick={() => exportXlsx(results)}>
                     Exportar Excel
                   </Button>
                 </div>

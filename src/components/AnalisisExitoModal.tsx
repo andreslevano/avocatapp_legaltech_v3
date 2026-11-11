@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/ui/Button';
 
 interface AnalisisExitoModalProps {
   isOpen: boolean;
@@ -206,12 +207,11 @@ export default function AnalisisExitoModal({ isOpen, onClose, analisis, loading 
 
         {/* Footer */}
         <div className="flex justify-end space-x-4 pt-6 border-t">
-          <button
-            onClick={onClose}
-            className="btn-primary px-6 py-2"
+          <Button onClick={onClose}
+            variant="primary" className="px-6 py-2"
           >
             Cerrar
-          </button>
+          </Button>
         </div>
       </div>
     </div>

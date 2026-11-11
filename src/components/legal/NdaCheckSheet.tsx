@@ -69,11 +69,11 @@ export default function NdaCheckSheet({ check, onClose, onRecheck }: { check: Nd
         <div className="flex flex-wrap gap-2 pt-1">
           {bad.length > 0 && (
             <Link href={`/tools/nda?renew=${encodeURIComponent(check.contractId)}&check=${encodeURIComponent(check.id)}`} className="flex-1">
-              <Button variant="BtnGold" size="sm" fullWidth>Generar versión actualizada</Button>
+              <Button variant="accent" size="sm" fullWidth>Generar versión actualizada</Button>
             </Link>
           )}
-          {onRecheck && <Button variant="BtnOutlineDark" size="sm" onClick={onRecheck}>Volver a revisar</Button>}
-          <Button variant="BtnGhost" size="sm" onClick={onClose}>Cerrar</Button>
+          {onRecheck && <Button variant="secondary" size="sm" onClick={onRecheck}>Volver a revisar</Button>}
+          <Button variant="ghost" size="sm" onClick={onClose}>Cerrar</Button>
         </div>
       </div>
     </ModalShell>

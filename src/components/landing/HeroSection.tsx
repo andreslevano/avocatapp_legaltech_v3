@@ -96,13 +96,13 @@ export default function HeroSection() {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-3">
             <Link href="/signup">
-              <Button variant="BtnGold" size="lg" className="text-[15px] px-7">
+              <Button variant="accent" size="lg" className="text-[15px] px-7">
                 Prueba gratis 14 días →
               </Button>
             </Link>
             <Link href="#como-funciona">
               <Button
-                variant="BtnGhost"
+                variant="ghost"
                 size="lg"
                 className="text-[#8a8070] border border-[#2e2b20] hover:border-avocat-gold/30 hover:text-[#c8c0ac]"
               >

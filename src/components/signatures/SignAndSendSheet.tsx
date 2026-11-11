@@ -143,7 +143,7 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
               {info ? 'La conexión con DocuSign ha caducado.' : 'Conecta tu cuenta de DocuSign para enviar documentos a firmar.'}
               {' '}Volverás aquí con el documento listo para enviar.
             </p>
-            <Button variant="BtnGold" size="sm" loading={busy === 'connect'} onClick={connect}>
+            <Button variant="accent" size="sm" loading={busy === 'connect'} onClick={connect}>
               {info ? 'Reconectar DocuSign' : 'Conectar DocuSign'}
             </Button>
           </div>
@@ -286,12 +286,12 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button variant="BtnGhost" size="sm" className="!text-[#9a9a9a] hover:!bg-transparent hover:!text-[#c8c0ac]"
+        <Button variant="ghost" size="sm" className="!text-[#9a9a9a] hover:!bg-transparent hover:!text-[#c8c0ac]"
           disabled={!!busy} onClick={p.onClose}>Cancelar</Button>
         {resumeId ? (
-          <Button variant="BtnGold" size="sm" loading={busy === 'resume'} onClick={resume}>Continuar firma</Button>
+          <Button variant="accent" size="sm" loading={busy === 'resume'} onClick={resume}>Continuar firma</Button>
         ) : connected ? (
-          <Button variant="BtnGold" size="sm" loading={busy === 'send'} onClick={send}>Firmar y enviar →</Button>
+          <Button variant="accent" size="sm" loading={busy === 'send'} onClick={send}>Firmar y enviar →</Button>
         ) : null}
       </div>
     </ModalShell>

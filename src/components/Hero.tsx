@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useI18n } from '@/hooks/useI18n';
+import { buttonClasses } from '@/components/ui/Button';
 
 export default function Hero() {
   const { t } = useI18n();
@@ -36,7 +37,7 @@ export default function Hero() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/signup" className="btn-primary text-lg px-8 py-3 shadow-xl hover:shadow-2xl transition-all">
+            <Link href="/signup" className={`${buttonClasses({ variant: 'primary' })} text-lg px-8 py-3`}>
               {t('hero.cta')}
             </Link>
           </div>

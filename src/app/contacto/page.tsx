@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import { useI18n } from '@/hooks/useI18n';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Button } from '@/components/ui/Button';
 
 interface ContactFormData {
   name: string;
@@ -291,13 +292,12 @@ export default function ContactPage() {
                   >
                     ← Volver al inicio
                   </Link>
-                  <button
-                    type="submit"
+                  <Button type="submit"
                     disabled={isSubmitting}
-                    className="btn-primary px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    variant="primary" className="px-6 py-3"
                   >
                     {isSubmitting ? 'Enviando...' : 'Enviar mensaje'}
-                  </button>
+                  </Button>
                 </div>
               </form>
             )}

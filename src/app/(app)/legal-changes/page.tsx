@@ -71,7 +71,7 @@ export default function LegalChangesPage() {
                   {' '}· ✅ {count('ok')} · 🟡 {count('review')} · 🔴 {count('outdated')}
                 </p>
               </div>
-              <Button variant="BtnGold" size="sm" disabled={!ndas.length}
+              <Button variant="accent" size="sm" disabled={!ndas.length}
                 onClick={() => setTargets(ndas.map(c => ({ contractId: c.id, title: c.title })))}>
                 Revisar todos mis NDAs
               </Button>

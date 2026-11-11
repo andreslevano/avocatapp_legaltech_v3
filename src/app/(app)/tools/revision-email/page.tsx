@@ -246,7 +246,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
             Autoriza acceso de solo lectura a tu Gmail para buscar, analizar y vincular emails a tus casos.
           </p>
         </div>
-        <Button variant="BtnGold" size="md" loading={connecting} onClick={handleConnect}>
+        <Button variant="accent" size="md" loading={connecting} onClick={handleConnect}>
           Conectar Gmail
         </Button>
         {searchError && <p className="text-[12px] text-red-400">{searchError}</p>}
@@ -293,7 +293,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
         </div>
         {searchError && <p className="text-[12px] text-red-400">{searchError}</p>}
         <div className="flex justify-end">
-          <Button variant="BtnGold" size="sm" loading={searching} onClick={handleSearch}>Buscar emails</Button>
+          <Button variant="accent" size="sm" loading={searching} onClick={handleSearch}>Buscar emails</Button>
         </div>
       </div>
 
@@ -357,7 +357,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
           {/* Analyze button */}
           {!analysis && (
             <div className="px-5 py-3 flex justify-end">
-              <Button variant="BtnGold" size="sm" loading={analyzing} onClick={handleAnalyze}>
+              <Button variant="accent" size="sm" loading={analyzing} onClick={handleAnalyze}>
                 Analizar con IA
               </Button>
             </div>
@@ -411,8 +411,8 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
                   </>
                 ) : (
                   <>
-                    <Button variant="BtnGold" size="sm" onClick={() => setShowCreateCase(true)}>Crear caso</Button>
-                    <Button variant="BtnOutlineDark" size="sm" onClick={() => setShowLinkCase(v => !v)}>
+                    <Button variant="accent" size="sm" onClick={() => setShowCreateCase(true)}>Crear caso</Button>
+                    <Button variant="secondary" size="sm" onClick={() => setShowLinkCase(v => !v)}>
                       Vincular a caso
                     </Button>
                   </>
@@ -421,7 +421,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
                   <Link href="/documents" className="text-[12px] text-avocat-gold hover:underline ml-auto">Ver documento →</Link>
                 ) : (
                   <Button
-                    variant="BtnGhost"
+                    variant="ghost"
                     size="sm"
                     loading={savingDoc}
                     onClick={async () => {
@@ -498,8 +498,8 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
               </div>
             </div>
             <div className="flex gap-3 pt-1">
-              <Button variant="BtnGhost" size="md" fullWidth onClick={() => setShowCreateCase(false)}>Cancelar</Button>
-              <Button variant="BtnGold" size="md" fullWidth loading={savingCase} onClick={handleCreateCase}>Crear caso</Button>
+              <Button variant="ghost" size="md" fullWidth onClick={() => setShowCreateCase(false)}>Cancelar</Button>
+              <Button variant="accent" size="md" fullWidth loading={savingCase} onClick={handleCreateCase}>Crear caso</Button>
             </div>
           </div>
         </div>
@@ -548,7 +548,7 @@ function ManualTab({ user }: { user: ReturnType<typeof useAppAuth>['user'] }) {
           className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-4 py-3 text-[13px] font-sans text-[#c8c0ac] placeholder-[#3a3630] focus:outline-none focus:border-avocat-gold/40 resize-none leading-relaxed" />
         {error && <p className="mt-2 text-[12px] text-red-400">{error}</p>}
         <div className="mt-3 flex justify-end">
-          <Button variant="BtnGold" size="md" loading={analyzing} onClick={handleAnalyze}>Analizar email</Button>
+          <Button variant="accent" size="md" loading={analyzing} onClick={handleAnalyze}>Analizar email</Button>
         </div>
       </div>
 
@@ -614,7 +614,7 @@ export default function RevisionEmailPage() {
       <AppHeader
         title="Revisión de Email"
         subtitle="Análisis jurídico e integración con casos"
-        actions={<Link href="/tools"><Button variant="BtnGhost" size="sm">← Herramientas</Button></Link>}
+        actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-3xl mx-auto space-y-5">
