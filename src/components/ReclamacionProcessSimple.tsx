@@ -95,42 +95,42 @@ const DOCUMENT_CATEGORIES: DocumentCategory[] = [
     name: 'Contrato',
     description: 'Contrato o acuerdo comercial',
     required: true,
-    color: 'bg-surface-muted/30 text-text-primary'
+    color: 'bg-surface-muted/30 text-text'
   },
   {
     id: 'invoice',
     name: 'Factura',
     description: 'Facturas pendientes de pago',
     required: true,
-    color: 'bg-surface-muted/30 text-text-primary'
+    color: 'bg-surface-muted/30 text-text'
   },
   {
     id: 'correspondence',
     name: 'Correspondencia',
     description: 'Emails, cartas, comunicaciones',
     required: false,
-    color: 'bg-surface-muted/20 text-text-secondary'
+    color: 'bg-surface-muted/20 text-text-muted'
   },
   {
     id: 'evidence',
     name: 'Pruebas',
     description: 'Documentos que prueban la deuda',
     required: true,
-    color: 'bg-surface-muted/30 text-text-primary'
+    color: 'bg-surface-muted/30 text-text'
   },
   {
     id: 'identity',
     name: 'Identificación',
     description: 'DNI, NIE o documentos de identidad',
     required: true,
-    color: 'bg-surface-muted/30 text-text-primary'
+    color: 'bg-surface-muted/30 text-text'
   },
   {
     id: 'other',
     name: 'Otros',
     description: 'Otros documentos relevantes',
     required: false,
-    color: 'bg-surface-muted/30 text-text-primary'
+    color: 'bg-surface-muted/30 text-text'
   }
 ];
 
@@ -376,8 +376,8 @@ export default function ReclamacionProcessSimple({ userId, userEmail }: Reclamac
           uid: userId,
           userId,
           customerEmail: userEmail || 'user@example.com',
-          successUrl: `${window.location.origin}/dashboard/autoservicio/reclamacion-cantidades?payment=success&caseId=${reclId}`,
-          cancelUrl: `${window.location.origin}/dashboard/autoservicio/reclamacion-cantidades?payment=cancelled&caseId=${reclId}`
+          successUrl: `${window.location.origin}/escritos/reclamacion-cantidad?payment=success&caseId=${reclId}`,
+          cancelUrl: `${window.location.origin}/escritos/reclamacion-cantidad?payment=cancelled&caseId=${reclId}`
         }),
       });
 

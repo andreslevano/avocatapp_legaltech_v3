@@ -1,5 +1,8 @@
 'use client';
 
+// TODO(ds-v4): product review — no longer referenced after /dashboard was retired. A "probabilidad de éxito"
+// indicator in a legal product needs a documented methodology + disclaimer, or removal.
+
 import { useState, useEffect } from 'react';
 
 interface WinProbabilityProps {

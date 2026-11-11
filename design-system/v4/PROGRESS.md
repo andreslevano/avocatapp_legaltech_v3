@@ -16,7 +16,8 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 | fix | Opacity modifiers on var colours | done | 929512df | — |
 | 6 | Dark app: raw hex sweep | done | e06ab228 | 2,770 |
 | 7 | Agent | done | a0c34d8b | 2,770 |
-| 8 | Document wizard | done | (this commit) | 2,435 |
+| 8 | Document wizard | done | 14f1d743 | 2,435 |
+| 9 | Retire /dashboard | done | (this commit) | 2,128 |
 
 ## Phase 0 — Foundations
 - CLAUDE.md: "DESIGN SYSTEM v3" section replaced with `CLAUDE-section.md`.
@@ -102,3 +103,26 @@ lint:tokens at start (no baseline): **5,806 violations in 118 files** (5,810 bef
 - PDFs: EB Garamond Regular/SemiBold/Italic TTFs (OFL, Fontsource 5.0.0, Latin) in `public/fonts/` with `OFL-EBGaramond.txt` + README. `lib/pdf/fonts.ts` → `registerDocumentFonts(doc)` (Body / Heading / Body-Italic, Times fallback); all 7 pdfkit generators switched from Helvetica. Verified: generated sample PDF embeds EBGaramond, no Helvetica. Note: none of `src/lib/pdf/*` is imported by the app today (dead code or used elsewhere); `src/assets/fonts/SourceSans3-*.otf` are HTML files, not fonts (pre-existing).
 - **Global fix**: `[data-theme] { color: var(--text) }` — nested theme containers (dark Navbar/Footer/featured price card inside light pages, and the reverse) inherited the outer theme's computed text colour, making plain text invisible. Found via the wizard visual check.
 - Dev-only harness `/e2e/wizard` (`?proc=tutela`, `?theme=light`; 404 in production) used for screenshots at 375/1280 in both themes.
+
+## Phase 9 — Retire /dashboard
+Route moves (all inside the `(app)` shell, dark theme):
+| Legacy | New |
+|---|---|
+| `/dashboard` (KPIs) | `/panel` (page moved; title "Panel") |
+| `/dashboard/autoservicio/reclamacion-cantidades` | `/escritos/reclamacion-cantidad` |
+| `/dashboard/autoservicio/accion-tutela` | `/escritos/accion-tutela` |
+| `/dashboard/accion-tutela/history` | `/escritos/accion-tutela/historial` |
+| `/dashboard/administrador` | `/admin` (keeps its own isAdmin check; `requiresAdminAccess` lists `/admin`) |
+| `/profile` | `/settings/perfil` |
+| `/subscription` | `/settings/suscripcion` |
+| `casos-urgentes / a-tiempo / vencidos` | `/cases?estado=urgente|a-tiempo|vencido` (new deadline filter on /cases using `deadlineStatus()`; also `proximo`; cards show a StatusTag for non-"a tiempo" deadlines) |
+| `analisis-caso`, `auditoria-legal` | `/tools/analisis` (already the v3 replacement; plan's `/tools/auditoria` doesn't exist) |
+| `autoservicio/extraccion-datos`, `revision-email`, `generacion-escritos`, `generar-escritos`, `estudiantes`, `casos`, `crear-caso`, `directorio-clientes`, `repositorio` | existing `(app)` pages (`/tools/*`, `/cases`, `/cases/new`, `/clients`, `/documents`) |
+- 24 permanent (301) redirects in `next.config.js` incl. a `/dashboard/:path*` → `/panel` catch-all. Verified on a production build with `next start`: query strings survive (Stripe `?payment=success&caseId=…`).
+- `PLAN_DASHBOARDS.Abogados`, Rail "Panel", home link, onboarding/signup fallbacks → `/panel`; `LAWYER_ONLY_PATHS` = `/panel`, `/cases`. Stripe success/cancel URLs in both wizards and links in tools/notifications/profile panel/integration cards point to the new paths (old ones still redirect; API `returnTo` defaults left untouched and covered by the redirect).
+- **Bug fixed on the way:** the legacy reclamación/tutela pages read `useDashboardAuth()`, but `dashboard/layout` never mounted that provider → `userId` was undefined ("Debes iniciar sesión para continuar"). Moved pages use `useAppAuth()`.
+- Deleted `src/app/dashboard/` (19 files) and, once unreferenced: `DashboardShell`, `DashboardLayout`, `DashboardNavigation`, `components/Sidebar`, `UserMenu`, `LawyerToolbar`, `IndicatorCards`, `CaseStatistics`, `CustomerStatistics`, `ClientAnalytics` (+1 pre-existing tsc error gone), `contexts/DashboardAuthContext`. Kept with TODO for product review: `WinProbabilityIndicator`, `SpainMap` (now unreferenced). Legacy 1,792-line `autoservicio/extraccion-datos` and 1,041-line `analisis-caso` were removed in favour of the existing `/tools/*` pages (their tsc errors went with them).
+- Moved pages swept to v4 tokens; remaining UI emoji → Lucide; profile country flags → names.
+- ZapierChatbot kept (accent themed); TODO: disclaimer can't be injected into the third-party popup.
+- Untracked Finder duplicates (`src/app/dashboard/layout 2.tsx`, `casos/page 2.tsx`, `src/app/profile/layout 2.tsx`) are git-ignored and not routes; left on disk.
+- tsc 23 → 16. Single commit for the phase (route moves are interdependent: redirects, PLAN_DASHBOARDS and deletions had to land together to keep the build green).

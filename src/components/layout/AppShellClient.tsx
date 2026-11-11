@@ -17,11 +17,9 @@ import FocusedSigningHost from '@/components/signatures/FocusedSigningHost';
 import { ImportJobsProvider } from '@/contexts/ImportJobsContext';
 import PreviewVerifyBanner from '@/components/layout/PreviewVerifyBanner';
 
-const LAWYER_ONLY_PATHS = ['/dashboard', '/cases'];
+const LAWYER_ONLY_PATHS = ['/panel', '/cases'];
 
 function isLawyerOnlyPath(pathname: string) {
-  // Autoservicio tools live under /dashboard/autoservicio — open to all plans
-  if (pathname.startsWith('/dashboard/autoservicio')) return false;
   return LAWYER_ONLY_PATHS.some(
     p => pathname === p || pathname.startsWith(p + '/')
   );

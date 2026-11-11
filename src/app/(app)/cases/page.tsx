@@ -1,7 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { deadlineStatus, type LegalStatus } from '@/lib/tokens';
+import { StatusTag } from '@/components/ui/StatusTag';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCases, type CaseDoc, type CaseStatus } from '@/lib/firestore';
 import AppHeader from '@/components/layout/AppHeader';
@@ -30,6 +33,22 @@ const FILTERS: { label: string; value: CaseStatus | 'all' }[] = [
   { label: 'Archivados', value: 'archived' },
 ];
 
+// Deadline filters (?estado=) — replace the legacy /dashboard/casos-urgentes|a-tiempo|vencidos pages.
+// One rule for every view: deadlineStatus() (vencido < 0 días, urgente ≤ 3, próximo ≤ 7, a tiempo > 7).
+type Estado = 'vencido' | 'urgente' | 'proximo' | 'a-tiempo';
+const ESTADOS: { label: string; value: Estado }[] = [
+  { label: 'Vencidos', value: 'vencido' },
+  { label: 'Urgentes', value: 'urgente' },
+  { label: 'Próximos', value: 'proximo' },
+  { label: 'A tiempo', value: 'a-tiempo' },
+];
+
+function daysLeft(ts: Timestamp | null): number | null {
+  if (!ts) return null;
+  const secs = (ts as unknown as { seconds: number }).seconds ?? 0;
+  return Math.floor((secs * 1000 - Date.now()) / 86_400_000);
+}
+
 function formatDeadline(ts: Timestamp | null): string | null {
   if (!ts) return null;
   const secs = (ts as unknown as { seconds: number }).seconds ?? 0;
@@ -39,7 +58,25 @@ function formatDeadline(ts: Timestamp | null): string | null {
 }
 
 export default function CasesPage() {
+  return (
+    <Suspense fallback={null}>
+      <CasesPageInner />
+    </Suspense>
+  );
+}
+
+function CasesPageInner() {
   const { userDoc } = useAppAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const estadoParam = params?.get('estado') ?? '';
+  const estado = (ESTADOS.some(e => e.value === estadoParam) ? estadoParam : null) as Estado | null;
+  const setEstado = (e: Estado | null) => {
+    const q = new URLSearchParams(params?.toString() ?? '');
+    if (e) q.set('estado', e); else q.delete('estado');
+    router.replace(`${pathname}${q.toString() ? `?${q}` : ''}`, { scroll: false });
+  };
   const [cases, setCases] = useState<CaseDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<CaseStatus | 'all'>('all');
@@ -55,6 +92,11 @@ export default function CasesPage() {
 
   const visible = cases.filter(c => {
     if (filter !== 'all' && c.status !== filter) return false;
+    if (estado) {
+      if (c.status === 'closed' || c.status === 'archived') return false;
+      const d = daysLeft(c.deadline);
+      if (d === null || deadlineStatus(d) !== estado) return false;
+    }
     if (search) {
       const q = search.toLowerCase();
       return (
@@ -105,6 +147,25 @@ export default function CasesPage() {
             ))}
           </div>
 
+          {/* Deadline filter (?estado=) */}
+          <div className="flex gap-1" role="group" aria-label="Filtrar por plazo">
+            {ESTADOS.map(e => (
+              <button
+                key={e.value}
+                onClick={() => setEstado(estado === e.value ? null : e.value)}
+                aria-pressed={estado === e.value}
+                className={[
+                  'px-3 py-1.5 rounded-lg text-caption font-sans font-medium transition-colors border',
+                  estado === e.value
+                    ? 'border-accent text-accent-text bg-accent-subtle'
+                    : 'border-transparent text-text-muted hover:text-text hover:bg-surface-muted',
+                ].join(' ')}
+              >
+                {e.label}
+              </button>
+            ))}
+          </div>
+
           {/* Search */}
           <input
             type="text"
@@ -124,9 +185,9 @@ export default function CasesPage() {
           ) : visible.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-small text-text-muted">
-                {search || filter !== 'all' ? 'Sin resultados para este filtro' : 'No hay casos aún. Crea el primero.'}
+                {search || filter !== 'all' || estado ? 'Sin resultados para este filtro' : 'No hay casos aún. Crea el primero.'}
               </p>
-              {!search && filter === 'all' && (
+              {!search && filter === 'all' && !estado && (
                 <Link
                   href="/cases/new"
                   className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-text-on-accent text-small font-sans font-medium hover:bg-accent-hover transition-colors"
@@ -139,6 +200,8 @@ export default function CasesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {visible.map(c => {
                 const deadline = formatDeadline(c.deadline);
+                const d = daysLeft(c.deadline);
+                const dStatus: LegalStatus | null = d !== null && c.status !== 'closed' && c.status !== 'archived' ? deadlineStatus(d) : null;
                 return (
                   <Link
                     key={c.id}
@@ -157,7 +220,10 @@ export default function CasesPage() {
                     <div className="flex items-center justify-between text-caption">
                       <span className="text-text-muted">{c.client || '—'}</span>
                       {deadline && (
-                        <span className="text-text-muted inline-flex items-center gap-1"><CalendarDays size={12} aria-hidden /> {deadline}</span>
+                        <span className="text-text-muted inline-flex items-center gap-1.5">
+                          <CalendarDays size={12} aria-hidden /> {deadline}
+                          {dStatus && dStatus !== 'a-tiempo' && <StatusTag status={dStatus} size="sm" />}
+                        </span>
                       )}
                     </div>
                   </Link>

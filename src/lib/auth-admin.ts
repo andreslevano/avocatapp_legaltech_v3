@@ -144,6 +144,7 @@ export async function getAdminUsers(): Promise<any[]> {
  */
 export function requiresAdminAccess(pathname: string): boolean {
   const adminPaths = [
+    '/admin',
     '/dashboard/administrador',
     '/api/admin/',
     '/api/analyze-pdf'

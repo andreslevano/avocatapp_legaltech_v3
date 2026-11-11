@@ -48,7 +48,7 @@ export default function ConnectDocusignCard() {
   };
 
   const connect = (switchUser = false) =>
-    run(switchUser ? 'switch' : 'connect', () => startDocusignConnect(user, { returnTo: '/profile', switchUser }));
+    run(switchUser ? 'switch' : 'connect', () => startDocusignConnect(user, { returnTo: '/settings/perfil', switchUser }));
 
   return (
     <div className="bg-[#161410] border border-[#2e2b20] rounded-xl p-4 space-y-3">

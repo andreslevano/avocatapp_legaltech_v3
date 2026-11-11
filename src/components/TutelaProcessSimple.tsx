@@ -61,7 +61,7 @@ const DOCUMENT_CATEGORIES: DocumentCategory[] = [
     name: 'Otros',
     description: 'Otros documentos relevantes',
     required: false,
-    color: 'bg-surface-muted/30 text-text-primary'
+    color: 'bg-surface-muted/30 text-text'
   }
 ];
 
@@ -497,8 +497,8 @@ export default function TutelaProcessSimple({ onComplete, userId, userEmail }: T
           formData: formData,
           customerEmail: userEmail,
           userId: userId,
-          successUrl: `${window.location.origin}/dashboard/autoservicio/accion-tutela?payment=success`,
-          cancelUrl: `${window.location.origin}/dashboard/autoservicio/accion-tutela?payment=cancelled`
+          successUrl: `${window.location.origin}/escritos/accion-tutela?payment=success`,
+          cancelUrl: `${window.location.origin}/escritos/accion-tutela?payment=cancelled`
         })
       });
 

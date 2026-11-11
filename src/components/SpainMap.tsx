@@ -1,5 +1,7 @@
 'use client';
 
+// TODO(ds-v4): product review — no longer referenced after /dashboard was retired (was used by CustomerStatistics).
+
 interface CityData {
   city: string;
   count: number;

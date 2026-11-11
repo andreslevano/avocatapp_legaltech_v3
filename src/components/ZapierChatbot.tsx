@@ -2,6 +2,9 @@
 
 import { useEffect } from 'react';
 
+// Kept on the home page (DS v4 default). Accent is themed via `--zapier-primary: var(--accent)` in globals.css.
+// TODO(ds-v4): the AIDisclaimer can't be placed inside this third-party popup (shadow DOM); ask Zapier to
+// add "Avocat puede equivocarse…" to the bot's greeting, or replace it with the in-app agent.
 export default function ZapierChatbot() {
   useEffect(() => {
     // Ensure the web component is visible on mobile - minimal styles to avoid conflicts

@@ -18,7 +18,7 @@ import { canUseContracts } from '@/lib/contracts/config';
 import { watchContracts } from '@/lib/contracts/client';
 import type { Contract } from '@/lib/contracts/types';
 
-export default function DashboardPage() {
+export default function PanelPage() {
   const { user, userDoc } = useAppAuth();
   const router = useRouter();
 
@@ -78,12 +78,12 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col h-full">
       <AppHeader
-        title="Dashboard"
+        title="Panel"
         subtitle={`Bienvenido, ${userDoc.displayName?.split(' ')[0] ?? ''}`}
         actions={
           <Link
             href="/cases/new"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-avocat-gold text-white text-[12px] font-sans font-medium hover:bg-[#a07824] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-text-on-accent text-caption font-sans font-medium hover:bg-accent-hover transition-colors"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -96,7 +96,7 @@ export default function DashboardPage() {
       <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
           <div className="flex items-center justify-center h-40">
-            <div className="h-6 w-6 rounded-full border-2 border-avocat-gold border-t-transparent animate-spin" />
+            <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           </div>
         ) : (
           <div className="max-w-6xl mx-auto space-y-6">
@@ -127,13 +127,13 @@ export default function DashboardPage() {
             </div>
 
             {cases.length === 0 && !loading && (
-              <div className="text-center py-12 bg-[#1e1c16] border border-[#2e2b20] rounded-xl">
-                <p className="text-[13px] text-[#6b6050] mb-4">
+              <div className="text-center py-12 bg-surface border border-border rounded-xl">
+                <p className="text-small text-text-muted mb-4">
                   Aún no tienes casos. Empieza creando el primero.
                 </p>
                 <Link
                   href="/cases/new"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-avocat-gold text-white text-[13px] font-sans font-medium hover:bg-[#a07824] transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-text-on-accent text-small font-sans font-medium hover:bg-accent-hover transition-colors"
                 >
                   Crear primer caso
                 </Link>

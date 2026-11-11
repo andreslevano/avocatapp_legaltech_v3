@@ -7,14 +7,14 @@ import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebas
 import TutelaProcessSimple from './TutelaProcessSimple';
 import PurchaseHistoryComponent from './PurchaseHistory';
 import ErrorBoundary from './ErrorBoundary';
-import { useDashboardAuth } from '@/contexts/DashboardAuthContext';
+import { useAppAuth } from '@/contexts/AppAuthContext';
 
-const AUTOSERVICIO_TUTELA_PATH = '/dashboard/autoservicio/accion-tutela';
+const AUTOSERVICIO_TUTELA_PATH = '/escritos/accion-tutela';
 
 function AccionTutelaContentInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const user = useDashboardAuth();
+  const { user } = useAppAuth();
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<'processing' | 'completed' | 'failed' | null>(null);
   const [processingPurchaseId, setProcessingPurchaseId] = useState<string | null>(null);
@@ -153,36 +153,36 @@ function AccionTutelaContentInner() {
               {processingStatus === 'processing' && (
                 <div className="bg-surface-muted/20 border-l-4 border-sidebar p-4 rounded-md shadow-sm">
                   <div className="flex items-start">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-status-en-revision-border"></div>
                     <div className="ml-3">
-                      <h3 className="text-sm font-medium text-blue-800">¡Pago exitoso! Procesando tu compra...</h3>
-                      <p className="mt-1 text-sm text-blue-700">Por favor, no cierres esta página.</p>
+                      <h3 className="text-sm font-medium text-info-text">¡Pago exitoso! Procesando tu compra...</h3>
+                      <p className="mt-1 text-sm text-info-text">Por favor, no cierres esta página.</p>
                     </div>
                   </div>
                 </div>
               )}
               {processingStatus === 'completed' && (
-                <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-md shadow-sm">
-                  <h3 className="text-sm font-medium text-green-800">¡Compra procesada exitosamente!</h3>
+                <div className="bg-success-subtle border-l-4 border-status-a-tiempo-border p-4 rounded-md shadow-sm">
+                  <h3 className="text-sm font-medium text-success-text">¡Compra procesada exitosamente!</h3>
                 </div>
               )}
               {processingStatus === 'failed' && (
-                <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md shadow-sm">
-                  <h3 className="text-sm font-medium text-red-800">Error al procesar compra</h3>
+                <div className="bg-danger-subtle border-l-4 border-status-urgente-border p-4 rounded-md shadow-sm">
+                  <h3 className="text-sm font-medium text-danger-text">Error al procesar compra</h3>
                 </div>
               )}
             </div>
           )}
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-            <p className="text-sm text-red-700">
+          <div className="bg-danger-subtle border-l-4 border-status-urgente-border p-4 mb-6">
+            <p className="text-sm text-danger-text">
               <strong>Acción de Tutela</strong> - Herramientas especializadas para acciones de tutela en Colombia
             </p>
           </div>
-          <h1 className="text-h1 text-text-primary mb-8">Panel de Acción de Tutela</h1>
+          <h1 className="text-h1 text-text mb-8">Panel de Acción de Tutela</h1>
           <div className="bg-card overflow-hidden shadow rounded-lg mb-8">
             <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-h3 text-text-primary mb-2">¡Bienvenido a Avocat para Acciones de Tutela!</h3>
-              <p className="text-body text-text-secondary">
+              <h3 className="text-h3 text-text mb-2">¡Bienvenido a Avocat para Acciones de Tutela!</h3>
+              <p className="text-body text-text-muted">
                 Genera una acción de tutela profesional conforme a la Constitución Política (art. 86) y el Decreto 2591 de 1991.
               </p>
             </div>
@@ -199,7 +199,7 @@ function AccionTutelaContentInner() {
 
 export default function AccionTutelaPageContent() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-status-urgente-border" /></div>}>
       <AccionTutelaContentInner />
     </Suspense>
   );

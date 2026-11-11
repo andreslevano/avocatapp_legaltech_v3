@@ -266,7 +266,7 @@ function EstudiantesContent() {
             <p className="text-caption text-text-muted leading-relaxed">
               Accede a más de 44 modelos de escritos académicos de las 8 áreas del derecho español por €3 cada uno.
             </p>
-            <Link href="/subscription">
+            <Link href="/settings/suscripcion">
               <Button variant="accent" size="sm" className="mt-2">Ver planes</Button>
             </Link>
           </div>

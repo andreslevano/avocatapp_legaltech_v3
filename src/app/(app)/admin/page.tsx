@@ -8,6 +8,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/Button';
+import { Ban, CircleCheck, TriangleAlert } from 'lucide-react';
 
 interface User {
   uid: string;
@@ -274,7 +275,7 @@ export default function AdminDashboard() {
     if (adminChecked && isAuthorized === false) {
       const redirectTimer = setTimeout(() => {
         console.log('🚫 Redirecting non-admin user to dashboard');
-        router.push('/dashboard');
+        router.push('/agent');
       }, 100); // Small delay to ensure Firestore query completed
       
       return () => clearTimeout(redirectTimer);
@@ -290,10 +291,10 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-app flex items-center justify-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-text-secondary">Cargando Administrador...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-status-en-revision-border mx-auto"></div>
+          <p className="mt-4 text-text-muted">Cargando Administrador...</p>
         </div>
       </div>
     );
@@ -309,17 +310,17 @@ export default function AdminDashboard() {
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-app flex items-center justify-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-600 text-2xl">🚫</span>
+          <div className="w-16 h-16 bg-danger-subtle rounded-full flex items-center justify-center mx-auto mb-4">
+            <Ban size={28} className="text-danger-text" aria-hidden />
           </div>
-          <h2 className="text-2xl font-bold text-text-primary mb-2">Acceso Denegado</h2>
-          <p className="text-text-secondary mb-4">No tienes permisos para acceder a esta sección.</p>
-          <Button onClick={() => router.push('/dashboard')}
+          <h2 className="text-2xl font-bold text-text mb-2">Acceso Denegado</h2>
+          <p className="text-text-muted mb-4">No tienes permisos para acceder a esta sección.</p>
+          <Button onClick={() => router.push('/agent')}
             variant="primary"
           >
-            Volver al Dashboard
+            Volver a Avocat
           </Button>
         </div>
       </div>
@@ -330,18 +331,18 @@ export default function AdminDashboard() {
     <ErrorBoundary>
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-text-primary">Administrador</h1>
+          <h1 className="text-2xl font-bold text-text">Administrador</h1>
         </div>
         <div>
               {error && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+                <div className="mb-6 bg-danger-subtle border border-status-urgente-border rounded-md p-4">
                   <div className="flex">
                     <div className="flex-shrink-0">
-                      <span className="text-red-400">⚠️</span>
+                      <TriangleAlert size={18} className="text-danger-text" aria-hidden />
                     </div>
                     <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">Error</h3>
-                      <div className="mt-2 text-sm text-red-700">{error}</div>
+                      <h3 className="text-sm font-medium text-danger-text">Error</h3>
+                      <div className="mt-2 text-sm text-danger-text">{error}</div>
                     </div>
                   </div>
                 </div>
@@ -349,14 +350,14 @@ export default function AdminDashboard() {
 
               {/* Sync Status */}
               {syncStatus && (
-                <div className="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
+                <div className="mb-6 bg-success-subtle border border-status-a-tiempo-border rounded-md p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <span className="text-green-400">✅</span>
+                      <CircleCheck size={18} className="text-success-text" aria-hidden />
                     </div>
                     <div className="ml-3">
-                      <h3 className="text-sm font-medium text-green-800">Estado de Sincronización</h3>
-                      <div className="mt-1 text-sm text-green-700">
+                      <h3 className="text-sm font-medium text-success-text">Estado de Sincronización</h3>
+                      <div className="mt-1 text-sm text-success-text">
                         Última sincronización: {new Date(syncStatus.stats.lastSync).toLocaleString()}
                       </div>
                     </div>
@@ -367,43 +368,43 @@ export default function AdminDashboard() {
               {/* User Management */}
               <div className="bg-card shadow rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
+                  <h3 className="text-lg leading-6 font-medium text-text mb-4">
                     Gestión de Usuarios
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* User List */}
                     <div>
-                      <h4 className="text-md font-medium text-text-primary mb-3">Usuarios</h4>
+                      <h4 className="text-md font-medium text-text mb-3">Usuarios</h4>
                       <div className="space-y-2">
                         {users.map((user) => (
                           <div
                             key={user.uid}
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                               selectedUser === user.uid
-                                ? 'border-purple-500 bg-purple-50'
+                                ? 'border-status-en-revision-border bg-info-subtle'
                                 : 'border-border hover:border-border'
                             }`}
                             onClick={() => setSelectedUser(user.uid)}
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-sm font-medium text-text-primary">
+                                <p className="text-sm font-medium text-text">
                                   {user.displayName}
                                 </p>
-                                <p className="text-sm text-text-secondary">{user.email}</p>
+                                <p className="text-sm text-text-muted">{user.email}</p>
                               </div>
                               <div className="flex items-center space-x-2">
                                 {user.isAdmin && (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-info-subtle text-info-text">
                                     Admin
                                   </span>
                                 )}
                                 <span
                                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                     user.isActive
-                                      ? 'bg-green-100 text-green-800'
-                                      : 'bg-red-100 text-red-800'
+                                      ? 'bg-success-subtle text-success-text'
+                                      : 'bg-danger-subtle text-danger-text'
                                   }`}
                                 >
                                   {user.isActive ? 'Activo' : 'Inactivo'}
@@ -417,7 +418,7 @@ export default function AdminDashboard() {
 
                     {/* User Actions */}
                     <div>
-                      <h4 className="text-md font-medium text-text-primary mb-3">Acciones</h4>
+                      <h4 className="text-md font-medium text-text mb-3">Acciones</h4>
                       <div className="space-y-3">
                         <Button onClick={generateEmail}
                           disabled={!selectedUser || isGeneratingEmail}
@@ -444,30 +445,30 @@ export default function AdminDashboard() {
 
                   {/* User Summary */}
                   {userSummary && (
-                    <div className="mt-6 p-4 bg-app rounded-lg">
-                      <h4 className="text-md font-medium text-text-primary mb-3">
+                    <div className="mt-6 p-4 bg-bg rounded-lg">
+                      <h4 className="text-md font-medium text-text mb-3">
                         Resumen del Usuario
                       </h4>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                          <p className="text-sm text-text-secondary">Email</p>
-                          <p className="text-sm font-medium text-text-primary">{userSummary.email}</p>
+                          <p className="text-sm text-text-muted">Email</p>
+                          <p className="text-sm font-medium text-text">{userSummary.email}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-text-secondary">Estado</p>
-                          <p className="text-sm font-medium text-text-primary">
+                          <p className="text-sm text-text-muted">Estado</p>
+                          <p className="text-sm font-medium text-text">
                             {userSummary.isActive ? 'Activo' : 'Inactivo'}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-text-secondary">Creado</p>
-                          <p className="text-sm font-medium text-text-primary">
+                          <p className="text-sm text-text-muted">Creado</p>
+                          <p className="text-sm font-medium text-text">
                             {new Date(userSummary.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-text-secondary">Último Login</p>
-                          <p className="text-sm font-medium text-text-primary">
+                          <p className="text-sm text-text-muted">Último Login</p>
+                          <p className="text-sm font-medium text-text">
                             {new Date(userSummary.lastLoginAt).toLocaleDateString()}
                           </p>
                         </div>

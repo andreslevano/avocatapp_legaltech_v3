@@ -143,7 +143,7 @@ export default function NotificationsPage() {
 
           <div className="pt-4 flex items-center justify-between gap-3 text-caption text-text-muted">
             <span className="flex gap-4">
-              <Link href="/profile#notificaciones" className="hover:text-accent-text">Configurar avisos</Link>
+              <Link href="/settings/perfil#notificaciones" className="hover:text-accent-text">Configurar avisos</Link>
               {(userDoc as unknown as { isAdmin?: boolean }).isAdmin === true && (
                 <Link href="/admin/legal-changes" className="hover:text-accent-text">Revisar cambios legales (admin)</Link>
               )}

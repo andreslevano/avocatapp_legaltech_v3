@@ -26,56 +26,12 @@
   "arbitrary-text-size": 1,
   "v3-alias": 8
  },
- "src/app/dashboard/accion-tutela/history/page.tsx": {
-  "tw-default-color": 25
- },
- "src/app/dashboard/administrador/page.tsx": {
-  "tw-default-color": 21
- },
- "src/app/dashboard/autoservicio/extraccion-datos/page.tsx": {
-  "raw-hex": 4,
-  "tw-default-color": 33
- },
- "src/app/dashboard/crear-caso/page.tsx": {
-  "raw-hex": 1,
-  "arbitrary-color": 1,
-  "v3-alias": 1
- },
- "src/app/dashboard/page.tsx": {
-  "raw-hex": 5,
-  "arbitrary-color": 5,
-  "arbitrary-text-size": 3,
-  "v3-alias": 3
- },
- "src/app/dashboard/reclamacion-cantidades/error.tsx": {
-  "tw-default-color": 6
- },
- "src/app/dashboard/reclamacion-cantidades/loading.tsx": {
-  "tw-default-color": 1
- },
  "src/app/e2e/sign-sheet/Harness.tsx": {
   "raw-hex": 2,
   "arbitrary-color": 2
  },
  "src/app/layout.tsx": {
   "v3-alias": 1
- },
- "src/app/profile/page.tsx": {
-  "raw-hex": 58,
-  "arbitrary-color": 57,
-  "tw-default-color": 9,
-  "arbitrary-text-size": 33,
-  "v3-alias": 17
- },
- "src/components/AccionTutelaPageContent.tsx": {
-  "tw-default-color": 13
- },
- "src/components/CaseStatistics.tsx": {
-  "raw-hex": 4,
-  "tw-default-color": 1
- },
- "src/components/CustomerStatistics.tsx": {
-  "raw-hex": 6
  },
  "src/components/SpainMap.tsx": {
   "raw-hex": 21

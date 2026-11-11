@@ -11,15 +11,16 @@ import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 import { canUseDocusign } from '@/lib/docusign/config';
 import NotificationSettingsCard from '@/components/notifications/NotificationSettingsCard';
 import { canUseContracts } from '@/lib/contracts/config';
+import { primitives } from '@/lib/tokens';
 
 const COUNTRIES = [
-  { label: 'España',    flag: '🇪🇸' },
-  { label: 'Colombia',  flag: '🇨🇴' },
-  { label: 'México',    flag: '🇲🇽' },
-  { label: 'Chile',     flag: '🇨🇱' },
-  { label: 'Perú',      flag: '🇵🇪' },
-  { label: 'Ecuador',   flag: '🇪🇨' },
-  { label: 'Argentina', flag: '🇦🇷' },
+  { label: 'España',    code: 'ES' },
+  { label: 'Colombia',  code: 'CO' },
+  { label: 'México',    code: 'MX' },
+  { label: 'Chile',     code: 'CL' },
+  { label: 'Perú',      code: 'PE' },
+  { label: 'Ecuador',   code: 'EC' },
+  { label: 'Argentina', code: 'AR' },
 ];
 
 const SPECIALTIES = [
@@ -38,30 +39,30 @@ const PLAN_META: Record<string, { label: string; price: string; color: string; b
   Abogados: {
     label: 'Plan Abogados',
     price: '€75 / mes',
-    color: 'text-avocat-gold',
-    bg: 'bg-avocat-gold/10',
-    border: 'border-avocat-gold/25',
+    color: 'text-accent-text',
+    bg: 'bg-accent-subtle',
+    border: 'border-accent-border',
   },
   Estudiantes: {
     label: 'Plan Estudiantes',
     price: '€3 / escrito',
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/20',
+    color: 'text-info-text',
+    bg: 'bg-info-subtle',
+    border: 'border-status-en-revision-border',
   },
   Autoservicio: {
     label: 'Plan Particular',
     price: '€50 / mes',
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/20',
+    color: 'text-success-text',
+    bg: 'bg-success-subtle',
+    border: 'border-status-a-tiempo-border',
   },
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050] mb-2">
+      <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-2">
         {label}
       </label>
       {children}
@@ -74,8 +75,8 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
     <input
       {...props}
       className={[
-        'w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3.5 py-2.5 text-[13px] font-sans text-[#c8c0ac]',
-        'focus:outline-none focus:border-avocat-gold/40 transition-colors placeholder:text-[#3a3630]',
+        'w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-small font-sans text-text',
+        ' focus:border-accent-border transition-colors placeholder:text-text-muted',
         props.disabled ? 'opacity-50 cursor-not-allowed' : '',
         props.className ?? '',
       ].join(' ')}
@@ -117,7 +118,7 @@ export default function ProfilePage() {
     if (!canvas || !showPad) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.strokeStyle = '#1a1a1a';
+    ctx.strokeStyle = primitives['neutral-900']; // ink on the white signature pad
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -233,43 +234,43 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-[#161410]">
+    <div className="flex-1 overflow-auto bg-bg">
       <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-display text-[28px] font-semibold text-[#e8d4a0] leading-tight mb-1">
+          <h1 className="font-display text-h2 font-semibold text-text-heading leading-tight mb-1">
             Mi perfil
           </h1>
-          <p className="text-[13px] font-sans text-[#6b6050]">
+          <p className="text-small font-sans text-text-muted">
             Información de tu cuenta y configuración personal
           </p>
         </div>
 
         {/* Avatar + identity card */}
-        <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 mb-4 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-avocat-gold/20 border-2 border-avocat-gold/40 flex items-center justify-center flex-shrink-0">
-            <span className="text-[20px] font-display font-semibold text-avocat-gold leading-none">
+        <div className="bg-surface border border-border rounded-2xl p-5 mb-4 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-accent-subtle border-2 border-accent-border flex items-center justify-center flex-shrink-0">
+            <span className="text-h3 font-display font-semibold text-accent-text leading-none">
               {initials}
             </span>
           </div>
           <div className="min-w-0">
-            <p className="text-[15px] font-sans font-semibold text-[#e8d4a0] truncate">
+            <p className="text-body-sm font-sans font-semibold text-text-heading truncate">
               {form.displayName || 'Usuario'}
             </p>
-            <p className="text-[12px] font-sans text-[#6b6050] truncate">{user.email}</p>
+            <p className="text-caption font-sans text-text-muted truncate">{user.email}</p>
             {memberSince && (
-              <p className="text-[11px] font-sans text-[#3a3630] mt-0.5">
+              <p className="text-caption font-sans text-text-muted mt-0.5">
                 Miembro desde {memberSince}
               </p>
             )}
           </div>
           {planMeta && (
             <div className={`ml-auto hidden sm:flex flex-col items-end gap-0.5`}>
-              <span className={`text-[11px] font-sans font-semibold ${planMeta.color}`}>
+              <span className={`text-caption font-sans font-semibold ${planMeta.color}`}>
                 {planMeta.label}
               </span>
-              <span className={`text-[11px] font-display font-semibold ${planMeta.color}`}>
+              <span className={`text-caption font-display font-semibold ${planMeta.color}`}>
                 {planMeta.price}
               </span>
             </div>
@@ -279,14 +280,14 @@ export default function ProfilePage() {
         {/* Plan card (mobile) */}
         {planMeta && (
           <div className={`sm:hidden ${planMeta.bg} border ${planMeta.border} rounded-xl px-4 py-3 mb-4 flex items-center justify-between`}>
-            <span className={`text-[12px] font-sans font-semibold ${planMeta.color}`}>{planMeta.label}</span>
-            <span className={`text-[12px] font-display font-semibold ${planMeta.color}`}>{planMeta.price}</span>
+            <span className={`text-caption font-sans font-semibold ${planMeta.color}`}>{planMeta.label}</span>
+            <span className={`text-caption font-display font-semibold ${planMeta.color}`}>{planMeta.price}</span>
           </div>
         )}
 
         {/* Form card */}
-        <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 space-y-5">
-          <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
+        <div className="bg-surface border border-border rounded-2xl p-5 space-y-5">
+          <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">
             Datos personales
           </p>
 
@@ -306,7 +307,7 @@ export default function ProfilePage() {
               disabled
               placeholder="correo@ejemplo.com"
             />
-            <p className="mt-1.5 text-[11px] font-sans text-[#3a3630]">
+            <p className="mt-1.5 text-caption font-sans text-text-muted">
               El correo no se puede modificar
             </p>
           </Field>
@@ -324,18 +325,18 @@ export default function ProfilePage() {
             <select
               value={form.country}
               onChange={e => setForm(f => ({ ...f, country: e.target.value }))}
-              className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3.5 py-2.5 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40 transition-colors"
+              className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-small font-sans text-text  focus:border-accent-border transition-colors"
             >
-              <option value="" className="bg-[#161410]">Seleccionar país…</option>
+              <option value="" className="bg-bg">Seleccionar país…</option>
               {COUNTRIES.map(c => (
-                <option key={c.label} value={c.label} className="bg-[#161410]">
-                  {c.flag} {c.label}
+                <option key={c.label} value={c.label} className="bg-bg">
+                  {c.label}
                 </option>
               ))}
             </select>
             {countryObj && (
-              <p className="mt-1.5 text-[12px] font-sans text-[#6b6050]">
-                {countryObj.flag} {countryObj.label}
+              <p className="mt-1.5 text-caption font-sans text-text-muted">
+                {countryObj.label}
               </p>
             )}
           </Field>
@@ -345,11 +346,11 @@ export default function ProfilePage() {
               <select
                 value={form.specialty}
                 onChange={e => setForm(f => ({ ...f, specialty: e.target.value }))}
-                className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3.5 py-2.5 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40 transition-colors"
+                className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-small font-sans text-text  focus:border-accent-border transition-colors"
               >
-                <option value="" className="bg-[#161410]">Seleccionar especialidad…</option>
+                <option value="" className="bg-bg">Seleccionar especialidad…</option>
                 {SPECIALTIES.map(s => (
-                  <option key={s} value={s} className="bg-[#161410]">{s}</option>
+                  <option key={s} value={s} className="bg-bg">{s}</option>
                 ))}
               </select>
             </Field>
@@ -357,12 +358,12 @@ export default function ProfilePage() {
         </div>
 
         {/* Legal info for document generation */}
-        <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 space-y-5 mt-4">
+        <div className="bg-surface border border-border rounded-2xl p-5 space-y-5 mt-4">
           <div>
-            <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
+            <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">
               Información legal para documentos
             </p>
-            <p className="text-[11px] font-sans text-[#3a3630] mt-1">
+            <p className="text-caption font-sans text-text-muted mt-1">
               Estos datos se usarán para pre-completar NDAs y otros documentos generados con IA.
             </p>
           </div>
@@ -381,10 +382,10 @@ export default function ProfilePage() {
               <select
                 value={form.legalIdType}
                 onChange={e => setForm(f => ({ ...f, legalIdType: e.target.value }))}
-                className="w-full bg-[#161410] border border-[#2e2b20] rounded-lg px-3.5 py-2.5 text-[13px] font-sans text-[#c8c0ac] focus:outline-none focus:border-avocat-gold/40 transition-colors"
+                className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-small font-sans text-text  focus:border-accent-border transition-colors"
               >
                 {['RUT', 'DNI', 'Pasaporte', 'Cédula', 'CUIT', 'NIF', 'Otro'].map(t => (
-                  <option key={t} value={t} className="bg-[#161410]">{t}</option>
+                  <option key={t} value={t} className="bg-bg">{t}</option>
                 ))}
               </select>
             </Field>
@@ -418,18 +419,18 @@ export default function ProfilePage() {
         </div>
 
         {/* Signature pad */}
-        <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 mt-4">
+        <div className="bg-surface border border-border rounded-2xl p-5 mt-4">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
+              <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">
                 Firma manuscrita
               </p>
-              <p className="text-[11px] font-sans text-[#3a3630] mt-1">
+              <p className="text-caption font-sans text-text-muted mt-1">
                 Se incluirá automáticamente en los documentos generados que requieran firma.
               </p>
             </div>
             {sigSaved && (
-              <span className="text-[12px] font-sans text-emerald-400 flex items-center gap-1.5 flex-shrink-0">
+              <span className="text-caption font-sans text-success-text flex items-center gap-1.5 flex-shrink-0">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
@@ -441,14 +442,14 @@ export default function ProfilePage() {
           {/* Existing signature preview */}
           {signatureUrl && !showPad && (
             <div className="mb-3">
-              <div className="bg-white rounded-lg p-3 inline-block border border-[#2e2b20]">
+              <div className="bg-white rounded-lg p-3 inline-block border border-border">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={signatureUrl} alt="Firma guardada" className="h-16 max-w-[280px] object-contain" />
               </div>
               <div className="mt-2 flex gap-2">
                 <button
                   onClick={() => { setShowPad(true); clearPad(); }}
-                  className="text-[11px] font-sans text-avocat-gold/70 hover:text-avocat-gold border border-avocat-gold/20 hover:border-avocat-gold/40 px-3 py-1.5 rounded-md transition-colors"
+                  className="text-caption font-sans text-accent-text hover:text-accent-text border border-accent-border hover:border-accent-border px-3 py-1.5 rounded-md transition-colors"
                 >
                   Cambiar firma
                 </button>
@@ -459,7 +460,7 @@ export default function ProfilePage() {
           {/* Signature canvas */}
           {(!signatureUrl || showPad) && (
             <div>
-              <div className="relative rounded-lg overflow-hidden border border-[#2e2b20] bg-white mb-2" style={{ touchAction: 'none' }}>
+              <div className="relative rounded-lg overflow-hidden border border-border bg-white mb-2" style={{ touchAction: 'none' }}>
                 <canvas
                   ref={canvasRef}
                   width={600}
@@ -475,7 +476,7 @@ export default function ProfilePage() {
                 />
                 {!hasSig && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="text-[12px] font-sans text-[#bbb] select-none">
+                    <span className="text-caption font-sans text-text-muted select-none">
                       Dibuja tu firma aquí
                     </span>
                   </div>
@@ -484,14 +485,14 @@ export default function ProfilePage() {
               <div className="flex gap-2">
                 <button
                   onClick={clearPad}
-                  className="text-[11px] font-sans text-[#6b6050] hover:text-[#c8c0ac] border border-[#2e2b20] hover:border-[#3a3630] px-3 py-1.5 rounded-md transition-colors"
+                  className="text-caption font-sans text-text-muted hover:text-text border border-border hover:border-border-strong px-3 py-1.5 rounded-md transition-colors"
                 >
                   Limpiar
                 </button>
                 {showPad && signatureUrl && (
                   <button
                     onClick={() => { setShowPad(false); clearPad(); }}
-                    className="text-[11px] font-sans text-[#6b6050] hover:text-[#c8c0ac] border border-[#2e2b20] hover:border-[#3a3630] px-3 py-1.5 rounded-md transition-colors"
+                    className="text-caption font-sans text-text-muted hover:text-text border border-border hover:border-border-strong px-3 py-1.5 rounded-md transition-colors"
                   >
                     Cancelar
                   </button>
@@ -499,7 +500,7 @@ export default function ProfilePage() {
                 <button
                   onClick={saveSignature}
                   disabled={!hasSig || savingSig}
-                  className="text-[11px] font-sans font-medium text-avocat-black bg-avocat-gold hover:bg-[#a07824] disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 rounded-md transition-colors"
+                  className="text-caption font-sans font-medium text-text bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 rounded-md transition-colors"
                 >
                   {savingSig ? 'Guardando…' : 'Guardar firma'}
                 </button>
@@ -510,12 +511,12 @@ export default function ProfilePage() {
 
         {/* Integraciones (DocuSign, Microsoft) */}
         {(canUseDocusign(userDoc.plan, user) || canUseMicrosoft(userDoc.plan, user)) && (
-          <div className="bg-[#1e1c16] border border-[#2e2b20] rounded-2xl p-5 space-y-4 mt-4">
+          <div className="bg-surface border border-border rounded-2xl p-5 space-y-4 mt-4">
             <div>
-              <p className="text-[11px] font-sans font-semibold uppercase tracking-widest text-[#6b6050]">
+              <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">
                 Integraciones
               </p>
-              <p className="text-[11px] font-sans text-[#3a3630] mt-1">
+              <p className="text-caption font-sans text-text-muted mt-1">
                 Conecta servicios externos. Avocat guarda las credenciales cifradas y nunca las muestra en el navegador.
               </p>
             </div>
@@ -532,13 +533,13 @@ export default function ProfilePage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2.5 rounded-lg bg-avocat-gold text-white text-[13px] font-sans font-medium hover:bg-[#a07824] disabled:opacity-50 transition-colors"
+            className="px-5 py-2.5 rounded-lg bg-accent text-text-on-accent text-small font-sans font-medium hover:bg-accent-hover disabled:opacity-50 transition-colors"
           >
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </button>
 
           {saved && (
-            <span className="text-[12px] font-sans text-emerald-400 flex items-center gap-1.5">
+            <span className="text-caption font-sans text-success-text flex items-center gap-1.5">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
@@ -547,7 +548,7 @@ export default function ProfilePage() {
           )}
 
           {error && (
-            <span className="text-[12px] font-sans text-red-400">{error}</span>
+            <span className="text-caption font-sans text-danger-text">{error}</span>
           )}
         </div>
 

@@ -90,7 +90,7 @@ export default function SignupForm() {
         await signInWithEmailAndPassword(auth as Auth, reactivationUser.email, form.password);
         setSuccess('¡Cuenta reactivada! Redirigiendo...');
         setShowReactivation(false);
-        setTimeout(() => router.push((form.plan ? PLAN_DASHBOARDS[form.plan] : undefined) ?? '/dashboard'), 2000);
+        setTimeout(() => router.push((form.plan ? PLAN_DASHBOARDS[form.plan] : undefined) ?? '/panel'), 2000);
       } else {
         setError(result.message || 'Error al reactivar la cuenta.');
       }
@@ -148,7 +148,7 @@ export default function SignupForm() {
       trackRegistrationConversion();
       setSuccess('¡Cuenta creada! Redirigiendo...');
 
-      const dashboardUrl = (form.plan ? PLAN_DASHBOARDS[form.plan] : undefined) ?? '/dashboard';
+      const dashboardUrl = (form.plan ? PLAN_DASHBOARDS[form.plan] : undefined) ?? '/panel';
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
       const priceId =
         !pilot && form.plan === 'Abogados' ? SUBSCRIPTION_PRICE_IDS.Abogados

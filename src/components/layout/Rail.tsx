@@ -23,7 +23,7 @@ const IconDocs      = () => <FileText {...ICON} />;
 // ── Nav definitions per plan ─────────────────────────────────────────────────
 
 const NAV_ABOGADOS = [
-  { href: '/dashboard',  label: 'Panel',        icon: <IconDashboard /> },
+  { href: '/panel',      label: 'Panel',        icon: <IconDashboard /> },
   { href: '/cases',      label: 'Casos',        icon: <IconCases /> },
   { href: '/clients',    label: 'Clientes',     icon: <IconClients /> },
   { href: '/agent',      label: 'Agente IA',    icon: <IconAgent /> },
@@ -62,7 +62,7 @@ function getNavItems(plan: string | null) {
 }
 
 function getHomeHref(plan: string | null) {
-  return plan === 'Abogados' ? '/dashboard' : '/agent';
+  return plan === 'Abogados' ? '/panel' : '/agent';
 }
 
 // ── NavItem ──────────────────────────────────────────────────────────────────

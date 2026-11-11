@@ -40,7 +40,7 @@ export default function ConnectMicrosoftCard() {
   const connect = async () => {
     if (!user) return;
     setBusy('connect');
-    try { await startMicrosoftConnect(user, { returnTo: '/profile', intent: 'connect' }); }
+    try { await startMicrosoftConnect(user, { returnTo: '/settings/perfil', intent: 'connect' }); }
     catch (e) { setNotice({ kind: 'err', text: (e as Error).message }); setBusy(null); }
   };
   const disconnect = async () => {

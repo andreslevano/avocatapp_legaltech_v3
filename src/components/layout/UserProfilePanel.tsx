@@ -222,7 +222,7 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
       {/* ── Navigation actions ── */}
       <div className="px-2 py-2 space-y-0.5">
         <Link
-          href="/profile"
+          href="/settings/perfil"
           onClick={onClose}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-caption font-sans text-text hover:text-text-heading hover:bg-surface-muted transition-colors"
         >

@@ -91,7 +91,7 @@ export const SALES_CONTACT = { label: 'Hablar con ventas', href: '/contacto', pr
 
 /** Where each plan lands after signup / onboarding (single map). */
 export const PLAN_DASHBOARDS: Record<StoredPlan, string> = {
-  Abogados: '/dashboard',
+  Abogados: '/panel',
   Estudiantes: '/agent',
   Autoservicio: '/agent',
 };

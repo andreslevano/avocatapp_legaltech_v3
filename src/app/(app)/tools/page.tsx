@@ -54,13 +54,13 @@ const TOOLS_MOBILITYFORWORK = [
 
 const TOOLS_AUTOSERVICIO = [
   {
-    href: '/dashboard/autoservicio/accion-tutela',
+    href: '/escritos/accion-tutela',
     title: 'Acción de Tutela',
     description: 'Redacta una acción de tutela paso a paso con IA. Incluye historial de documentos generados.',
     icon: Scale,
   },
   {
-    href: '/dashboard/autoservicio/reclamacion-cantidades',
+    href: '/escritos/reclamacion-cantidad',
     title: 'Reclamación de Cantidades',
     description: 'Genera cartas de reclamación económica con los datos de tu caso.',
     icon: Banknote,

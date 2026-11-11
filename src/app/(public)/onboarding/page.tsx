@@ -27,7 +27,7 @@ function OnboardingContent() {
           const data = snap.data();
           // Only redirect away if NOT in plan-change mode
           if (!isChangingPlan && data.plan && data.onboardingComplete) {
-            router.push('/dashboard');
+            router.push('/panel');
             return;
           }
           setDisplayName(data.displayName || data.firstName || firebaseUser.email || '');
