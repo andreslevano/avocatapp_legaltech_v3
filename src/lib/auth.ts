@@ -23,6 +23,13 @@ export interface UserDoc {
   creditos_disponibles?: number;
   creditos_consumidos?: number;
   stripe_customer_id?: string;
+  /** Herramientas page: tool hrefs per group, in display order (set by drag and drop). */
+  toolLayout?: ToolLayout;
+}
+
+export interface ToolLayout {
+  favoritos: string[];
+  principales: string[];
 }
 
 /** Returns the default app route for a given plan */

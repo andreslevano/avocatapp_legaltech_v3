@@ -5,16 +5,21 @@ import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
-import { useState } from 'react';
+import { useState, type DragEvent } from 'react';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { ToolLayout } from '@/lib/auth';
+import { TOOL_GROUPS as GROUPS, moveTool, resolveLayout, type ToolGroupId as GroupId } from '@/lib/tool-layout';
+import { IconButton } from '@/components/ui/IconButton';
 import { orgNdaTemplateFor } from '@/lib/org-templates';
-import { Banknote, ChartColumn, FileLock2, FilePenLine, GraduationCap, Handshake, Mail, Scale, Search, type LucideIcon } from 'lucide-react';
+import { Banknote, ChartColumn, FileLock2, FilePenLine, GraduationCap, Handshake, Mail, Scale, Search, Star, type LucideIcon } from 'lucide-react';
 
 interface Tool {
   href: string;
   title: string;
   description: string;
   icon: LucideIcon;
-  /** Shown under "Favoritos" at the top of the page. Set it to highlight a tool. */
+  /** Default group: "Favoritos" until the user moves it (drag and drop or star). Set it to highlight a tool. */
   featured?: boolean;
 }
 
@@ -102,10 +107,47 @@ export default function ToolsPage() {
     ...(orgNdaTemplateFor(user) === 'mobilityforwork' ? TOOLS_MOBILITYFORWORK : []),
     ...TOOLS_COMMON.slice(1),
   ];
-  const groups = [
-    { id: 'favoritos', title: 'Favoritos', items: tools.filter(t => t.featured) },
-    { id: 'principales', title: 'Principales', items: tools.filter(t => !t.featured) },
-  ].filter(g => g.items.length > 0);
+  const byHref = new Map(tools.map(t => [t.href, t]));
+
+  // Local edits win over the snapshot in userDoc (which is not refreshed after our write).
+  const [edited, setEdited] = useState<ToolLayout | null>(null);
+  const layout = resolveLayout(tools, edited ?? userDoc.toolLayout);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ group: GroupId; before?: string } | null>(null);
+
+  function applyMove(href: string, to: GroupId, before?: string) {
+    const next = moveTool(layout, href, to, before);
+    setEdited(next);
+    if (db && userDoc.uid) {
+      updateDoc(doc(db, 'users', userDoc.uid), { toolLayout: next, updatedAt: serverTimestamp() })
+        .catch(err => console.error('[tools] could not save layout', err));
+    }
+  }
+
+  function onDragStart(e: DragEvent, href: string) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', href);
+    setDragging(href);
+  }
+  function onDragOver(e: DragEvent, group: GroupId, before?: string) {
+    if (!dragging) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    if (dropTarget?.group !== group || dropTarget?.before !== before) setDropTarget({ group, before });
+  }
+  function onDrop(e: DragEvent, group: GroupId, before?: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    const href = dragging ?? e.dataTransfer.getData('text/plain');
+    if (href && href !== before && byHref.has(href)) applyMove(href, group, before);
+    setDragging(null);
+    setDropTarget(null);
+  }
+  function onDragEnd() {
+    setDragging(null);
+    setDropTarget(null);
+  }
 
   const creditos = userDoc.creditos_disponibles ?? 0;
 
@@ -162,28 +204,68 @@ export default function ToolsPage() {
           </div>
         )}
 
-        {groups.map(g => (
-          <section key={g.id} aria-labelledby={`tools-${g.id}`} className="max-w-3xl">
-            <h2 id={`tools-${g.id}`} className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3">
-              {g.title}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {g.items.map(t => (
-                <Link
-                  key={t.href}
-                  href={t.href}
-                  className="bg-surface border border-border rounded-xl p-5 hover:border-accent-border hover:bg-surface-muted transition-colors group"
-                >
-                  <t.icon size={24} className="mb-3 text-accent-text" aria-hidden />
-                  <h3 className="font-sans font-semibold text-body-sm text-text group-hover:text-text-heading mb-1.5">
-                    {t.title}
-                  </h3>
-                  <p className="text-caption text-text-muted leading-relaxed">{t.description}</p>
-                </Link>
-              ))}
-            </div>
-          </section>
-        ))}
+        {GROUPS.map(g => {
+          const items = layout[g.id].map(h => byHref.get(h)!).filter(Boolean);
+          const isTarget = dropTarget?.group === g.id;
+          return (
+            <section
+              key={g.id}
+              aria-labelledby={`tools-${g.id}`}
+              className="max-w-3xl"
+              onDragOver={e => onDragOver(e, g.id)}
+              onDrop={e => onDrop(e, g.id)}
+            >
+              <h2 id={`tools-${g.id}`} className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3">
+                {g.title}
+              </h2>
+              <div
+                className={`grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl transition-colors ${
+                  dragging ? 'p-2 -m-2 border border-dashed ' + (isTarget ? 'border-accent-border bg-accent-subtle' : 'border-border') : ''
+                }`}
+              >
+                {items.map(t => {
+                  const fav = g.id === 'favoritos';
+                  return (
+                    <div
+                      key={t.href}
+                      draggable
+                      onDragStart={e => onDragStart(e, t.href)}
+                      onDragEnd={onDragEnd}
+                      onDragOver={e => onDragOver(e, g.id, t.href)}
+                      onDrop={e => onDrop(e, g.id, t.href)}
+                      className={`relative bg-surface border rounded-xl transition-colors group cursor-grab active:cursor-grabbing hover:border-accent-border hover:bg-surface-muted ${
+                        dragging === t.href ? 'opacity-50' : ''
+                      } ${dropTarget?.before === t.href && dragging !== t.href ? 'border-accent' : 'border-border'}`}
+                    >
+                      <Link href={t.href} draggable={false} className="block p-5 pr-14 rounded-xl">
+                        <t.icon size={24} className="mb-3 text-accent-text" aria-hidden />
+                        <h3 className="font-sans font-semibold text-body-sm text-text group-hover:text-text-heading mb-1.5">
+                          {t.title}
+                        </h3>
+                        <p className="text-caption text-text-muted leading-relaxed">{t.description}</p>
+                      </Link>
+                      <IconButton
+                        icon={Star}
+                        size="sm"
+                        label={fav ? `Quitar ${t.title} de favoritos` : `Añadir ${t.title} a favoritos`}
+                        pressed={fav}
+                        onClick={() => applyMove(t.href, fav ? 'principales' : 'favoritos')}
+                        className={`absolute top-3 right-3 ${fav ? '[&>svg]:text-accent-text [&>svg]:fill-current' : '[&>svg]:text-text-muted'}`}
+                      />
+                    </div>
+                  );
+                })}
+                {items.length === 0 && (
+                  <p className="sm:col-span-2 rounded-xl border border-dashed border-border px-5 py-6 text-caption text-text-muted text-center">
+                    {g.id === 'favoritos'
+                      ? 'Arrastra aquí una herramienta o pulsa la estrella para añadirla a favoritos.'
+                      : 'Arrastra aquí una herramienta para quitarla de favoritos.'}
+                  </p>
+                )}
+              </div>
+            </section>
+          );
+        })}
       </div>
     </div>
   );
