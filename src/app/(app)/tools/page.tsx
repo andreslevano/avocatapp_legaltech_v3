@@ -7,14 +7,24 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 import { useState } from 'react';
 import { orgNdaTemplateFor } from '@/lib/org-templates';
-import { Banknote, ChartColumn, FileLock2, FilePenLine, GraduationCap, Handshake, Mail, Scale, Search } from 'lucide-react';
+import { Banknote, ChartColumn, FileLock2, FilePenLine, GraduationCap, Handshake, Mail, Scale, Search, type LucideIcon } from 'lucide-react';
 
-const TOOLS_COMMON = [
+interface Tool {
+  href: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  /** Shown under "Favoritos" at the top of the page. Set it to highlight a tool. */
+  featured?: boolean;
+}
+
+const TOOLS_COMMON: Tool[] = [
   {
     href: '/tools/nda',
     title: 'Generador de NDA',
     description: 'Crea un Acuerdo de Confidencialidad completo y listo para firma. Consulta NDAs previos en tu repositorio como referencia.',
     icon: FileLock2,
+    featured: true,
   },
   {
     href: '/tools/analisis',
@@ -43,16 +53,17 @@ const TOOLS_COMMON = [
 ];
 
 // Organisation templates (MOBIFORWORK): only for users of that organisation.
-const TOOLS_MOBILITYFORWORK = [
+const TOOLS_MOBILITYFORWORK: Tool[] = [
   {
     href: '/tools/contrato-servicios',
     title: 'Generador de contrato de servicios',
     description: 'Contrato de Prestación de Servicios con la plantilla de MOBIFORWORK: datos del colaborador, tarifa y firma con DocuSign.',
     icon: Handshake,
+    featured: true,
   },
 ];
 
-const TOOLS_AUTOSERVICIO = [
+const TOOLS_AUTOSERVICIO: Tool[] = [
   {
     href: '/escritos/accion-tutela',
     title: 'Acción de Tutela',
@@ -67,7 +78,7 @@ const TOOLS_AUTOSERVICIO = [
   },
 ];
 
-const TOOLS_ESTUDIANTES = [
+const TOOLS_ESTUDIANTES: Tool[] = [
   {
     href: '/tools/estudiantes',
     title: 'Documentos por Área Legal',
@@ -84,13 +95,17 @@ export default function ToolsPage() {
   const isEstudiantes = userDoc.plan === 'Estudiantes';
   const [topping, setTopping] = useState(false);
 
-  const tools = [
+  const tools: Tool[] = [
     ...(isEstudiantes ? TOOLS_ESTUDIANTES : []),
     ...(isAutoservicio ? TOOLS_AUTOSERVICIO : []),
     ...TOOLS_COMMON.slice(0, 1),
     ...(orgNdaTemplateFor(user) === 'mobilityforwork' ? TOOLS_MOBILITYFORWORK : []),
     ...TOOLS_COMMON.slice(1),
   ];
+  const groups = [
+    { id: 'favoritos', title: 'Favoritos', items: tools.filter(t => t.featured) },
+    { id: 'principales', title: 'Principales', items: tools.filter(t => !t.featured) },
+  ].filter(g => g.items.length > 0);
 
   const creditos = userDoc.creditos_disponibles ?? 0;
 
@@ -147,21 +162,28 @@ export default function ToolsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl">
-          {tools.map(t => (
-            <Link
-              key={t.href}
-              href={t.href}
-              className="bg-surface border border-border rounded-xl p-5 hover:border-accent-border hover:bg-surface-muted transition-colors group"
-            >
-              <t.icon size={24} className="mb-3 text-accent-text" aria-hidden />
-              <h3 className="font-sans font-semibold text-body-sm text-text group-hover:text-text-heading mb-1.5">
-                {t.title}
-              </h3>
-              <p className="text-caption text-text-muted leading-relaxed">{t.description}</p>
-            </Link>
-          ))}
-        </div>
+        {groups.map(g => (
+          <section key={g.id} aria-labelledby={`tools-${g.id}`} className="max-w-3xl">
+            <h2 id={`tools-${g.id}`} className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3">
+              {g.title}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {g.items.map(t => (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  className="bg-surface border border-border rounded-xl p-5 hover:border-accent-border hover:bg-surface-muted transition-colors group"
+                >
+                  <t.icon size={24} className="mb-3 text-accent-text" aria-hidden />
+                  <h3 className="font-sans font-semibold text-body-sm text-text group-hover:text-text-heading mb-1.5">
+                    {t.title}
+                  </h3>
+                  <p className="text-caption text-text-muted leading-relaxed">{t.description}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );
