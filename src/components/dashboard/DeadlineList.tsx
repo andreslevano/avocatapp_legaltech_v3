@@ -5,7 +5,7 @@ import type { CaseDoc } from '@/lib/firestore';
 import type { Timestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/contracts/types';
 import { CONTRACT_TYPE_LABEL, DATE_KIND_LABEL } from '@/lib/contracts/types';
-import { daysBetween, formatContractDate, madridToday, nextContractEvent } from '@/lib/contracts/dates';
+import { daysBetween, formatContractDate, lastPassedContractEvent, madridToday, nextContractEvent } from '@/lib/contracts/dates';
 
 function msToDeadline(deadline: Timestamp | null): number | null {
   if (!deadline) return null;
@@ -23,7 +23,8 @@ function relativeLabel(days: number): string {
 
 interface DeadlineListProps {
   cases: CaseDoc[];
-  /** F3: confirmed contracts — their next notice / end / survival date joins the list. */
+  /** F3: confirmed contracts — their next notice / end / survival date joins the list; a date that
+   *  passed in the last EXPIRED_VISIBLE_DAYS shows as "Venció hace N días" when nothing is upcoming. */
   contracts?: Contract[];
 }
 
@@ -40,9 +41,9 @@ export default function DeadlineList({ cases, contracts = [] }: DeadlineListProp
     }));
   const today = madridToday();
   const contractRows: Row[] = contracts
-    .filter(c => c.confirmedByUser && !c.alertsMuted && (c.lifecycle === 'active' || c.lifecycle === 'expiring'))
+    .filter(c => c.confirmedByUser && !c.alertsMuted && (c.lifecycle === 'active' || c.lifecycle === 'expiring' || c.lifecycle === 'expired'))
     .flatMap(c => {
-      const next = nextContractEvent(c.dates, today);
+      const next = nextContractEvent(c.dates, today) ?? lastPassedContractEvent(c.dates, today);
       if (!next) return [];
       const days = daysBetween(today, next.date);
       if (days > 120) return [];

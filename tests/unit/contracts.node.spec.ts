@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
-  addMonths, computeDates, daysBetween, lifecycleFor, madridHour, madridToday, nextContractEvent, parseDuration, rollForward,
+  addMonths, computeDates, daysBetween, lastPassedContractEvent, lifecycleFor, madridHour, madridToday, nextContractEvent, parseDuration, rollForward,
 } from '@/lib/contracts/dates';
 import { alertText, buildDigest, dueAlerts, normalizePrefs, DEFAULT_PREFS } from '@/lib/contracts/alerts';
 import { contractFromExtraction, contractFromNdaForm, EXTRACTION_JSON_SCHEMA, validateContractEdit } from '@/lib/contracts/extract';
@@ -214,5 +214,21 @@ test.describe('agent history persistence', () => {
     const src = readFileSync(join(__dirname, '../../src/app/api/agent-v2/route.ts'), 'utf8');
     const block = src.slice(src.indexOf('const assistantMsg'), src.indexOf('await convRef.update'));
     expect(block).not.toMatch(/:\s*undefined/);
+  });
+});
+
+test.describe('lastPassedContractEvent (panel "Venció hace…")', () => {
+  const base = { effectiveDate: '2025-11-02', noticeDeadline: null, confidentialitySurvivalEnd: null };
+  test('recent past end date is returned', () => {
+    expect(lastPassedContractEvent({ ...base, termEndDate: '2026-11-02' }, '2026-11-13')).toEqual({ kind: 'termEndDate', date: '2026-11-02' });
+  });
+  test('older than the grace window is dropped', () => {
+    expect(lastPassedContractEvent({ ...base, termEndDate: '2026-10-01' }, '2026-11-13')).toBeNull();
+  });
+  test('today or future dates are not "passed"', () => {
+    expect(lastPassedContractEvent({ ...base, termEndDate: '2026-11-13' }, '2026-11-13')).toBeNull();
+  });
+  test('most recent of several passed dates wins', () => {
+    expect(lastPassedContractEvent({ ...base, noticeDeadline: '2026-11-01', termEndDate: '2026-11-09' }, '2026-11-13')?.date).toBe('2026-11-09');
   });
 });

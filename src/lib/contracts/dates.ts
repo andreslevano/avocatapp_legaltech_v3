@@ -100,6 +100,21 @@ export function nextContractEvent(dates: ContractDates, today: string): { kind: 
   return upcoming[0] ?? null;
 }
 
+/** Days an expired contract stays on "Próximos vencimientos" as "Venció hace N días". */
+export const EXPIRED_VISIBLE_DAYS = 30;
+
+/** The most recent date that already passed within `graceDays` (for "Venció hace…" rows). */
+export function lastPassedContractEvent(
+  dates: ContractDates, today: string, graceDays = EXPIRED_VISIBLE_DAYS,
+): { kind: DateKind; date: string } | null {
+  const order: DateKind[] = ['noticeDeadline', 'termEndDate', 'confidentialitySurvivalEnd'];
+  const passed = order
+    .map(kind => ({ kind, date: dates[kind] }))
+    .filter((x): x is { kind: DateKind; date: string } => !!x.date && x.date < today && daysBetween(x.date, today) <= graceDays)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  return passed[0] ?? null;
+}
+
 /** "Por vencer" when the term end or the notice deadline falls within this many days. */
 export const EXPIRING_WINDOW_DAYS = 30;
 
