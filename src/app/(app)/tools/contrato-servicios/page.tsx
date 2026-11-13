@@ -16,13 +16,38 @@ import { getClients, type ClientDoc } from '@/lib/firestore';
 import SignAndSendButton from '@/components/signatures/SignAndSendButton';
 import { takeSignResume } from '@/lib/signatures/client';
 import { orgNdaTemplateFor } from '@/lib/org-templates';
-import { MFW_SERVICES_TEMPLATE, renderMfwServices, type MfwServicesInput } from '@/lib/org-templates/mobiforwork-services';
+import {
+  MFW_EXTRA_CLAUSE_MAX_CHARS, MFW_SERVICES_TEMPLATE, renderMfwServices, validateMfwPayment,
+  type MfwMilestone, type MfwPaymentModel, type MfwServicesInput,
+} from '@/lib/org-templates/mobiforwork-services';
+import { IconButton } from '@/components/ui/IconButton';
+import { Plus, Trash2 } from 'lucide-react';
 import { madridToday } from '@/lib/contracts/dates';
 import type { Currency } from '@/lib/org-templates/spanish-numbers';
 
 const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-small font-sans text-text  focus:border-accent-border';
 const LABEL = 'block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5';
 const META: DocMeta = { authorName: MFW_SERVICES_TEMPLATE.company, authorNif: `CIF ${MFW_SERVICES_TEMPLATE.cif}` };
+
+const MODALIDADES: { id: MfwPaymentModel; label: string }[] = [
+  { id: 'horas', label: 'Por horas validadas (pool de recursos)' },
+  { id: 'unico_fin', label: 'Pago único al finalizar el curso' },
+  { id: 'hitos', label: 'Pagos parciales' },
+];
+
+type HitoTipo = MfwMilestone['tipo'];
+interface HitoRow { valor: string; cuando: MfwMilestone['cuando']; fecha: string }
+interface PactoRow { titulo: string; texto: string }
+
+/** Spanish or plain input: "2.000" → 2000, "1.200,50" → 1200.5, "35,5" / "35.5" → 35.5; '' or invalid → NaN. */
+const parseNum = (raw: string) => {
+  const t = raw.trim().replace(/\s/g, '');
+  if (!t) return NaN;
+  if (t.includes(',')) return Number(t.replace(/\./g, '').replace(',', '.'));
+  return Number(/^\d{1,3}(\.\d{3})+$/.test(t) ? t.replace(/\./g, '') : t);
+};
+const money = (n: number, currency: Currency) =>
+  `${n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency === 'EUR' ? '€' : 'USD'}`;
 
 export default function ServicesContractPage() {
   const { user, userDoc } = useAppAuth();
@@ -37,6 +62,12 @@ export default function ServicesContractPage() {
   const [meses, setMeses] = useState(String(MFW_SERVICES_TEMPLATE.defaultInitialMonths));
   const [tarifa, setTarifa] = useState('');
   const [moneda, setMoneda] = useState<Currency>(MFW_SERVICES_TEMPLATE.defaultCurrency);
+  const [modalidad, setModalidad] = useState<MfwPaymentModel>('horas');
+  const [importeTotal, setImporteTotal] = useState('');
+  const [fechaFinCurso, setFechaFinCurso] = useState('');
+  const [hitoTipo, setHitoTipo] = useState<HitoTipo>('porcentaje');
+  const [hitos, setHitos] = useState<HitoRow[]>([]);
+  const [pactos, setPactos] = useState<PactoRow[]>([]);
   const [clients, setClients] = useState<ClientDoc[]>([]);
   const [clientId, setClientId] = useState('');
 
@@ -97,22 +128,60 @@ export default function ServicesContractPage() {
     });
   };
 
+  const setHito = (i: number, p: Partial<HitoRow>) => setHitos(hs => hs.map((h, j) => (j === i ? { ...h, ...p } : h)));
+  const setPacto = (i: number, p: Partial<PactoRow>) => setPactos(ps => ps.map((x, j) => (j === i ? { ...x, ...p } : x)));
+  const chooseModalidad = (m: MfwPaymentModel) => {
+    setModalidad(m);
+    if (m === 'hitos' && hitos.length === 0) setHitos([{ valor: '', cuando: 'fecha', fecha: '' }, { valor: '', cuando: 'fin_curso', fecha: '' }]);
+  };
+  // Preset for teachers: part of the fee on a date, the rest when the course ends (values stay editable).
+  const presetParcialYFin = () => {
+    setModalidad('hitos');
+    setHitoTipo('porcentaje');
+    setHitos([{ valor: '50', cuando: 'fecha', fecha: '' }, { valor: '50', cuando: 'fin_curso', fecha: '' }]);
+  };
+
+  const total = parseNum(importeTotal);
+  const hitosInput: MfwMilestone[] = hitos.map(h => ({
+    tipo: hitoTipo, valor: parseNum(h.valor), cuando: h.cuando, fecha: h.cuando === 'fecha' ? h.fecha || null : null,
+  }));
+  const remainder = (() => {
+    const sum = hitosInput.reduce((a, h) => a + (Number.isFinite(h.valor) ? h.valor : 0), 0);
+    if (hitoTipo === 'porcentaje') {
+      const left = Math.round((100 - sum) * 100) / 100;
+      if (Math.abs(left) <= 0.01) return { text: 'Completo: 100 %', ok: true };
+      return { text: `${left > 0 ? 'Faltan' : 'Sobran'} ${Math.abs(left).toLocaleString('es-ES')} %`, ok: false };
+    }
+    if (!(total > 0)) return { text: 'Indica el importe total', ok: false };
+    const left = Math.round((total - sum) * 100) / 100;
+    if (Math.abs(left) <= 0.01) return { text: `Completo: ${money(total, moneda)}`, ok: true };
+    return { text: `${left > 0 ? 'Faltan' : 'Sobran'} ${money(Math.abs(left), moneda)}`, ok: false };
+  })();
+
   const title = `Contrato de servicios — ${MFW_SERVICES_TEMPLATE.company} / ${colab.nombre?.trim() || 'Colaborador'}`;
 
   const generate = async () => {
     if (!user) return;
     if (!colab.nombre?.trim()) return setError('Indica el nombre del colaborador.');
     const rate = Number(tarifa.replace(',', '.'));
-    if (tarifa.trim() && !(rate > 0)) return setError('La tarifa por hora no es válida.');
+    if (modalidad === 'horas' && tarifa.trim() && !(rate > 0)) return setError('La tarifa por hora no es válida.');
     const m = Number(meses);
-    if (!Number.isInteger(m) || m < 1 || m > 120) return setError('La vigencia inicial debe ser un número de meses (1–120).');
+    if (modalidad === 'horas' && (!Number.isInteger(m) || m < 1 || m > 120)) return setError('La vigencia inicial debe ser un número de meses (1–120).');
+    const input: MfwServicesInput = {
+      fechaContrato, colaborador: colab, servicio, duracion, inicioPool,
+      mesesIniciales: Number.isInteger(m) && m > 0 ? m : undefined,
+      tarifaHora: modalidad === 'horas' && tarifa.trim() ? rate : null, moneda, empresaDni,
+      modalidadPago: modalidad,
+      ...(modalidad !== 'horas' ? { importeTotal: Number.isFinite(total) ? total : null, fechaFinCurso: fechaFinCurso || null } : {}),
+      ...(modalidad === 'hitos' ? { hitos: hitosInput } : {}),
+      pactosAdicionales: pactos.map(p => ({ titulo: p.titulo, texto: p.texto })),
+    };
+    const problems = validateMfwPayment(input);
+    if (problems.length) return setError(problems.join(' '));
     setError(''); setNotice(''); setSavedDocId(null); setResumeSign(false);
     setGenerating(true);
     try {
-      const md = renderMfwServices({
-        fechaContrato, colaborador: colab, servicio, duracion, inicioPool, mesesIniciales: m,
-        tarifaHora: tarifa.trim() ? rate : null, moneda, empresaDni,
-      });
+      const md = renderMfwServices(input);
       setResult(md);
       setDocTitle(title);
       const fileBase = `Contrato_Servicios_MOBIFORWORK_${colab.nombre!.trim()}`.replace(/\s+/g, '_').slice(0, 60);
@@ -148,8 +217,11 @@ export default function ServicesContractPage() {
               <p className="text-caption font-semibold text-accent-text">Plantilla de {MFW_SERVICES_TEMPLATE.company}</p>
               <p className="text-caption text-text">El contrato se genera con el texto de la plantilla, sin cambios en sus cláusulas. Solo completas los datos del colaborador y las condiciones económicas.</p>
               <p className="text-caption text-text-muted">
-                Fijado por la plantilla: LA EMPRESA (Félix Dia Morales, CIF {MFW_SERVICES_TEMPLATE.cif}) · régimen mercantil · pago a 30 días ·
+                Fijado por la plantilla: LA EMPRESA (Félix Dia Morales, CIF {MFW_SERVICES_TEMPLATE.cif}) · régimen mercantil · facturación y pago a 30 días de la factura ·
                 confidencialidad · propiedad intelectual para LA EMPRESA · preaviso de 30 días · no competencia 12 meses (40 %) · Juzgados de Barbastro.
+              </p>
+              <p className="text-caption text-text-muted">
+                Configurable: la modalidad de pago (por horas, pago único al finalizar o pagos parciales) y pactos adicionales en la cláusula decimotercera.
               </p>
             </div>
 
@@ -188,25 +260,115 @@ export default function ServicesContractPage() {
                 <label className={LABEL}>Duración (cláusula segunda)</label>
                 <input className={INPUT} value={duracion} onChange={e => setDuracion(e.target.value)} />
               </div>
-              <div>
-                <label className={LABEL}>Inicio del Pool de Recursos</label>
-                <input type="date" className={INPUT} value={inicioPool} onChange={e => setInicioPool(e.target.value)} />
-              </div>
-              <div>
-                <label className={LABEL}>Vigencia inicial (meses)</label>
-                <input type="number" min={1} max={120} className={INPUT} value={meses} onChange={e => setMeses(e.target.value)} />
-              </div>
-              <div>
-                <label className={LABEL}>Tarifa por hora</label>
-                <div className="flex gap-2">
-                  <input inputMode="decimal" className={INPUT} placeholder="p. ej. 35" value={tarifa} onChange={e => setTarifa(e.target.value)} />
-                  <select className={`${INPUT} max-w-[90px]`} value={moneda} onChange={e => setMoneda(e.target.value as Currency)}>
-                    <option value="USD" className="bg-bg">USD</option>
-                    <option value="EUR" className="bg-bg">EUR</option>
-                  </select>
-                </div>
-              </div>
             </div>
+
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-label font-semibold uppercase tracking-widest text-accent-text">Condiciones económicas (cláusula tercera)</p>
+                <Button variant="ghost" size="sm" onClick={presetParcialYFin}>Pago parcial + resto al finalizar</Button>
+              </div>
+              <div>
+                <label className={LABEL} htmlFor="modalidad-pago">Modalidad de pago</label>
+                <select id="modalidad-pago" className={INPUT} value={modalidad} onChange={e => chooseModalidad(e.target.value as MfwPaymentModel)}>
+                  {MODALIDADES.map(o => <option key={o.id} value={o.id} className="bg-bg">{o.label}</option>)}
+                </select>
+              </div>
+
+              {modalidad === 'horas' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className={LABEL}>Inicio del Pool de Recursos</label>
+                    <input type="date" className={INPUT} value={inicioPool} onChange={e => setInicioPool(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>Vigencia inicial (meses)</label>
+                    <input type="number" min={1} max={120} className={INPUT} value={meses} onChange={e => setMeses(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>Tarifa por hora</label>
+                    <div className="flex gap-2">
+                      <input inputMode="decimal" className={INPUT} placeholder="p. ej. 35" value={tarifa} onChange={e => setTarifa(e.target.value)} />
+                      <select className={`${INPUT} max-w-[90px]`} value={moneda} onChange={e => setMoneda(e.target.value as Currency)}>
+                        <option value="USD" className="bg-bg">USD</option>
+                        <option value="EUR" className="bg-bg">EUR</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={LABEL}>Importe total</label>
+                    <div className="flex gap-2">
+                      <input inputMode="decimal" className={INPUT} placeholder="p. ej. 2.000" value={importeTotal} onChange={e => setImporteTotal(e.target.value)} />
+                      <select className={`${INPUT} max-w-[90px]`} value={moneda} onChange={e => setMoneda(e.target.value as Currency)}>
+                        <option value="USD" className="bg-bg">USD</option>
+                        <option value="EUR" className="bg-bg">EUR</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={LABEL}>Fecha de fin del curso (opcional)</label>
+                    <input type="date" className={INPUT} value={fechaFinCurso} onChange={e => setFechaFinCurso(e.target.value)} />
+                  </div>
+                </div>
+              )}
+
+              {modalidad === 'hitos' && (
+                <div className="rounded-lg border border-border p-4 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-small font-semibold text-text-heading">Calendario de pagos</p>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-caption ${remainder.ok ? 'text-success-text' : 'text-warning-text'}`} aria-live="polite">{remainder.text}</span>
+                      <div className="inline-flex rounded-md border border-border overflow-hidden" role="group" aria-label="Tipo de pago">
+                        {(['importe', 'porcentaje'] as HitoTipo[]).map(t => (
+                          <button key={t} type="button" aria-pressed={hitoTipo === t} onClick={() => setHitoTipo(t)}
+                            className={`px-3 py-1 text-caption ${hitoTipo === t ? 'bg-accent-subtle text-accent-text' : 'text-text-muted hover:bg-surface-muted'}`}>
+                            {t === 'importe' ? 'Importe' : '%'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {hitos.map((h, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_auto] sm:grid-cols-[140px_1fr_1fr_auto] gap-2 items-center">
+                      <input inputMode="decimal" className={INPUT} aria-label={`Pago ${i + 1}: ${hitoTipo === 'porcentaje' ? 'porcentaje' : 'importe'}`}
+                        placeholder={hitoTipo === 'porcentaje' ? '%' : moneda} value={h.valor} onChange={e => setHito(i, { valor: e.target.value })} />
+                      <IconButton icon={Trash2} size="sm" label={`Quitar pago ${i + 1}`} onClick={() => setHitos(hs => hs.filter((_, j) => j !== i))} className="sm:order-last" />
+                      <select className={INPUT} aria-label={`Pago ${i + 1}: cuándo`} value={h.cuando} onChange={e => setHito(i, { cuando: e.target.value as HitoRow['cuando'] })}>
+                        <option value="fecha" className="bg-bg">Fecha</option>
+                        <option value="fin_curso" className="bg-bg">Al finalizar el curso</option>
+                      </select>
+                      {h.cuando === 'fecha'
+                        ? <input type="date" className={INPUT} aria-label={`Pago ${i + 1}: fecha`} value={h.fecha} onChange={e => setHito(i, { fecha: e.target.value })} />
+                        : <span className="text-caption text-text-muted">{fechaFinCurso ? 'En la fecha de fin del curso' : 'Cuando termine el curso'}</span>}
+                    </div>
+                  ))}
+                  <Button variant="secondary" size="sm" icon={Plus} onClick={() => setHitos(hs => [...hs, { valor: '', cuando: 'fecha', fecha: '' }])}>Añadir pago</Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <p className="text-label font-semibold uppercase tracking-widest text-accent-text">Pactos adicionales (opcional)</p>
+                <p className="text-caption text-text-muted mt-1">Se incluyen tal cual en la cláusula DECIMOTERCERA. Revísalos antes de firmar.</p>
+              </div>
+              {pactos.map((p, i) => (
+                <div key={i} className="rounded-lg border border-border p-3 space-y-2">
+                  <div className="flex gap-2 items-center">
+                    <span className="text-caption text-text-muted">13.{i + 1}</span>
+                    <input className={INPUT} placeholder="Título (opcional)" aria-label={`Pacto ${i + 1}: título`} value={p.titulo} onChange={e => setPacto(i, { titulo: e.target.value })} />
+                    <IconButton icon={Trash2} size="sm" label={`Quitar pacto ${i + 1}`} onClick={() => setPactos(ps => ps.filter((_, j) => j !== i))} />
+                  </div>
+                  <textarea className={`${INPUT} min-h-[96px]`} aria-label={`Pacto ${i + 1}: texto`} maxLength={MFW_EXTRA_CLAUSE_MAX_CHARS}
+                    placeholder="Texto del pacto" value={p.texto} onChange={e => setPacto(i, { texto: e.target.value })} />
+                  <p className="text-caption text-text-muted text-right">{p.texto.length.toLocaleString('es-ES')} / {MFW_EXTRA_CLAUSE_MAX_CHARS.toLocaleString('es-ES')}</p>
+                </div>
+              ))}
+              <Button variant="secondary" size="sm" icon={Plus} onClick={() => setPactos(ps => [...ps, { titulo: '', texto: '' }])}>Añadir pacto</Button>
+            </div>
+
             <p className="text-caption text-text-muted">Los datos que dejes vacíos aparecerán entre corchetes en el documento para completarlos antes de firmar. Importes y plazos se escriben en letra y número.</p>
 
             {error && <p className="text-caption text-danger-text">{error}</p>}

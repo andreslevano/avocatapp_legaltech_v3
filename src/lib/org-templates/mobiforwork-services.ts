@@ -40,7 +40,24 @@ export interface MfwServicesInput {
   /** LA EMPRESA's representative ID — personal data, kept out of the code: stored in Firestore
    *  org_templates/mobilityforwork.es_servicios.fixed and served by /api/org-templates/[id]. */
   empresaDni?: string | null;
+  // Pending legal approval by MOBIFORWORK — v2 payment models
+  /** TERCERA payment model. Default 'horas' = the v1 text, unchanged. */
+  modalidadPago?: MfwPaymentModel;
+  /** Total fee for 'unico_fin' and 'hitos'. */
+  importeTotal?: number | null;
+  /** Expected end of the course (YYYY-MM-DD), optional. */
+  fechaFinCurso?: string | null;
+  /** 'hitos': payment calendar, all of one `tipo`. */
+  hitos?: MfwMilestone[];
+  /** DECIMOTERCERA. PACTOS ADICIONALES — the user's text, verbatim (sanitised). */
+  pactosAdicionales?: MfwExtraClause[];
 }
+
+export type MfwPaymentModel = 'horas' | 'unico_fin' | 'hitos';
+export interface MfwMilestone { tipo: 'importe' | 'porcentaje'; valor: number; cuando: 'fecha' | 'fin_curso'; fecha?: string | null }
+export interface MfwExtraClause { titulo?: string; texto: string }
+
+export const MFW_EXTRA_CLAUSE_MAX_CHARS = 2000;
 
 const v = (value: string | undefined, placeholder: string) => {
   const t = (value ?? '').replace(/\s+/g, ' ').trim().replace(/\*/g, '');
@@ -60,12 +77,152 @@ function rateText(rate: number | null | undefined, currency: Currency): string {
   return `**${amountToSpanish(rate, currency)} (${currency} ${formatAmount(rate)})**`;
 }
 
+// ── v2: payment models and additional agreements ────────────────────────────
+// Pending legal approval by MOBIFORWORK — v2 payment models
+
+const PAYMENT_APPROVAL = 'siempre que los servicios prestados hayan sido debidamente justificados y aprobados conforme al procedimiento establecido entre las partes.';
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+const isIso = (d: string | null | undefined): d is string => !!d && ISO.test(d);
+const toCents = (n: number) => Math.round(n * 100);
+const PCT_TOLERANCE = 0.01 + 1e-9;
+
+function amountText(amount: number | null | undefined, currency: Currency, placeholder: string): string {
+  if (amount == null || !(amount > 0)) return `[${placeholder}] (${currency} [IMPORTE])`;
+  return `**${amountToSpanish(amount, currency)} (${currency} ${formatAmount(amount)})**`;
+}
+
+function endOfCourse(fechaFinCurso: string | null | undefined): string {
+  return `a la finalización del curso o servicio${isIso(fechaFinCurso) ? `, prevista para el día **${spanishDate(fechaFinCurso)}**` : ''}`;
+}
+
+/** Amount of each milestone. Percentages are rounded to cents; the difference goes on the last one,
+ *  so the amounts always add up to the total (3 × 33,33 % of 1.000 → 333,30 + 333,30 + 333,40). */
+export function milestoneAmounts(hitos: MfwMilestone[], total: number | null | undefined): (number | null)[] {
+  if (hitos.length === 0) return [];
+  if (hitos.every(h => h.tipo === 'importe')) return hitos.map(h => (h.valor > 0 ? h.valor : null));
+  if (total == null || !(total > 0)) return hitos.map(() => null);
+  const totalCents = toCents(total);
+  const cents = hitos.map(h => Math.round((totalCents * h.valor) / 100));
+  // The calendar always pays the whole total: the last payment takes the rounding difference.
+  cents[cents.length - 1] = totalCents - cents.slice(0, -1).reduce((a, c) => a + c, 0);
+  return cents.map(c => c / 100);
+}
+
+const LETTERS = 'abcdefghijklmnopqrstuvwxyz';
+
+/** TERCERA payment paragraphs for 'unico_fin' / 'hitos' (they replace the Pool de Recursos, rate and invoice paragraphs). */
+function paymentParagraphs(input: MfwServicesInput, moneda: Currency): string {
+  const total = amountText(input.importeTotal, moneda, 'IMPORTE TOTAL EN LETRA');
+  if (input.modalidadPago === 'unico_fin') {
+    return `LA EMPRESA abonará a EL COLABORADOR la cantidad total de ${total} por la prestación de los servicios objeto del presente contrato, que se hará efectiva ${endOfCourse(input.fechaFinCurso)}. EL COLABORADOR emitirá la correspondiente factura a la finalización del servicio y LA EMPRESA efectuará el pago dentro de los treinta (30) días siguientes a la fecha de recepción de la factura, ${PAYMENT_APPROVAL}`;
+  }
+  const hitos = input.hitos ?? [];
+  const amounts = milestoneAmounts(hitos, input.importeTotal);
+  const lines = hitos.map((h, i) => {
+    const amount = amountText(amounts[i], moneda, 'IMPORTE EN LETRA');
+    const pct = h.tipo === 'porcentaje' && h.valor > 0 ? `, equivalente al ${formatAmount(h.valor)} % del total` : '';
+    const when = h.cuando === 'fin_curso'
+      ? endOfCourse(input.fechaFinCurso)
+      : `el día ${isIso(h.fecha) ? `**${spanishDate(h.fecha)}**` : '[FECHA]'}`;
+    return `${LETTERS[i] ?? String(i + 1)}) ${amount}${pct}, ${when}.`;
+  });
+  return [
+    `LA EMPRESA abonará a EL COLABORADOR la cantidad total de ${total}, que se hará efectiva conforme al siguiente calendario de pagos:`,
+    ...lines,
+    `Para cada uno de los pagos, EL COLABORADOR emitirá la correspondiente factura y LA EMPRESA efectuará el pago dentro de los treinta (30) días siguientes a la fecha de recepción de la factura, ${PAYMENT_APPROVAL}`,
+  ].join('\n\n');
+}
+
+/** The user's text, verbatim but unable to break the document: no markdown control characters,
+ *  no "____" runs (signature/date anchors) and no backslashes (DocuSign anchor syntax). */
+export function sanitizeClauseText(text: string): string {
+  return text
+    .replace(/[*#>\\]/g, '')
+    .replace(/_{4,}/g, '___')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^-+\s*/, '');
+}
+
+function extraClauses(pactos: MfwExtraClause[] | undefined): string {
+  const items = (pactos ?? []).map(p => ({ titulo: sanitizeClauseText(p.titulo ?? ''), texto: sanitizeClauseText(p.texto ?? '') })).filter(p => p.texto);
+  if (items.length === 0) return '';
+  const paras = items.map((p, i) => `13.${i + 1}. ${p.titulo ? `**${p.titulo}.** ` : ''}${p.texto}`);
+  return `## DECIMOTERCERA. PACTOS ADICIONALES\n\n${paras.join('\n\n')}\n\n`;
+}
+
+const hasExtraClauses = (input: MfwServicesInput) => (input.pactosAdicionales ?? []).some(p => sanitizeClauseText(p.texto ?? ''));
+
+/** 'v1' = the original template (hourly model, no additional agreements); anything else 'v2'. */
+export function mfwServicesVersion(input: MfwServicesInput): 'v1' | 'v2' {
+  return (input.modalidadPago ?? 'horas') === 'horas' && !hasExtraClauses(input) ? 'v1' : 'v2';
+}
+
+/** Spanish validation messages for the payment model and additional agreements (empty = valid). */
+export function validateMfwPayment(input: MfwServicesInput): string[] {
+  const errors: string[] = [];
+  const model = input.modalidadPago ?? 'horas';
+  const total = input.importeTotal ?? 0;
+  if (model !== 'horas' && !(total > 0)) errors.push('Indica el importe total (mayor que 0).');
+  if (isIso(input.fechaFinCurso) && isIso(input.fechaContrato) && input.fechaFinCurso < input.fechaContrato) {
+    errors.push('La fecha de fin del curso no puede ser anterior a la fecha del contrato.');
+  }
+
+  if (model === 'hitos') {
+    const hitos = input.hitos ?? [];
+    if (hitos.length < 2) errors.push('Los pagos parciales necesitan al menos dos pagos.');
+    const tipos = new Set(hitos.map(h => h.tipo));
+    if (tipos.size > 1) errors.push('Todos los pagos deben ser importes o todos porcentajes.');
+    if (hitos.some(h => !(h.valor > 0))) errors.push('Cada pago debe tener un valor mayor que 0.');
+    if (tipos.size === 1 && hitos.length > 0) {
+      if (hitos[0].tipo === 'porcentaje') {
+        const sum = hitos.reduce((a, h) => a + h.valor, 0);
+        // ±0,01 so thirds (33,33 × 3) are accepted; the amounts still add up to the total.
+        if (Math.abs(sum - 100) > PCT_TOLERANCE) errors.push(`Los porcentajes deben sumar 100 % (ahora suman ${formatAmount(Math.round(sum * 100) / 100)} %).`);
+      } else if (total > 0) {
+        const sum = hitos.reduce((a, h) => a + toCents(h.valor), 0);
+        if (Math.abs(sum - toCents(total)) > 1) errors.push(`Los importes deben sumar el importe total (ahora suman ${formatAmount(sum / 100)}).`);
+      }
+    }
+    hitos.forEach((h, i) => {
+      if (h.cuando !== 'fecha') return;
+      const n = i + 1;
+      if (!isIso(h.fecha)) { errors.push(`Indica la fecha del pago ${n}.`); return; }
+      if (isIso(input.fechaContrato) && h.fecha < input.fechaContrato) errors.push(`La fecha del pago ${n} es anterior a la fecha del contrato.`);
+      if (isIso(input.fechaFinCurso) && h.fecha > input.fechaFinCurso) errors.push(`La fecha del pago ${n} es posterior a la fecha de fin del curso.`);
+    });
+    const finIdx = hitos.map((h, i) => (h.cuando === 'fin_curso' ? i : -1)).filter(i => i >= 0);
+    if (finIdx.length > 1) errors.push('Solo puede haber un pago al finalizar el curso.');
+    else if (finIdx.length === 1 && finIdx[0] !== hitos.length - 1) errors.push('El pago al finalizar el curso debe ser el último.');
+  }
+
+  (input.pactosAdicionales ?? []).forEach((p, i) => {
+    const t = (p.texto ?? '').trim();
+    if (!t) errors.push(`El pacto adicional ${i + 1} está vacío.`);
+    else if (t.length > MFW_EXTRA_CLAUSE_MAX_CHARS) errors.push(`El pacto adicional ${i + 1} supera los ${formatAmount(MFW_EXTRA_CLAUSE_MAX_CHARS)} caracteres.`);
+  });
+  return errors;
+}
+
 export function renderMfwServices(input: MfwServicesInput): string {
   const c = input.colaborador;
   const meses = input.mesesIniciales && input.mesesIniciales > 0 ? Math.round(input.mesesIniciales) : MFW_SERVICES_TEMPLATE.defaultInitialMonths;
   const moneda = input.moneda ?? MFW_SERVICES_TEMPLATE.defaultCurrency;
   const servicio = (input.servicio ?? '').trim() || MFW_SERVICES_TEMPLATE.defaultService;
   const duracion = (input.duracion ?? '').trim() || MFW_SERVICES_TEMPLATE.defaultDuration;
+  const modelo = input.modalidadPago ?? 'horas';
+  // v1 text — the 'horas' model (default). Byte-for-byte the original template.
+  const hourly = `A partir del día ${input.inicioPool ? `**${spanishDate(input.inicioPool)}**` : '[FECHA DE INICIO]'}, EL COLABORADOR prestará sus servicios bajo una modalidad de Pool de Recursos, de carácter temporal, mediante la cual estará disponible para la ejecución de tareas o proyectos específicos que le sean asignados por LA EMPRESA, sin que ello implique una obligación de asignación continua de trabajo por parte de LA EMPRESA ni una obligación de disponibilidad exclusiva por parte de EL COLABORADOR.
+
+La presente modalidad tendrá una vigencia inicial de ${monthsText(meses)}, contados desde su entrada en vigor. Transcurrido dicho período, las partes revisarán conjuntamente las condiciones de colaboración y podrán acordar su continuidad, modificación o sustitución por otra modalidad contractual.
+
+Para cada tarea, incidencia, proyecto o servicio solicitado por LA EMPRESA, EL COLABORADOR deberá proporcionar previamente una estimación del tiempo requerido para su ejecución, la cual deberá ser validada o aprobada por LA EMPRESA antes del inicio de los trabajos, salvo casos de urgencia debidamente justificados.
+
+LA EMPRESA abonará a EL COLABORADOR la cantidad de ${rateText(input.tarifaHora, moneda)} por cada hora efectivamente trabajada y validada, de acuerdo con las tareas realizadas y aceptadas por LA EMPRESA.
+
+EL COLABORADOR emitirá la correspondiente factura detallando las tareas realizadas y las horas dedicadas a cada una de ellas. LA EMPRESA efectuará el pago dentro de los treinta (30) días siguientes a la fecha de recepción de la factura, siempre que los servicios prestados hayan sido debidamente justificados y aprobados conforme al procedimiento establecido entre las partes.
+
+`;
   return `# CONTRATO DE PRESTACIÓN DE SERVICIOS
 
 En Barbastro a ${input.fechaContrato ? spanishDate(input.fechaContrato) : '[FECHA]'}
@@ -98,17 +255,9 @@ El presente contrato tiene una duración ${duracion === MFW_SERVICES_TEMPLATE.de
 
 ## TERCERA. TARIFAS, HONORARIOS, FACTURACIÓN Y FORMA DE PAGO
 
-A partir del día ${input.inicioPool ? `**${spanishDate(input.inicioPool)}**` : '[FECHA DE INICIO]'}, EL COLABORADOR prestará sus servicios bajo una modalidad de Pool de Recursos, de carácter temporal, mediante la cual estará disponible para la ejecución de tareas o proyectos específicos que le sean asignados por LA EMPRESA, sin que ello implique una obligación de asignación continua de trabajo por parte de LA EMPRESA ni una obligación de disponibilidad exclusiva por parte de EL COLABORADOR.
+${modelo === 'horas' ? hourly : `${paymentParagraphs(input, moneda)}
 
-La presente modalidad tendrá una vigencia inicial de ${monthsText(meses)}, contados desde su entrada en vigor. Transcurrido dicho período, las partes revisarán conjuntamente las condiciones de colaboración y podrán acordar su continuidad, modificación o sustitución por otra modalidad contractual.
-
-Para cada tarea, incidencia, proyecto o servicio solicitado por LA EMPRESA, EL COLABORADOR deberá proporcionar previamente una estimación del tiempo requerido para su ejecución, la cual deberá ser validada o aprobada por LA EMPRESA antes del inicio de los trabajos, salvo casos de urgencia debidamente justificados.
-
-LA EMPRESA abonará a EL COLABORADOR la cantidad de ${rateText(input.tarifaHora, moneda)} por cada hora efectivamente trabajada y validada, de acuerdo con las tareas realizadas y aceptadas por LA EMPRESA.
-
-EL COLABORADOR emitirá la correspondiente factura detallando las tareas realizadas y las horas dedicadas a cada una de ellas. LA EMPRESA efectuará el pago dentro de los treinta (30) días siguientes a la fecha de recepción de la factura, siempre que los servicios prestados hayan sido debidamente justificados y aprobados conforme al procedimiento establecido entre las partes.
-
-LA EMPRESA reembolsará los gastos de desplazamiento, alojamiento, manutención u otros gastos necesarios para la prestación del servicio únicamente cuando hayan sido previamente autorizados por LA EMPRESA y, en su caso, resulten repercutibles al cliente final. EL COLABORADOR deberá presentar los correspondientes justificantes o facturas para su reembolso.
+`}LA EMPRESA reembolsará los gastos de desplazamiento, alojamiento, manutención u otros gastos necesarios para la prestación del servicio únicamente cuando hayan sido previamente autorizados por LA EMPRESA y, en su caso, resulten repercutibles al cliente final. EL COLABORADOR deberá presentar los correspondientes justificantes o facturas para su reembolso.
 
 ## CUARTA. - CONFIDENCIALIDAD
 
@@ -192,7 +341,7 @@ Le informamos que usted puede presentar una reclamación ante la Autoridad de Co
 
 El cumplimiento, ejecución e interpretación del presente contrato estará sujeto a la legislación española y, en caso de controversia, ambas Partes acuerdan someterse, con renuncia expresa a cualquier otro fuero que pudiera corresponderles, a la jurisdicción de los Juzgados y Tribunales de Barbastro.
 
-Y en prueba de conformidad, ambas partes firman el presente documento por duplicado, a un solo efecto y en lugar y fecha señalados en el encabezamiento.
+${extraClauses(input.pactosAdicionales)}Y en prueba de conformidad, ambas partes firman el presente documento por duplicado, a un solo efecto y en lugar y fecha señalados en el encabezamiento.
 
 ## FIRMAS
 
