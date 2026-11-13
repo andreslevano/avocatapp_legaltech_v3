@@ -8,6 +8,13 @@ import { getClients, getCases, type ClientDoc, type CaseDoc } from '@/lib/firest
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import type { Timestamp } from 'firebase/firestore';
+import { Send } from 'lucide-react';
+import { availableDocs, type DocId } from '@/lib/data-requests/catalog';
+import { isValidEmail } from '@/lib/data-requests/core';
+import {
+  createRequest, DocPicker, PrepareLinks, requestStatus, RequestStatusChip, resendRequest, revokeRequest, SentNotice,
+  type SentResult,
+} from '@/components/clients/DataRequestControls';
 
 function formatDate(ts: Timestamp | null): string {
   if (!ts) return '—';
@@ -33,7 +40,8 @@ const EMPTY_FORM: NewClientForm = {
 };
 
 export default function ClientsPage() {
-  const { userDoc } = useAppAuth();
+  const { user, userDoc } = useAppAuth();
+  const requestableDocs = availableDocs(user);
   const [clients, setClients] = useState<ClientDoc[]>([]);
   const [cases,   setCases]   = useState<CaseDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +50,14 @@ export default function ClientsPage() {
   const [form, setForm] = useState<NewClientForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  // "Solicitar datos al cliente"
+  const [requestOn, setRequestOn] = useState(false);
+  const [requestDocs, setRequestDocs] = useState<DocId[]>([]);
+  const [requestFor, setRequestFor] = useState<ClientDoc | null>(null);   // row action modal
+  /** Results of the last send per client: the link can only be copied right after sending. */
+  const [sent, setSent] = useState<Record<string, SentResult>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!userDoc.uid) return;
@@ -55,7 +71,71 @@ export default function ClientsPage() {
     setEditingClient(null);
     setForm(EMPTY_FORM);
     setError('');
+    setRequestOn(false);
+    setRequestDocs(requestableDocs.length === 1 ? [requestableDocs[0].id] : []);
     setShowModal(true);
+  };
+
+  /** Server summary → local list (status chip, actions). */
+  const applyRequest = (clientId: string, r: SentResult | { id: string; status: SentResult['status'] }, documents?: DocId[]) => {
+    setClients(prev => prev.map(c => c.id !== clientId ? c : {
+      ...c,
+      dataRequest: {
+        id: r.id, status: r.status, documents: documents ?? c.dataRequest?.documents,
+        expiresAt: 'link' in r ? new Date(Date.now() + 14 * 86_400_000).toISOString() : c.dataRequest?.expiresAt,
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+  };
+
+  const sendRequest = async (client: { id: string }, documents: DocId[]) => {
+    const r = await createRequest(user, client.id, documents);
+    setSent(p => ({ ...p, [client.id]: r }));
+    applyRequest(client.id, r, documents);
+    return r;
+  };
+
+  const rowAction = async (c: ClientDoc, action: 'resend' | 'revoke') => {
+    if (!c.dataRequest) return;
+    setBusy(`${c.id}:${action}`);
+    setRowError(p => ({ ...p, [c.id]: '' }));
+    try {
+      if (action === 'resend') {
+        const r = await resendRequest(user, c.dataRequest.id);
+        setSent(p => ({ ...p, [c.id]: r }));
+        applyRequest(c.id, r);
+      } else {
+        const r = await revokeRequest(user, c.dataRequest.id);
+        setSent(p => { const n = { ...p }; delete n[c.id]; return n; });
+        applyRequest(c.id, r);
+      }
+    } catch (e) {
+      setRowError(p => ({ ...p, [c.id]: (e as Error).message }));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const openRequestFor = (c: ClientDoc) => {
+    setRequestFor(c);
+    setRequestDocs(c.dataRequest?.documents?.length ? c.dataRequest.documents : requestableDocs.length === 1 ? [requestableDocs[0].id] : []);
+    setError('');
+  };
+
+  const submitRequestFor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!requestFor) return;
+    if (requestDocs.length === 0) return setError('Elige al menos un documento.');
+    setSaving(true);
+    setError('');
+    try {
+      await sendRequest(requestFor, requestDocs);
+      setRequestFor(null);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openEdit = (client: ClientDoc) => {
@@ -77,6 +157,9 @@ export default function ClientsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return setError('El nombre es obligatorio.');
+    const wantsRequest = !editingClient && requestOn;
+    if (wantsRequest && !isValidEmail(form.email.trim().toLowerCase())) return setError('Indica un email válido para enviarle el enlace.');
+    if (wantsRequest && requestDocs.length === 0) return setError('Elige al menos un documento.');
     if (!db) return setError('Base de datos no disponible.');
     setError('');
     setSaving(true);
@@ -119,6 +202,13 @@ export default function ClientsPage() {
           status: 'active',
         };
         setClients(prev => [newClient, ...prev]);
+        if (wantsRequest) {
+          try {
+            await sendRequest(newClient, requestDocs);
+          } catch (err) {
+            setRowError(p => ({ ...p, [newClient.id]: `Cliente guardado, pero no se pudo enviar la solicitud: ${(err as Error).message}` }));
+          }
+        }
       }
       setShowModal(false);
     } catch {
@@ -163,7 +253,7 @@ export default function ClientsPage() {
             <table className="w-full text-caption font-sans">
               <thead>
                 <tr className="border-b border-border">
-                  {['Cliente', 'Email', 'Casos activos', 'Último caso', 'Estado', ''].map(h => (
+                  {['Cliente', 'Email', 'Datos', 'Casos activos', 'Último caso', 'Estado', ''].map(h => (
                     <th key={h} className="text-left px-4 py-2.5 text-label font-semibold tracking-widest uppercase text-text-muted">{h}</th>
                   ))}
                 </tr>
@@ -176,6 +266,35 @@ export default function ClientsPage() {
                       {c.company && <div className="text-caption text-text-muted">{c.company}</div>}
                     </td>
                     <td className="px-4 py-3 text-text-muted">{c.email || '—'}</td>
+                    <td className="px-4 py-3 align-top min-w-[220px]">
+                      {(() => {
+                        const st = requestStatus(c.dataRequest);
+                        if (!st || !c.dataRequest) return <span className="text-text-muted">—</span>;
+                        const pending = st === 'enviada' || st === 'abierta';
+                        return (
+                          <div className="space-y-1.5">
+                            <RequestStatusChip status={st} />
+                            {st === 'completada' && <PrepareLinks clientId={c.id} dr={c.dataRequest} />}
+                            {st !== 'completada' && (
+                              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                                <button type="button" onClick={() => rowAction(c, 'resend')} disabled={!!busy}
+                                  className="text-caption text-text-muted hover:text-accent-text disabled:opacity-50">
+                                  {busy === `${c.id}:resend` ? 'Reenviando…' : 'Reenviar'}
+                                </button>
+                                {pending && (
+                                  <button type="button" onClick={() => rowAction(c, 'revoke')} disabled={!!busy}
+                                    className="text-caption text-text-muted hover:text-danger-text disabled:opacity-50">
+                                    {busy === `${c.id}:revoke` ? 'Anulando…' : 'Anular'}
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            {sent[c.id] && pending && <SentNotice email={c.email} result={sent[c.id]} />}
+                            {rowError[c.id] && <p className="text-caption text-danger-text">{rowError[c.id]}</p>}
+                          </div>
+                        );
+                      })()}
+                    </td>
                     <td className="px-4 py-3 text-text">{activeCasesByClientId[c.id] ?? 0}</td>
                     <td className="px-4 py-3 text-text-muted">{formatDate(c.lastCaseDate)}</td>
                     <td className="px-4 py-3">
@@ -183,10 +302,18 @@ export default function ClientsPage() {
                         {c.status === 'active' ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {requestableDocs.length > 0 && c.email && (
+                        <button
+                          onClick={() => openRequestFor(c)}
+                          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-caption text-text-muted hover:text-accent-text border border-transparent hover:border-accent-border px-2.5 py-1 rounded-md"
+                        >
+                          Solicitar datos
+                        </button>
+                      )}
                       <button
                         onClick={() => openEdit(c)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-caption text-text-muted hover:text-accent-text border border-transparent hover:border-accent-border px-2.5 py-1 rounded-md"
+                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-caption text-text-muted hover:text-accent-text border border-transparent hover:border-accent-border px-2.5 py-1 rounded-md"
                       >
                         Editar
                       </button>
@@ -228,6 +355,24 @@ export default function ClientsPage() {
                 </div>
               ))}
 
+              {!editingClient && requestableDocs.length > 0 && form.email.trim() && (
+                <div className="rounded-lg border border-accent-border bg-accent-subtle px-3 py-3 space-y-2">
+                  <p className="text-label font-semibold uppercase tracking-widest text-accent-text">Solicitar los datos al cliente</p>
+                  <label className="flex items-center justify-between gap-3 text-small text-text cursor-pointer">
+                    <span>Enviar un enlace para que complete sus datos</span>
+                    <input type="checkbox" role="switch" aria-checked={requestOn} checked={requestOn}
+                      onChange={e => setRequestOn(e.target.checked)} className="h-4 w-4" />
+                  </label>
+                  {requestOn && (
+                    <>
+                      <DocPicker docs={requestableDocs} value={requestDocs} onChange={setRequestDocs} />
+                      <p className="text-caption text-text-muted">Solo necesitas nombre y email. El resto lo completará el cliente.</p>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {!(requestOn && !editingClient) && <>
               <p className="text-label font-semibold uppercase tracking-widest text-text-muted pt-2">Información legal</p>
               <div>
                 <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Empresa / Organización</label>
@@ -272,12 +417,35 @@ export default function ClientsPage() {
                   className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border"
                 />
               </div>
+              </>}
 
               <div className="flex gap-3 pt-2">
                 <Button type="button" variant="ghost" size="md" fullWidth onClick={() => setShowModal(false)}>Cancelar</Button>
                 <Button type="submit" variant="accent" size="md" fullWidth loading={saving}>
-                  {editingClient ? 'Guardar cambios' : 'Guardar'}
+                  {editingClient ? 'Guardar cambios' : requestOn ? 'Guardar y enviar' : 'Guardar'}
                 </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {requestFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setRequestFor(null)} />
+          <div role="dialog" aria-modal="true" aria-labelledby="request-title" className="relative bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-elevated">
+            <h2 id="request-title" className="font-display text-h3 text-text-heading mb-1">Solicitar datos</h2>
+            <p className="text-caption text-text-muted mb-4">
+              Enviaremos a <span className="text-text">{requestFor.email}</span> un enlace para que {requestFor.name} complete los datos
+              que necesitan estos documentos. Caduca en 14 días.
+              {requestFor.dataRequest && ['enviada', 'abierta'].includes(requestFor.dataRequest.status) && ' El enlace anterior dejará de funcionar.'}
+            </p>
+            <form onSubmit={submitRequestFor} className="space-y-4">
+              {error && <p className="text-caption text-danger-text">{error}</p>}
+              <DocPicker docs={requestableDocs} value={requestDocs} onChange={setRequestDocs} />
+              <div className="flex gap-3">
+                <Button type="button" variant="ghost" size="md" fullWidth onClick={() => setRequestFor(null)}>Cancelar</Button>
+                <Button type="submit" variant="accent" size="md" fullWidth icon={Send} loading={saving}>Enviar enlace</Button>
               </div>
             </form>
           </div>

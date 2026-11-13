@@ -181,6 +181,13 @@ service cloud.firestore {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
+    // data_requests/{id}: "Solicitar datos al cliente". The owner reads their own requests; every
+    // write (create, resend, revoke, the client's submission) goes through the server with the Admin
+    // SDK. The public link never reads Firestore directly: it calls /api/data-requests/public/{token}.
+    match /data_requests/{requestId} {
+      allow read: if request.auth != null && resource.data.ownerId == request.auth.uid;
+    }
+
     // notifications/{id}: expiry alerts (F3), created by the scan (Admin SDK). The owner reads them
     // and may only mark them as read. contract_alerts/{key} and system/{doc} are server-only
     // (catch-all deny).

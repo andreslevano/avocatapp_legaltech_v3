@@ -23,6 +23,8 @@ import {
 import { IconButton } from '@/components/ui/IconButton';
 import { Plus, Trash2 } from 'lucide-react';
 import { madridToday } from '@/lib/contracts/dates';
+import { clientToColaborador } from '@/lib/data-requests/core';
+import { linkRequestDocument, readRequestParams } from '@/lib/data-requests/client';
 import type { Currency } from '@/lib/org-templates/spanish-numbers';
 
 const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-small font-sans text-text  focus:border-accent-border';
@@ -81,6 +83,18 @@ export default function ServicesContractPage() {
 
   useEffect(() => { if (user?.uid) getClients(user.uid).then(setClients).catch(() => {}); }, [user?.uid]);
 
+  // "Preparar contrato" from Clientes (?clientId=…&requestId=…): preselect the client once the list loads.
+  const [requestParams] = useState(readRequestParams);
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    if (prefilled || !requestParams.clientId) return;
+    const c = clients.find(x => x.id === requestParams.clientId);
+    if (!c) return;
+    setClientId(c.id);
+    setColab(clientToColaborador(c));
+    setPrefilled(true);
+  }, [clients, prefilled, requestParams.clientId]);
+
   // Template data kept out of the code (LA EMPRESA's representative DNI).
   const [empresaDni, setEmpresaDni] = useState<string | null>(null);
   useEffect(() => {
@@ -122,10 +136,7 @@ export default function ServicesContractPage() {
     setClientId(id);
     const c = clients.find(x => x.id === id);
     if (!c) return;
-    setColab({
-      nombre: c.name, domicilio: c.address || '', email: c.email || '',
-      documento: c.idNumber ? `${c.idType || ''} ${c.idNumber}`.trim() : '',
-    });
+    setColab(clientToColaborador(c));
   };
 
   const setHito = (i: number, p: Partial<HitoRow>) => setHitos(hs => hs.map((h, j) => (j === i ? { ...h, ...p } : h)));
@@ -192,6 +203,7 @@ export default function ServicesContractPage() {
         caseId: null, source: 'generated', pdfBlob: pdf?.blob ?? undefined,
       });
       setSavedDocId(record.id);
+      if (requestParams.requestId) linkRequestDocument(user, requestParams.requestId, 'contrato_servicios_mfw', record.id);
       user.getIdToken().then(token => fetch('/api/documents/embed', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ docId: record.id, text: md.slice(0, 12000) }),

@@ -21,6 +21,9 @@ import { updateInstructions } from '@/lib/legal/check';
 import { orgNdaTemplateFor } from '@/lib/org-templates';
 import { MFW_CONTRACT_DEFAULTS, MFW_NDA_TEMPLATE, renderMfwNda, type MfwReceptor } from '@/lib/org-templates/mobiforwork-nda';
 import MfwNdaFields from '@/components/org-templates/MfwNdaFields';
+import { clientToMfwReceptor, clientToNdaParte } from '@/lib/data-requests/core';
+import { ndaDocFor } from '@/lib/data-requests/catalog';
+import { linkRequestDocument, readRequestParams } from '@/lib/data-requests/client';
 
 type Tipo = 'unilateral' | 'bilateral';
 type Lang = 'es' | 'en';
@@ -93,7 +96,7 @@ function ParteFields({ label, value, onChange, headerAction }: ParteFieldsProps)
 export default function NdaPage() {
   const { user, userDoc } = useAppAuth();
   const router = useRouter();
-  const ud = userDoc as Record<string, unknown>;
+  const ud = userDoc as unknown as Record<string, unknown>;
   const signatureUrl = (ud.signatureUrl as string) || undefined;
   const meta: DocMeta = {
     authorName: (ud.legalCompanyName as string) || userDoc.displayName || '',
@@ -217,22 +220,19 @@ export default function NdaPage() {
     setSelectedClientId(clientId);
     const client = clients.find(c => c.id === clientId);
     if (!client) return;
-    setMfwReceptor({
-      tipo: client.company ? 'sociedad' : 'persona',
-      razonSocial: client.company || '', nombre: client.name, cargo: client.representativeCapacity || '',
-      documento: client.idNumber ? `${client.idType || ''} ${client.idNumber}`.trim() : '',
-      domicilio: client.address || '', email: client.email || '',
-    });
-    setReceptora({
-      nombre: client.name,
-      empresa: client.company || '',
-      cargo: client.representativeCapacity || '',
-      idType: client.idType || 'RUT',
-      idNumber: client.idNumber || '',
-      address: client.address || '',
-      email: client.email || '',
-    });
+    setMfwReceptor(clientToMfwReceptor(client));
+    setReceptora(clientToNdaParte(client));
   };
+
+  // "Preparar NDA" from Clientes (?clientId=…&requestId=…): preselect the client once the list loads.
+  const [requestParams] = useState(readRequestParams);
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    if (prefilled || !requestParams.clientId || !clients.some(c => c.id === requestParams.clientId)) return;
+    fillFromClient(requestParams.clientId);
+    setPrefilled(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients, prefilled, requestParams.clientId]);
 
   const handleGenerate = async () => {
     if (!divulgante.nombre.trim()) return setError('Ingresa el nombre de la parte divulgante.');
@@ -350,6 +350,7 @@ export default function NdaPage() {
           });
           setSaved(true);
           setSavedDocId(record.id);
+          if (requestParams.requestId) linkRequestDocument(user, requestParams.requestId, ndaDocFor(user), record.id);
           // F0: structured contract record from the form (dates, parties) for expiry alerts.
           if (contractsOn) {
             createNdaContract(user, orgTpl ? {

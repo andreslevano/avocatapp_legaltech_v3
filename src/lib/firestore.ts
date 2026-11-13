@@ -12,6 +12,7 @@ import {
   type Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import type { DataRequestStatus, DocId } from '@/lib/data-requests/catalog';
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -80,6 +81,22 @@ export interface ClientDoc {
   idNumber?: string;
   address?: string;
   representativeCapacity?: string;
+  // "Solicitar datos al cliente" (src/lib/data-requests): optional, older clients don't have them.
+  personType?: 'persona' | 'sociedad';
+  nationality?: string;
+  companyTaxId?: string;          // NIF of the company (sociedad)
+  companyAddress?: string;        // domicilio social
+  powers?: string;                // escritura de poder o cargo inscrito
+  dataRequest?: ClientDataRequestSummary;
+}
+
+/** clients/{id}.dataRequest — summary of the latest data request (written by the server). */
+export interface ClientDataRequestSummary {
+  id: string;
+  status: DataRequestStatus;
+  documents?: DocId[];
+  expiresAt?: string;
+  updatedAt: string;
 }
 
 export interface ConversationMessage {

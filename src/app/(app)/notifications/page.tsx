@@ -108,6 +108,7 @@ export default function NotificationsPage() {
             </div>
           ) : items.map(n => {
             if (n.type === 'legal_change') return <LegalChangeItem key={n.id} n={n} onOpen={open} />;
+            if (n.type === 'data_request') return <DataRequestItem key={n.id} n={n} onOpen={open} />;
             const c = contracts.get(n.contractId);
             const closed = c && (c.lifecycle === 'terminated' || c.lifecycle === 'renewed' || c.lifecycle === 'superseded');
             return (
@@ -159,6 +160,28 @@ export default function NotificationsPage() {
 }
 
 /** F2: "Cambio normativo: N NDAs pueden requerir actualización". */
+/** A client completed "Solicitar datos": open Clientes to prepare the documents. */
+function DataRequestItem({ n, onOpen }: { n: AppNotification; onOpen: (n: AppNotification, href: string) => void }) {
+  return (
+    <div className={`bg-surface border rounded-xl px-4 py-3 space-y-2 ${n.readAt ? 'border-border' : 'border-accent-border'}`}>
+      <div className="flex items-start gap-2.5">
+        <span className="mt-1.5 w-2 h-2 rounded-full flex-shrink-0 bg-success-text" />
+        <div className="flex-1 min-w-0">
+          <p className={`text-small leading-snug ${n.readAt ? 'text-text' : 'text-text-heading font-medium'}`}>{n.title}</p>
+          <p className="text-caption text-text-muted mt-0.5">{n.body}</p>
+        </div>
+        {!n.readAt && (
+          <button onClick={() => markNotificationsRead([n.id])} title="Marcar como leído"
+            className="text-caption text-text-muted hover:text-text flex-shrink-0">Leído</button>
+        )}
+      </div>
+      <div className="pl-[18px]">
+        <Button variant="accent" size="sm" onClick={() => onOpen(n, n.url || '/clients')}>Preparar documentos</Button>
+      </div>
+    </div>
+  );
+}
+
 function LegalChangeItem({ n, onOpen }: { n: AppNotification; onOpen: (n: AppNotification, href: string) => void }) {
   return (
     <div className={`bg-surface border rounded-xl px-4 py-3 space-y-2 ${n.readAt ? 'border-border' : 'border-accent-border'}`}>

@@ -59,7 +59,7 @@ export function watchContracts(uid: string, cb: (cs: Contract[]) => void): () =>
 export interface AppNotification {
   id: string;
   userId: string;
-  type: 'contract_expiry' | 'legal_change';
+  type: 'contract_expiry' | 'legal_change' | 'data_request';
   // contract_expiry (F3)
   contractId: string;
   documentId: string;
@@ -69,6 +69,9 @@ export interface AppNotification {
   changeId?: string;
   contractIds?: string[];
   url?: string | null;
+  // data_request: a client completed "Solicitar datos" (src/lib/data-requests)
+  requestId?: string;
+  clientId?: string;
   dueDate: string;
   severity: AlertSeverity;
   title: string;
