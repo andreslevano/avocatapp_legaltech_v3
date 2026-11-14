@@ -25,8 +25,20 @@ service firebase.storage {
     match /reclamaciones_cantidades/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+    // Document branding logo (src/lib/branding.ts): owner only, raster images only (no SVG), ≤ 1 MB,
+    // a single file named logo.<ext> whose extension matches its content type.
+    match /users/{userId}/branding/{fileName} {
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId
+        && request.resource.size < 1024 * 1024
+        && ((fileName == 'logo.png' && request.resource.contentType == 'image/png')
+          || (fileName == 'logo.jpg' && request.resource.contentType == 'image/jpeg')
+          || (fileName == 'logo.webp' && request.resource.contentType == 'image/webp'));
+    }
+    // Everything else under users/{uid}/ — branding/ is excluded so the rule above is the only grant.
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId
+        && !allPaths.matches('branding/.*');
     }
     match /accion-tutela/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;

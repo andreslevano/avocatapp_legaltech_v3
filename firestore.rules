@@ -40,10 +40,35 @@ service cloud.firestore {
       // to themselves (signup writes isAdmin: false).
       allow create: if request.auth != null && request.auth.uid == userId
         && !('integrations' in request.resource.data)
-        && (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false);
+        && (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false)
+        && (!('branding' in request.resource.data) || validBranding(request.resource.data.branding, userId));
       allow update: if request.auth != null && request.auth.uid == userId
         && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['creditos_disponibles', 'creditos_consumidos', 'stripe_customer_id', 'integrations', 'isAdmin']);
+            .hasAny(['creditos_disponibles', 'creditos_consumidos', 'stripe_customer_id', 'integrations', 'isAdmin'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['branding'])
+            || validBranding(request.resource.data.branding, userId));
+    }
+
+    // users/{uid}.branding — document branding (src/lib/branding.ts). Exact shape, validated values:
+    // #RRGGBB colours, curated font ids, the logo only from the owner's own branding/ Storage path.
+    function validHex(c) {
+      return c is string && c.matches('#[0-9A-Fa-f]{6}');
+    }
+    function validBranding(b, uid) {
+      return b is map
+        && b.keys().hasOnly(['logoUrl', 'logoPath', 'logoWidth', 'logoHeight', 'logoPosition', 'colors', 'font', 'applyColorsToHeadings', 'updatedAt'])
+        && b.keys().hasAll(['logoUrl', 'logoPath', 'logoWidth', 'logoHeight', 'logoPosition', 'colors', 'font', 'applyColorsToHeadings'])
+        && (b.logoUrl == null || (b.logoUrl is string && b.logoUrl.size() < 2048
+            && b.logoUrl.matches('https://firebasestorage[.]googleapis[.]com/v0/b/[^/]+/o/users%2F' + uid + '%2Fbranding%2Flogo[.](png|jpg|webp)([?].*)?')))
+        && (b.logoPath == null || (b.logoPath is string && b.logoPath.matches('users/' + uid + '/branding/logo[.](png|jpg|webp)')))
+        && b.logoWidth is number && b.logoWidth >= 0 && b.logoWidth <= 10000
+        && b.logoHeight is number && b.logoHeight >= 0 && b.logoHeight <= 10000
+        && b.logoPosition in ['left', 'right']
+        && b.colors is map && b.colors.keys().hasOnly(['primary', 'secondary']) && b.colors.keys().hasAll(['primary', 'secondary'])
+        && validHex(b.colors.primary) && validHex(b.colors.secondary)
+        && b.font in ['eb-garamond', 'times', 'georgia', 'arial', 'calibri', 'dm-sans', 'lato']
+        && b.applyColorsToHeadings is bool
+        && (!('updatedAt' in b) || b.updatedAt is timestamp);
     }
 
     // users/{userId}/creditos_log: owner can read for balance history display.
