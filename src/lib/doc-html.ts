@@ -1,6 +1,8 @@
 // Document HTML builder (markdown → styled HTML used for Word, PDF and DocuSign).
 // Pure string building — safe on both client and server (e.g. /api/signatures).
 
+import { googleFontsHref, isHex6, isSafeLogoSrc, type ResolvedBranding } from './branding';
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface DocMeta {
@@ -196,6 +198,59 @@ function wrapSignatureSection(html: string): string {
 export interface BuildDocOptions {
   /** DocuSign mode: no stamped signature image; anchors for signHere/dateSigned tabs instead. */
   forSignature?: boolean;
+  /** Document branding (logo, header colours, font). Absent or default → legacy HTML, unchanged. */
+  branding?: ResolvedBranding;
+}
+
+// ── Branding ─────────────────────────────────────────────────────────────────
+
+const escAttr = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/** Extra CSS for a branded document. Colours are re-validated here: only #RRGGBB reaches the CSS. */
+function brandingCss(b: ResolvedBranding): string {
+  const primary = isHex6(b.primary) ? b.primary : '#444444';
+  const secondary = isHex6(b.secondary) ? b.secondary : '#999999';
+  const heading = b.headingColor && isHex6(b.headingColor) ? `\n  h1, h2, h3 { color: ${b.headingColor}; }` : '';
+  // Font stacks come from FONT_CATALOG; strip anything that could close the declaration.
+  const font = b.font.css.replace(/[;{}<>]/g, '');
+  return `
+  /* ── Branding ── */
+  body, h1, h2, h3, p, li, td { font-family: ${font}; }${heading}
+  table.doc-header-b {
+    width: 100%;
+    border-collapse: collapse;
+    border-bottom: 1.5pt solid ${primary};
+    margin-bottom: 24pt;
+    font-size: 9pt;
+  }
+  table.doc-header-b td { padding: 0 0 8pt; vertical-align: middle; }
+  td.doc-logo-cell { width: 1%; white-space: nowrap; }
+  td.doc-logo-cell.left  { padding-right: 12pt; }
+  td.doc-logo-cell.right { padding-left: 12pt; text-align: right; }
+  img.doc-logo { display: block; object-fit: contain; }
+  .doc-header-b .doc-author { color: ${primary}; font-weight: bold; letter-spacing: 0.5pt; text-transform: uppercase; display: block; }
+  .doc-header-b .doc-nif    { color: ${secondary}; font-size: 8pt; display: block; }
+  .doc-header-b .doc-date   { color: ${secondary}; text-align: right; white-space: nowrap; }
+  .doc-footer { color: ${secondary}; }
+`;
+}
+
+function brandedHeader(b: ResolvedBranding, authorName: string, authorNif: string, date: string): string {
+  const logo = b.logo && isSafeLogoSrc(b.logo.src)
+    ? `<img class="doc-logo" src="${escAttr(b.logo.src)}" alt="Logotipo" width="${Math.round(b.logo.width)}" height="${Math.round(b.logo.height)}" style="width:${Math.round(b.logo.width)}px;height:${Math.round(b.logo.height)}px;">`
+    : '';
+  const right = b.logo?.position === 'right';
+  const logoCell = logo ? `<td class="doc-logo-cell ${right ? 'right' : 'left'}">${logo}</td>` : '';
+  const text = `<td class="doc-header-text">
+        <span class="doc-author">${inline(authorName)}</span>
+        ${authorNif ? `<span class="doc-nif">${inline(authorNif)}</span>` : ''}
+      </td>`;
+  // Logo on the right sits after the date so name/NIF stay left and the logo marks the corner.
+  const dateCell = `<td class="doc-date">${date}</td>`;
+  return `<table class="doc-header-b" role="presentation"><tr>
+      ${right ? `${text}${dateCell}${logoCell}` : `${logoCell}${text}${dateCell}`}
+    </tr></table>`;
 }
 
 export function buildDocHtml(
@@ -205,14 +260,28 @@ export function buildDocHtml(
     year: 'numeric', month: 'long', day: 'numeric',
   });
 
-  const authorName = meta?.authorName || 'AVOCAT LegalTech';
-  const authorNif  = meta?.authorNif  || '';
+  // Header text: explicit meta wins, then the branding owner's header, then Avocat's.
+  const authorName = meta?.authorName || opts?.branding?.header.authorName || 'AVOCAT LegalTech';
+  const authorNif  = meta?.authorNif  || opts?.branding?.header.authorNif  || '';
 
   const body = mdToHtml(content);
   const bodyHtml = wrapSignatureSection(opts?.forSignature ? injectAnchors(body) : injectSignature(body, signatureUrl));
 
   const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+  const html = legacyHtml(safeTitle, authorName, authorNif, date, bodyHtml);
+  const b = opts?.branding;
+  if (!b || b.isDefault) return html;
+
+  // Branded: same base document + override styles + table header (renders in Word, html2canvas, DocuSign).
+  const fontHref = googleFontsHref(b.font);
+  const head = `${fontHref ? `<link rel="stylesheet" href="${escAttr(fontHref)}">\n` : ''}<style>${brandingCss(b)}</style>\n</head>`;
+  return html
+    .replace('</head>', head)
+    .replace(/  <div class="doc-header">[\s\S]*?\n  <\/div>\n/, `  ${brandedHeader(b, authorName, authorNif, date)}\n`);
+}
+
+function legacyHtml(safeTitle: string, authorName: string, authorNif: string, date: string, bodyHtml: string): string {
   return `<!DOCTYPE html>
 <html lang="es" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
 <head>

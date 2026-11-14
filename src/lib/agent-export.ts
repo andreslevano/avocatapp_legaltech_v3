@@ -1,10 +1,11 @@
 'use client';
 
 import { buildDocHtml, type DocMeta } from './doc-html';
+import { primaryFamily, type ResolvedBranding } from './branding';
 import { A4_PX, PDF_MARGIN_MM, PX_PER_MM, pageStarts, type Zone } from '@/lib/pdf-pages';
 import { primitives } from '@/lib/tokens';
 
-export type { DocMeta };
+export type { DocMeta, ResolvedBranding };
 
 // ── Public utilities ──────────────────────────────────────────────────────────
 
@@ -31,10 +32,10 @@ export function extractDocTitle(content: string): string {
 }
 
 export async function buildPdfBlob(
-  content: string, title?: string, signatureUrl?: string, meta?: DocMeta
+  content: string, title?: string, signatureUrl?: string, meta?: DocMeta, branding?: ResolvedBranding
 ): Promise<{ blob: Blob; filename: string }> {
   const docTitle = title ?? extractDocTitle(content);
-  const html = buildDocHtml(content, docTitle, signatureUrl, meta);
+  const html = buildDocHtml(content, docTitle, signatureUrl, meta, { branding });
 
   const container = document.createElement('div');
   container.innerHTML = html;
@@ -52,7 +53,19 @@ export async function buildPdfBlob(
       import('jspdf'),
     ]);
 
-    await (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts?.ready;
+    const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+    // The branding font's <link> was just injected: ask for the faces explicitly, then wait.
+    if (fonts && branding?.font.google) {
+      const fam = primaryFamily(branding.font);
+      await Promise.race([
+        Promise.all(['400 12pt', '700 12pt', 'italic 400 12pt'].map(w => fonts.load(`${w} "${fam}"`))),
+        new Promise(r => setTimeout(r, 4000)),
+      ]).catch(() => undefined);
+    }
+    await fonts?.ready;
+    // Wait for the logo (and any other image) so html2canvas never captures an empty box.
+    await Promise.all(Array.from(container.querySelectorAll('img')).map(img => img.complete ? null
+      : new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 4000); })));
     // What must stay together (DOM): a heading with the next line, a signature block, an image.
     const origin = container.getBoundingClientRect().top;
     const zones: Zone[] = [];
@@ -129,18 +142,18 @@ function blankRows(canvas: HTMLCanvasElement, x0: number, x1: number, ratio: num
 }
 
 export function buildWordBlob(
-  content: string, title?: string, signatureUrl?: string, meta?: DocMeta
+  content: string, title?: string, signatureUrl?: string, meta?: DocMeta, branding?: ResolvedBranding
 ): { blob: Blob; filename: string } {
   const docTitle = title ?? extractDocTitle(content);
-  const html = buildDocHtml(content, docTitle, signatureUrl, meta);
+  const html = buildDocHtml(content, docTitle, signatureUrl, meta, { branding });
   const blob = new Blob(['﻿' + html], { type: 'application/msword' });
   return { blob, filename: `${sanitizeFilename(docTitle)}.doc` };
 }
 
 export function downloadAsWord(
-  content: string, title?: string, signatureUrl?: string, meta?: DocMeta
+  content: string, title?: string, signatureUrl?: string, meta?: DocMeta, branding?: ResolvedBranding
 ) {
-  const { blob, filename } = buildWordBlob(content, title, signatureUrl, meta);
+  const { blob, filename } = buildWordBlob(content, title, signatureUrl, meta, branding);
   const url = URL.createObjectURL(blob);
   const a   = document.createElement('a');
   a.href = url; a.download = filename;
@@ -155,13 +168,16 @@ export async function saveAnalysisDocument(params: {
   userId: string;
   plan: string;
   caseId?: string | null;
+  /** Word branding (logo as Storage URL); pdfBranding defaults to it (logo as data URI is best). */
+  branding?: ResolvedBranding;
+  pdfBranding?: ResolvedBranding;
 }): Promise<import('@/lib/storage-client').DocumentRecord> {
-  const { content, title, userId, plan, caseId } = params;
-  const { blob: wordBlob, filename: wordFilename } = buildWordBlob(content, title);
+  const { content, title, userId, plan, caseId, branding, pdfBranding } = params;
+  const { blob: wordBlob, filename: wordFilename } = buildWordBlob(content, title, undefined, undefined, branding);
   const { saveDocumentToStorage } = await import('@/lib/storage-client');
   let pdfBlob: Blob | undefined;
   try {
-    const r = await buildPdfBlob(content, title);
+    const r = await buildPdfBlob(content, title, undefined, undefined, pdfBranding ?? branding);
     pdfBlob = r.blob;
   } catch { /* pdf generation optional */ }
   return saveDocumentToStorage({
@@ -172,10 +188,10 @@ export async function saveAnalysisDocument(params: {
 }
 
 export function downloadAsPdf(
-  content: string, title?: string, signatureUrl?: string, meta?: DocMeta
+  content: string, title?: string, signatureUrl?: string, meta?: DocMeta, branding?: ResolvedBranding
 ) {
   const docTitle = title ?? extractDocTitle(content);
-  const html     = buildDocHtml(content, docTitle, signatureUrl, meta);
+  const html     = buildDocHtml(content, docTitle, signatureUrl, meta, { branding });
   const autoprint = `<script>window.onload=function(){window.print();setTimeout(()=>window.close(),800);};<\/script>`;
   const win = window.open('', '_blank', 'width=900,height=750');
   if (!win) return;
