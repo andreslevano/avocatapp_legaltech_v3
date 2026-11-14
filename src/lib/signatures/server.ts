@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, storage } from '@/lib/firebase-admin';
 import { buildDocHtml, signingHtmlFromSaved, withSignatureBlocks, type DocMeta } from '@/lib/doc-html';
+import { inlineSavedLogo, loadOwnerBranding } from '@/lib/branding-server';
 import { randomToken, sha256Base64Url } from '@/lib/integrations/crypto';
 import { allowedEmbedOrigin, dsServerConfig, focusedViewHosts } from '@/lib/docusign/config';
 import { buildEnvelopeDefinition, webhookUrlFor } from '@/lib/docusign/envelope';
@@ -104,9 +105,12 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
 
   // Missing "Firma:" blocks (owner = 1, then each signer) are appended at the end (Phase 5a/5b).
   const names = [owner.name, ...signers.map(p => p.name)];
+  // Branding: logo inlined as a data URI, web-safe font (src/lib/branding-server.ts).
+  const saved = input.markdown ? null : signingHtmlFromSaved(await readSavedDoc(docSnap.data() ?? {}), names, options.language);
   const html = input.markdown
-    ? buildDocHtml(withSignatureBlocks(input.markdown, names, options.language), input.title, undefined, await ownerMeta(uid), { forSignature: true })
-    : signingHtmlFromSaved(await readSavedDoc(docSnap.data() ?? {}), names, options.language);
+    ? buildDocHtml(withSignatureBlocks(input.markdown, names, options.language), input.title, undefined, await ownerMeta(uid),
+      { forSignature: true, branding: (await loadOwnerBranding(uid, { forSignature: true })).branding })
+    : saved && await inlineSavedLogo(saved);
   if (!html) {
     throw fail('Por ahora solo se pueden enviar a firma documentos generados en Avocat (Word). Los PDF y archivos subidos llegarán más adelante.', 'unsupported_format', 422);
   }

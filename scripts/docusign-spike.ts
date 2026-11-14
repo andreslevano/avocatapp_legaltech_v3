@@ -16,6 +16,10 @@
  *   npx ts-node -P tsconfig.scripts.json scripts/docusign-spike.ts pdf    # text PDF via pdfkit
  *   … spike.ts html you@example.com   # easier: reuse the connection made in Perfil → Integraciones
  *                                      # (no DOCUSIGN_SPIKE_* vars needed)
+ *   … spike.ts html you@example.com --branded[=webfont]
+ *        # document branding check: 120×40 PNG logo (data URI), navy header, Lato. Default sends the
+ *        # forSignature web-safe stack (what production sends); =webfont keeps the Google Fonts link
+ *        # to see whether DocuSign's HTML conversion loads web fonts.
  *
  * Plain fetch against eSignature REST v2.1 (no docusign-esign SDK). Demo only.
  */
@@ -24,6 +28,7 @@ import { writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { buildDocHtml, countSignatureBlocks, dateAnchor, signatureAnchor } from '../src/lib/doc-html';
+import { DEFAULT_BRANDING, resolveBranding, withLogoSrc, withSafeFont } from '../src/lib/branding';
 
 loadEnv({ path: '.env.local' });
 
@@ -120,9 +125,37 @@ async function resolveCredentials(email?: string): Promise<{ token: string; acco
   };
 }
 
+/** Solid navy 120×40 PNG — generated, so the spike needs no binary fixture. */
+function spikeLogoPng(): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { deflateSync } = require('zlib');
+  const w = 120, h = 40;
+  const raw = Buffer.alloc((w * 4 + 1) * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const o = y * (w * 4 + 1) + 1 + x * 4;
+    const ring = x < 4 || x >= w - 4 || y < 4 || y >= h - 4;
+    raw[o] = ring ? 0xb8 : 0x1f; raw[o + 1] = ring ? 0x88 : 0x3a; raw[o + 2] = ring ? 0x2a : 0x5f; raw[o + 3] = 255;
+  }
+  const crc = (b: Buffer) => { let c = ~0; for (const x of b) { c ^= x; for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1)); } return ~c >>> 0; };
+  const chunk = (t: string, d: Buffer) => { const l = Buffer.alloc(4); l.writeUInt32BE(d.length); const td = Buffer.concat([Buffer.from(t), d]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([l, td, c]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 6;
+  const png = Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+  return `data:image/png;base64,${png.toString('base64')}`;
+}
+
+function spikeBranding(webFont: boolean) {
+  const r = resolveBranding({ branding: {
+    ...DEFAULT_BRANDING, logoUrl: 'https://firebasestorage.googleapis.com/v0/b/x/o/spike.png', logoWidth: 120, logoHeight: 40,
+    colors: { primary: '#1f3a5f', secondary: '#5b6b7f' }, font: 'lato', applyColorsToHeadings: true,
+  } });
+  const b = withLogoSrc(r, spikeLogoPng());
+  return webFont ? b : withSafeFont(b);
+}
+
 async function main() {
   const variant = (process.argv[2] ?? 'html') as 'html' | 'pdf';
-  const { token, accountId, baseUri } = await resolveCredentials(process.argv[3]);
+  const brandedArg = process.argv.find(a => a.startsWith('--branded'));
+  const { token, accountId, baseUri } = await resolveCredentials(process.argv[3]?.startsWith('--') ? undefined : process.argv[3]);
   const api = `${baseUri}/restapi/v2.1/accounts/${accountId}`;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
@@ -135,7 +168,8 @@ async function main() {
     fileExtension = 'pdf';
     writeFileSync(join(tmpdir(), 'docusign-spike.pdf'), pdf);
   } else {
-    const html = buildDocHtml(SAMPLE_NDA, 'Acuerdo de confidencialidad', undefined, { authorName: 'ACME S.L.' }, { forSignature: true });
+    const html = buildDocHtml(SAMPLE_NDA, 'Acuerdo de confidencialidad', undefined, { authorName: 'ACME S.L.' },
+      { forSignature: true, branding: brandedArg ? spikeBranding(brandedArg.endsWith('=webfont')) : undefined });
     documentBase64 = Buffer.from(html, 'utf8').toString('base64');
     fileExtension = 'html';
     writeFileSync(join(tmpdir(), 'docusign-spike.html'), html);

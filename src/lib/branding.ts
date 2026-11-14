@@ -6,7 +6,7 @@
 // users/{uid}; a future "Empresa" space plugs in as resolveBranding(empresaDoc ?? userDoc) without
 // changing callers.
 
-import { primitives } from '@/lib/tokens';
+import { primitives } from './tokens'; // relative: doc-html (and so this) also loads from scripts/ via ts-node
 
 // ── Fonts ─────────────────────────────────────────────────────────────────────
 
