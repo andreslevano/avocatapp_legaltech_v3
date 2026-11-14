@@ -37,8 +37,11 @@ service firebase.storage {
     }
     // Everything else under users/{uid}/ — branding/ is excluded so the rule above is the only grant.
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId
-        && !allPaths.matches('branding/.*');
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      // request.resource.name is the full object path (string): writes to branding/ are only
+      // granted by the stricter rule above.
+      allow create, update: if request.auth != null && request.auth.uid == userId
+        && !request.resource.name.matches('users/[^/]+/branding/.*');
     }
     match /accion-tutela/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
