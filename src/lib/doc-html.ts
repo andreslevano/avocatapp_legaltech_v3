@@ -228,7 +228,8 @@ function brandingCss(b: ResolvedBranding): string {
   td.doc-logo-cell { width: 1%; white-space: nowrap; }
   td.doc-logo-cell.left  { padding-right: 12pt; }
   td.doc-logo-cell.right { padding-left: 12pt; text-align: right; }
-  img.doc-logo { display: block; object-fit: contain; }
+  /* max-width: none — host-page CSS (Tailwind preflight img{max-width:100%}) collapsed it inside the 1% cell */
+  img.doc-logo { display: block; object-fit: contain; max-width: none; height: auto; }
   .doc-header-b .doc-author { color: ${primary}; font-weight: bold; letter-spacing: 0.5pt; text-transform: uppercase; display: block; }
   .doc-header-b .doc-nif    { color: ${secondary}; font-size: 8pt; display: block; }
   .doc-header-b .doc-date   { color: ${secondary}; text-align: right; white-space: nowrap; }
@@ -238,7 +239,7 @@ function brandingCss(b: ResolvedBranding): string {
 
 function brandedHeader(b: ResolvedBranding, authorName: string, authorNif: string, date: string): string {
   const logo = b.logo && isSafeLogoSrc(b.logo.src)
-    ? `<img class="doc-logo" src="${escAttr(b.logo.src)}" alt="Logotipo" width="${Math.round(b.logo.width)}" height="${Math.round(b.logo.height)}" style="width:${Math.round(b.logo.width)}px;height:${Math.round(b.logo.height)}px;">`
+    ? `<img class="doc-logo" src="${escAttr(b.logo.src)}" alt="Logotipo" width="${Math.round(b.logo.width)}" height="${Math.round(b.logo.height)}" style="width:${Math.round(b.logo.width)}px;height:${Math.round(b.logo.height)}px;max-width:none;">`
     : '';
   const right = b.logo?.position === 'right';
   const logoCell = logo ? `<td class="doc-logo-cell ${right ? 'right' : 'left'}">${logo}</td>` : '';
