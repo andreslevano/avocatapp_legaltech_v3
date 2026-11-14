@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+<head>
+<meta charset="UTF-8">
+<title>Contrato</title>
+<style>
+  @page WordSection1 { size:21cm 29.7cm; margin:2.5cm; }
+  div.WordSection1   { page:WordSection1; }
+  @page {
+    size: A4;
+    margin: 2.5cm;
+  }
+
+  /* ── Base ── */
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000;
+    background: #fff;
+  }
+
+  /* ── Page header ── */
+  .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1pt solid #999;
+    padding-bottom: 8pt;
+    margin-bottom: 24pt;
+    font-size: 9pt;
+    color: #444;
+  }
+  .doc-header-left { display: flex; flex-direction: column; gap: 1pt; }
+  .doc-author { font-weight: bold; letter-spacing: 0.5pt; text-transform: uppercase; }
+  .doc-nif    { font-size: 8pt; color: #666; }
+  .doc-date   { text-align: right; white-space: nowrap; }
+
+  /* ── Headings ── */
+  h1 {
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: center;
+    text-transform: uppercase;
+    text-indent: 0;
+    margin: 0 0 24pt;
+    letter-spacing: 0.5pt;
+  }
+  h2 {
+    font-size: 12pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-align: left;
+    text-indent: 0;
+    margin: 18pt 0 6pt;
+  }
+  h3 {
+    font-size: 12pt;
+    font-weight: bold;
+    text-align: left;
+    text-indent: 0;
+    margin: 14pt 0 4pt;
+  }
+
+  /* ── Body text ── */
+  p {
+    margin: 0 0 6pt;
+    text-align: justify;
+    text-indent: 1cm;
+  }
+
+  /* ── Lists ── */
+  ul, ol {
+    margin: 0 0 6pt;
+    padding-left: 1.5cm;
+    text-align: justify;
+  }
+  li { margin: 2pt 0; }
+
+  /* ── Separators ── */
+  hr.doc-sep {
+    border: none;
+    border-top: 0.5pt solid #ccc;
+    margin: 10pt 0;
+  }
+
+  /* ── Inline ── */
+  strong { font-weight: bold; }
+  em     { font-style: italic; }
+  code   { font-family: 'Courier New', monospace; font-size: 10pt; }
+
+  /* ── Signature section — left-aligned, no indent ── */
+  .sig-section p, .sig-section li {
+    text-indent: 0;
+    text-align: left;
+    word-spacing: normal;
+  }
+  /* One party's block (name … Firma) never splits across pages */
+  .sig-section p { page-break-inside: avoid; break-inside: avoid; }
+  .ds-sig { display: inline-block; margin-top: 16pt; }
+
+  /* ── Footer ── */
+  .doc-footer {
+    border-top: 0.5pt solid #ccc;
+    margin-top: 36pt;
+    padding-top: 6pt;
+    font-size: 8pt;
+    color: #999;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="WordSection1">
+
+  <div class="doc-header">
+    <div class="doc-header-left">
+      <span class="doc-author">Bufete</span>
+      
+    </div>
+    <span class="doc-date">__DATE__</span>
+  </div>
+
+  <h1>CONTRATO DE PRUEBA</h1>
+<p>En Madrid, a 1 de noviembre de 2026.</p>
+<h2>REUNIDOS</h2>
+<p>De una parte, <strong>ACME S.L.</strong> &lt;script&gt;alert(1)&lt;/script&gt; con <em>NIF</em> <code>B12345678</code>.</p>
+<ul><li>Uno</li><li>Dos</li></ul>
+<hr class="doc-sep">
+<div class="sig-section"><h2>FIRMAS</h2>
+<p><strong>ACME S.L.</strong><br>Fecha: <span style="color:#ffffff;font-size:1pt;">\d1\</span><span style="display:inline-block;width:120px;border-bottom:1pt solid #000;vertical-align:bottom;margin-left:4pt;"></span><br>Firma: <span class="ds-sig"><span style="color:#ffffff;font-size:1pt;">\s1\</span><span style="display:inline-block;width:200px;border-bottom:1pt solid #000;vertical-align:bottom;margin-left:4pt;"></span></span></p>
+<p><strong>OTRA S.L.</strong><br>Fecha: <span style="color:#ffffff;font-size:1pt;">\d2\</span><span style="display:inline-block;width:120px;border-bottom:1pt solid #000;vertical-align:bottom;margin-left:4pt;"></span><br>Firma: <span class="ds-sig"><span style="color:#ffffff;font-size:1pt;">\s2\</span><span style="display:inline-block;width:200px;border-bottom:1pt solid #000;vertical-align:bottom;margin-left:4pt;"></span></span></p>
+
+  <div class="doc-footer">Documento generado con AVOCAT &middot; avocatapp.com</div>
+
+</div>
+</body>
+</html>
