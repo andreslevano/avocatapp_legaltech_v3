@@ -8,7 +8,8 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import {
-  resolveBranding, withLogoSrc, type BrandingOwner, type OrgTemplateContext, type ResolvedBranding,
+  resolveBranding, sanitizeBranding, withLogoSrc,
+  type Branding, type BrandingOwner, type OrgTemplateContext, type ResolvedBranding,
 } from '@/lib/branding';
 
 export interface DocBranding {
@@ -18,6 +19,9 @@ export interface DocBranding {
   pdf: ResolvedBranding;
   /** False while the logo is still being inlined — wait before building a PDF. */
   ready: boolean;
+  /** The saved branding (sanitized) and its owner document — for the Perfil editor. */
+  stored: Branding;
+  owner: BrandingOwner;
 }
 
 const cache = new Map<string, Promise<string | null>>();
@@ -64,5 +68,6 @@ export function useDocBranding(org?: OrgTemplateContext | null): DocBranding {
 
   const done = !logoUrl || inlined?.url === logoUrl;
   const pdf = useMemo(() => (done && logoUrl ? withLogoSrc(word, inlined?.src) : word), [word, done, logoUrl, inlined]);
-  return { word, pdf, ready: done };
+  const stored = useMemo(() => sanitizeBranding(owner.branding), [owner]);
+  return { word, pdf, ready: done, stored, owner };
 }

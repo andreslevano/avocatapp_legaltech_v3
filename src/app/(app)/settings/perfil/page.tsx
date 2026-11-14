@@ -10,6 +10,7 @@ import ConnectMicrosoftCard from '@/components/integrations/ConnectMicrosoftCard
 import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 import { canUseDocusign } from '@/lib/docusign/config';
 import NotificationSettingsCard from '@/components/notifications/NotificationSettingsCard';
+import BrandingCard from '@/components/settings/BrandingCard';
 import { canUseContracts } from '@/lib/contracts/config';
 import { primitives } from '@/lib/tokens';
 
@@ -508,6 +509,9 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        {/* Identidad de marca: logo, colores y tipografía de los documentos */}
+        <BrandingCard />
 
         {/* Integraciones (DocuSign, Microsoft) */}
         {(canUseDocusign(userDoc.plan, user) || canUseMicrosoft(userDoc.plan, user)) && (
