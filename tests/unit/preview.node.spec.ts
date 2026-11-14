@@ -38,3 +38,17 @@ test.describe('named testers', () => {
     expect(orgNdaTemplateFor(felix)).toBe('mobilityforwork');
   });
 });
+
+test.describe('external named testers', () => {
+  test('get preview features on Abogados but never the MOBIFORWORK templates', async () => {
+    const { canUseDocusign } = await import('@/lib/docusign/config');
+    const { canUseContracts } = await import('@/lib/contracts/config');
+    const { orgNdaTemplateFor } = await import('@/lib/org-templates');
+    for (const e of ['vergarabularz@gmail.com', 'rufinomartinez@gmail.com', 'sergio.pena@madcloudconsulting.com']) {
+      expect(canUseDocusign('Abogados', e)).toBe(true);
+      expect(canUseContracts('Abogados', { email: e, emailVerified: false })).toBe(true);
+      expect(canUseDocusign('Estudiantes', e)).toBe(false);
+      expect(orgNdaTemplateFor(e)).toBeNull();
+    }
+  });
+});

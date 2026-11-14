@@ -11,6 +11,14 @@ export const PREVIEW_DOMAINS: string[] = ['mobilityforwork.es'];
 export const PREVIEW_NAMED_EMAILS: string[] = [
   'andres.levano@mobilityforwork.es',
   'felix.dia@mobilityforwork.es',
+  // External testers (named: any provider, no domain rule). Not MOBIFORWORK members, so they don't
+  // get the organisation's templates (org-templates filters this list by @mobilityforwork.es).
+  'rufinomartinez@gmail.com',              // Rufino Martínez
+  'pena.pineda.sergio@gmail.com',          // Sergio Peña
+  'sergio.pena@madcloudconsulting.com',    // Sergio Peña
+  'vergarabularz@gmail.com',               // Víctor Vergara
+  'vergarabularz@yahoo.com',               // Víctor Vergara
+  'victor.vergara@madcloudconsulting.com', // Víctor Vergara
 ];
 
 /** A signed-in user (Firebase `User`, an ID-token-derived object) or just an email. */
