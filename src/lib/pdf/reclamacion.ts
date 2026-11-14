@@ -1,11 +1,14 @@
 import PDFDocument from 'pdfkit';
 import { ModelOutput } from '../validate-reclamacion';
 import { registerDocumentFonts, DOC_FONT } from './fonts';
+import { applyBrandingFonts, drawBrandedHeader } from './branding';
+import type { ServerBranding } from '../branding-server';
 
 export async function renderReclamacionPDF(
   model: ModelOutput, 
   cuantia: number, 
-  precision: number
+  precision: number,
+  branding?: ServerBranding | null,
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
@@ -17,7 +20,8 @@ export async function renderReclamacionPDF(
         right: 60
       }
     });
-    registerDocumentFonts(doc); // DS v4: EB Garamond (falls back to Times)
+    applyBrandingFonts(doc, branding); // DS v4: EB Garamond (falls back to Times) or the brand font
+    drawBrandedHeader(doc, branding); // no-op without branding
 
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));

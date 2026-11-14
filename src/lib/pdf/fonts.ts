@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import type { FontDef } from '../branding';
 
 const FONT_DIRECTORY = path.join(process.cwd(), 'src', 'assets', 'fonts');
 const REGULAR_FONT_PATH = path.join(FONT_DIRECTORY, 'SourceSans3-Regular.otf');
@@ -44,8 +45,20 @@ const STANDARD_FALLBACK: Record<keyof typeof DOC_FONT, string> = {
   italic: 'Times-Italic',
 };
 
-/** Register Body / Heading / Body-Italic on a pdfkit document. Call right after `new PDFDocument()`. */
-export function registerDocumentFonts(doc: any): void {
+const STANDARD_SANS: Record<keyof typeof DOC_FONT, string> = {
+  body: 'Helvetica',
+  heading: 'Helvetica-Bold',
+  italic: 'Helvetica-Oblique',
+};
+
+/**
+ * Register Body / Heading / Body-Italic on a pdfkit document. Call right after `new PDFDocument()`.
+ * With a branding font (src/lib/branding.ts FONT_CATALOG) those same names point at its bundled
+ * OFL TTFs, so every generator using DOC_FONT follows the brand; a font without bundled files
+ * (Times, Arial) uses the standard PDF font, and a missing file falls back to Helvetica + a log.
+ */
+export function registerDocumentFonts(doc: any, brandFont?: FontDef): void {
+  if (brandFont) return registerBrandFont(doc, brandFont);
   (Object.keys(DOC_FONT) as (keyof typeof DOC_FONT)[]).forEach(k => {
     const file = DOC_FONT_FILES[k];
     try {
@@ -53,6 +66,23 @@ export function registerDocumentFonts(doc: any): void {
       else doc.registerFont(DOC_FONT[k], STANDARD_FALLBACK[k]);
     } catch {
       doc.registerFont(DOC_FONT[k], STANDARD_FALLBACK[k]);
+    }
+  });
+}
+
+function registerBrandFont(doc: any, font: FontDef): void {
+  const standard = font.pdfkit.standard === 'Times' ? STANDARD_FALLBACK : STANDARD_SANS;
+  const files = font.pdfkit.files;
+  const byKey = files ? { body: files.regular, heading: files.bold, italic: files.italic } : null;
+  (Object.keys(DOC_FONT) as (keyof typeof DOC_FONT)[]).forEach(k => {
+    if (!byKey) return doc.registerFont(DOC_FONT[k], standard[k]);
+    const file = path.join(DOC_FONT_DIR, byKey[k]);
+    try {
+      if (!fs.existsSync(file)) throw new Error('missing');
+      doc.registerFont(DOC_FONT[k], file);
+    } catch (e) {
+      console.warn(`[pdf] branding font ${font.id} (${byKey[k]}) unavailable: ${(e as Error).message} — using Helvetica`);
+      doc.registerFont(DOC_FONT[k], STANDARD_SANS[k]);
     }
   });
 }

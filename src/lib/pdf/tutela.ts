@@ -1,8 +1,10 @@
 import PDFDocument from 'pdfkit';
 import { TutelaModel } from '../validate-tutela';
 import { registerDocumentFonts, DOC_FONT } from './fonts';
+import { applyBrandingFonts, drawBrandedHeader } from './branding';
+import type { ServerBranding } from '../branding-server';
 
-export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
+export async function renderTutelaPDF(modelo: TutelaModel, branding?: ServerBranding | null): Promise<Buffer> {
   const doc = new PDFDocument({
     size: 'A4',
     margins: {
@@ -12,7 +14,8 @@ export async function renderTutelaPDF(modelo: TutelaModel): Promise<Buffer> {
       right: 60
     }
   });
-  registerDocumentFonts(doc); // DS v4: EB Garamond (falls back to Times)
+  applyBrandingFonts(doc, branding); // DS v4: EB Garamond (falls back to Times) or the brand font
+  drawBrandedHeader(doc, branding); // no-op without branding
 
   const buffers: Buffer[] = [];
   doc.on('data', buffers.push.bind(buffers));

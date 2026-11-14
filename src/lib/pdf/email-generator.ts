@@ -1,5 +1,7 @@
 import PDFDocument from 'pdfkit';
 import { registerDocumentFonts, DOC_FONT } from './fonts';
+import { applyBrandingFonts, drawBrandedHeader } from './branding';
+import type { ServerBranding } from '../branding-server';
 import { primitives as P } from '@/lib/tokens';
 
 interface EmailData {
@@ -10,7 +12,7 @@ interface EmailData {
   chatgptUsed: boolean;
 }
 
-export async function generateEmailPDF(data: EmailData): Promise<Buffer> {
+export async function generateEmailPDF(data: EmailData, branding?: ServerBranding | null): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ 
       size: 'A4', 
@@ -22,7 +24,8 @@ export async function generateEmailPDF(data: EmailData): Promise<Buffer> {
         Creator: 'Avocat LegalTech v3'
       }
     });
-    registerDocumentFonts(doc); // DS v4: EB Garamond (falls back to Times)
+    applyBrandingFonts(doc, branding); // DS v4: EB Garamond (falls back to Times) or the brand font
+    drawBrandedHeader(doc, branding); // no-op without branding
 
     let buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));

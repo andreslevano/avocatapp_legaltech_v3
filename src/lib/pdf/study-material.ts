@@ -1,5 +1,7 @@
 import PDFDocument from './pdfkit';
 import { applyPdfFonts, PDF_FONT_FAMILY, PDF_FONT_PATHS, registerDocumentFonts, DOC_FONT } from './fonts';
+import { applyBrandingFonts, drawBrandedHeader } from './branding';
+import type { ServerBranding } from '../branding-server';
 
 export interface StudyMaterialData {
   title: string;
@@ -8,7 +10,7 @@ export interface StudyMaterialData {
   content: string;
 }
 
-export function renderStudyMaterialPDF(data: StudyMaterialData): Promise<Buffer> {
+export function renderStudyMaterialPDF(data: StudyMaterialData, branding?: ServerBranding | null): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
       // Document fonts are registered right after creation (EB Garamond, Times fallback)
@@ -21,7 +23,8 @@ export function renderStudyMaterialPDF(data: StudyMaterialData): Promise<Buffer>
           right: 50
         }
       });
-      registerDocumentFonts(doc); // DS v4: EB Garamond (falls back to Times)
+      applyBrandingFonts(doc, branding); // DS v4: EB Garamond (falls back to Times) or the brand font
+      drawBrandedHeader(doc, branding); // no-op without branding
 
       const buffers: Buffer[] = [];
       doc.on('data', buffers.push.bind(buffers));

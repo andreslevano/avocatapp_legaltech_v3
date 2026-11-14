@@ -3,6 +3,8 @@ import PDFDocument from 'pdfkit';
 import path from 'path';
 import fs from 'fs';
 import { registerDocumentFonts, DOC_FONT } from './fonts';
+import { applyBrandingFonts, drawBrandedHeader } from './branding';
+import type { ServerBranding } from '../branding-server';
 
 // Configurar ruta de fuentes de PDFKit para Next.js
 const setupPdfKitFonts = () => {
@@ -59,7 +61,7 @@ function safeFont(doc: any, fontName: string): any {
   }
 }
 
-export function renderReclamacionCantidadesPDF(modeloJSON: ReclamacionCantidadesModel): Promise<Buffer> {
+export function renderReclamacionCantidadesPDF(modeloJSON: ReclamacionCantidadesModel, branding?: ServerBranding | null): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
       // Crear documento PDF sin especificar fuente inicialmente
@@ -73,7 +75,8 @@ export function renderReclamacionCantidadesPDF(modeloJSON: ReclamacionCantidades
           right: 50
         }
       });
-      registerDocumentFonts(doc); // DS v4: EB Garamond (falls back to Times)
+      applyBrandingFonts(doc, branding); // DS v4: EB Garamond (falls back to Times) or the brand font
+      drawBrandedHeader(doc, branding); // no-op without branding
       
       // No especificar fuente inicialmente - PDFKit usará la fuente por defecto
       // Si faltan los TTF, registerDocumentFonts usa las fuentes estándar Times de PDFKit
