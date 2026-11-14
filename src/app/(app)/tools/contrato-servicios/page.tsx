@@ -16,6 +16,7 @@ import { getClients, type ClientDoc } from '@/lib/firestore';
 import SignAndSendButton from '@/components/signatures/SignAndSendButton';
 import { takeSignResume } from '@/lib/signatures/client';
 import { orgNdaTemplateFor } from '@/lib/org-templates';
+import { useDocBranding } from '@/hooks/useDocBranding';
 import {
   MFW_EXTRA_CLAUSE_MAX_CHARS, MFW_SERVICES_TEMPLATE, renderMfwServices, validateMfwPayment,
   type MfwMilestone, type MfwPaymentModel, type MfwServicesInput,
@@ -55,6 +56,8 @@ export default function ServicesContractPage() {
   const { user, userDoc } = useAppAuth();
   const router = useRouter();
   const enabled = orgNdaTemplateFor(user) === 'mobilityforwork';
+  // Org template: MOBIFORWORK header; the member's logo/colours/font (src/lib/branding.ts rule).
+  const brand = useDocBranding({ company: MFW_SERVICES_TEMPLATE.company, cif: MFW_SERVICES_TEMPLATE.cif, member: enabled });
 
   const [fechaContrato, setFechaContrato] = useState(madridToday());
   const [colab, setColab] = useState<MfwServicesInput['colaborador']>({});
@@ -196,8 +199,8 @@ export default function ServicesContractPage() {
       setResult(md);
       setDocTitle(title);
       const fileBase = `Contrato_Servicios_MOBIFORWORK_${colab.nombre!.trim()}`.replace(/\s+/g, '_').slice(0, 60);
-      const { blob } = buildWordBlob(md, fileBase, undefined, META);
-      const pdf = await buildPdfBlob(md, fileBase, undefined, META).catch(() => null);
+      const { blob } = buildWordBlob(md, fileBase, undefined, META, brand.word);
+      const pdf = await buildPdfBlob(md, fileBase, undefined, META, brand.pdf).catch(() => null);
       const record = await saveDocumentToStorage({
         userId: user.uid, plan: userDoc.plan ?? 'Abogados', blob, name: `${fileBase}.doc`,
         caseId: null, source: 'generated', pdfBlob: pdf?.blob ?? undefined,
@@ -410,8 +413,8 @@ export default function ServicesContractPage() {
                       autoOpen={resumeSign}
                     />
                   )}
-                  <Button variant="ghost" size="sm" onClick={() => downloadAsWord(result, docTitle || title, undefined, META)}>Word</Button>
-                  <Button variant="ghost" size="sm" onClick={() => downloadAsPdf(result, docTitle || title, undefined, META)}>PDF</Button>
+                  <Button variant="ghost" size="sm" onClick={() => downloadAsWord(result, docTitle || title, undefined, META, brand.word)}>Word</Button>
+                  <Button variant="ghost" size="sm" onClick={() => downloadAsPdf(result, docTitle || title, undefined, META, brand.pdf)}>PDF</Button>
                 </div>
               </div>
               <pre className="px-5 py-4 text-caption text-text whitespace-pre-wrap font-sans leading-relaxed max-h-[60vh] overflow-y-auto">{result}</pre>

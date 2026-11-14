@@ -8,6 +8,7 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { consumirCredito } from '@/lib/creditos';
 import { getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
 import { saveAnalysisDocument } from '@/lib/agent-export';
+import { useDocBranding } from '@/hooks/useDocBranding';
 import type { OcrPdfProgress } from '@/lib/ocr-pdf-client';
 
 interface ExtractedField { key: string; value: string; }
@@ -104,6 +105,7 @@ function exportXlsx(results: ExtractionResult[]) {
 
 export default function ExtraccionDatosPage() {
   const { user, userDoc } = useAppAuth();
+  const brand = useDocBranding();
 
   const [files, setFiles]           = useState<File[]>([]);
   const [dragging, setDragging]     = useState(false);
@@ -213,6 +215,7 @@ ${text.slice(0, 12000)}`;
         title: `Extracción de datos — ${results.length} documento${results.length !== 1 ? 's' : ''}`,
         userId: userDoc.uid,
         plan: userDoc.plan ?? 'Abogados',
+        branding: brand.word, pdfBranding: brand.pdf,
       });
       setSaved(true);
     } catch { /* silent */ }

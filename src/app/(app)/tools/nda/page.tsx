@@ -11,6 +11,7 @@ import { downloadAsWord, downloadAsPdf, buildWordBlob, buildPdfBlob, type DocMet
 import { saveDocumentToStorage, getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
 import { getClients, type ClientDoc } from '@/lib/firestore';
 import { buildDocHtml } from '@/lib/doc-html';
+import { useDocBranding } from '@/hooks/useDocBranding';
 import SignAndSendButton from '@/components/signatures/SignAndSendButton';
 import { takeSignResume } from '@/lib/signatures/client';
 import { canUseContracts } from '@/lib/contracts/config';
@@ -113,6 +114,8 @@ export default function NdaPage() {
   const [objeto, setObjeto]           = useState('');
   // Organisation template (MOBIFORWORK, lawyer-validated): deterministic text, only these fields vary.
   const orgTpl = orgNdaTemplateFor(user);
+  // Document branding; on the org template the user is a member (orgNdaTemplateFor matched).
+  const brand = useDocBranding(orgTpl ? { company: MFW_NDA_TEMPLATE.company, cif: MFW_NDA_TEMPLATE.cif, member: true } : null);
   const [mfwReceptor, setMfwReceptor] = useState<MfwReceptor>({ tipo: 'sociedad' });
   const [duracion, setDuracion]       = useState('2 años');
   const [jurisdiccion, setJurisdiccion] = useState(
@@ -336,9 +339,9 @@ export default function NdaPage() {
           // The template's first signature block is MOBIFORWORK's CEO: never stamp the user's own signature there.
           const sig = orgTpl ? undefined : signatureUrl;
           const docMeta: DocMeta = orgTpl ? { authorName: MFW_NDA_TEMPLATE.company, authorNif: `CIF ${MFW_NDA_TEMPLATE.cif}` } : meta;
-          const { blob } = buildWordBlob(accumulated, ndaName, sig, docMeta);
+          const { blob } = buildWordBlob(accumulated, ndaName, sig, docMeta, brand.word);
           // Generate PDF in parallel (fire — don't block if it fails)
-          const pdfBlobResult = await buildPdfBlob(accumulated, ndaName, sig, docMeta).catch(() => null);
+          const pdfBlobResult = await buildPdfBlob(accumulated, ndaName, sig, docMeta, brand.pdf).catch(() => null);
           const record = await saveDocumentToStorage({
             userId: user.uid,
             plan: userDoc.plan ?? 'Autoservicio',
@@ -651,10 +654,10 @@ export default function NdaPage() {
                   <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>
                     Copiar
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={() => downloadAsWord(result, ndaTitle, signatureUrl, meta)}>
+                  <Button variant="secondary" size="sm" onClick={() => downloadAsWord(result, ndaTitle, signatureUrl, meta, brand.word)}>
                     Word
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={() => downloadAsPdf(result, ndaTitle, signatureUrl, meta)}>
+                  <Button variant="secondary" size="sm" onClick={() => downloadAsPdf(result, ndaTitle, signatureUrl, meta, brand.pdf)}>
                     PDF
                   </Button>
                 </div>
@@ -671,7 +674,7 @@ export default function NdaPage() {
                 <div className="bg-bg p-3 sm:p-5">
                   <iframe
                     title={ndaTitle}
-                    srcDoc={buildDocHtml(result, ndaTitle, signatureUrl, meta)
+                    srcDoc={buildDocHtml(result, ndaTitle, signatureUrl, meta, { branding: brand.pdf })
                       .replace('</head>', '<style>body{margin:0;padding:1.5cm 1.8cm}</style></head>')}
                     sandbox=""
                     className="w-full h-[600px] rounded-lg bg-white border-0"

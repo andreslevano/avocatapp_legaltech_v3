@@ -7,6 +7,7 @@ import AgentMessage, { type Message, type MessageAttachment } from './AgentMessa
 import AgentInput from './AgentInput';
 import AgentWelcome, { type CaseContext } from './AgentWelcome';
 import { isLegalDocument, buildWordBlob, buildPdfBlob } from '@/lib/agent-export';
+import { useDocBranding } from '@/hooks/useDocBranding';
 import { saveDocumentToStorage, type DocumentRecord } from '@/lib/storage-client';
 import { canUseDocusign } from '@/lib/docusign/config';
 import SignDocumentSheet from '@/components/signatures/SignDocumentSheet';
@@ -44,6 +45,10 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [savedToast, setSavedToast] = useState<SavedToast | null>(null);
+  // Document branding, read through a ref so the streaming callback always uses the latest.
+  const brand = useDocBranding();
+  const brandRef = useRef(brand);
+  brandRef.current = brand;
   const [signDoc, setSignDoc] = useState<DocumentRecord | null>(null);
   const docusignOn = canUseDocusign(userDoc.plan, user);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -240,8 +245,8 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
         // Auto-save legal documents to Firebase Storage
         if (isLegalDocument(accumulated)) {
           try {
-            const { blob, filename } = buildWordBlob(accumulated);
-            const pdfBlobResult = await buildPdfBlob(accumulated, filename.replace(/\.[^.]+$/, '')).catch(() => null);
+            const { blob, filename } = buildWordBlob(accumulated, undefined, undefined, undefined, brandRef.current.word);
+            const pdfBlobResult = await buildPdfBlob(accumulated, filename.replace(/\.[^.]+$/, ''), undefined, undefined, brandRef.current.pdf).catch(() => null);
             const record = await saveDocumentToStorage({
               userId: user.uid,
               plan: userDoc.plan ?? '',

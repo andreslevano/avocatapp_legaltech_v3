@@ -9,6 +9,7 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { consumirCredito } from '@/lib/creditos';
 import { getUserDocuments, getDocumentById, type DocumentRecord } from '@/lib/storage-client';
 import { saveAnalysisDocument } from '@/lib/agent-export';
+import { useDocBranding } from '@/hooks/useDocBranding';
 import { getCases, type CaseDoc } from '@/lib/firestore';
 import type { OcrPdfProgress } from '@/lib/ocr-pdf-client';
 import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
@@ -97,6 +98,7 @@ export default function AnalisisPage() {
 
 function AnalisisPageContent() {
   const { user, userDoc } = useAppAuth();
+  const brand = useDocBranding();
   const searchParams = useSearchParams();
   const docId = searchParams.get('docId');
 
@@ -252,6 +254,7 @@ function AnalisisPageContent() {
         userId:  userDoc.uid,
         plan:    userDoc.plan ?? 'Abogados',
         caseId:  caseId ?? null,
+        branding: brand.word, pdfBranding: brand.pdf,
       });
       setSavedDocId('done');
       if (caseId) {

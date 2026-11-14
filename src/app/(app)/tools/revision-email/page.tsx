@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCases, createCase, updateCase, type CaseDoc } from '@/lib/firestore';
 import { saveAnalysisDocument } from '@/lib/agent-export';
+import { useDocBranding } from '@/hooks/useDocBranding';
 import type { GmailMessage, GmailMessageFull } from '@/lib/gmail';
 import type { EmailAnalysisResult } from '@/app/api/gmail/analyze/route';
 import { Mail, Paperclip, X } from 'lucide-react';
@@ -67,6 +68,7 @@ const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small
 // ── Gmail tab ─────────────────────────────────────────────────────────────────
 
 function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user']; userDoc: ReturnType<typeof useAppAuth>['userDoc']; }) {
+  const brand = useDocBranding();
   const ud = userDoc as Record<string, unknown>;
   const [connected, setConnected]     = useState<boolean>(Boolean(ud.gmailConnected));
   const [gmailEmail, setGmailEmail]   = useState<string>((ud.gmailEmail as string) ?? '');
@@ -435,6 +437,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
                           title: `Análisis email — ${analysis.categoria}`,
                           userId: user.uid,
                           plan: userDoc.plan ?? 'Abogados',
+                          branding: brand.word, pdfBranding: brand.pdf,
                         });
                         setDocSaved('done');
                       } catch { /* silent */ }

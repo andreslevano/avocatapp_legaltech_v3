@@ -7,6 +7,7 @@ import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { saveAnalysisDocument, downloadAsWord, downloadAsPdf } from '@/lib/agent-export';
+import { useDocBranding } from '@/hooks/useDocBranding';
 import { consumirCredito } from '@/lib/creditos';
 import SignAndSendButton from '@/components/signatures/SignAndSendButton';
 import { getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
@@ -212,6 +213,7 @@ const ROLES = ['Demandante','Demandado','Actor','Parte actora','Parte demandada'
 
 export default function GeneracionPage() {
   const { user, userDoc } = useAppAuth();
+  const brand = useDocBranding();
 
   // Step machine
   const [step,       setStep]       = useState<'select' | 'form' | 'result'>('select');
@@ -337,6 +339,7 @@ export default function GeneracionPage() {
           userId:  userDoc.uid,
           plan:    userDoc.plan ?? 'Abogados',
           caseId:  null,
+          branding: brand.word, pdfBranding: brand.pdf,
         }).then(rec => { setAutoSaved(true); setSavedDocId(rec.id); }).catch(() => {});
       }
     } catch {
@@ -624,8 +627,8 @@ export default function GeneracionPage() {
                         />
                       )}
                       <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(result)}>Copiar</Button>
-                      <Button variant="secondary" size="sm" onClick={() => downloadAsWord(result, docLabel)}>Word</Button>
-                      <Button variant="secondary" size="sm" onClick={() => downloadAsPdf(result, docLabel)}>PDF</Button>
+                      <Button variant="secondary" size="sm" onClick={() => downloadAsWord(result, docLabel, undefined, undefined, brand.word)}>Word</Button>
+                      <Button variant="secondary" size="sm" onClick={() => downloadAsPdf(result, docLabel, undefined, undefined, brand.pdf)}>PDF</Button>
                     </>
                   )}
                 </div>
