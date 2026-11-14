@@ -4,18 +4,21 @@ import { useEffect, useState } from 'react';
 import { buildPdfBlob } from '@/lib/agent-export';
 import { renderMfwNda } from '@/lib/org-templates/mobiforwork-nda';
 import { renderMfwServices } from '@/lib/org-templates/mobiforwork-services';
-import { DEFAULT_BRANDING, primaryFamily, resolveBranding, withLogoSrc, type ResolvedBranding } from '@/lib/branding';
+import { COLOR_PRESETS, DEFAULT_BRANDING, primaryFamily, resolveBranding, withLogoSrc, type ResolvedBranding } from '@/lib/branding';
+import { primitives } from '@/lib/tokens';
+
+const NAVY = COLOR_PRESETS.find(p => p.id === 'marino')!;
 
 /** ?branded=1 — navy/gold 300×100 PNG logo (drawn here, no fixture), navy header, Lato, coloured headings. */
 function harnessBranding(): ResolvedBranding {
   const c = document.createElement('canvas');
   c.width = 300; c.height = 100;
   const ctx = c.getContext('2d')!;
-  ctx.fillStyle = '#1f3a5f'; ctx.fillRect(0, 0, 300, 100);
-  ctx.fillStyle = '#b8882a'; ctx.fillRect(20, 20, 260, 60);
+  ctx.fillStyle = NAVY.primary; ctx.fillRect(0, 0, 300, 100);
+  ctx.fillStyle = primitives['gold-500']; ctx.fillRect(20, 20, 260, 60);
   const r = resolveBranding({ branding: {
     ...DEFAULT_BRANDING, logoUrl: 'https://firebasestorage.googleapis.com/v0/b/x/o/harness.png', logoWidth: 300, logoHeight: 100,
-    colors: { primary: '#1f3a5f', secondary: '#5b6b7f' }, font: 'lato', applyColorsToHeadings: true,
+    colors: { primary: NAVY.primary, secondary: NAVY.secondary }, font: 'lato', applyColorsToHeadings: true,
   } }, { company: 'MOBIFORWORK S.L.', cif: 'ESB22430706', member: true });
   return withLogoSrc(r, c.toDataURL('image/png'));
 }
