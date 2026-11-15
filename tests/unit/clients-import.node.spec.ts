@@ -1,8 +1,9 @@
 // Clientes → Importar desde Excel: validation scenarios and a real template round trip.
 import { test, expect } from '@playwright/test';
 import ExcelJS from 'exceljs';
+import { mapLimit } from '@/lib/clients/import-client';
 import {
-  cellText, IMPORT_COLUMNS, IMPORT_MAX_ROWS, matchHeaders, parseClientRows, toClientFields, type ParsedImport,
+  canRequest, cellText, IMPORT_COLUMNS, IMPORT_MAX_REQUESTS, IMPORT_MAX_ROWS, matchHeaders, parseClientRows, toClientFields, type ParsedImport,
 } from '@/lib/clients/import';
 import { buildErrorReport, buildTemplate, ImportFileError, parseCsv, readClientFile } from '@/lib/clients/import-excel';
 
@@ -116,8 +117,8 @@ test.describe('files', () => {
     expect(wb.worksheets.map(w => w.name)).toEqual(['Clientes', 'Instrucciones']);
     const ws = wb.getWorksheet('Clientes')!;
     expect(ws.getCell('D2').dataValidation).toMatchObject({ type: 'list', formulae: ['"Persona,Sociedad"'] });
-    ws.getRow(2).values = row({ name: 'Ana Pérez', email: 'ana@x.es', phone: '+34 600 000 000', idType: 'DNI', idNumber: '12345678Z' });
-    ws.getRow(3).values = row({ name: 'ACME', personType: 'Sociedad', company: 'ACME S.L.', companyTaxId: 'B12345674' });
+    ws.getRow(2).values = row({ name: 'Ana Pérez', email: 'ana@x.es', phone: '+34 600 000 000', idType: 'DNI', idNumber: '12345678Z' }) as ExcelJS.CellValue[];
+    ws.getRow(3).values = row({ name: 'ACME', personType: 'Sociedad', company: 'ACME S.L.', companyTaxId: 'B12345674' }) as ExcelJS.CellValue[];
     const filled = new File([await wb.xlsx.writeBuffer()], 'clientes.xlsx');
     const { matrix, sheetName } = await readClientFile(filled);
     expect(sheetName).toBe('Clientes');
@@ -147,5 +148,29 @@ test.describe('files', () => {
     const again = ok(parseClientRows((await readClientFile(new File([await blob.arrayBuffer()], 'r.xlsx'))).matrix, []));
     expect(again.header.unknown).toEqual(['Motivo']);
     expect(again.rows[0].errors.email).toBeTruthy();
+  });
+});
+
+test.describe('Solicitar los datos (bulk)', () => {
+  test('only valid rows with an email receive a request; cap is 100', () => {
+    const p = ok(parseClientRows([H,
+      row({ name: 'Con email', email: 'a@x.es' }),
+      row({ name: 'Sin email' }),
+      row({ name: 'Email malo', email: 'a@' }),
+    ], []));
+    expect(p.rows.map(canRequest)).toEqual([true, false, false]);
+    expect(IMPORT_MAX_REQUESTS).toBe(100);
+  });
+  test('mapLimit keeps order and never exceeds the limit', async () => {
+    let inFlight = 0, peak = 0;
+    const out = await mapLimit([5, 1, 4, 2, 3, 0], 3, async (n, i) => {
+      inFlight++; peak = Math.max(peak, inFlight);
+      await new Promise(r => setTimeout(r, n * 3));
+      inFlight--;
+      return i * 10;
+    });
+    expect(out).toEqual([0, 10, 20, 30, 40, 50]);
+    expect(peak).toBe(3);
+    expect(await mapLimit([], 3, async () => 1)).toEqual([]);
   });
 });

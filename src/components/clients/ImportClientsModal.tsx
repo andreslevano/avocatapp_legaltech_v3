@@ -1,22 +1,33 @@
 'use client';
 
 // Clientes → "Importar desde Excel": 1) download the template / pick a file, 2) review (valid,
-// warnings, duplicates, errors) before anything is written, 3) result with undo and the rows that
-// weren't imported as an Excel to fix and re-upload. Logic: src/lib/clients/import*.ts.
+// warnings, duplicates, errors) before anything is written — optionally "Solicitar los datos" to the
+// imported clients, like "Guardar y enviar" in the new-client form, 3) result with undo (which also
+// cancels the links) and the rows that weren't imported as an Excel to fix and re-upload.
+// Logic: src/lib/clients/import*.ts; requests go through the same /api/data-requests as the form.
 
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
-import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Upload, X, XCircle, Copy, Undo2 } from 'lucide-react';
+import type { User } from 'firebase/auth';
+import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Upload, X, XCircle, Copy, Undo2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import type { ClientDoc } from '@/lib/firestore';
 import {
-  fieldLabel, IMPORT_MAX_ROWS, parseClientRows, type ExistingClient, type ImportRow, type ParsedImport, type RowStatus,
+  canRequest, fieldLabel, IMPORT_MAX_REQUESTS, IMPORT_MAX_ROWS, parseClientRows,
+  type ExistingClient, type ImportRow, type ParsedImport, type RowStatus,
 } from '@/lib/clients/import';
 import { buildErrorReport, buildTemplate, downloadBlob, ImportFileError, readClientFile } from '@/lib/clients/import-excel';
-import { commitClientImport, newImportId, undoClientImport, type CommitResult } from '@/lib/clients/import-client';
+import { commitClientImport, mapLimit, newImportId, undoClientImport, type CommitResult } from '@/lib/clients/import-client';
+import { createRequest, DocPicker, resendRequest, revokeRequest, type SentResult } from '@/components/clients/DataRequestControls';
+import type { DocId, RequestableDoc } from '@/lib/data-requests/catalog';
 
 interface Props {
+  user: User;
   userId: string;
+  /** Documents this account can request (availableDocs(user)); empty → no request option. */
+  requestableDocs: RequestableDoc[];
+  /** A request was created for an imported client (updates the status chip in the list). */
+  onRequestSent: (clientId: string, result: SentResult, documents: DocId[]) => void;
   existing: ExistingClient[];
   /** Client ids that have cases (never deleted by "Deshacer"). */
   linkedClientIds: Set<string>;
@@ -32,9 +43,22 @@ const STATUS: Record<RowStatus, { label: string; cls: string; Icon: typeof Check
   error:     { label: 'Con errores',     cls: 'text-danger-text',  Icon: XCircle },
 };
 
-type Step = 'pick' | 'review' | 'saving' | 'done';
+type Step = 'pick' | 'review' | 'saving' | 'sending' | 'done';
 
-export default function ImportClientsModal({ userId, existing, linkedClientIds, onClose, onImported, onUndone }: Props) {
+/** Outcome of "Solicitar los datos" for one imported client. */
+interface SendOutcome {
+  client: ClientDoc;
+  state: 'sent' | 'not_emailed' | 'failed';
+  requestId?: string;
+  error?: string;
+}
+
+/** Requests in flight at once (each one sends an email through the server). */
+const SEND_CONCURRENCY = 3;
+
+export default function ImportClientsModal({
+  user, userId, requestableDocs, onRequestSent, existing, linkedClientIds, onClose, onImported, onUndone,
+}: Props) {
   const [step, setStep] = useState<Step>('pick');
   const [fileName, setFileName] = useState('');
   const [parsed, setParsed] = useState<ParsedImport | null>(null);
@@ -46,6 +70,12 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
   const [result, setResult] = useState<CommitResult | null>(null);
   const [undone, setUndone] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  // "Solicitar los datos a los clientes importados"
+  const [requestOn, setRequestOn] = useState(false);
+  const [requestDocs, setRequestDocs] = useState<DocId[]>(requestableDocs.length === 1 ? [requestableDocs[0].id] : []);
+  const [sends, setSends] = useState<SendOutcome[]>([]);
+  const [sendProgress, setSendProgress] = useState({ done: 0, total: 0 });
+  const [emailOff, setEmailOff] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const importId = useRef(newImportId());
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -53,7 +83,7 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
   // Escape closes (not while writing); focus moves into the dialog.
   useEffect(() => {
     dialogRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && step !== 'saving') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && step !== 'saving' && step !== 'sending') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [step, onClose]);
@@ -67,6 +97,9 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
     () => parsed?.rows.filter(r => r.status === 'ok' || r.status === 'warning' || (includeDuplicates && r.status === 'duplicate')) ?? [],
     [parsed, includeDuplicates],
   );
+  const requestTargets = useMemo(() => toImport.filter(canRequest), [toImport]);
+  const tooManyRequests = requestOn && requestTargets.length > IMPORT_MAX_REQUESTS;
+  const requestBlocked = requestOn && (requestDocs.length === 0 || tooManyRequests || requestTargets.length === 0);
   const notImported = useMemo(() => {
     const skipped = parsed?.rows.filter(r => !toImport.includes(r)) ?? [];
     return [...skipped, ...(result?.failed ?? [])];
@@ -96,6 +129,27 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
     }
   };
 
+  /** Creates (or, for a link whose email didn't go out, re-sends) the request of each client. */
+  const sendRequests = async (targets: { client: ClientDoc; resendId?: string }[]) => {
+    if (!targets.length) return;
+    setStep('sending');
+    setSendProgress({ done: 0, total: targets.length });
+    let done = 0;
+    const outcomes = await mapLimit(targets, SEND_CONCURRENCY, async ({ client, resendId }): Promise<SendOutcome> => {
+      try {
+        const r = resendId ? await resendRequest(user, resendId) : await createRequest(user, client.id, requestDocs);
+        onRequestSent(client.id, r, requestDocs);
+        if (!r.emailConfigured) setEmailOff(true);
+        return { client, state: r.emailed ? 'sent' : 'not_emailed', requestId: r.id };
+      } catch (e) {
+        return { client, state: 'failed', error: (e as Error).message };
+      } finally {
+        setSendProgress({ done: ++done, total: targets.length });
+      }
+    });
+    setSends(prev => [...prev.filter(p => !outcomes.some(o => o.client.id === p.client.id)), ...outcomes]);
+  };
+
   const doImport = async (rows: ImportRow[]) => {
     if (!rows.length) return;
     setStep('saving'); setProgress(0); setError('');
@@ -103,6 +157,12 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
       .catch(e => ({ importId: importId.current, created: [], failed: rows, error: (e as Error).message }) as CommitResult);
     setResult(prev => prev ? { ...r, created: [...prev.created, ...r.created] } : r);
     if (r.created.length) onImported(r.created);
+    if (requestOn && requestDocs.length) await sendRequests(r.created.filter(c => !!c.email).map(client => ({ client })));
+    setStep('done');
+  };
+
+  const retrySends = async () => {
+    await sendRequests(sends.filter(s => s.state !== 'sent').map(s => ({ client: s.client, resendId: s.state === 'not_emailed' ? s.requestId : undefined })));
     setStep('done');
   };
 
@@ -111,6 +171,9 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
     const ids = result.created.map(c => c.id).filter(id => !linkedClientIds.has(id));
     setBusy('undo'); setError('');
     try {
+      // Cancel the links first so nobody fills in a form for a client that no longer exists.
+      const toRevoke = sends.filter(s => s.requestId && ids.includes(s.client.id));
+      await mapLimit(toRevoke, SEND_CONCURRENCY, s => revokeRequest(user, s.requestId!).catch(() => null));
       await undoClientImport(ids);
       onUndone(ids);
       setUndone(ids.length);
@@ -131,7 +194,7 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={() => step !== 'saving' && onClose()} />
+      <div className="absolute inset-0 bg-black/60" onClick={() => step !== 'saving' && step !== 'sending' && onClose()} />
       <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="import-title"
         className="relative bg-surface border border-border rounded-t-2xl sm:rounded-2xl w-full sm:max-w-3xl max-h-[92vh] flex flex-col shadow-elevated">
         <div className="flex items-start justify-between gap-3 p-5 sm:p-6 border-b border-border">
@@ -141,10 +204,11 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
               {step === 'pick' && `Crea hasta ${IMPORT_MAX_ROWS} clientes de una vez con la plantilla de Avocat.`}
               {step === 'review' && `${fileName} · revisa antes de importar. Todavía no se ha creado ningún cliente.`}
               {step === 'saving' && 'Creando clientes…'}
+              {step === 'sending' && 'Enviando las solicitudes de datos…'}
               {step === 'done' && 'Importación terminada.'}
             </p>
           </div>
-          <button type="button" onClick={onClose} disabled={step === 'saving'} aria-label="Cerrar"
+          <button type="button" onClick={onClose} disabled={step === 'saving' || step === 'sending'} aria-label="Cerrar"
             className="min-h-touch min-w-touch sm:min-h-0 sm:min-w-0 p-1.5 rounded-md text-text-muted hover:text-text disabled:opacity-40">
             <X size={20} aria-hidden />
           </button>
@@ -229,6 +293,35 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
                 </label>
               )}
 
+              {requestableDocs.length > 0 && (
+                <div className="rounded-lg border border-accent-border bg-accent-subtle px-3 py-3 space-y-2">
+                  <p className="text-label font-semibold uppercase tracking-widest text-accent-text">Solicitar los datos a los clientes</p>
+                  <label className="flex items-center justify-between gap-3 min-h-touch sm:min-h-0 text-small text-text cursor-pointer">
+                    <span>Enviar a cada cliente importado un enlace para que complete sus datos</span>
+                    <input type="checkbox" role="switch" aria-checked={requestOn} checked={requestOn}
+                      onChange={e => setRequestOn(e.target.checked)} className="h-4 w-4 flex-shrink-0" />
+                  </label>
+                  {requestOn && (
+                    <>
+                      <DocPicker docs={requestableDocs} value={requestDocs} onChange={setRequestDocs} />
+                      <p className="text-caption text-text-muted">
+                        Solo necesitas nombre y email. El resto lo completará cada cliente. El enlace caduca en 14 días.
+                      </p>
+                      <p className="text-caption text-text">
+                        {requestTargets.length} recibirán la solicitud
+                        {toImport.length - requestTargets.length > 0 && ` · ${toImport.length - requestTargets.length} no tienen email (se crean sin solicitud)`}
+                      </p>
+                      {requestDocs.length === 0 && <p className="text-caption text-danger-text">Elige al menos un documento.</p>}
+                      {tooManyRequests && (
+                        <p className="text-caption text-danger-text">
+                          Puedes enviar hasta {IMPORT_MAX_REQUESTS} solicitudes por importación. Divide el archivo o desactiva la opción y envíalas después desde la lista.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
               <div className="overflow-x-auto border border-border rounded-xl">
                 <table className="w-full text-caption">
                   <thead>
@@ -278,6 +371,14 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
             </div>
           )}
 
+          {step === 'sending' && (
+            <div className="py-10 text-center" role="status" aria-live="polite">
+              <div className="mx-auto h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+              <p className="text-small text-text mt-3">Enviando solicitudes… {sendProgress.done} de {sendProgress.total}</p>
+              <p className="text-caption text-text-muted mt-1">Los clientes ya están creados. No cierres esta ventana.</p>
+            </div>
+          )}
+
           {step === 'done' && result && (
             <div className="space-y-4" role="status" aria-live="polite">
               {undone !== null ? (
@@ -296,6 +397,37 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
                   Hubo un problema de conexión. Los demás sí se guardaron. Puedes reintentar solo los que faltan.
                 </Alert>
               )}
+              {undone === null && sends.length > 0 && (() => {
+                const sent = sends.filter(x => x.state === 'sent').length;
+                const pending = sends.filter(x => x.state !== 'sent');
+                return (
+                  <>
+                    {sent > 0 && (
+                      <Alert tone="success" title={`${sent} solicitud${sent !== 1 ? 'es' : ''} de datos enviada${sent !== 1 ? 's' : ''}`}>
+                        Cada cliente ha recibido un email con su enlace. Verás el estado en la lista y te avisaremos cuando completen sus datos.
+                      </Alert>
+                    )}
+                    {emailOff && (
+                      <Alert tone="warning" title="El envío de emails no está configurado">
+                        Los enlaces se han creado, pero no se han enviado. Usa «Reenviar» en cada cliente cuando el email esté disponible.
+                      </Alert>
+                    )}
+                    {pending.length > 0 && (
+                      <Alert tone="warning" title={`${pending.length} solicitud${pending.length !== 1 ? 'es' : ''} sin enviar`}
+                        action={emailOff ? undefined : <Button variant="secondary" size="sm" icon={Send} onClick={retrySends}>Reintentar envíos</Button>}>
+                        <ul className="mt-1 space-y-0.5">
+                          {pending.slice(0, 15).map(p => (
+                            <li key={p.client.id}>
+                              {p.client.name} ({p.client.email}): {p.state === 'failed' ? (p.error || 'no se pudo crear la solicitud') : 'el email no salió'}
+                            </li>
+                          ))}
+                          {pending.length > 15 && <li>y {pending.length - 15} más.</li>}
+                        </ul>
+                      </Alert>
+                    )}
+                  </>
+                );
+              })()}
               {notImported.length > 0 && (
                 <p className="text-small text-text">
                   {notImported.length} fila{notImported.length !== 1 ? 's' : ''} no se importaron (errores o duplicados). Descárgalas en un Excel con el motivo, corrígelas y vuelve a subirlo.
@@ -309,8 +441,10 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
           {step === 'review' && (
             <>
               <Button variant="ghost" size="sm" className="min-h-touch sm:min-h-0" onClick={() => { setStep('pick'); setParsed(null); }}>Elegir otro archivo</Button>
-              <Button variant="accent" className="min-h-touch sm:min-h-0" disabled={toImport.length === 0} onClick={() => doImport(toImport)}>
-                {toImport.length === 0 ? 'No hay clientes para importar' : `Importar ${toImport.length} cliente${toImport.length !== 1 ? 's' : ''}`}
+              <Button variant="accent" className="min-h-touch sm:min-h-0" disabled={toImport.length === 0 || requestBlocked} onClick={() => doImport(toImport)}>
+                {toImport.length === 0
+                  ? 'No hay clientes para importar'
+                  : `Importar ${toImport.length} cliente${toImport.length !== 1 ? 's' : ''}${requestOn && requestTargets.length ? ` y enviar ${requestTargets.length} solicitud${requestTargets.length !== 1 ? 'es' : ''}` : ''}`}
               </Button>
             </>
           )}
@@ -319,7 +453,7 @@ export default function ImportClientsModal({ userId, existing, linkedClientIds, 
               <div className="flex flex-col sm:flex-row gap-2">
                 {result.created.length > 0 && undone === null && (
                   <Button variant="ghost" size="sm" className="min-h-touch sm:min-h-0" loading={busy === 'undo'} onClick={undo}>
-                    <Undo2 size={16} aria-hidden /> Deshacer importación
+                    <Undo2 size={16} aria-hidden /> {sends.some(x => x.requestId) ? 'Deshacer importación y anular enlaces' : 'Deshacer importación'}
                   </Button>
                 )}
                 {notImported.length > 0 && (

@@ -9,6 +9,11 @@ export const IMPORT_MAX_ROWS = 500;
 export const IMPORT_MAX_BYTES = 2 * 1024 * 1024;
 export const TEMPLATE_SHEET = 'Clientes';
 export const TEMPLATE_VERSION = 'avocat-clientes-v1';
+/**
+ * "Solicitar los datos" for an import: one email per client through the shared Gmail SMTP account
+ * (~500/day for all of Avocat), so one import may send at most this many requests.
+ */
+export const IMPORT_MAX_REQUESTS = 100;
 
 /** Same options as the manual form, plus NIE (validated like DNI). */
 export const ID_TYPES = ['DNI', 'NIE', 'NIF', 'Pasaporte', 'RUT', 'Cédula', 'CUIT', 'Otro'] as const;
@@ -258,3 +263,6 @@ export function toClientFields(v: ClientValues) {
 
 export const fieldLabel = (f: ImportField | 'row') =>
   f === 'row' ? 'Fila' : (IMPORT_COLUMNS.find(c => c.field === f)?.header.replace(' *', '') ?? f);
+
+/** Imported rows that can receive a data request (valid email: rows with a bad one are errors). */
+export const canRequest = (r: Pick<ImportRow, 'values' | 'status'>) => r.status !== 'error' && !!r.values.email;

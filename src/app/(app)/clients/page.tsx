@@ -466,7 +466,14 @@ export default function ClientsPage() {
 
       {showImport && (
         <ImportClientsModal
+          user={user}
           userId={userDoc.uid}
+          requestableDocs={requestableDocs}
+          onRequestSent={(id, r, docs) => {
+            applyRequest(id, r, docs);
+            // Keep the copyable link only when the email didn't go out (like the single-client flow).
+            if (!r.emailed) setSent(p => ({ ...p, [id]: r }));
+          }}
           existing={clients.map(c => ({ id: c.id, name: c.name, email: c.email, idType: c.idType, idNumber: c.idNumber }))}
           linkedClientIds={new Set(cases.map(c => c.clientId).filter((id): id is string => !!id))}
           onClose={() => setShowImport(false)}
