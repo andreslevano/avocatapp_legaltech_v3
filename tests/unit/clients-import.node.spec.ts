@@ -124,7 +124,7 @@ test.describe('files', () => {
     expect(sheetName).toBe('Clientes');
     const p = ok(parseClientRows(matrix, []));
     expect(p.rows.map(r => [r.values.name, r.status])).toEqual([['Ana Pérez', 'ok'], ['ACME', 'ok']]);
-    expect(p.skippedEmpty).toBeGreaterThan(400);   // formatted empty rows of the template
+    expect(p.skippedEmpty).toBe(IMPORT_MAX_ROWS - 2);   // formatted empty rows of the template
   });
 
   test('rejects wrong files with a clear message', async () => {
@@ -151,16 +151,62 @@ test.describe('files', () => {
   });
 });
 
-test.describe('Solicitar los datos (bulk)', () => {
-  test('only valid rows with an email receive a request; cap is 100', () => {
-    const p = ok(parseClientRows([H,
-      row({ name: 'Con email', email: 'a@x.es' }),
-      row({ name: 'Sin email' }),
-      row({ name: 'Email malo', email: 'a@' }),
-    ], []));
-    expect(p.rows.map(canRequest)).toEqual([true, false, false]);
-    expect(IMPORT_MAX_REQUESTS).toBe(100);
+test.describe('Solicitar los datos (per client, from the Excel)', () => {
+  const DOCS = [
+    { id: 'nda_mfw' as const, label: 'NDA MOBIFORWORK' },
+    { id: 'contrato_servicios_mfw' as const, label: 'Contrato de servicios MOBIFORWORK', personaOnly: true },
+  ];
+  const HR = ['Nombre', 'Email', 'Solicitar NDA MOBIFORWORK', 'Solicitar Contrato de servicios MOBIFORWORK', 'Tipo de cliente'];
+
+  test('each row requests its own documents; Sí/No variants; email required; personaOnly warning', () => {
+    const p = ok(parseClientRows([HR,
+      ['Solo NDA', 'a@x.es', 'Sí', '', ''],
+      ['Solo contrato', 'b@x.es', 'no', 'x', ''],
+      ['Ambos', 'c@x.es', 'SI', 'si', ''],
+      ['Ninguno', 'd@x.es', '', 'No', ''],
+      ['Sin email', '', 'Sí', '', ''],
+      ['Valor raro', 'e@x.es', 'quizás', '', ''],
+      ['Sociedad', 'f@x.es', '', 'Sí', 'Sociedad'],
+    ], [], DOCS));
+    expect(p.header.requestCols.size).toBe(2);
+    expect(p.rows.map(r => r.requestDocs)).toEqual([
+      ['nda_mfw'], ['contrato_servicios_mfw'], ['nda_mfw', 'contrato_servicios_mfw'], [], ['nda_mfw'], [], ['contrato_servicios_mfw'],
+    ]);
+    expect(p.rows[4].errors.request).toContain('email');
+    expect(p.rows[5].errors.request).toContain('quizás');
+    expect(p.rows[6].warnings.request).toContain('personas físicas');
+    expect(p.rows.map(canRequest)).toEqual([true, true, true, false, false, false, true]);
   });
+
+  test('request columns of documents this account cannot request are ignored (reported as unknown)', () => {
+    const p = ok(parseClientRows([['Nombre', 'Email', 'Solicitar NDA MOBIFORWORK'], ['A', 'a@x.es', 'Sí']], [], []));
+    expect(p.header.unknown).toEqual(['Solicitar NDA MOBIFORWORK']);
+    expect(p.rows[0].requestDocs).toEqual([]);
+  });
+
+  test('template has one Sí/No column per document after Email; round trip keeps the marks', async () => {
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(await (await buildTemplate(DOCS)).arrayBuffer());
+    const ws = wb.getWorksheet('Clientes')!;
+    expect(ws.getRow(1).values).toEqual(expect.arrayContaining(['Email', 'Solicitar NDA MOBIFORWORK', 'Solicitar Contrato de servicios MOBIFORWORK']));
+    expect(ws.getCell('C1').value).toBe('Solicitar NDA MOBIFORWORK');
+    expect(ws.getCell('C2').dataValidation).toMatchObject({ type: 'list', formulae: ['"Sí,No"'] });
+    ws.getRow(2).values = ['Ana', 'ana@x.es', 'Sí', 'No'];
+    ws.getRow(3).values = ['Luis', 'luis@x.es', '', 'Sí'];
+    const { matrix } = await readClientFile(new File([await wb.xlsx.writeBuffer()], 'c.xlsx'));
+    const p = ok(parseClientRows(matrix, [], DOCS));
+    expect(p.rows.map(r => [r.values.name, r.requestDocs])).toEqual([['Ana', ['nda_mfw']], ['Luis', ['contrato_servicios_mfw']]]);
+    // the error report keeps the marks, so a fixed file re-imports with them
+    const bad = ok(parseClientRows([HR, ['', 'x@x.es', 'Sí', '', '']], [], DOCS));
+    const again = ok(parseClientRows((await readClientFile(new File([await (await buildErrorReport(bad.rows, DOCS)).arrayBuffer()], 'r.xlsx'))).matrix, [], DOCS));
+    expect(again.rows[0].requestDocs).toEqual(['nda_mfw']);
+  });
+
+  test('limits: 100 clients per import, same as requests', () => {
+    expect(IMPORT_MAX_ROWS).toBe(100);
+    expect(IMPORT_MAX_REQUESTS).toBe(IMPORT_MAX_ROWS);
+  });
+
   test('mapLimit keeps order and never exceeds the limit', async () => {
     let inFlight = 0, peak = 0;
     const out = await mapLimit([5, 1, 4, 2, 3, 0], 3, async (n, i) => {

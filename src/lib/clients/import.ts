@@ -4,8 +4,10 @@
 // "Solicitar datos al cliente" (src/lib/data-requests/core.ts).
 
 import { cleanValue, FIELD_MAX, isValidCif, isValidDni, isValidEmail, isValidNie } from '@/lib/data-requests/core';
+import type { DocId, RequestableDoc } from '@/lib/data-requests/catalog';
 
-export const IMPORT_MAX_ROWS = 500;
+/** Same as IMPORT_MAX_REQUESTS: one import never sends more data-request emails than it creates clients. */
+export const IMPORT_MAX_ROWS = 100;
 export const IMPORT_MAX_BYTES = 2 * 1024 * 1024;
 export const TEMPLATE_SHEET = 'Clientes';
 export const TEMPLATE_VERSION = 'avocat-clientes-v1';
@@ -66,24 +68,45 @@ export const normHeader = (s: unknown) => String(s ?? '')
 const ALIAS = new Map<string, ImportField>();
 for (const c of IMPORT_COLUMNS) for (const a of [c.header, ...c.aliases]) ALIAS.set(normHeader(a), c.field);
 
+// ── "Solicitar datos" columns (one Sí/No column per document the account can request) ──
+
+export const YES_NO = ['Sí', 'No'] as const;
+const YES = new Set(['si', 'sí', 's', 'x', 'yes', 'y', '1', 'true', 'verdadero', '✓', '✔', '✔️']);
+const NO = new Set(['', 'no', 'n', '0', 'false', 'falso', '-']);
+
+export const requestHeader = (d: Pick<RequestableDoc, 'label'>) => `Solicitar ${d.label}`;
+/** "NDA MOBIFORWORK" → "NDA" (short label for the review table). */
+export const shortDocLabel = (d: Pick<RequestableDoc, 'label'>) => d.label.replace(/\s*MOBIFORWORK\s*/g, ' ').trim();
+
 export interface HeaderMatch {
   /** Column index (0-based) → field. */
   map: Map<number, ImportField>;
+  /** Column index → document to request (only documents available to this account). */
+  requestCols: Map<number, DocId>;
   missingRequired: ImportField[];
   /** Headers we don't recognise (ignored). */
   unknown: string[];
-  /** Fields that appear in more than one column (the first one is used). */
-  repeated: ImportField[];
+  /** Fields (or "Solicitar …" columns) that appear in more than one column (the first one is used). */
+  repeated: (ImportField | string)[];
 }
 
-export function matchHeaders(headers: unknown[]): HeaderMatch {
+export function matchHeaders(headers: unknown[], docs: readonly Pick<RequestableDoc, 'id' | 'label'>[] = []): HeaderMatch {
   const map = new Map<number, ImportField>();
+  const requestCols = new Map<number, DocId>();
+  const docAlias = new Map<string, DocId>();
+  for (const d of docs) for (const a of [requestHeader(d), d.label]) docAlias.set(normHeader(a), d.id);
   const seen = new Set<ImportField>();
   const unknown: string[] = [];
-  const repeated: ImportField[] = [];
+  const repeated: (ImportField | string)[] = [];
   headers.forEach((h, i) => {
     const key = normHeader(h);
     if (!key) return;
+    const doc = docAlias.get(key);
+    if (doc) {
+      if ([...requestCols.values()].includes(doc)) repeated.push(requestHeader(docs.find(d => d.id === doc)!));
+      else requestCols.set(i, doc);
+      return;
+    }
     const f = ALIAS.get(key);
     if (!f) { unknown.push(String(h).trim()); return; }
     if (seen.has(f)) { repeated.push(f); return; }
@@ -91,7 +114,7 @@ export function matchHeaders(headers: unknown[]): HeaderMatch {
     map.set(i, f);
   });
   const missingRequired = IMPORT_COLUMNS.filter(c => c.required && !seen.has(c.field)).map(c => c.field);
-  return { map, missingRequired, unknown, repeated };
+  return { map, requestCols, missingRequired, unknown, repeated };
 }
 
 /** Header row = first of the first 10 rows that contains a required header (files with a title row). */
@@ -113,8 +136,10 @@ export interface ImportRow {
   rowNumber: number;
   values: ClientValues;
   status: RowStatus;
-  errors: Partial<Record<ImportField | 'row', string>>;
-  warnings: Partial<Record<ImportField | 'row', string>>;
+  errors: Partial<Record<ImportField | 'row' | 'request', string>>;
+  warnings: Partial<Record<ImportField | 'row' | 'request', string>>;
+  /** Documents marked "Sí" in the Solicitar columns: the data request this client will get. */
+  requestDocs: DocId[];
   /** Existing client (or earlier row) this one duplicates. */
   duplicateOf?: string;
 }
@@ -142,7 +167,10 @@ export function cellText(v: unknown): string {
   return String(v);
 }
 
-function validateRow(rowNumber: number, raw: Partial<Record<ImportField, unknown>>): ImportRow {
+function validateRow(
+  rowNumber: number, raw: Partial<Record<ImportField, unknown>>,
+  rawRequests: [DocId, unknown][] = [], docs: readonly Pick<RequestableDoc, 'id' | 'personaOnly'>[] = [],
+): ImportRow {
   const values: ClientValues = {};
   const errors: ImportRow['errors'] = {};
   const warnings: ImportRow['warnings'] = {};
@@ -186,8 +214,21 @@ function validateRow(rowNumber: number, raw: Partial<Record<ImportField, unknown
     warnings.personType = 'Marcado como Persona pero tiene datos de empresa: se guardarán igualmente.';
   }
 
+  const requestDocs: DocId[] = [];
+  const bad: string[] = [];
+  for (const [id, v] of rawRequests) {
+    const t = normHeader(cellText(v));
+    if (YES.has(t)) requestDocs.push(id);
+    else if (!NO.has(t)) bad.push(cellText(v).trim());
+  }
+  if (bad.length) errors.request = `En las columnas "Solicitar" usa Sí o No (encontrado: ${bad.join(', ')}).`;
+  else if (requestDocs.length && !values.email) errors.request = 'Para solicitar los datos hace falta el email del cliente.';
+  else if (sociedad && requestDocs.some(id => docs.find(d => d.id === id)?.personaOnly)) {
+    warnings.request = 'El contrato de servicios es para personas físicas: el cliente lo completará como persona.';
+  }
+
   const status: RowStatus = Object.keys(errors).length ? 'error' : Object.keys(warnings).length ? 'warning' : 'ok';
-  return { rowNumber, values, status, errors, warnings };
+  return { rowNumber, values, status, errors, warnings, requestDocs };
 }
 
 export interface ParsedImport {
@@ -202,12 +243,14 @@ export interface ParsedImport {
  * Sheet as a matrix of cell values (row 0 = first row) → validated rows. Duplicates: same email or
  * same document (type + number) as an existing client or an earlier row of the file.
  */
-export function parseClientRows(matrix: unknown[][], existing: ExistingClient[]): ParsedImport | { error: string } {
+export function parseClientRows(
+  matrix: unknown[][], existing: ExistingClient[], docs: readonly Pick<RequestableDoc, 'id' | 'label' | 'personaOnly'>[] = [],
+): ParsedImport | { error: string } {
   const h = findHeaderRow(matrix);
   if (h < 0) {
     return { error: 'No encontramos la columna "Nombre". Usa la plantilla de Avocat o añade una fila de encabezados con, al menos, "Nombre".' };
   }
-  const header = matchHeaders(matrix[h]);
+  const header = matchHeaders(matrix[h], docs);
   const byEmail = new Map<string, string>();
   const byId = new Map<string, string>();
   for (const c of existing) {
@@ -223,10 +266,12 @@ export function parseClientRows(matrix: unknown[][], existing: ExistingClient[])
     const cells = matrix[i] ?? [];
     const raw: Partial<Record<ImportField, unknown>> = {};
     header.map.forEach((field, col) => { raw[field] = cells[col]; });
+    const rawRequests: [DocId, unknown][] = [...header.requestCols].map(([col, id]) => [id, cells[col]]);
+    // A row with only "No" in the request columns (and nothing else) is still an empty row.
     if (Object.values(raw).every(v => !cellText(v).trim())) { skippedEmpty++; continue; }
     if (rows.length >= IMPORT_MAX_ROWS) { tooMany = true; break; }
 
-    const row = validateRow(i + 1, raw);
+    const row = validateRow(i + 1, raw, rawRequests, docs);
     if (row.status !== 'error') {
       const email = row.values.email;
       const k = idKey(row.values.idType, row.values.idNumber);
@@ -261,8 +306,10 @@ export function toClientFields(v: ClientValues) {
   };
 }
 
-export const fieldLabel = (f: ImportField | 'row') =>
-  f === 'row' ? 'Fila' : (IMPORT_COLUMNS.find(c => c.field === f)?.header.replace(' *', '') ?? f);
+export const fieldLabel = (f: ImportField | 'row' | 'request') =>
+  f === 'row' ? 'Fila' : f === 'request' ? 'Solicitar datos'
+    : (IMPORT_COLUMNS.find(c => c.field === f)?.header.replace(' *', '') ?? f);
 
-/** Imported rows that can receive a data request (valid email: rows with a bad one are errors). */
-export const canRequest = (r: Pick<ImportRow, 'values' | 'status'>) => r.status !== 'error' && !!r.values.email;
+/** Imported rows that will receive a data request: marked in the Excel, with a valid email. */
+export const canRequest = (r: Pick<ImportRow, 'values' | 'status' | 'requestDocs'>) =>
+  r.status !== 'error' && !!r.values.email && r.requestDocs.length > 0;

@@ -1,8 +1,9 @@
 'use client';
 
 // Clientes → "Importar desde Excel": 1) download the template / pick a file, 2) review (valid,
-// warnings, duplicates, errors) before anything is written — optionally "Solicitar los datos" to the
-// imported clients, like "Guardar y enviar" in the new-client form, 3) result with undo (which also
+// warnings, duplicates, errors) before anything is written — including which clients get a data
+// request, from the "Solicitar <documento>" Sí/No columns of the template (per client, like "Guardar y
+// enviar" in the new-client form), 3) result with undo (which also
 // cancels the links) and the rows that weren't imported as an Excel to fix and re-upload.
 // Logic: src/lib/clients/import*.ts; requests go through the same /api/data-requests as the form.
 
@@ -13,12 +14,12 @@ import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import type { ClientDoc } from '@/lib/firestore';
 import {
-  canRequest, fieldLabel, IMPORT_MAX_REQUESTS, IMPORT_MAX_ROWS, parseClientRows,
-  type ExistingClient, type ImportRow, type ParsedImport, type RowStatus,
+  canRequest, fieldLabel, IMPORT_MAX_ROWS, parseClientRows, shortDocLabel,
+  type ExistingClient, type ImportField, type ImportRow, type ParsedImport, type RowStatus,
 } from '@/lib/clients/import';
 import { buildErrorReport, buildTemplate, downloadBlob, ImportFileError, readClientFile } from '@/lib/clients/import-excel';
 import { commitClientImport, mapLimit, newImportId, undoClientImport, type CommitResult } from '@/lib/clients/import-client';
-import { createRequest, DocPicker, resendRequest, revokeRequest, type SentResult } from '@/components/clients/DataRequestControls';
+import { createRequest, resendRequest, revokeRequest, type SentResult } from '@/components/clients/DataRequestControls';
 import type { DocId, RequestableDoc } from '@/lib/data-requests/catalog';
 
 interface Props {
@@ -48,6 +49,7 @@ type Step = 'pick' | 'review' | 'saving' | 'sending' | 'done';
 /** Outcome of "Solicitar los datos" for one imported client. */
 interface SendOutcome {
   client: ClientDoc;
+  docs: DocId[];
   state: 'sent' | 'not_emailed' | 'failed';
   requestId?: string;
   error?: string;
@@ -70,9 +72,8 @@ export default function ImportClientsModal({
   const [result, setResult] = useState<CommitResult | null>(null);
   const [undone, setUndone] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  // "Solicitar los datos a los clientes importados"
-  const [requestOn, setRequestOn] = useState(false);
-  const [requestDocs, setRequestDocs] = useState<DocId[]>(requestableDocs.length === 1 ? [requestableDocs[0].id] : []);
+  // "Solicitar datos": what each client gets comes from the Excel; this switch can hold all of them back.
+  const [requestOn, setRequestOn] = useState(true);
   const [sends, setSends] = useState<SendOutcome[]>([]);
   const [sendProgress, setSendProgress] = useState({ done: 0, total: 0 });
   const [emailOff, setEmailOff] = useState(false);
@@ -97,9 +98,9 @@ export default function ImportClientsModal({
     () => parsed?.rows.filter(r => r.status === 'ok' || r.status === 'warning' || (includeDuplicates && r.status === 'duplicate')) ?? [],
     [parsed, includeDuplicates],
   );
-  const requestTargets = useMemo(() => toImport.filter(canRequest), [toImport]);
-  const tooManyRequests = requestOn && requestTargets.length > IMPORT_MAX_REQUESTS;
-  const requestBlocked = requestOn && (requestDocs.length === 0 || tooManyRequests || requestTargets.length === 0);
+  const requestTargets = useMemo(() => (requestOn ? toImport.filter(canRequest) : []), [toImport, requestOn]);
+  const markedRows = useMemo(() => toImport.filter(canRequest), [toImport]);
+  const docLabel = (id: DocId) => requestableDocs.find(d => d.id === id);
   const notImported = useMemo(() => {
     const skipped = parsed?.rows.filter(r => !toImport.includes(r)) ?? [];
     return [...skipped, ...(result?.failed ?? [])];
@@ -107,7 +108,7 @@ export default function ImportClientsModal({
 
   const downloadTemplate = async () => {
     setBusy('template'); setError('');
-    try { downloadBlob(await buildTemplate(), 'Plantilla_clientes_Avocat.xlsx'); }
+    try { downloadBlob(await buildTemplate(requestableDocs), 'Plantilla_clientes_Avocat.xlsx'); }
     catch { setError('No se pudo generar la plantilla. Intenta de nuevo.'); }
     finally { setBusy(null); }
   };
@@ -117,10 +118,10 @@ export default function ImportClientsModal({
     setBusy('read'); setError(''); setFileName(file.name);
     try {
       const { matrix } = await readClientFile(file);
-      const p = parseClientRows(matrix, existing);
+      const p = parseClientRows(matrix, existing, requestableDocs);
       if ('error' in p) { setError(p.error); return; }
       if (p.rows.length === 0) { setError('El archivo no tiene clientes: rellena al menos una fila debajo de los encabezados.'); return; }
-      setParsed(p); setFilter('all'); setIncludeDuplicates(false); setStep('review');
+      setParsed(p); setFilter('all'); setIncludeDuplicates(false); setRequestOn(true); setStep('review');
     } catch (e) {
       setError(e instanceof ImportFileError ? e.message : 'No se pudo leer el archivo. Comprueba que es la plantilla en .xlsx.');
     } finally {
@@ -130,19 +131,19 @@ export default function ImportClientsModal({
   };
 
   /** Creates (or, for a link whose email didn't go out, re-sends) the request of each client. */
-  const sendRequests = async (targets: { client: ClientDoc; resendId?: string }[]) => {
+  const sendRequests = async (targets: { client: ClientDoc; docs: DocId[]; resendId?: string }[]) => {
     if (!targets.length) return;
     setStep('sending');
     setSendProgress({ done: 0, total: targets.length });
     let done = 0;
-    const outcomes = await mapLimit(targets, SEND_CONCURRENCY, async ({ client, resendId }): Promise<SendOutcome> => {
+    const outcomes = await mapLimit(targets, SEND_CONCURRENCY, async ({ client, docs, resendId }): Promise<SendOutcome> => {
       try {
-        const r = resendId ? await resendRequest(user, resendId) : await createRequest(user, client.id, requestDocs);
-        onRequestSent(client.id, r, requestDocs);
+        const r = resendId ? await resendRequest(user, resendId) : await createRequest(user, client.id, docs);
+        onRequestSent(client.id, r, docs);
         if (!r.emailConfigured) setEmailOff(true);
-        return { client, state: r.emailed ? 'sent' : 'not_emailed', requestId: r.id };
+        return { client, docs, state: r.emailed ? 'sent' : 'not_emailed', requestId: r.id };
       } catch (e) {
-        return { client, state: 'failed', error: (e as Error).message };
+        return { client, docs, state: 'failed', error: (e as Error).message };
       } finally {
         setSendProgress({ done: ++done, total: targets.length });
       }
@@ -157,12 +158,19 @@ export default function ImportClientsModal({
       .catch(e => ({ importId: importId.current, created: [], failed: rows, error: (e as Error).message }) as CommitResult);
     setResult(prev => prev ? { ...r, created: [...prev.created, ...r.created] } : r);
     if (r.created.length) onImported(r.created);
-    if (requestOn && requestDocs.length) await sendRequests(r.created.filter(c => !!c.email).map(client => ({ client })));
+    // created[i] is rows[i] (chunks are written in order; a failed chunk stops the rest).
+    if (requestOn) {
+      await sendRequests(r.created
+        .map((client, i) => ({ client, docs: rows[i].requestDocs, row: rows[i] }))
+        .filter(t => canRequest(t.row))
+        .map(({ client, docs }) => ({ client, docs })));
+    }
     setStep('done');
   };
 
   const retrySends = async () => {
-    await sendRequests(sends.filter(s => s.state !== 'sent').map(s => ({ client: s.client, resendId: s.state === 'not_emailed' ? s.requestId : undefined })));
+    await sendRequests(sends.filter(s => s.state !== 'sent')
+      .map(s => ({ client: s.client, docs: s.docs, resendId: s.state === 'not_emailed' ? s.requestId : undefined })));
     setStep('done');
   };
 
@@ -184,7 +192,7 @@ export default function ImportClientsModal({
 
   const downloadReport = async () => {
     setBusy('report');
-    try { downloadBlob(await buildErrorReport(notImported), `Clientes_no_importados_${fileName.replace(/\.[^.]+$/, '') || 'archivo'}.xlsx`); }
+    try { downloadBlob(await buildErrorReport(notImported, requestableDocs), `Clientes_no_importados_${fileName.replace(/\.[^.]+$/, '') || 'archivo'}.xlsx`); }
     catch { setError('No se pudo generar el archivo.'); }
     finally { setBusy(null); }
   };
@@ -223,7 +231,10 @@ export default function ImportClientsModal({
                 <li className="flex gap-3">
                   <span className="text-label font-semibold text-accent-text mt-0.5">1</span>
                   <div className="flex-1">
-                    <p>Descarga la plantilla y rellena una fila por cliente. Solo el nombre es obligatorio.</p>
+                    <p>
+                      Descarga la plantilla y rellena una fila por cliente. Solo el nombre es obligatorio.
+                      {requestableDocs.length > 0 && ' Para pedirle sus datos a un cliente, pon su email y marca «Sí» en los documentos que vas a preparar.'}
+                    </p>
                     <Button variant="secondary" size="sm" className="mt-2 min-h-touch sm:min-h-0" loading={busy === 'template'} onClick={downloadTemplate}>
                       <Download size={16} aria-hidden /> Descargar plantilla (.xlsx)
                     </Button>
@@ -279,7 +290,7 @@ export default function ImportClientsModal({
                 <Alert tone="info" title="Columnas que no se importan">
                   {[
                     parsed.header.unknown.length ? `No reconocidas: ${parsed.header.unknown.join(', ')}.` : '',
-                    parsed.header.repeated.length ? `Repetidas (se usa la primera): ${parsed.header.repeated.map(fieldLabel).join(', ')}.` : '',
+                    parsed.header.repeated.length ? `Repetidas (se usa la primera): ${parsed.header.repeated.map(f => fieldLabel(f as ImportField)).join(', ')}.` : '',
                   ].filter(Boolean).join(' ')}
                 </Alert>
               )}
@@ -293,34 +304,35 @@ export default function ImportClientsModal({
                 </label>
               )}
 
-              {requestableDocs.length > 0 && (
+              {requestableDocs.length > 0 && (markedRows.length > 0 ? (
                 <div className="rounded-lg border border-accent-border bg-accent-subtle px-3 py-3 space-y-2">
                   <p className="text-label font-semibold uppercase tracking-widest text-accent-text">Solicitar los datos a los clientes</p>
                   <label className="flex items-center justify-between gap-3 min-h-touch sm:min-h-0 text-small text-text cursor-pointer">
-                    <span>Enviar a cada cliente importado un enlace para que complete sus datos</span>
+                    <span>Enviar las solicitudes marcadas en el Excel ({markedRows.length} cliente{markedRows.length !== 1 ? 's' : ''})</span>
                     <input type="checkbox" role="switch" aria-checked={requestOn} checked={requestOn}
                       onChange={e => setRequestOn(e.target.checked)} className="h-4 w-4 flex-shrink-0" />
                   </label>
-                  {requestOn && (
+                  {requestOn ? (
                     <>
-                      <DocPicker docs={requestableDocs} value={requestDocs} onChange={setRequestDocs} />
+                      <ul className="text-caption text-text space-y-0.5">
+                        {requestableDocs.map(d => {
+                          const n = markedRows.filter(r => r.requestDocs.includes(d.id)).length;
+                          return n > 0 && <li key={d.id}>{d.label}: {n} cliente{n !== 1 ? 's' : ''}</li>;
+                        })}
+                      </ul>
                       <p className="text-caption text-text-muted">
-                        Solo necesitas nombre y email. El resto lo completará cada cliente. El enlace caduca en 14 días.
+                        Cada cliente recibirá un enlace para completar los datos de los documentos marcados en su fila. Caduca en 14 días.
                       </p>
-                      <p className="text-caption text-text">
-                        {requestTargets.length} recibirán la solicitud
-                        {toImport.length - requestTargets.length > 0 && ` · ${toImport.length - requestTargets.length} no tienen email (se crean sin solicitud)`}
-                      </p>
-                      {requestDocs.length === 0 && <p className="text-caption text-danger-text">Elige al menos un documento.</p>}
-                      {tooManyRequests && (
-                        <p className="text-caption text-danger-text">
-                          Puedes enviar hasta {IMPORT_MAX_REQUESTS} solicitudes por importación. Divide el archivo o desactiva la opción y envíalas después desde la lista.
-                        </p>
-                      )}
                     </>
+                  ) : (
+                    <p className="text-caption text-text-muted">Se crearán los clientes sin enviar nada. Podrás solicitar los datos después desde la lista.</p>
                   )}
                 </div>
-              )}
+              ) : parsed.header.requestCols.size === 0 && (
+                <Alert tone="info" title="Sin solicitudes de datos">
+                  Este archivo no tiene las columnas «Solicitar …». Si quieres que los clientes completen sus datos, descarga la plantilla de nuevo, marca «Sí» en los documentos de cada cliente y vuelve a subirla.
+                </Alert>
+              ))}
 
               <div className="overflow-x-auto border border-border rounded-xl">
                 <table className="w-full text-caption">
@@ -330,6 +342,7 @@ export default function ImportClientsModal({
                       <th scope="col" className="px-3 py-2">Cliente</th>
                       <th scope="col" className="px-3 py-2">Email</th>
                       <th scope="col" className="px-3 py-2">Documento</th>
+                      {parsed.header.requestCols.size > 0 && <th scope="col" className="px-3 py-2">Solicitar</th>}
                       <th scope="col" className="px-3 py-2">Estado</th>
                     </tr>
                   </thead>
@@ -337,9 +350,9 @@ export default function ImportClientsModal({
                     {shown.slice(0, 300).map(r => {
                       const { label, cls, Icon } = STATUS[r.status];
                       const notes = [
-                        ...Object.entries(r.errors).map(([f, m]) => `${fieldLabel(f as never)}: ${m}`),
+                        ...Object.entries(r.errors).map(([f, m]) => `${fieldLabel(f as ImportField)}: ${m}`),
                         ...(r.status === 'duplicate' ? [`Coincide con ${r.duplicateOf}`] : []),
-                        ...Object.entries(r.warnings).map(([f, m]) => `${fieldLabel(f as never)}: ${m}`),
+                        ...Object.entries(r.warnings).map(([f, m]) => `${fieldLabel(f as ImportField)}: ${m}`),
                       ];
                       return (
                         <tr key={r.rowNumber} className="border-b border-border last:border-0 align-top">
@@ -348,6 +361,13 @@ export default function ImportClientsModal({
                             {r.values.company && <span className="block text-text-muted">{r.values.company}</span>}</td>
                           <td className="px-3 py-2 text-text-muted break-all">{r.values.email || '—'}</td>
                           <td className="px-3 py-2 text-text-muted whitespace-nowrap">{r.values.idNumber ? `${r.values.idType ?? ''} ${r.values.idNumber}` : '—'}</td>
+                          {parsed.header.requestCols.size > 0 && (
+                            <td className="px-3 py-2 text-text">
+                              {r.requestDocs.length
+                                ? r.requestDocs.map(id => <span key={id} className="block whitespace-nowrap">{shortDocLabel(docLabel(id) ?? { label: id })}</span>)
+                                : <span className="text-text-muted">—</span>}
+                            </td>
+                          )}
                           <td className="px-3 py-2">
                             <span className={`flex items-center gap-1 ${cls}`}><Icon size={16} aria-hidden /> {label}</span>
                             {notes.map(n => <span key={n} className="block text-text-muted mt-0.5">{n}</span>)}
@@ -441,10 +461,10 @@ export default function ImportClientsModal({
           {step === 'review' && (
             <>
               <Button variant="ghost" size="sm" className="min-h-touch sm:min-h-0" onClick={() => { setStep('pick'); setParsed(null); }}>Elegir otro archivo</Button>
-              <Button variant="accent" className="min-h-touch sm:min-h-0" disabled={toImport.length === 0 || requestBlocked} onClick={() => doImport(toImport)}>
+              <Button variant="accent" className="min-h-touch sm:min-h-0" disabled={toImport.length === 0} onClick={() => doImport(toImport)}>
                 {toImport.length === 0
                   ? 'No hay clientes para importar'
-                  : `Importar ${toImport.length} cliente${toImport.length !== 1 ? 's' : ''}${requestOn && requestTargets.length ? ` y enviar ${requestTargets.length} solicitud${requestTargets.length !== 1 ? 'es' : ''}` : ''}`}
+                  : `Importar ${toImport.length} cliente${toImport.length !== 1 ? 's' : ''}${requestTargets.length ? ` y enviar ${requestTargets.length} solicitud${requestTargets.length !== 1 ? 'es' : ''}` : ''}`}
               </Button>
             </>
           )}

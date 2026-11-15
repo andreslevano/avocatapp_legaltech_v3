@@ -6,10 +6,24 @@
 // ReDoS) and the fixed releases aren't published on npm.
 
 import { primitives } from '@/lib/tokens';
+import type { RequestableDoc } from '@/lib/data-requests/catalog';
 import {
-  fieldLabel, IMPORT_COLUMNS, IMPORT_MAX_BYTES, IMPORT_MAX_ROWS, TEMPLATE_SHEET, TEMPLATE_VERSION,
-  type ImportRow,
+  fieldLabel, IMPORT_COLUMNS, IMPORT_MAX_BYTES, IMPORT_MAX_ROWS, requestHeader, TEMPLATE_SHEET, TEMPLATE_VERSION, YES_NO,
+  type ImportField, type ImportRow,
 } from './import';
+
+/** Sheet columns: client fields with one "Solicitar <documento>" (Sí/No) column per requestable document after Email. */
+interface SheetColumn { key: string; header: string; width: number; hint: string; required?: boolean; list?: readonly string[]; request?: boolean }
+
+function sheetColumns(docs: readonly Pick<RequestableDoc, 'id' | 'label' | 'personaOnly'>[]): SheetColumn[] {
+  const fields: SheetColumn[] = IMPORT_COLUMNS.map(c => ({ key: c.field, header: c.header, width: c.width, hint: c.hint, required: c.required, list: c.list }));
+  const requests: SheetColumn[] = docs.map(d => ({
+    key: `request:${d.id}`, header: requestHeader(d), width: Math.max(16, requestHeader(d).length + 2), list: YES_NO, request: true,
+    hint: `Sí: enviaremos al cliente un enlace para completar los datos del ${d.label}${d.personaOnly ? ' (como persona física)' : ''}. Hace falta su email. Vacío o No: no se solicita.`,
+  }));
+  const at = fields.findIndex(c => c.key === 'email') + 1;
+  return [...fields.slice(0, at), ...requests, ...fields.slice(at)];
+}
 
 const argb = (hex: string) => `FF${hex.replace('#', '').toUpperCase()}`;
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -23,7 +37,8 @@ async function excel() {
 
 // ── Template ─────────────────────────────────────────────────────
 
-export async function buildTemplate(): Promise<Blob> {
+export async function buildTemplate(docs: readonly Pick<RequestableDoc, 'id' | 'label' | 'personaOnly'>[] = []): Promise<Blob> {
+  const cols = sheetColumns(docs);
   const ExcelJS = await excel();
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Avocat';
@@ -31,18 +46,19 @@ export async function buildTemplate(): Promise<Blob> {
   wb.subject = TEMPLATE_VERSION;
 
   const ws = wb.addWorksheet(TEMPLATE_SHEET, { views: [{ state: 'frozen', ySplit: 1 }] });
-  ws.columns = IMPORT_COLUMNS.map(c => ({ header: c.header, key: c.field, width: c.width, style: { numFmt: '@' } }));
+  ws.columns = cols.map(c => ({ header: c.header, key: c.key, width: c.width, style: { numFmt: '@' } }));
   const head = ws.getRow(1);
   head.height = 22;
   head.eachCell((cell, col) => {
-    const c = IMPORT_COLUMNS[col - 1];
+    const c = cols[col - 1];
     cell.font = { bold: true, color: { argb: argb(primitives['neutral-0']) } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: argb(c.required ? primitives['gold-700'] : primitives['neutral-800']) } };
+    const fill = c.required ? primitives['gold-700'] : c.request ? primitives['gold-900'] : primitives['neutral-800'];
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: argb(fill) } };
     cell.alignment = { vertical: 'middle' };
     cell.note = c.hint;
   });
   // Text format for every data cell (phones and IDs keep leading zeros / "+"), dropdowns for lists.
-  IMPORT_COLUMNS.forEach((c, i) => {
+  cols.forEach((c, i) => {
     const letter = ws.getColumn(i + 1).letter;
     for (let r = 2; r <= IMPORT_MAX_ROWS + 1; r++) {
       const cell = ws.getCell(`${letter}${r}`);
@@ -63,21 +79,22 @@ export async function buildTemplate(): Promise<Blob> {
     ['Cómo usar esta plantilla', ''],
     ['1.', `Rellena la hoja "${TEMPLATE_SHEET}": una fila por cliente, desde la fila 2.`],
     ['2.', 'Solo "Nombre" es obligatorio. Deja vacías las columnas que no necesites; puedes borrarlas o cambiarlas de orden.'],
-    ['3.', `Máximo ${IMPORT_MAX_ROWS} clientes por archivo y 2 MB.`],
+    ...(docs.length ? [['', 'Para pedir al cliente que complete sus datos, rellena su Email y marca "Sí" en las columnas "Solicitar …" de los documentos que vas a preparar (uno, varios o ninguno por cliente). Le enviaremos un enlace que caduca en 14 días.'] as [string, string]] : []),
+    ['3.', `Máximo ${IMPORT_MAX_ROWS} clientes por archivo y 2 MB. Si tienes más, usa varios archivos.`],
     ['4.', 'Sube el archivo en Clientes → Importar desde Excel. Verás una revisión antes de crear nada.'],
     ['5.', 'Los clientes que ya tienes (mismo email o mismo documento) se marcan como posibles duplicados y no se importan salvo que lo indiques.'],
     ['', ''],
     ['Columna', 'Qué poner'],
-    ...IMPORT_COLUMNS.map(c => [c.header, c.hint] as [string, string]),
+    ...cols.map(c => [c.header, c.hint] as [string, string]),
     ['', ''],
     ['Ejemplo', ''],
   ];
   lines.forEach(l => help.addRow(l));
   help.getRow(1).font = { bold: true, size: 14 };
-  help.getRow(8).font = { bold: true };
-  const exHead = help.addRow(IMPORT_COLUMNS.map(c => c.header.replace(' *', '')));
+  help.getRow(docs.length ? 9 : 8).font = { bold: true };
+  const exHead = help.addRow(cols.map(c => c.header.replace(' *', '')));
   exHead.font = { bold: true };
-  help.addRow(IMPORT_COLUMNS.map(c => c.example));
+  help.addRow(cols.map(c => c.request ? 'Sí' : IMPORT_COLUMNS.find(x => x.field === c.key)?.example ?? ''));
   help.addRow(['Ejemplo de sociedad: Tipo de cliente "Sociedad", Empresa "ACME S.L.", NIF de la empresa "B12345678" y, en Nombre, la persona que firma.']);
   help.addRow([`Versión de la plantilla: ${TEMPLATE_VERSION}`]);
 
@@ -167,24 +184,28 @@ export async function readClientFile(file: File): Promise<{ matrix: unknown[][];
 // ── Error report ─────────────────────────────────────────────────
 
 const describe = (r: ImportRow) => [
-  ...Object.entries(r.errors).map(([f, m]) => `${fieldLabel(f as never)}: ${m}`),
+  ...Object.entries(r.errors).map(([f, m]) => `${fieldLabel(f as ImportField)}: ${m}`),
   ...(r.status === 'duplicate' ? [`Posible duplicado de ${r.duplicateOf}`] : []),
 ].join(' · ');
 
 /** The rows that weren't imported, in template form + a "Motivo" column (ignored on re-import). */
-export async function buildErrorReport(rows: ImportRow[]): Promise<Blob> {
+export async function buildErrorReport(
+  rows: ImportRow[], docs: readonly Pick<RequestableDoc, 'id' | 'label' | 'personaOnly'>[] = [],
+): Promise<Blob> {
+  const cols = sheetColumns(docs);
   const ExcelJS = await excel();
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(TEMPLATE_SHEET, { views: [{ state: 'frozen', ySplit: 1 }] });
   ws.columns = [
     { header: 'Motivo', key: 'reason', width: 50 },
-    ...IMPORT_COLUMNS.map(c => ({ header: c.header, key: c.field, width: c.width, style: { numFmt: '@' } })),
+    ...cols.map(c => ({ header: c.header, key: c.key, width: c.width, style: { numFmt: '@' } })),
   ];
   ws.getRow(1).font = { bold: true };
   ws.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: argb(primitives['gold-100']) } };
   for (const r of rows) {
     // Plain strings only: a value like "=HYPERLINK(…)" stays text (no formula injection).
-    ws.addRow({ reason: `Fila ${r.rowNumber}: ${describe(r)}`, ...r.values });
+    const marks = Object.fromEntries(docs.map(d => [`request:${d.id}`, r.requestDocs.includes(d.id) ? 'Sí' : '']));
+    ws.addRow({ reason: `Fila ${r.rowNumber}: ${describe(r)}`, ...r.values, ...marks });
   }
   const buf = await wb.xlsx.writeBuffer();
   return new Blob([buf], { type: XLSX_MIME });
