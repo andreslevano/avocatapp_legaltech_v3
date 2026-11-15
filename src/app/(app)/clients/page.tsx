@@ -8,7 +8,8 @@ import { getClients, getCases, type ClientDoc, type CaseDoc } from '@/lib/firest
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import type { Timestamp } from 'firebase/firestore';
-import { Send } from 'lucide-react';
+import { FileSpreadsheet, Send } from 'lucide-react';
+import ImportClientsModal from '@/components/clients/ImportClientsModal';
 import { availableDocs, type DocId } from '@/lib/data-requests/catalog';
 import { isValidEmail } from '@/lib/data-requests/core';
 import {
@@ -46,6 +47,7 @@ export default function ClientsPage() {
   const [cases,   setCases]   = useState<CaseDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editingClient, setEditingClient] = useState<ClientDoc | null>(null);
   const [form, setForm] = useState<NewClientForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -224,9 +226,14 @@ export default function ClientsPage() {
         title="Clientes"
         subtitle={`${clients.length} cliente${clients.length !== 1 ? 's' : ''}`}
         actions={
-          <Button variant="accent" size="sm" onClick={openCreate}>
-            + Nuevo cliente
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setShowImport(true)} aria-label="Importar clientes desde Excel">
+              <FileSpreadsheet size={16} aria-hidden /> <span className="hidden sm:inline">Importar desde Excel</span>
+            </Button>
+            <Button variant="accent" size="sm" onClick={openCreate}>
+              + Nuevo cliente
+            </Button>
+          </div>
         }
       />
 
@@ -238,7 +245,12 @@ export default function ClientsPage() {
         ) : clients.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-small text-text-muted mb-4">No hay clientes registrados aún.</p>
-            <Button variant="accent" size="md" onClick={openCreate}>Añadir primer cliente</Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+              <Button variant="accent" size="md" onClick={openCreate}>Añadir primer cliente</Button>
+              <Button variant="secondary" size="md" onClick={() => setShowImport(true)}>
+                <FileSpreadsheet size={16} aria-hidden /> Importar varios desde Excel
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -450,6 +462,17 @@ export default function ClientsPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {showImport && (
+        <ImportClientsModal
+          userId={userDoc.uid}
+          existing={clients.map(c => ({ id: c.id, name: c.name, email: c.email, idType: c.idType, idNumber: c.idNumber }))}
+          linkedClientIds={new Set(cases.map(c => c.clientId).filter((id): id is string => !!id))}
+          onClose={() => setShowImport(false)}
+          onImported={created => setClients(prev => [...created, ...prev])}
+          onUndone={ids => setClients(prev => prev.filter(c => !ids.includes(c.id)))}
+        />
       )}
     </div>
   );
