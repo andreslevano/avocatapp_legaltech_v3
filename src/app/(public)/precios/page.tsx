@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import PricingExperience from '@/components/pricing/PricingExperience';
 import { checkoutAvailability, requestCountry } from '@/lib/pricing-server';
 import {
-  COUNTRIES, isProfileId, LADDER, planById, pricingFaqs, PRICES, type Interval, type ProfileId,
+  COUNTRIES, isProfileId, isTaxIncluded, LADDER, planById, pricingFaqs, PRICES, type Interval, type ProfileId,
 } from '@/lib/pricing';
 
 // Country comes from the request (cookie, headers): rendered per request.
@@ -49,7 +49,7 @@ export default function PreciosPage({ searchParams }: { searchParams: Search }) 
           eligibleRegion: { '@type': 'Country', name: c.name },
           priceSpecification: {
             '@type': 'UnitPriceSpecification', price: p.monthly, priceCurrency: c.currency,
-            unitText: 'MONTH', valueAddedTaxIncluded: !plan.b2b, ...(p.from ? { minPrice: p.monthly } : {}),
+            unitText: 'MONTH', valueAddedTaxIncluded: isTaxIncluded(id, country), ...(p.from ? { minPrice: p.monthly } : {}),
           },
         };
       }),

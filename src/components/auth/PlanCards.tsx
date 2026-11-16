@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { Check } from 'lucide-react';
 import {
-  COUNTRIES, ctaFor, formatPrice, LADDER, localize, planById, priceFor, taxLine,
+  COUNTRIES, ctaFor, displayPrice, formatPrice, LADDER, localize, planById, planTaxLine,
   type Availability, type CountryCode, type Interval, type PricingPlanId,
 } from '@/lib/pricing';
 
@@ -31,7 +31,7 @@ export default function PlanCards({ selected, onChange, country, interval, avail
       <div role="radiogroup" aria-labelledby="plan-label" className="space-y-3">
         {ids.map(id => {
           const plan = planById(id);
-          const price = priceFor(id, country, interval)!;
+          const shown = displayPrice(id, country, interval);
           const isSelected = selected === id;
           const cta = availability ? ctaFor(id, country, interval, availability) : null;
           const note = cta && cta.kind !== 'checkout'
@@ -61,9 +61,9 @@ export default function PlanCards({ selected, onChange, country, interval, avail
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="font-display font-semibold text-h3 text-text-heading">{formatPrice(country, price)}</span>
-                  <span className="text-caption text-text-muted">{interval === 'annual' ? '/año' : '/mes'}</span>
-                  <span className="block text-caption text-text-muted">{taxLine(country, plan.b2b)}</span>
+                  <span className="font-display font-semibold text-h3 text-text-heading">{formatPrice(country, shown.amount)}</span>
+                  <span className="text-caption text-text-muted">{shown.per}</span>
+                  <span className="block text-caption text-text-muted">{planTaxLine(id, country)}{shown.monthlyOnly ? ' · solo mensual' : ''}</span>
                 </div>
               </div>
             </button>

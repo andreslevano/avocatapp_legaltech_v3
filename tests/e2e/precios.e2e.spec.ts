@@ -30,8 +30,8 @@ for (const width of [375, 768, 1280]) {
 test('country switch changes currency and tax line', async ({ page }) => {
   await open(page, 'es', 1280);
   const card = page.locator('#plan-abogado');
-  await expect(card).toContainText('69 €');
-  await expect(card).toContainText('IVA no incluido');
+  await expect(card).toContainText('75 €');           // legacy Stripe price while the 69 € one is created
+  await expect(card).toContainText('IVA incluido');
   await page.getByLabel('País y moneda').selectOption('PE');
   await expect(card).toContainText('S/');
   await expect(card).toContainText('IGV no incluido');
@@ -44,8 +44,9 @@ test('country switch changes currency and tax line', async ({ page }) => {
 test('annual toggle shows 10× price', async ({ page }) => {
   await open(page, 'es', 1280);
   await page.getByRole('radio', { name: /Anual/ }).click();
-  await expect(page.locator('#plan-abogado')).toContainText('690 €');
-  await expect(page.locator('#plan-abogado')).toContainText('/año');
+  await expect(page.locator('#plan-empresa-inicial')).toContainText('1.790 €');
+  await expect(page.locator('#plan-empresa-inicial')).toContainText('/año');
+  await expect(page.locator('#plan-abogado')).toContainText('Solo facturación mensual por ahora');
   await expect(page.locator('#plan-empresa-negocio')).toContainText('4.900 €');
 });
 
@@ -123,4 +124,12 @@ test('signup ?plan=particular shows the Particular plan, not the 50 €/mes bund
   await expect(plans.getByRole('radio', { name: /Empresa Negocio/ })).toBeVisible();
   await page.goto('/signup?plan=abogado&pais=cl&periodo=anual');
   await expect(page.getByRole('radiogroup', { name: /Selecciona tu plan/ }).getByRole('radio', { checked: true })).toContainText('$399.900');
+});
+
+test('clicking a plan without a Stripe price shows the "muy pronto" message and the email field', async ({ page }) => {
+  await open(page, 'es', 1280);
+  const card = page.locator('#plan-particular');
+  await card.getByRole('button', { name: 'Avísame cuando esté disponible' }).click();
+  await expect(card.getByRole('status')).toContainText('El plan Particular estará disponible muy pronto');
+  await expect(card.getByRole('textbox')).toBeVisible();
 });

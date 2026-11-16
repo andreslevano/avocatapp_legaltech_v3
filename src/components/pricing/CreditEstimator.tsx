@@ -4,7 +4,7 @@
 // currency. Deterministic, client-side, keyboard accessible (labelled number inputs, live result).
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { estimate, formatNumber, formatPrice, planById, PRICES, taxLine, type CountryCode } from '@/lib/pricing';
+import { estimate, formatNumber, formatPrice, planById, planTaxLine, PRICES, type CountryCode } from '@/lib/pricing';
 import { trackPricing } from '@/lib/pricing-analytics';
 
 const FIELDS = [
@@ -50,7 +50,7 @@ export default function CreditEstimator({ country }: { country: CountryCode }) {
         <p className="mt-3 text-caption text-text-muted">Te recomendamos</p>
         <p className="text-h4 font-sans font-semibold text-text-heading">{plan.name}</p>
         <p className="text-small text-text">
-          {price.from ? 'Desde ' : ''}{formatPrice(country, price.monthly)}/mes · {taxLine(country, plan.b2b)}
+          {price.from ? 'Desde ' : ''}{formatPrice(country, price.monthly)}/mes · {planTaxLine(r.planId, country)}
         </p>
         <Button href={`#plan-${r.planId}`} variant="secondary" size="sm" className="mt-4"
           onClick={() => trackPricing('pricing_cta_click', { country, plan: r.planId, interval: 'monthly', kind: 'estimator' })}>

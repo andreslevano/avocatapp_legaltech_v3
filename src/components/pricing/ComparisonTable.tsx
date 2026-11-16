@@ -6,7 +6,7 @@
 import { useMemo, useState } from 'react';
 import { Check, ChevronDown, Minus } from 'lucide-react';
 import {
-  COMPARISON, formatPrice, LADDER, localize, planById, priceFor, PRICES, taxLine,
+  COMPARISON, displayPrice, formatPrice, LADDER, localize, planById, planTaxLine, PRICES,
   type Cell, type ComparisonRow, type CountryCode, type Interval, type PricingPlanId,
 } from '@/lib/pricing';
 import StatusChip from './StatusChip';
@@ -17,9 +17,8 @@ function Value({ row, plan, country, interval }: { row: ComparisonRow; plan: Pri
   const v: Cell = row.values[plan];
   if (row.id === 'precio') {
     const p = PRICES[country][plan];
-    const amount = priceFor(plan, country, interval) ?? p.monthly;
-    const per = interval === 'annual' && p.annual !== null ? '/año' : '/mes';
-    return <span>{p.from ? 'Desde ' : ''}{formatPrice(country, amount)}{per}<span className="block text-caption text-text-muted">{taxLine(country, planById(plan).b2b)}</span></span>;
+    const d = displayPrice(plan, country, interval);
+    return <span>{p.from ? 'Desde ' : ''}{formatPrice(country, d.amount)}{d.per}<span className="block text-caption text-text-muted">{planTaxLine(plan, country)}{d.monthlyOnly ? ' · solo mensual' : ''}</span></span>;
   }
   if (v === true) return <><Check size={18} aria-hidden className="inline text-success-text" /><span className="sr-only">Incluido</span></>;
   if (v === false) return <><Minus size={18} aria-hidden className="inline text-text-muted" /><span className="sr-only">No incluido</span></>;

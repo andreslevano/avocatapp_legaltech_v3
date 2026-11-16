@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
-  COUNTRIES, creditEquivalents, ctaFor, formatNumber, formatPrice, localize, priceFor, sendsLabel, SIGNATURE, taxLine,
+  COUNTRIES, creditEquivalents, ctaFor, displayPrice, formatNumber, formatPrice, localize, planTaxLine, priceFor, SELLABLE_NOW, sendsLabel, SIGNATURE,
   type Availability, type CountryCode, type Interval, type PricingPlan,
 } from '@/lib/pricing';
 import { trackPricing } from '@/lib/pricing-analytics';
@@ -17,7 +17,7 @@ interface Props { plan: PricingPlan; country: CountryCode; interval: Interval; a
 
 export default function PlanCard({ plan, country, interval, availability }: Props) {
   const [waitlist, setWaitlist] = useState(false);
-  const price = priceFor(plan.id, country, interval);
+  const shown = displayPrice(plan.id, country, interval);
   const monthly = priceFor(plan.id, country, 'monthly')!;
   const cta = ctaFor(plan.id, country, interval, availability);
   const credits = plan.creditsPerMonth;
@@ -41,12 +41,13 @@ export default function PlanCard({ plan, country, interval, availability }: Prop
 
       <div className="mt-4">
         <p className="flex items-baseline gap-1">
-          <span className="font-display text-h2 text-text-heading">{formatPrice(country, price ?? monthly)}</span>
-          <span className="text-small text-text-muted">{interval === 'annual' ? '/año' : '/mes'}</span>
+          <span className="font-display text-h2 text-text-heading">{formatPrice(country, shown.amount)}</span>
+          <span className="text-small text-text-muted">{shown.per}</span>
         </p>
         <p className="text-caption text-text-muted">
-          {taxLine(country, plan.b2b)}
-          {interval === 'annual' && <> · 2 meses gratis ({formatPrice(country, monthly)}/mes en mensual)</>}
+          {planTaxLine(plan.id, country)}
+          {interval === 'annual' && !shown.monthlyOnly && <> · 2 meses gratis ({formatPrice(country, monthly)}/mes en mensual)</>}
+          {shown.monthlyOnly && <> · Solo facturación mensual por ahora</>}
         </p>
       </div>
 
@@ -74,14 +75,24 @@ export default function PlanCard({ plan, country, interval, availability }: Prop
 
       <div className="mt-3">
         {waitlist ? (
-          <WaitlistForm country={country} plan={plan.id} />
+          <div role="status" className="space-y-2">
+            <p className="text-small text-text">
+              <strong className="font-semibold">El plan {plan.name} estará disponible muy pronto.</strong>{' '}
+              {SELLABLE_NOW.includes(country)
+                ? 'Estamos terminando de preparar los pagos. Déjanos tu email y te avisamos en cuanto puedas contratarlo.'
+                : `Todavía no se puede contratar en ${COUNTRIES[country].name}. Déjanos tu email y te avisamos cuando abramos.`}
+            </p>
+            <WaitlistForm country={country} plan={plan.id} compact />
+          </div>
         ) : cta.kind === 'waitlist' ? (
           <Button variant={featured ? 'accent' : 'secondary'} block onClick={onCta} aria-expanded={false}>{cta.label}</Button>
         ) : (
           <Button href={cta.href} variant={featured ? 'accent' : 'secondary'} block onClick={onCta}>{cta.label}</Button>
         )}
         {cta.kind === 'waitlist' && !waitlist && (
-          <p className="mt-2 text-caption text-text-muted">Aún no se puede contratar en {COUNTRIES[country].name}.</p>
+          <p className="mt-2 text-caption text-text-muted">
+            {SELLABLE_NOW.includes(country) ? 'Disponible muy pronto.' : `Aún no se puede contratar en ${COUNTRIES[country].name}.`}
+          </p>
         )}
       </div>
     </article>

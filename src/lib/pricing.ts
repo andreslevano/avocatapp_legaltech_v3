@@ -132,16 +132,26 @@ export const planById = (id: PricingPlanId) => PRICING_PLANS.find(p => p.id === 
 
 export interface PlanPrice {
   monthly: number;
-  /** = 10 × monthly ("2 meses gratis"); null for a Medida (contract). */
+  /** = 10 × monthly ("2 meses gratis"); null = not offered (a Medida: contract; or monthly only). */
   annual: number | null;
   /** "desde …/mes" (a Medida). */
   from?: boolean;
+  /** Overrides the plan's B2B/B2C tax display for this country (see ABOGADO_ES_LEGACY). */
+  taxIncluded?: boolean;
 }
 
 const m = (monthly: number): PlanPrice => ({ monthly, annual: Math.round(monthly * 10 * 100) / 100 });
 
+/**
+ * TEMPORARY (until the new Abogado price exists in Stripe): Spain shows the price Stripe charges
+ * today — the legacy 75 €/mes subscription (SUBSCRIPTION_PRICE_IDS.Abogados, IVA incluido, monthly
+ * only). STRIPE_PRICE_ABOGADO_ES_M points at that legacy price meanwhile. When the 69 € (IVA no
+ * incluido) prices are created: set `abogado: m(69)` here and update STRIPE_PRICE_ABOGADO_ES_M/_Y.
+ */
+export const ABOGADO_ES_LEGACY: PlanPrice = { monthly: 75, annual: null, taxIncluded: true };
+
 export const PRICES: Record<CountryCode, Record<PricingPlanId, PlanPrice>> = {
-  ES: { estudiante: m(6.9), particular: m(9.9), abogado: m(69), 'empresa-inicial': m(179), 'empresa-negocio': m(490), 'empresa-medida': { monthly: 1200, annual: null, from: true } },
+  ES: { estudiante: m(6.9), particular: m(9.9), abogado: ABOGADO_ES_LEGACY, 'empresa-inicial': m(179), 'empresa-negocio': m(490), 'empresa-medida': { monthly: 1200, annual: null, from: true } },
   CL: { estudiante: m(4990), particular: m(6990), abogado: m(39990), 'empresa-inicial': m(104990), 'empresa-negocio': m(289990), 'empresa-medida': { monthly: 690000, annual: null, from: true } },
   MX: { estudiante: m(99), particular: m(149), abogado: m(699), 'empresa-inicial': m(1790), 'empresa-negocio': m(4990), 'empresa-medida': { monthly: 12000, annual: null, from: true } },
   CO: { estudiante: m(14900), particular: m(24900), abogado: m(119000), 'empresa-inicial': m(309000), 'empresa-negocio': m(849000), 'empresa-medida': { monthly: 2100000, annual: null, from: true } },
@@ -165,7 +175,9 @@ export function allStripeEnvNames(): { name: string; plan: string; country: Coun
       if (!p.stripeKey) continue;
       for (const i of ['monthly', 'annual'] as Interval[]) {
         const pr = PRICES[c][p.id];
-        out.push({ name: stripeEnvName(p, c, i)!, plan: p.name, country: c, interval: i, amount: i === 'monthly' ? pr.monthly : pr.annual!, currency: COUNTRIES[c].currency, taxIncluded: !p.b2b });
+        const amount = i === 'monthly' ? pr.monthly : pr.annual;
+        if (amount === null) continue;   // not offered (e.g. Abogado ES annual while on the legacy price)
+        out.push({ name: stripeEnvName(p, c, i)!, plan: p.name, country: c, interval: i, amount, currency: COUNTRIES[c].currency, taxIncluded: isTaxIncluded(p.id, c) });
       }
     }
     out.push({ name: packEnvName(c), plan: `Pack ${PACK_CREDITS} créditos`, country: c, interval: 'once', amount: PACK_PRICES[c], currency: COUNTRIES[c].currency, taxIncluded: true });
@@ -196,6 +208,22 @@ export function taxLine(country: CountryCode, b2b: boolean): string {
   return `${COUNTRIES[country].taxName} ${b2b ? 'no incluido' : 'incluido'}`;
 }
 
+/** Whether the price shown includes tax: the plan's B2C/B2B rule unless the country price overrides it. */
+export function isTaxIncluded(planId: PricingPlanId, country: CountryCode): boolean {
+  return PRICES[country][planId].taxIncluded ?? !planById(planId).b2b;
+}
+export const planTaxLine = (planId: PricingPlanId, country: CountryCode) => taxLine(country, !isTaxIncluded(planId, country));
+
+/** Annual billing offered for this plan here (a Medida and monthly-only prices: no). */
+export const hasAnnual = (planId: PricingPlanId, country: CountryCode) => PRICES[country][planId].annual !== null;
+
+/** What to print: the annual price when chosen and offered, else the monthly one. */
+export function displayPrice(planId: PricingPlanId, country: CountryCode, interval: Interval): { amount: number; per: '/mes' | '/año'; monthlyOnly: boolean } {
+  const p = PRICES[country][planId];
+  if (interval === 'annual' && p.annual !== null) return { amount: p.annual, per: '/año', monthlyOnly: false };
+  return { amount: p.monthly, per: '/mes', monthlyOnly: interval === 'annual' && !p.from };
+}
+
 export function priceFor(planId: PricingPlanId, country: CountryCode, interval: Interval): number | null {
   const p = PRICES[country][planId];
   return interval === 'monthly' ? p.monthly : p.annual;
@@ -203,9 +231,8 @@ export function priceFor(planId: PricingPlanId, country: CountryCode, interval: 
 
 /** Monthly-equivalent price net of tax (B2C prices include tax; B2B don't). */
 export function netMonthly(planId: PricingPlanId, country: CountryCode): number {
-  const p = planById(planId);
   const gross = PRICES[country][planId].monthly;
-  return p.b2b ? gross : gross / (1 + COUNTRIES[country].taxRate);
+  return isTaxIncluded(planId, country) ? gross / (1 + COUNTRIES[country].taxRate) : gross;
 }
 
 /** Net price per credit (monthly billing). null when credits are by contract. */
@@ -574,6 +601,7 @@ export function ctaFor(planId: PricingPlanId, country: CountryCode, interval: In
   const plan = planById(planId);
   const contact = (label: string) => ({ kind: 'contact' as const, label, href: `/contacto?motivo=empresa&plan=${planId}&pais=${country.toLowerCase()}` });
   if (plan.contactOnly) return contact('Hablar con ventas');
+  if (interval === 'annual' && !hasAnnual(planId, country)) interval = 'monthly';
   const ok = a.plans[country]?.[planId]?.[interval];
   if (ok) {
     const label = plan.trialDays ? `Probar ${plan.trialDays} días gratis` : plan.profile === 'empresa' ? 'Contratar' : 'Empezar';

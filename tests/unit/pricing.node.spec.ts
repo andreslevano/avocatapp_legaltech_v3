@@ -12,6 +12,8 @@ test('annual = 10 × monthly on every plan and country (a Medida: contract)', ()
   for (const c of COUNTRY_ORDER) for (const id of LADDER) {
     const p = PRICES[c][id];
     if (id === 'empresa-medida') { expect(p.annual).toBeNull(); expect(p.from).toBe(true); continue; }
+    // Temporary: Abogado ES on the legacy 75 €/mes Stripe price (monthly only, IVA incluido).
+    if (c === 'ES' && id === 'abogado') { expect(p).toMatchObject({ monthly: 75, annual: null, taxIncluded: true }); continue; }
     expect(p.annual).toBeCloseTo(p.monthly * 10, 6);
   }
 });
@@ -67,7 +69,8 @@ test('estimator: deterministic recommendation', () => {
 
 test('Stripe env names: plan × country × interval + packs, never invented ids', () => {
   const env = allStripeEnvNames();
-  expect(env).toHaveLength(5 * (5 * 2 + 1));
+  expect(env).toHaveLength(5 * (5 * 2 + 1) - 1);   // no Abogado ES annual while on the legacy price
+  expect(env.find(e => e.name === 'STRIPE_PRICE_ABOGADO_ES_M')).toMatchObject({ amount: 75, taxIncluded: true });
   expect(env.map(e => e.name)).toContain('STRIPE_PRICE_ABOGADO_ES_M');
   expect(env.map(e => e.name)).toContain('STRIPE_PRICE_PACK30_PE');
   expect(env.find(e => e.name === 'STRIPE_PRICE_EMPRESA_NEGOCIO_CL_Y')).toMatchObject({ amount: 2899900, currency: 'CLP', taxIncluded: false });
@@ -79,7 +82,7 @@ test('params and legacy plans.ts exports', () => {
   expect(pricingPlanFromParam('negocio')).toBe('empresa-negocio');
   expect(planFromParam('empresa-negocio')).toBe('Abogados');
   expect(planFromParam('particular')).toBe('Autoservicio');
-  expect(PLANS.abogados).toMatchObject({ price: 69, unit: '/mes', taxIncluded: false });
+  expect(PLANS.abogados).toMatchObject({ price: 75, unit: '/mes', taxIncluded: true });
   expect(PLANS.particulares).toMatchObject({ price: 9.9, taxIncluded: true });
 });
 
@@ -129,4 +132,14 @@ test.describe('availability, CTA and country', () => {
     expect(resolveCountryFrom({ headers: { 'accept-language': 'fr-FR' } })).toBe('ES');
     expect(resolveCountryFrom({})).toBe('ES');
   });
+});
+
+test('legacy Abogado ES: tax line, monthly only, annual CTA buys monthly', () => {
+  const { planTaxLine, displayPrice, ctaFor, availabilityFrom } = require('@/lib/pricing') as typeof import('@/lib/pricing');
+  expect(planTaxLine('abogado', 'ES')).toBe('IVA incluido');
+  expect(planTaxLine('abogado', 'CL')).toBe('IVA no incluido');
+  expect(displayPrice('abogado', 'ES', 'annual')).toEqual({ amount: 75, per: '/mes', monthlyOnly: true });
+  expect(displayPrice('abogado', 'CL', 'annual')).toEqual({ amount: 399900, per: '/año', monthlyOnly: false });
+  const a = availabilityFrom({ STRIPE_PRICE_ABOGADO_ES_M: 'price_legacy' });
+  expect(ctaFor('abogado', 'ES', 'annual', a)).toMatchObject({ kind: 'checkout', href: '/signup?plan=abogado&pais=es&periodo=mensual' });
 });

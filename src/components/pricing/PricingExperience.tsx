@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, FileSignature, Mail, ShieldCheck, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
-  COUNTRIES, COUNTRY_COOKIE, ctaFor, formatPrice, LADDER, localize, PACK_CREDITS, PACK_PRICES, planById, PRICES, PRICING_PLANS,
+  COUNTRIES, COUNTRY_COOKIE, ctaFor, displayPrice, formatPrice, planTaxLine, LADDER, localize, PACK_CREDITS, PACK_PRICES, planById, PRICES, PRICING_PLANS,
   PROFILES, pricingFaqs, SIGNATURE, sendsLabel, taxLine, WELCOME_CREDITS, isProfileId,
   type Availability, type CountryCode, type Interval, type PricingPlanId, type ProfileId,
 } from '@/lib/pricing';
@@ -315,7 +315,6 @@ export default function PricingExperience({ initialCountry, initialProfile, init
 
 /** "69 €/mes · IVA no incluido" for the profile aside. */
 function priceLine(id: PricingPlanId, country: CountryCode, interval: Interval): string {
-  const { monthly, annual, from } = PRICES[country][id];
-  const yearly = interval === 'annual' && annual !== null;
-  return `${from ? 'Desde ' : ''}${formatPrice(country, yearly ? annual : monthly)}${yearly ? '/año' : '/mes'} · ${taxLine(country, planById(id).b2b)}`;
+  const d = displayPrice(id, country, interval);
+  return `${PRICES[country][id].from ? 'Desde ' : ''}${formatPrice(country, d.amount)}${d.per} · ${planTaxLine(id, country)}`;
 }

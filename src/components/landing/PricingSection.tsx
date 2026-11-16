@@ -9,7 +9,7 @@ import { ArrowRight, Check } from 'lucide-react';
 import AnimatedSection from './AnimatedSection';
 import { buttonClasses } from '@/components/ui/Button';
 import {
-  COUNTRY_COOKIE, formatNumber, formatPrice, localize, planById, PRICES, resolveCountryFrom, taxLine,
+  COUNTRY_COOKIE, formatNumber, formatPrice, localize, planById, planTaxLine, PRICES, resolveCountryFrom,
   type CountryCode, type PricingPlanId,
 } from '@/lib/pricing';
 
@@ -56,7 +56,7 @@ export default function PricingSection() {
                     <span className="font-display text-h1 text-text-heading">{formatPrice(country, price)}</span>
                     <span className="text-small text-text-muted">/mes</span>
                   </p>
-                  <p className="text-caption text-text-muted">{taxLine(country, plan.b2b)}</p>
+                  <p className="text-caption text-text-muted">{planTaxLine(c.plan, country)}</p>
                   <p className="text-body-sm text-text-muted mt-2">{localize(c.from ? 'Despachos y empresas con área legal, de 3 a 25 personas o más.' : plan.forWho, country)}</p>
                   <ul className="space-y-2.5 my-6 flex-1">
                     <li className="flex items-start gap-2 text-body-sm text-text">

@@ -2,7 +2,7 @@
 // reads pricing.ts directly. Firestore stores the legacy plan names
 // (`UserPlan`): 'Abogados' | 'Autoservicio' | 'Estudiantes' — never change those values.
 import { SUBSCRIPTION_PRICE_IDS } from './subscription-prices';
-import { planById, PRICES, TRIAL_DAYS } from './pricing';
+import { isTaxIncluded, planById, PRICES, TRIAL_DAYS } from './pricing';
 
 export type PlanId = 'abogados' | 'particulares' | 'estudiantes';
 export type { StoredPlan } from './pricing';
@@ -32,10 +32,10 @@ const ABO = es('abogado'), PAR = es('particular'), EST = es('estudiante');
 
 export const PLANS: Record<PlanId, PlanDef> = {
   abogados: {
-    id: 'abogados', stored: 'Abogados', name: ABO.plan.name, price: ABO.price, unit: '/mes', taxIncluded: false,
+    id: 'abogados', stored: 'Abogados', name: ABO.plan.name, price: ABO.price, unit: '/mes', taxIncluded: isTaxIncluded('abogado', 'ES'),
     forWho: ABO.plan.forWho, features: ABO.plan.features,
     cta: `Probar ${TRIAL_DAYS} días gratis`, ctaHref: '/signup?plan=abogado',
-    fine: `IVA no incluido. ${TRIAL_DAYS} días gratis. Cancela cuando quieras.`,
+    fine: `IVA ${isTaxIncluded('abogado', 'ES') ? 'incluido' : 'no incluido'}. ${TRIAL_DAYS} días gratis. Cancela cuando quieras.`,
     featured: true, stripePriceId: SUBSCRIPTION_PRICE_IDS.Abogados,
   },
   particulares: {
