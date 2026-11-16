@@ -14,24 +14,22 @@ import { X } from 'lucide-react';
 
 // ── Plan metadata ──────────────────────────────────────────────────
 
-const PLAN_META: Record<UserPlan, { label: string; price: string; desc: string; color: string; bg: string }> = {
+// No price here: what each subscriber pays depends on when they subscribed (legacy vs Precios v4).
+const PLAN_META: Record<UserPlan, { label: string; desc: string; color: string; bg: string }> = {
   Abogados: {
     label: 'Plan Abogados',
-    price: '€75 / mes',
     desc:  'Dashboard, casos, clientes y agente IA profesional',
     color: 'text-accent-text',
     bg:    'bg-accent-subtle border-accent-border',
   },
   Estudiantes: {
     label: 'Plan Estudiantes',
-    price: '€3 / escrito',
     desc:  'Tutor socrático, plantillas y material jurídico',
     color: 'text-info-text',
     bg:    'bg-info-subtle border-status-en-revision-border',
   },
   Autoservicio: {
     label: 'Plan Particular',
-    price: '€50 / mes',
     desc:  'Asistente legal en lenguaje claro, sin tecnicismos',
     color: 'text-success-text',
     bg:    'bg-success-subtle border-status-a-tiempo-border',
@@ -172,7 +170,7 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
         <div className={`mx-4 my-3 px-3.5 py-3 rounded-xl border ${planMeta.bg}`}>
           <div className="flex items-center justify-between mb-1">
             <span className={`text-caption font-sans font-semibold ${planMeta.color}`}>{planMeta.label}</span>
-            <span className={`text-caption font-display font-semibold ${planMeta.color}`}>{planMeta.price}</span>
+            <Link href="/precios" className="text-caption text-accent-text hover:underline">Planes y precios</Link>
           </div>
           <p className="text-caption text-text-muted leading-snug">{planMeta.desc}</p>
         </div>

@@ -1,84 +1,64 @@
-// Single pricing source (DS v4 — design-system/v4/components/PlanCard.md). Home, product pages,
-// signup and the navbar read prices ONLY from here. Firestore stores the legacy plan names
+// Legacy pricing exports, now derived from the Precios v4 catalogue (src/lib/pricing.ts) — new code
+// reads pricing.ts directly. Firestore stores the legacy plan names
 // (`UserPlan`): 'Abogados' | 'Autoservicio' | 'Estudiantes' — never change those values.
 import { SUBSCRIPTION_PRICE_IDS } from './subscription-prices';
+import { planById, PRICES, TRIAL_DAYS } from './pricing';
 
 export type PlanId = 'abogados' | 'particulares' | 'estudiantes';
-export type StoredPlan = 'Abogados' | 'Autoservicio' | 'Estudiantes';
+export type { StoredPlan } from './pricing';
+import type { StoredPlan } from './pricing';
 
 export interface PlanDef {
   id: PlanId;
   stored: StoredPlan;
   name: string;
-  /** Amount in euros, IVA included. */
+  /** Spain, monthly. B2C plans: IVA included; Abogado: IVA not included (see taxIncluded). */
   price: number;
   unit: '/mes' | '/escrito';
+  taxIncluded: boolean;
   forWho: string;
   features: string[];
   cta: string;
   ctaHref: string;
   fine: string;
   featured: boolean;
+  /** Legacy Stripe price (existing subscribers / old checkout). New checkout: /api/checkout + env ids. */
   stripePriceId: string | null;
 }
 
+// Precios v4: derived from the catalogue (src/lib/pricing.ts), Spain, monthly billing.
+const es = (id: Parameters<typeof planById>[0]) => ({ plan: planById(id), price: PRICES.ES[id].monthly });
+const ABO = es('abogado'), PAR = es('particular'), EST = es('estudiante');
+
 export const PLANS: Record<PlanId, PlanDef> = {
   abogados: {
-    id: 'abogados',
-    stored: 'Abogados',
-    name: 'Abogados',
-    price: 75,
-    unit: '/mes',
-    forWho: 'Despachos y abogados en ejercicio.',
-    features: ['Agente IA con contexto de cada caso', 'Casos, plazos y clientes', 'Repositorio de documentos', 'Panel de indicadores'],
-    cta: 'Probar 14 días gratis',
-    ctaHref: '/signup?plan=abogados',
-    // TODO(ds-v4): confirm the Stripe price has a 14-day trial; signup sends Abogados to checkout (card required).
-    fine: '14 días gratis. Cancela cuando quieras.',
-    featured: true,
-    stripePriceId: SUBSCRIPTION_PRICE_IDS.Abogados,
+    id: 'abogados', stored: 'Abogados', name: ABO.plan.name, price: ABO.price, unit: '/mes', taxIncluded: false,
+    forWho: ABO.plan.forWho, features: ABO.plan.features,
+    cta: `Probar ${TRIAL_DAYS} días gratis`, ctaHref: '/signup?plan=abogado',
+    fine: `IVA no incluido. ${TRIAL_DAYS} días gratis. Cancela cuando quieras.`,
+    featured: true, stripePriceId: SUBSCRIPTION_PRICE_IDS.Abogados,
   },
   particulares: {
-    id: 'particulares',
-    stored: 'Autoservicio',
-    name: 'Particulares',
-    price: 10,
-    unit: '/escrito',
-    forWho: 'Reclama sin abogado cuando la ley lo permite.',
-    features: ['Reclamación de cantidad (España)', 'Acción de tutela (Colombia)', 'Lenguaje claro, paso a paso', 'Descarga en Word y PDF'],
-    cta: 'Crear mi escrito',
-    ctaHref: '/signup?plan=particulares',
-    fine: 'Pago único por escrito. Sin suscripción.',
-    featured: false,
-    // TODO(ds-v4): no per-document Stripe price id found in the code (ReclamacionProcess uses the placeholder
-    // 'price_reclamacion_cantidades'). Signup still uses the legacy 50 €/mes subscription price —
-    // see PARTICULARES_LEGACY_BUNDLE below.
-    stripePriceId: null,
+    id: 'particulares', stored: 'Autoservicio', name: PAR.plan.name, price: PAR.price, unit: '/mes', taxIncluded: true,
+    forWho: PAR.plan.forWho, features: PAR.plan.features,
+    cta: 'Empezar', ctaHref: '/signup?plan=particular',
+    fine: 'IVA incluido. Cancela cuando quieras.',
+    featured: false, stripePriceId: null,
   },
   estudiantes: {
-    id: 'estudiantes',
-    stored: 'Estudiantes',
-    name: 'Estudiantes',
-    price: 3,
-    unit: '/escrito',
-    forWho: 'Grado y máster en Derecho.',
-    features: ['Tutor socrático', 'Plantillas comentadas', '8 áreas del Derecho'],
-    cta: 'Empezar a practicar',
-    ctaHref: '/signup?plan=estudiantes',
-    fine: 'Pago único por escrito.',
-    featured: false,
-    // TODO(ds-v4): no Stripe price id for Estudiantes in the code.
-    stripePriceId: null,
+    id: 'estudiantes', stored: 'Estudiantes', name: EST.plan.name, price: EST.price, unit: '/mes', taxIncluded: true,
+    forWho: EST.plan.forWho, features: EST.plan.features,
+    cta: 'Empezar a practicar', ctaHref: '/signup?plan=estudiante',
+    fine: 'IVA incluido. Con email universitario verificado.',
+    featured: false, stripePriceId: null,
   },
 };
 
 export const PLAN_ORDER: PlanId[] = ['abogados', 'particulares', 'estudiantes'];
 
 /**
- * The 50 €/mes · 100 créditos bundle is no longer advertised on public pages (DS v4 default), but its
- * Stripe path is untouched: signup still opens this subscription checkout for Particulares.
- * TODO(ds-v4): business decision — retire it (and switch signup to pay-per-document) or keep it as an
- * in-app "Bono Particulares". Until then signup shows this price so users see what they will be charged.
+ * Legacy Autoservicio subscription (100 créditos/mes, old price). Precios v4: no longer sold to new signups
+ * (D7); kept so existing subscribers' renewals (webhook: 100 credits per cycle) keep working.
  */
 export const PARTICULARES_LEGACY_BUNDLE = {
   price: 50,
@@ -96,10 +76,11 @@ export const PLAN_DASHBOARDS: Record<StoredPlan, string> = {
   Autoservicio: '/agent',
 };
 
-/** `?plan=` values accepted by signup: v4 ids plus the legacy ones. */
+/** `?plan=` values accepted by signup: v4 ids plus the legacy ones (Empresa plans are stored as Abogados). */
 export function planFromParam(param: string | null | undefined): StoredPlan | undefined {
   switch ((param ?? '').toLowerCase()) {
-    case 'abogados': case 'abogado': return 'Abogados';
+    case 'abogados': case 'abogado':
+    case 'empresa': case 'empresa-inicial': case 'empresa-negocio': case 'empresa-medida': return 'Abogados';
     case 'particulares': case 'particular': case 'autoservicio': return 'Autoservicio';
     case 'estudiantes': case 'estudiante': return 'Estudiantes';
     default: return undefined;
@@ -110,7 +91,7 @@ export function planByStored(stored: StoredPlan): PlanDef {
   return Object.values(PLANS).find(p => p.stored === stored)!;
 }
 
-/** "75 €", "3,50 €" — Spanish format, space before the euro sign. */
+/** "69 €", "6,90 €" — Spanish format, space before the euro sign (Spain only; see pricing.formatPrice). */
 export function formatEuro(amount: number): string {
   const n = Number.isInteger(amount)
     ? amount.toLocaleString('es-ES')

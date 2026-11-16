@@ -36,24 +36,22 @@ const SPECIALTIES = [
   'Otra',
 ];
 
-const PLAN_META: Record<string, { label: string; price: string; color: string; bg: string; border: string }> = {
+// No price here: what each subscriber pays depends on when they subscribed (legacy vs Precios v4).
+const PLAN_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
   Abogados: {
     label: 'Plan Abogados',
-    price: '€75 / mes',
     color: 'text-accent-text',
     bg: 'bg-accent-subtle',
     border: 'border-accent-border',
   },
   Estudiantes: {
     label: 'Plan Estudiantes',
-    price: '€3 / escrito',
     color: 'text-info-text',
     bg: 'bg-info-subtle',
     border: 'border-status-en-revision-border',
   },
   Autoservicio: {
     label: 'Plan Particular',
-    price: '€50 / mes',
     color: 'text-success-text',
     bg: 'bg-success-subtle',
     border: 'border-status-a-tiempo-border',
@@ -271,9 +269,7 @@ export default function ProfilePage() {
               <span className={`text-caption font-sans font-semibold ${planMeta.color}`}>
                 {planMeta.label}
               </span>
-              <span className={`text-caption font-display font-semibold ${planMeta.color}`}>
-                {planMeta.price}
-              </span>
+              <a href="/precios" className="text-caption text-accent-text hover:underline">Planes y precios</a>
             </div>
           )}
         </div>
@@ -282,7 +278,7 @@ export default function ProfilePage() {
         {planMeta && (
           <div className={`sm:hidden ${planMeta.bg} border ${planMeta.border} rounded-xl px-4 py-3 mb-4 flex items-center justify-between`}>
             <span className={`text-caption font-sans font-semibold ${planMeta.color}`}>{planMeta.label}</span>
-            <span className={`text-caption font-display font-semibold ${planMeta.color}`}>{planMeta.price}</span>
+            <a href="/precios" className="text-caption text-accent-text hover:underline">Planes y precios</a>
           </div>
         )}
 

@@ -14,7 +14,10 @@ import DocumentWizard, { type WizardStep } from '@/components/wizard/DocumentWiz
 import FileDropzone from '@/components/wizard/FileDropzone';
 import DocumentPreview, { Mark } from '@/components/wizard/DocumentPreview';
 import AIJobProgress from '@/components/wizard/AIJobProgress';
-import { PLANS, formatEuro } from '@/lib/plans';
+import { formatEuro } from '@/lib/plans';
+
+/** One-off price of the reclamación de cantidades document (legacy product, unchanged by Precios v4). */
+const RECLAMACION_PRICE_EUR = 10;
 
 interface ReclamacionProcessProps {
   userId?: string;
@@ -369,8 +372,8 @@ export default function ReclamacionProcessSimple({ userId, userEmail }: Reclamac
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // Charged amount unchanged (cents). TODO(ds-v4): derive from PLANS.particulares.price once Stripe uses a price id.
-          items: [{ name: 'Reclamación de Cantidades', price: 1000, quantity: 1 }],
+          // One-off reclamación product (not a plan): charged amount unchanged, in cents.
+          items: [{ name: 'Reclamación de Cantidades', price: RECLAMACION_PRICE_EUR * 100, quantity: 1 }],
           documentType: 'reclamacion_cantidades',
           caseId: reclId,
           uid: userId,
@@ -477,7 +480,7 @@ export default function ReclamacionProcessSimple({ userId, userEmail }: Reclamac
   };
 
   const requiredCount = DOCUMENT_CATEGORIES.filter(cat => cat.required).length;
-  const price = formatEuro(PLANS.particulares.price);
+  const price = formatEuro(RECLAMACION_PRICE_EUR);
   const f = reclamacionFormData;
 
   const datosStep: WizardStep = {
