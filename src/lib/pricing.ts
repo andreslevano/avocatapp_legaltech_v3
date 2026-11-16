@@ -537,3 +537,62 @@ export function pricingPlanFromParam(param: string | null | undefined): PricingP
 
 export const PROFILE_ORDER: ProfileId[] = ['estudiante', 'particular', 'abogado', 'empresa'];
 export const isProfileId = (v: unknown): v is ProfileId => typeof v === 'string' && (PROFILE_ORDER as string[]).includes(v);
+
+// ── Availability & CTA (D6, D7) — pure; env read in src/lib/pricing-server.ts ─
+
+/** Which plan × interval can be bought now in each country (true = its Stripe env id is set). */
+export interface Availability {
+  plans: Record<CountryCode, Partial<Record<PricingPlanId, { monthly: boolean; annual: boolean }>>>;
+  pack: Record<CountryCode, boolean>;
+  signatureLive: boolean;
+}
+
+/** Availability from an env map (process.env on the server). */
+export function availabilityFrom(env: Record<string, string | undefined>): Availability {
+  const has = (n: string | null) => !!(n && env[n]?.trim().startsWith('price_'));
+  const plans = {} as Availability['plans'];
+  const pack = {} as Availability['pack'];
+  for (const c of COUNTRY_ORDER) {
+    plans[c] = {};
+    for (const p of PRICING_PLANS) {
+      if (!p.stripeKey) continue;
+      plans[c][p.id] = { monthly: has(stripeEnvName(p, c, 'monthly')), annual: has(stripeEnvName(p, c, 'annual')) };
+    }
+    pack[c] = has(packEnvName(c));
+  }
+  return { plans, pack, signatureLive: env.SIGNATURE_PROVIDER_LIVE === 'true' };
+}
+
+export type CtaKind = 'checkout' | 'waitlist' | 'contact';
+export interface Cta { kind: CtaKind; label: string; href: string }
+
+/**
+ * D6/D7: checkout when the price id exists; Empresa Inicial/Negocio otherwise "Solicitar demo";
+ * a Medida always sales; everything else "Avísame cuando esté disponible" (waitlist).
+ */
+export function ctaFor(planId: PricingPlanId, country: CountryCode, interval: Interval, a: Availability): Cta {
+  const plan = planById(planId);
+  const contact = (label: string) => ({ kind: 'contact' as const, label, href: `/contacto?motivo=empresa&plan=${planId}&pais=${country.toLowerCase()}` });
+  if (plan.contactOnly) return contact('Hablar con ventas');
+  const ok = a.plans[country]?.[planId]?.[interval];
+  if (ok) {
+    const label = plan.trialDays ? `Probar ${plan.trialDays} días gratis` : plan.profile === 'empresa' ? 'Contratar' : 'Empezar';
+    return { kind: 'checkout', label, href: `/signup?plan=${planId}&pais=${country.toLowerCase()}&periodo=${interval === 'monthly' ? 'mensual' : 'anual'}` };
+  }
+  if (plan.profile === 'empresa') return contact('Solicitar demo');
+  return { kind: 'waitlist', label: 'Avísame cuando esté disponible', href: `#avisame-${planId}` };
+}
+
+/** Country from ?pais → cookie → CDN geo header → Accept-Language region → Spain. */
+export function resolveCountryFrom(input: {
+  param?: string | null; cookie?: string | null; headers?: Record<string, string | null | undefined>;
+}): CountryCode {
+  const pick = (v: string | null | undefined) => (v && isCountryCode(v) ? v.toUpperCase() as CountryCode : null);
+  const h = input.headers ?? {};
+  const fromLang = (h['accept-language'] ?? '').split(',')
+    .map(part => part.trim().split(';')[0].split('-')[1])
+    .map(pick).find(Boolean) ?? null;
+  return pick(input.param) ?? pick(input.cookie)
+    ?? pick(h['x-vercel-ip-country']) ?? pick(h['cf-ipcountry']) ?? pick(h['x-country-code']) ?? pick(h['x-appengine-country'])
+    ?? fromLang ?? DEFAULT_COUNTRY;
+}

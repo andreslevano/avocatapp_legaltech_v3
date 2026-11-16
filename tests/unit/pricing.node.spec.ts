@@ -102,3 +102,31 @@ test('no public string still advertises the old prices', () => {
   const hits = files.filter(f => bad.test(readFileSync(f, 'utf8'))).map(f => f.replace(root, 'src'));
   expect(hits).toEqual([]);
 });
+
+test.describe('availability, CTA and country', () => {
+  const { availabilityFrom, ctaFor, resolveCountryFrom } = require('@/lib/pricing') as typeof import('@/lib/pricing');
+  const env = { STRIPE_PRICE_ABOGADO_ES_M: 'price_1', STRIPE_PRICE_PARTICULAR_ES_M: 'price_2', STRIPE_PRICE_PACK30_ES: 'price_3', STRIPE_PRICE_ESTUDIANTE_ES_Y: 'nope' };
+
+  test('ids present → checkout; missing → waitlist / demo / sales', () => {
+    const a = availabilityFrom(env);
+    expect(a.plans.ES.abogado).toEqual({ monthly: true, annual: false });
+    expect(a.plans.ES.estudiante).toEqual({ monthly: false, annual: false });   // not a price_ id
+    expect(a.pack).toMatchObject({ ES: true, CL: false });
+    expect(a.signatureLive).toBe(false);
+    expect(availabilityFrom({ SIGNATURE_PROVIDER_LIVE: 'true' }).signatureLive).toBe(true);
+    expect(ctaFor('abogado', 'ES', 'monthly', a)).toMatchObject({ kind: 'checkout', label: 'Probar 14 días gratis', href: '/signup?plan=abogado&pais=es&periodo=mensual' });
+    expect(ctaFor('abogado', 'ES', 'annual', a).kind).toBe('waitlist');
+    expect(ctaFor('abogado', 'CL', 'monthly', a)).toMatchObject({ kind: 'waitlist', label: 'Avísame cuando esté disponible' });
+    expect(ctaFor('empresa-inicial', 'ES', 'monthly', a)).toMatchObject({ kind: 'contact', label: 'Solicitar demo' });
+    expect(ctaFor('empresa-medida', 'ES', 'monthly', a)).toMatchObject({ kind: 'contact', label: 'Hablar con ventas' });
+  });
+
+  test('country resolution order', () => {
+    expect(resolveCountryFrom({ param: 'cl', cookie: 'MX', headers: { 'cf-ipcountry': 'CO' } })).toBe('CL');
+    expect(resolveCountryFrom({ param: 'us', cookie: 'mx' })).toBe('MX');
+    expect(resolveCountryFrom({ headers: { 'cf-ipcountry': 'CO', 'accept-language': 'es-PE' } })).toBe('CO');
+    expect(resolveCountryFrom({ headers: { 'accept-language': 'en-US,es-PE;q=0.8' } })).toBe('PE');
+    expect(resolveCountryFrom({ headers: { 'accept-language': 'fr-FR' } })).toBe('ES');
+    expect(resolveCountryFrom({})).toBe('ES');
+  });
+});
