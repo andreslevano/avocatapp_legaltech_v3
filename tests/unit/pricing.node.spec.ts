@@ -118,7 +118,9 @@ test.describe('availability, CTA and country', () => {
     expect(a.signatureLive).toBe(false);
     expect(availabilityFrom({ SIGNATURE_PROVIDER_LIVE: 'true' }).signatureLive).toBe(true);
     expect(ctaFor('abogado', 'ES', 'monthly', a)).toMatchObject({ kind: 'checkout', label: 'Probar 14 días gratis', href: '/signup?plan=abogado&pais=es&periodo=mensual' });
-    expect(ctaFor('abogado', 'ES', 'annual', a).kind).toBe('waitlist');
+    // Abogado ES is monthly only (legacy 75 € price): "Anual" buys the monthly price.
+    expect(ctaFor('abogado', 'ES', 'annual', a)).toMatchObject({ kind: 'checkout', href: '/signup?plan=abogado&pais=es&periodo=mensual' });
+    expect(ctaFor('particular', 'ES', 'annual', a).kind).toBe('waitlist');
     expect(ctaFor('abogado', 'CL', 'monthly', a)).toMatchObject({ kind: 'waitlist', label: 'Avísame cuando esté disponible' });
     expect(ctaFor('empresa-inicial', 'ES', 'monthly', a)).toMatchObject({ kind: 'contact', label: 'Solicitar demo' });
     expect(ctaFor('empresa-medida', 'ES', 'monthly', a)).toMatchObject({ kind: 'contact', label: 'Hablar con ventas' });

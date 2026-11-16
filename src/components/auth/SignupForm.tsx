@@ -178,7 +178,7 @@ export default function SignupForm({ availability, initialCountry = 'ES' }: Sign
         fetch('/api/creditos/bienvenida', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
 
         // Checkout (D7): price id resolved on the server from env; Particular no longer opens the
-        // legacy 50 €/mes subscription.
+        // legacy Autoservicio subscription (old price).
         if (!pilot && plan) {
           try {
             const res = await fetch('/api/checkout', {

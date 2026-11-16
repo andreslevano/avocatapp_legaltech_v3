@@ -8,7 +8,9 @@ import { buildDocHtml } from '@/lib/doc-html';
 
 const DIR = resolve(__dirname, '../fixtures/doc-html');
 const DATE_RE = /<span class="doc-date">[^<]*<\/span>/;
-const stable = (html: string) => html.replace(DATE_RE, '<span class="doc-date">__DATE__</span>');
+const TODAY = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+// Header date and the date stamped next to the owner's signature (since the signature-date fix).
+const stable = (html: string) => html.replace(DATE_RE, '<span class="doc-date">__DATE__</span>').split(TODAY).join('__TODAY__');
 
 const GOLDEN_MD = `# CONTRATO DE PRUEBA
 

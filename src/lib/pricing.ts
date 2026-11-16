@@ -144,7 +144,7 @@ const m = (monthly: number): PlanPrice => ({ monthly, annual: Math.round(monthly
 
 /**
  * TEMPORARY (until the new Abogado price exists in Stripe): Spain shows the price Stripe charges
- * today — the legacy 75 €/mes subscription (SUBSCRIPTION_PRICE_IDS.Abogados, IVA incluido, monthly
+ * today — the legacy 75 EUR/month subscription (SUBSCRIPTION_PRICE_IDS.Abogados, IVA incluido, monthly
  * only). STRIPE_PRICE_ABOGADO_ES_M points at that legacy price meanwhile. When the 69 € (IVA no
  * incluido) prices are created: set `abogado: m(69)` here and update STRIPE_PRICE_ABOGADO_ES_M/_Y.
  */

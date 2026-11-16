@@ -78,27 +78,25 @@ const SIG_LINE =
 const DATE_LINE =
   `<span style="display:inline-block;width:120px;border-bottom:1pt solid #000;vertical-align:bottom;margin-left:4pt;"></span>`;
 
-function injectSignature(html: string, signatureUrl?: string): string {
-  // Replace date placeholders with styled lines
-  html = html
-    .replace(/Fecha:\s*_{4,}/g, `Fecha:${DATE_LINE}`)
-    .replace(/Date:\s*_{4,}/g,  `Date:${DATE_LINE}`);
+/**
+ * "Fecha: ____" / "Firma: ____" → drawn lines. With the owner's signature (signatureUrl), the first
+ * block gets the signature image AND today's date (`dates`, "es"/"en" by label); the other blocks keep
+ * blank lines (each party dates it when signing). Bold labels ("**Fecha:** ____") are handled too.
+ */
+/** The date printed next to the owner's signature; the class lets saved documents be re-signed. */
+const SIGNED_DATE = (text: string) => `<span class="sig-date">${text.replace(/[<>&"]/g, '')}</span>`;
+/** Saved HTML → "Label: ____" again: stamped signature image, stamped date, drawn lines. */
+const SIGNED_DATE_RE = /<span class="sig-date">[^<]*<\/span>/g;
 
-  if (signatureUrl) {
-    // First signature block (divulgante/disclosing) → image; rest → blank line
-    let first = true;
-    html = html.replace(/(?:Firma y sello|Firma|Signature):\s*_{4,}/g, (match) => {
-      const label = match.startsWith('Firma y sello') ? 'Firma y sello' : match.startsWith('Firma') ? 'Firma' : 'Signature';
-      if (first) { first = false; return `${label}: ${SIG_IMG(signatureUrl)}`; }
-      return `${label}:${SIG_LINE}`;
-    });
-  } else {
-    html = html
-      .replace(/Firma y sello:\s*_{4,}/g, `Firma y sello:${SIG_LINE}`)
-      .replace(/Firma:\s*_{4,}/g,     `Firma:${SIG_LINE}`)
-      .replace(/Signature:\s*_{4,}/g, `Signature:${SIG_LINE}`);
-  }
-  return html;
+function injectSignature(html: string, signatureUrl?: string, dates?: { es: string; en: string }): string {
+  let date = 0;
+  html = html.replace(DATE_BLOCK_RE, (_m, label: string, close?: string) => {
+    const stampDate = signatureUrl && dates && ++date === 1;
+    return stampDate ? `${label}:${close ?? ''} ${SIGNED_DATE(label === 'Date' ? dates!.en : dates!.es)}` : `${label}:${close ?? ''}${DATE_LINE}`;
+  });
+  let sig = 0;
+  return html.replace(SIG_BLOCK_RE, (_m, label: string, close?: string) =>
+    signatureUrl && ++sig === 1 ? `${label}:${close ?? ''} ${SIG_IMG(signatureUrl)}` : `${label}:${close ?? ''}${SIG_LINE}`);
 }
 
 // ── DocuSign anchors (forSignature mode) ────────────────────────────────────
@@ -172,6 +170,7 @@ export function signingHtmlFromSaved(saved: string, signers: string[], lang: 'es
   // Back to the "Label: ____" form injectAnchors understands (stamped image / drawn lines).
   html = html
     .replace(/<img[^>]*alt="Firma"[^>]*>/g, '________')
+    .replace(SIGNED_DATE_RE, '________')
     .replace(/<span style="display:inline-block;width:\d+px;border-bottom:[^"]*"><\/span>/g, ' ________');
   const existing = (html.match(SIG_BLOCK_RE) ?? []).length;
   const extra = missingSignatureBlocksMd(existing, signers, lang);
@@ -200,6 +199,7 @@ export function stampOwnerSignature(
   // Back to "Label: ____" (a signature stamped when the document was saved, drawn lines).
   html = html
     .replace(/<img[^>]*alt="Firma"[^>]*>/g, '________')
+    .replace(SIGNED_DATE_RE, '________')
     .replace(/<span style="display:inline-block;width:\d+px;border-bottom:[^"]*"><\/span>/g, ' ________');
   const existing = (html.match(SIG_BLOCK_RE) ?? []).length;
   const extra = missingSignatureBlocksMd(existing, signers.length ? signers : ['—'], lang);
@@ -207,11 +207,10 @@ export function stampOwnerSignature(
     const block = existing === 0 ? `<div class="sig-section">${mdToHtml(extra)}</div>` : mdToHtml(extra);
     html = html.replace('<div class="doc-footer">', `${block}\n<div class="doc-footer">`);
   }
-  const safeDate = dateText.replace(/[<>&"]/g, '');
   let date = 0;
   let sig = 0;
   return html
-    .replace(DATE_BLOCK_RE, (_m, label: string, close?: string) => `${label}:${close ?? ''} ${++date === 1 ? safeDate : DATE_LINE}`)
+    .replace(DATE_BLOCK_RE, (_m, label: string, close?: string) => `${label}:${close ?? ''} ${++date === 1 ? SIGNED_DATE(dateText) : DATE_LINE}`)
     .replace(SIG_BLOCK_RE, (_m, label: string, close?: string) =>
       `${label}:${close ?? ''} ${++sig === 1 ? SIG_IMG(signatureUrl.replace(/"/g, '%22')) : SIG_LINE}`);
 }
@@ -299,7 +298,7 @@ export function buildDocHtml(
   const authorNif  = meta?.authorNif  || opts?.branding?.header.authorNif  || '';
 
   const body = mdToHtml(content);
-  const bodyHtml = wrapSignatureSection(opts?.forSignature ? injectAnchors(body) : injectSignature(body, signatureUrl));
+  const bodyHtml = wrapSignatureSection(opts?.forSignature ? injectAnchors(body) : injectSignature(body, signatureUrl, { es: date, en: new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) }));
 
   const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
