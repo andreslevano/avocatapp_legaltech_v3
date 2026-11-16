@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import type { Timestamp } from 'firebase/firestore';
 import { FileSpreadsheet, Send } from 'lucide-react';
 import ImportClientsModal from '@/components/clients/ImportClientsModal';
+import ClientsBulkBar from '@/components/clients/ClientsBulkBar';
 import { availableDocs, type DocId } from '@/lib/data-requests/catalog';
 import { isValidEmail } from '@/lib/data-requests/core';
 import {
@@ -48,6 +49,9 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  // Selection for bulk actions (ids of clients still in the list).
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleOne = (id: string) => setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [editingClient, setEditingClient] = useState<ClientDoc | null>(null);
   const [form, setForm] = useState<NewClientForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -265,6 +269,13 @@ export default function ClientsPage() {
             <table className="w-full text-caption font-sans">
               <thead>
                 <tr className="border-b border-border">
+                  <th className="w-10 pl-4 py-2.5">
+                    <input type="checkbox" aria-label="Seleccionar todos los clientes"
+                      checked={clients.length > 0 && clients.every(c => selected.has(c.id))}
+                      ref={el => { if (el) el.indeterminate = selected.size > 0 && !clients.every(c => selected.has(c.id)); }}
+                      onChange={e => setSelected(e.target.checked ? new Set(clients.map(c => c.id)) : new Set())}
+                      className="h-4 w-4 rounded border-border-strong accent-accent cursor-pointer" />
+                  </th>
                   {['Cliente', 'Email', 'Datos', 'Casos activos', 'Último caso', 'Estado', ''].map(h => (
                     <th key={h} className="text-left px-4 py-2.5 text-label font-semibold tracking-widest uppercase text-text-muted">{h}</th>
                   ))}
@@ -272,7 +283,11 @@ export default function ClientsPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {clients.map(c => (
-                  <tr key={c.id} className="hover:bg-surface-muted transition-colors group">
+                  <tr key={c.id} className={`transition-colors group ${selected.has(c.id) ? 'bg-accent-subtle' : 'hover:bg-surface-muted'}`}>
+                    <td className="w-10 pl-4 py-3">
+                      <input type="checkbox" aria-label={`Seleccionar a ${c.name}`} checked={selected.has(c.id)} onChange={() => toggleOne(c.id)}
+                        className="h-4 w-4 rounded border-border-strong accent-accent cursor-pointer" />
+                    </td>
                     <td className="px-4 py-3 font-medium text-text">
                       <div>{c.name}</div>
                       {c.company && <div className="text-caption text-text-muted">{c.company}</div>}
@@ -339,6 +354,22 @@ export default function ClientsPage() {
           </div>
         )}
       </div>
+
+      {selected.size > 0 && (
+        <ClientsBulkBar
+          user={user}
+          selected={clients.filter(c => selected.has(c.id))}
+          casesByClient={cases.reduce<Record<string, number>>((acc, cs) => { if (cs.clientId) acc[cs.clientId] = (acc[cs.clientId] ?? 0) + 1; return acc; }, {})}
+          requestableDocs={requestableDocs}
+          onClear={() => setSelected(new Set())}
+          onRequest={(id, r, docs) => { applyRequest(id, r, docs); if ('emailed' in r && !r.emailed) setSent(p => ({ ...p, [id]: r })); }}
+          onStatus={(ids, status) => setClients(prev => prev.map(c => ids.includes(c.id) ? { ...c, status } : c))}
+          onDeleted={ids => {
+            setClients(prev => prev.filter(c => !ids.includes(c.id)));
+            setSelected(prev => { const n = new Set(prev); ids.forEach(id => n.delete(id)); return n; });
+          }}
+        />
+      )}
 
       {/* Modal */}
       {showModal && (

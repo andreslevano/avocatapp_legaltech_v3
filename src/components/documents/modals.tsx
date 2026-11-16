@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { Button } from '@/components/ui/Button';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 
@@ -125,11 +125,13 @@ export function ModalShell({ title, onClose, children, sheetOnMobile = false }: 
   title: string; onClose: () => void; children: React.ReactNode;
   sheetOnMobile?: boolean;   // bottom sheet below md
 }) {
+  const titleId = useId();
   return (
     <div className={`fixed inset-0 z-50 flex justify-center ${sheetOnMobile ? 'items-end md:items-center md:p-4' : 'items-center p-4'}`}>
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className={`relative bg-surface border border-border p-5 w-full max-w-md shadow-xl space-y-3 ${sheetOnMobile ? 'rounded-t-2xl md:rounded-2xl max-h-[85vh] flex flex-col' : 'rounded-2xl'}`}>
-        <h2 className="font-sans font-semibold text-body-sm text-text-heading">{title}</h2>
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId}
+        className={`relative bg-surface border border-border p-5 w-full max-w-md shadow-xl space-y-3 ${sheetOnMobile ? 'rounded-t-2xl md:rounded-2xl max-h-[85vh] flex flex-col' : 'rounded-2xl'}`}>
+        <h2 id={titleId} className="font-sans font-semibold text-body-sm text-text-heading">{title}</h2>
         {children}
       </div>
     </div>

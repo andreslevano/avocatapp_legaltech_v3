@@ -220,3 +220,17 @@ test.describe('Solicitar los datos (per client, from the Excel)', () => {
     expect(await mapLimit([], 3, async () => 1)).toEqual([]);
   });
 });
+
+test('export of selected clients re-imports in the template format', async () => {
+  const { buildClientsExport } = await import('@/lib/clients/import-excel');
+  const blob = await buildClientsExport([
+    { name: 'Ana', email: 'ana@x.es', idType: 'DNI', idNumber: '12345678Z' },
+    { name: 'ACME rep', company: 'ACME S.L.', phone: '=HYPERLINK("x")' },
+  ]);
+  const { matrix } = await readClientFile(new File([await blob.arrayBuffer()], 'c.xlsx'));
+  const p = ok(parseClientRows(matrix, []));
+  expect(p.rows.map(r => [r.values.name, r.values.personType, r.status])).toEqual([['Ana', 'Persona', 'ok'], ['ACME rep', 'Sociedad', 'ok']]);
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(await blob.arrayBuffer());
+  expect(wb.getWorksheet('Clientes')!.getCell('C3').formula).toBeUndefined();
+});

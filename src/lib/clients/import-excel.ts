@@ -219,3 +219,36 @@ export function downloadBlob(blob: Blob, filename: string) {
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+// ── Export (Clientes → selected → Exportar a Excel) ──────────────────────────
+
+export interface ExportableClient {
+  name: string; email?: string; phone?: string; personType?: 'persona' | 'sociedad'; nationality?: string;
+  idType?: string; idNumber?: string; address?: string; company?: string; companyTaxId?: string;
+  companyAddress?: string; representativeCapacity?: string; powers?: string;
+}
+
+/** The selected clients in the template's format: edit and re-import (duplicates are detected). */
+export async function buildClientsExport(
+  clients: ExportableClient[], docs: readonly Pick<RequestableDoc, 'id' | 'label' | 'personaOnly'>[] = [],
+): Promise<Blob> {
+  const ExcelJS = await excel();
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Avocat';
+  const cols = sheetColumns(docs);
+  const ws = wb.addWorksheet(TEMPLATE_SHEET, { views: [{ state: 'frozen', ySplit: 1 }] });
+  ws.columns = cols.map(c => ({ header: c.header, key: c.key, width: c.width, style: { numFmt: '@' } }));
+  ws.getRow(1).font = { bold: true };
+  for (const c of clients) {
+    const sociedad = c.personType === 'sociedad' || (!c.personType && !!c.company);
+    // Plain strings only (no formulas from client data).
+    ws.addRow({
+      name: c.name ?? '', email: c.email ?? '', phone: c.phone ?? '', personType: sociedad ? 'Sociedad' : 'Persona',
+      nationality: c.nationality ?? '', idType: c.idType ?? '', idNumber: c.idNumber ?? '', address: c.address ?? '',
+      company: c.company ?? '', companyTaxId: c.companyTaxId ?? '', companyAddress: c.companyAddress ?? '',
+      representativeCapacity: c.representativeCapacity ?? '', powers: c.powers ?? '',
+    });
+  }
+  const buf = await wb.xlsx.writeBuffer();
+  return new Blob([buf], { type: XLSX_MIME });
+}
