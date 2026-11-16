@@ -110,3 +110,17 @@ test('contacto is prefilled from "Solicitar demo"', async ({ page }) => {
   await page.goto('/contacto?motivo=empresa&plan=empresa-negocio&pais=cl');
   await expect(page.locator('#subject')).toHaveValue('Plan Empresa Negocio · Chile');
 });
+
+test('signup ?plan=particular shows the Particular plan, not the 50 €/mes bundle', async ({ page }) => {
+  await page.context().addCookies([{ name: 'avocat_consent', value: CONSENT, url: 'http://localhost:3000' }]);
+  await page.goto('/signup?plan=particular&pais=es');
+  const plans = page.getByRole('radiogroup', { name: /Selecciona tu plan/ });
+  const selected = plans.getByRole('radio', { checked: true });
+  await expect(selected).toContainText('Particular');
+  await expect(selected).toContainText('9,90');
+  await expect(selected).toContainText('IVA incluido');
+  await expect(plans).not.toContainText('50 €');
+  await expect(plans.getByRole('radio', { name: /Empresa Negocio/ })).toBeVisible();
+  await page.goto('/signup?plan=abogado&pais=cl&periodo=anual');
+  await expect(page.getByRole('radiogroup', { name: /Selecciona tu plan/ }).getByRole('radio', { checked: true })).toContainText('$399.900');
+});

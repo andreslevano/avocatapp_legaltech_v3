@@ -28,3 +28,10 @@ test('sessionPlan: env ids only; trial for Abogado; Empresa tier; pack; legacy-c
     mode: 'payment', priceId: 'price_pack', metadata: { kind: 'pack', credits: '30', userId: 'u1' },
   });
 });
+
+test('signup no longer reaches the legacy Particulares (50 €/mes) subscription', () => {
+  const { readFileSync } = require('fs') as typeof import('fs');
+  const src = readFileSync(require('path').resolve(__dirname, '../../src/components/auth/SignupForm.tsx'), 'utf8');
+  expect(src).not.toMatch(/SUBSCRIPTION_PRICE_IDS|PARTICULARES_LEGACY_BUNDLE|getCheckoutSessionEndpoint/);
+  expect(src).toContain("fetch('/api/checkout'");
+});

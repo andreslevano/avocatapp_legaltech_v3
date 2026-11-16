@@ -1,13 +1,19 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import SignupForm from '@/components/auth/SignupForm';
+import { checkoutAvailability, requestCountry } from '@/lib/pricing-server';
 import { BookOpen, Scale, UserRound } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Crear cuenta — Avocat',
 };
 
-export default function SignupPage() {
+// Pricing country and availability come from the request / env.
+export const dynamic = 'force-dynamic';
+
+export default function SignupPage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
+  const country = requestCountry(searchParams.pais);
+  const availability = checkoutAvailability();
   return (
     <div className="min-h-screen grid md:grid-cols-[1fr_1.2fr]">
       {/* Left panel — brand */}
@@ -42,7 +48,7 @@ export default function SignupPage() {
         <div className="w-full max-w-md">
           <h1 className="font-display text-h2 text-text mb-1">Crea tu cuenta</h1>
           <p className="text-small text-text-muted mb-8">Elige tu plan y empieza en minutos.</p>
-          <SignupForm />
+          <SignupForm availability={availability} initialCountry={country} />
         </div>
       </div>
     </div>

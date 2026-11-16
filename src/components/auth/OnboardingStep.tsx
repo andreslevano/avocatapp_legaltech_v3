@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import PlanCards from '@/components/auth/PlanCards';
-import type { Plan } from '@/components/auth/PlanCards';
+import { planById, type PricingPlanId } from '@/lib/pricing';
 import { Button } from '@/components/ui/Button';
 import { PLAN_DASHBOARDS } from '@/lib/plans';
 
@@ -15,7 +15,7 @@ interface OnboardingStepProps {
 }
 
 export default function OnboardingStep({ uid, displayName }: OnboardingStepProps) {
-  const [plan, setPlan] = useState<Plan | ''>('');
+  const [plan, setPlan] = useState<PricingPlanId | ''>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -28,12 +28,12 @@ export default function OnboardingStep({ uid, displayName }: OnboardingStepProps
     try {
       if (db) {
         await updateDoc(doc(db, 'users', uid), {
-          plan,
+          plan: planById(plan).stored,
           onboardingComplete: true,
           updatedAt: serverTimestamp(),
         });
       }
-      router.push(PLAN_DASHBOARDS[plan]);
+      router.push(PLAN_DASHBOARDS[planById(plan).stored]);
     } catch (err) {
       console.error('Error saving plan:', err);
       setError('Error al guardar el plan. Intenta de nuevo.');
@@ -54,7 +54,7 @@ export default function OnboardingStep({ uid, displayName }: OnboardingStepProps
         </div>
 
         <div className="space-y-4">
-          <PlanCards selected={plan} onChange={setPlan} />
+          <PlanCards selected={plan} onChange={setPlan} country="ES" interval="monthly" includeEmpresa={false} />
 
           {error && (
             <p className="text-small text-danger-text">{error}</p>

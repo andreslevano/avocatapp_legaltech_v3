@@ -10,22 +10,33 @@ import { auth, db } from '@/lib/firebase';
 import { checkUserStatus, reactivateUserAccount } from '@/lib/user-reactivation';
 import { trackSignupStart, trackRegistrationConversion } from '@/lib/gtag';
 import { isPilotUser } from '@/lib/pilot-users';
-import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
-import { SUBSCRIPTION_PRICE_IDS } from '@/lib/subscription-prices';
-import { PLAN_DASHBOARDS, planFromParam } from '@/lib/plans';
+import { PLAN_DASHBOARDS } from '@/lib/plans';
+import {
+  COUNTRY_COOKIE, planById, pricingPlanFromParam, resolveCountryFrom,
+  type Availability, type CountryCode, type Interval, type PricingPlanId,
+} from '@/lib/pricing';
 import AccountReactivationModal from '@/components/AccountReactivationModal';
 import PlanCards from '@/components/auth/PlanCards';
-import type { Plan } from '@/components/auth/PlanCards';
+import BillingToggle from '@/components/pricing/BillingToggle';
 import { Button } from '@/components/ui/Button';
 import GoogleIcon from '@/components/brand/GoogleIcon';
 
 // Stored values stay as before (existing user docs); labels use the Spanish spelling.
+/** Signup country → pricing country (Ecuador has no local pricing yet: keeps the current one). */
+const PRICING_COUNTRY: Record<string, CountryCode> = { Chile: 'CL', Colombia: 'CO', 'España': 'ES', Mexico: 'MX', Peru: 'PE' };
+
 const COUNTRIES: { value: string; label: string }[] = [
   { value: 'Chile', label: 'Chile' }, { value: 'Colombia', label: 'Colombia' }, { value: 'Ecuador', label: 'Ecuador' },
   { value: 'España', label: 'España' }, { value: 'Mexico', label: 'México' }, { value: 'Peru', label: 'Perú' },
 ];
 
-export default function SignupForm() {
+interface SignupFormProps {
+  /** Server-side availability (Stripe price ids present) — /signup page. */
+  availability?: Availability;
+  initialCountry?: CountryCode;
+}
+
+export default function SignupForm({ availability, initialCountry = 'ES' }: SignupFormProps = {}) {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -35,8 +46,10 @@ export default function SignupForm() {
     confirmPassword: '',
     firm: '',
     phone: '',
-    plan: '' as Plan | '',
+    plan: '' as PricingPlanId | '',
   });
+  const [pricingCountry, setPricingCountry] = useState<CountryCode>(initialCountry);
+  const [interval, setInterval] = useState<Interval>('monthly');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -53,8 +66,12 @@ export default function SignupForm() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
-    const mapped = planFromParam(params.get('plan'));
-    if (mapped) setForm(prev => ({ ...prev, plan: mapped }));
+    const mapped = pricingPlanFromParam(params.get('plan'));
+    if (mapped && mapped !== 'empresa-medida') setForm(prev => ({ ...prev, plan: mapped }));
+    if (mapped === 'empresa-medida') window.location.replace('/contacto?motivo=empresa&plan=empresa-medida');
+    if (params.get('periodo') === 'anual') setInterval('annual');
+    const cookie = document.cookie.split('; ').find(c => c.startsWith(`${COUNTRY_COOKIE}=`))?.split('=')[1];
+    if (params.get('pais') || cookie) setPricingCountry(resolveCountryFrom({ param: params.get('pais'), cookie }));
   }, []);
 
   useEffect(() => {
@@ -63,8 +80,11 @@ export default function SignupForm() {
     return () => document.removeEventListener('focusin', onInteract);
   }, []);
 
-  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
+    if (field === 'country' && PRICING_COUNTRY[e.target.value]) setPricingCountry(PRICING_COUNTRY[e.target.value]);
+  };
+  const stored = form.plan ? planById(form.plan).stored : undefined;
 
   const handleGoogleSignup = async () => {
     setError('');
@@ -91,7 +111,7 @@ export default function SignupForm() {
         await signInWithEmailAndPassword(auth as Auth, reactivationUser.email, form.password);
         setSuccess('¡Cuenta reactivada! Redirigiendo...');
         setShowReactivation(false);
-        setTimeout(() => router.push((form.plan ? PLAN_DASHBOARDS[form.plan] : undefined) ?? '/panel'), 2000);
+        setTimeout(() => router.push((stored ? PLAN_DASHBOARDS[stored] : undefined) ?? '/panel'), 2000);
       } else {
         setError(result.message || 'Error al reactivar la cuenta.');
       }
@@ -129,8 +149,8 @@ export default function SignupForm() {
             lastName: form.lastName,
             phone: form.phone || null,
             country: form.country || null,
-            plan: form.plan || null,
-            onboardingComplete: !!form.plan,
+            plan: stored ?? null,
+            onboardingComplete: !!stored,
             firm: form.firm || null,
             isAdmin: false,
             isActive: true,
@@ -149,31 +169,32 @@ export default function SignupForm() {
       trackRegistrationConversion();
       setSuccess('¡Cuenta creada! Redirigiendo...');
 
-      const dashboardUrl = (form.plan ? PLAN_DASHBOARDS[form.plan] : undefined) ?? '/panel';
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      const priceId =
-        !pilot && form.plan === 'Abogados' ? SUBSCRIPTION_PRICE_IDS.Abogados
-        : !pilot && form.plan === 'Autoservicio' ? SUBSCRIPTION_PRICE_IDS.Autoservicio
-        : null;
+      const dashboardUrl = (stored ? PLAN_DASHBOARDS[stored] : undefined) ?? '/panel';
+      const plan = form.plan ? planById(form.plan) : null;
 
-      if (priceId && user) {
-        try {
-          const res = await fetch(getCheckoutSessionEndpoint(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.uid,
-              customerEmail: form.email,
-              subscriptionPlan: form.plan,
-              priceId,
-              successUrl: `${baseUrl}${dashboardUrl}`,
-              cancelUrl: `${baseUrl}/signup`,
-            }),
-          });
-          const data = await res.json();
-          if (data.success && data.url) { window.location.href = data.url; return; }
-        } catch (err) {
-          console.error('Checkout error:', err);
+      if (user) {
+        const token = await user.getIdToken();
+        // Welcome credits (D1): granted once, server-side (users can't write credits).
+        fetch('/api/creditos/bienvenida', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+
+        // Checkout (D7): price id resolved on the server from env; Particular no longer opens the
+        // legacy 50 €/mes subscription.
+        if (!pilot && plan) {
+          try {
+            const res = await fetch('/api/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ item: plan.id, country: pricingCountry, interval }),
+            });
+            const data = await res.json().catch(() => ({})) as { url?: string; available?: boolean };
+            if (data.url) { window.location.href = data.url; return; }
+            if (data.available === false && plan.profile === 'empresa') {
+              router.push(`/contacto?motivo=empresa&plan=${plan.id}&pais=${pricingCountry.toLowerCase()}`);
+              return;
+            }
+          } catch (err) {
+            console.error('Checkout error:', err);
+          }
         }
       }
 
@@ -234,7 +255,9 @@ export default function SignupForm() {
         )}
 
         {/* Plan selection */}
-        <PlanCards selected={form.plan} onChange={plan => setForm(prev => ({ ...prev, plan }))} />
+        <div className="flex justify-center"><BillingToggle value={interval} onChange={setInterval} /></div>
+        <PlanCards selected={form.plan} onChange={plan => setForm(prev => ({ ...prev, plan }))}
+          country={pricingCountry} interval={interval} availability={availability} />
 
         {/* Name row */}
         <div className="grid grid-cols-2 gap-3">
@@ -261,7 +284,7 @@ export default function SignupForm() {
           </select>
         </div>
 
-        {form.plan === 'Abogados' && (
+        {stored === 'Abogados' && (
           <div>
             <label className="block text-small font-medium text-text-muted mb-1.5">Bufete (opcional)</label>
             <input type="text" value={form.firm} onChange={set('firm')} placeholder="Nombre del bufete" className="w-full h-control-md px-3 border border-border-strong rounded-md bg-surface text-text" />
