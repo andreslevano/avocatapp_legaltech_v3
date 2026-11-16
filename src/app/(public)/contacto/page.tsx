@@ -7,6 +7,7 @@ import { useI18n } from '@/hooks/useI18n';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/Button';
+import { COUNTRIES, isCountryCode, planById, pricingPlanFromParam } from '@/lib/pricing';
 
 interface ContactFormData {
   name: string;
@@ -28,6 +29,21 @@ export default function ContactPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+
+  // From /precios ("Solicitar demo" / "Hablar con ventas"): ?motivo=empresa&plan=empresa-negocio&pais=cl
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('motivo') !== 'empresa') return;
+    const plan = pricingPlanFromParam(q.get('plan'));
+    const pais = q.get('pais');
+    const where = isCountryCode(pais) ? ` · ${COUNTRIES[pais.toUpperCase() as keyof typeof COUNTRIES].name}` : '';
+    const name = plan ? planById(plan).name : 'Empresa';
+    setFormData(f => ({
+      ...f,
+      subject: f.subject || `Plan ${name}${where}`,
+      message: f.message || `Hola, me interesa el plan ${name}. Somos un equipo de __ personas y nos gustaría una demostración.`,
+    }));
+  }, []);
 
   useEffect(() => {
     // Check if Firebase is ready

@@ -63,6 +63,7 @@ export default function AutoservicioPage() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button href="/signup?plan=particulares" variant="accent" size="lg">Crear mi documento</Button>
             <Button href="/login" variant="secondary" size="lg">Ya tengo cuenta</Button>
+            <Button href="/precios?perfil=particular#particular" variant="ghost" size="lg">Ver precios</Button>
           </div>
         </div>
       </section>

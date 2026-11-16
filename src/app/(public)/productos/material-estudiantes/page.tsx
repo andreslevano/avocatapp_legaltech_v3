@@ -19,7 +19,7 @@ const PACKAGE = [
 
 const BENEFITS = [
   'Plantillas de escritos de las principales áreas del Derecho',
-  `Desde ${formatEuro(PLANS.estudiantes.price)} por escrito`,
+  `${formatEuro(PLANS.estudiantes.price)} al mes, IVA incluido`,
   'Material de estudio incluido en cada paquete',
   'Descarga inmediata después del pago',
   'Tutor socrático IA disponible con el plan Estudiantes',
@@ -46,6 +46,7 @@ export default function MaterialEstudiantesPage() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button href="/signup?plan=estudiantes" variant="accent" size="lg">Explorar material</Button>
             <Button href="/login" variant="secondary" size="lg">Ya tengo cuenta</Button>
+            <Button href="/precios?perfil=estudiante#estudiante" variant="ghost" size="lg">Ver precios</Button>
           </div>
         </div>
       </section>
@@ -128,7 +129,7 @@ export default function MaterialEstudiantesPage() {
             Estudia con material profesional real
           </h2>
           <p className="font-sans text-body text-text-muted mb-8">
-            {`Plantillas comentadas y tutor socrático. Desde ${formatEuro(PLANS.estudiantes.price)} por escrito.`}
+            {`Plantillas comentadas y tutor socrático. ${formatEuro(PLANS.estudiantes.price)} al mes, IVA incluido.`}
           </p>
           <Button href="/signup?plan=estudiantes" variant="accent" size="lg">Ver catálogo</Button>
         </div>

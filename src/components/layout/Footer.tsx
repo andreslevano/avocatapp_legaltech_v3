@@ -11,7 +11,7 @@ const FOOTER_LINKS = {
     { href: '/productos/gestion-abogados', label: 'Para abogados' },
     { href: '/productos/autoservicio', label: 'Para particulares' },
     { href: '/productos/material-estudiantes', label: 'Para estudiantes' },
-    { href: '/#precios', label: 'Precios' },
+    { href: '/precios', label: 'Precios' },
   ],
   Empresa: [
     { href: '/acerca-de', label: 'Nosotros' },

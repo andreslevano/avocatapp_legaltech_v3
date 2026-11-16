@@ -13,7 +13,7 @@ const NAV_LINKS = [
   { href: '/productos/gestion-abogados', label: 'Abogados' },
   { href: '/productos/autoservicio', label: 'Particulares' },
   { href: '/productos/material-estudiantes', label: 'Estudiantes' },
-  { href: '/#precios', label: 'Precios' },
+  { href: '/precios', label: 'Precios' },
   { href: '/acerca-de', label: 'Nosotros' },
 ];
 const TRIAL_HREF = '/signup?plan=abogados';
@@ -41,7 +41,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 gap-4">
           <Logo variant="lockup" tone="gold" size={32} href="/" />
 
-          <nav aria-label="Principal" className="hidden md:flex items-center gap-6">
+          <nav aria-label="Principal" className="hidden lg:flex items-center gap-6">
             {NAV_LINKS.map(({ href, label }) => {
               const current = isCurrent(href);
               return (
@@ -60,7 +60,7 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Button href="/login" variant="ghost" size="sm" className="hidden md:inline-flex">Iniciar sesión</Button>
+            <Button href="/login" variant="ghost" size="sm" className="hidden lg:inline-flex">Iniciar sesión</Button>
             <Button href={TRIAL_HREF} variant="accent" size="sm">Probar 14 días gratis</Button>
             <IconButton
               ref={triggerRef}
@@ -68,7 +68,7 @@ export default function Navbar() {
               label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
               aria-expanded={menuOpen}
               aria-controls="public-nav-drawer"
-              className="md:hidden"
+              className="lg:hidden"
               onClick={() => setMenuOpen(v => !v)}
             />
           </div>
@@ -76,7 +76,7 @@ export default function Navbar() {
       </div>
 
       {menuOpen && (
-        <div id="public-nav-drawer" className="md:hidden bg-surface border-t border-border px-4 pb-4 pt-2 space-y-1">
+        <div id="public-nav-drawer" className="lg:hidden bg-surface border-t border-border px-4 pb-4 pt-2 space-y-1">
           <nav aria-label="Principal (móvil)">
             {NAV_LINKS.map(({ href, label }) => (
               <Link

@@ -46,7 +46,7 @@ export default function ComparisonTable({ country, interval, signatureLive }: Pr
       </label>
 
       {/* Desktop */}
-      <div className="hidden md:block overflow-x-auto lg:overflow-visible">
+      <div className="relative hidden md:block overflow-x-auto lg:overflow-visible">
         <table className="w-full text-small border-separate border-spacing-0">
           <caption className="sr-only">Comparativa de planes de Avocat</caption>
           <thead>
@@ -64,7 +64,7 @@ export default function ComparisonTable({ country, interval, signatureLive }: Pr
           {groups.map(g => {
             const open = !collapsed.has(g.id);
             return (
-              <tbody key={g.id}>
+              <tbody key={g.id} className="relative">
                 <tr>
                   <th scope="colgroup" colSpan={LADDER.length + 1} className="sticky left-0 bg-surface-muted text-left p-0 border-b border-border">
                     <button type="button" aria-expanded={open} aria-controls={`grp-${g.id}`} onClick={() => toggle(g.id)}

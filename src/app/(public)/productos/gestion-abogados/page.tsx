@@ -86,7 +86,7 @@ export default function GestionAbogadosPage() {
       >
         <div className="absolute inset-0 bg-bg/75" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-          <Tag variant="gold" className="mb-6">{`Plan ${PLANS.abogados.name} — ${priceLabel(PLANS.abogados)}`}</Tag>
+          <Tag variant="gold" className="mb-6">{`Plan ${PLANS.abogados.name} — ${priceLabel(PLANS.abogados)} · IVA no incluido`}</Tag>
           <h1 className="font-display text-h1 text-text mb-6 max-w-3xl mx-auto">
             Gestión Profesional para Abogados
           </h1>
@@ -96,6 +96,7 @@ export default function GestionAbogadosPage() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button href="/signup?plan=abogados" variant="accent" size="lg">Probar 14 días gratis</Button>
             <Button href="/login" variant="secondary" size="lg">Iniciar sesión</Button>
+            <Button href="/precios?perfil=abogado#abogado" variant="ghost" size="lg">Ver precios y planes Empresa</Button>
           </div>
         </div>
       </section>

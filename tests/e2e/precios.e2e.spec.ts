@@ -90,3 +90,23 @@ test('profile tabs sync ?perfil and #empresa opens the Empresa block', async ({ 
   await page.goto('/precios?pais=es#particular');
   await expect(page.getByRole('tabpanel')).toContainText('no sustituye a un abogado');
 });
+
+test('home summary: 4 cards in the visitor country + link to the comparison', async ({ page }) => {
+  await page.context().addCookies([
+    { name: 'avocat_consent', value: CONSENT, url: 'http://localhost:3000' },
+    { name: 'avocat_pais', value: 'MX', url: 'http://localhost:3000' },
+  ]);
+  await page.goto('/#precios');
+  const section = page.locator('#precios');
+  await expect(section.getByRole('heading', { level: 3 })).toHaveText(['Estudiante', 'Particular', 'Abogado', 'Empresa']);
+  await expect(section).toContainText('$699');
+  await expect(section).toContainText('desde');
+  await expect(section.getByRole('link', { name: /Comparar todos los planes/ })).toHaveAttribute('href', '/precios#comparar');
+  await expect(section).not.toContainText('75 €');
+});
+
+test('contacto is prefilled from "Solicitar demo"', async ({ page }) => {
+  await page.context().addCookies([{ name: 'avocat_consent', value: CONSENT, url: 'http://localhost:3000' }]);
+  await page.goto('/contacto?motivo=empresa&plan=empresa-negocio&pais=cl');
+  await expect(page.locator('#subject')).toHaveValue('Plan Empresa Negocio · Chile');
+});
