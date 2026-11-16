@@ -9,6 +9,7 @@ import { openCookieSettings } from '@/lib/consent';
 const FOOTER_LINKS = {
   Producto: [
     { href: '/productos/gestion-abogados', label: 'Para abogados' },
+    { href: '/productos/empresas', label: 'Para empresas' },
     { href: '/productos/autoservicio', label: 'Para particulares' },
     { href: '/productos/material-estudiantes', label: 'Para estudiantes' },
     { href: '/precios', label: 'Precios' },

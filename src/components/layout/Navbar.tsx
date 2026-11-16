@@ -11,6 +11,7 @@ import { IconButton } from '@/components/ui/IconButton';
 // Avocat DS v4 Navbar — spec: design-system/v4/components/Navbar.md. One item list for every public page.
 const NAV_LINKS = [
   { href: '/productos/gestion-abogados', label: 'Abogados' },
+  { href: '/productos/empresas', label: 'Empresas' },
   { href: '/productos/autoservicio', label: 'Particulares' },
   { href: '/productos/material-estudiantes', label: 'Estudiantes' },
   { href: '/precios', label: 'Precios' },

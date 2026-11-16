@@ -9,6 +9,7 @@ const alpha = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct
 
 const TABS = [
   { id: 'lawyer',  label: 'Abogados',     tag: 'Plan Abogados',    tagCls: 'bg-accent-subtle text-accent-text border-accent-border' },
+  { id: 'company', label: 'Empresas',     tag: 'Planes Empresa',   tagCls: 'bg-surface-muted text-text border-border-strong' },
   { id: 'student', label: 'Estudiantes',  tag: 'Plan Estudiantes', tagCls: 'bg-info-subtle text-info-text border-status-en-revision-border' },
   { id: 'self',    label: 'Particulares', tag: 'Plan Particular',  tagCls: 'bg-success-subtle text-success-text border-status-a-tiempo-border' },
 ] as const;
@@ -46,6 +47,27 @@ const CONTENT: Record<TabId, {
     href: '/productos/gestion-abogados',
     linkColor: 'text-accent-text',
   },
+  company: {
+    headline: 'Tu despacho o tu área legal, en equipo',
+    desc: 'Para despachos con varios abogados y empresas con área legal: todo el plan Abogado, créditos compartidos y externos —socios, clientes, proveedores— que revisan y firman sin coste.',
+    features: [
+      'Todo lo del plan Abogado',
+      'Créditos compartidos para el equipo',
+      'Plantillas de tu organización',
+      'Repositorio con carpetas',
+      'Externos sin coste (próximamente)',
+      'Roles y dos espacios (próximamente)',
+    ],
+    mockBg: 'var(--neutral-800)',
+    mockAccent: 'var(--gold-400)',
+    mockLines: [
+      { label: 'Usuarios', value: 'Hasta 10' },
+      { label: 'Créditos', value: '8.000 / mes' },
+      { label: 'Externos', value: '250 sin coste' },
+    ],
+    href: '/productos/empresas',
+    linkColor: 'text-accent-text',
+  },
   student: {
     headline: 'Aprende Derecho razonando',
     desc: 'Un tutor socrático que no te da la respuesta directa — te guía para que llegues tú mismo. Con casos reales, sentencias y material académico estructurado.',
@@ -76,12 +98,12 @@ const CONTENT: Record<TabId, {
       'Generación de reclamaciones',
       'Extracción de datos clave',
       'Evaluación de riesgo legal',
-      '100 créditos al mes',
+      '60 créditos al mes',
     ],
     mockBg: 'var(--success-50)',
     mockAccent: 'var(--success-600)',
     mockLines: [
-      { label: 'Créditos', value: '100 / mes' },
+      { label: 'Créditos', value: '60 / mes' },
       { label: 'Análisis', value: 'Contratos, PDFs' },
       { label: 'Escritos', value: 'Reclamaciones' },
     ],
@@ -112,13 +134,13 @@ export default function PersonaTabs() {
 
         {/* Tab switcher */}
         <div className="flex justify-center mb-8">
-          <div className="inline-flex gap-1 p-1 bg-surface-muted rounded-xl">
+          <div className="inline-flex flex-wrap justify-center gap-1 p-1 bg-surface-muted rounded-xl">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActive(t.id)}
                 className={[
-                  'px-5 py-2.5 rounded-lg text-small font-sans font-medium transition-all',
+                  'px-3 sm:px-5 py-2.5 rounded-lg text-small font-sans font-medium transition-all',
                   active === t.id
                     ? 'bg-surface shadow-sm text-text'
                     : 'text-text-muted hover:text-text-heading',

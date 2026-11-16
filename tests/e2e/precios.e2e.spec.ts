@@ -133,3 +133,20 @@ test('clicking a plan without a Stripe price shows the "muy pronto" message and 
   await expect(card.getByRole('status')).toContainText('El plan Particular estará disponible muy pronto');
   await expect(card.getByRole('textbox')).toBeVisible();
 });
+
+test('Empresas in the main menu, persona tabs and footer; product page; no overflow 375–1280', async ({ page }) => {
+  await page.context().addCookies([{ name: 'avocat_consent', value: CONSENT, url: 'http://localhost:3000' }]);
+  for (const width of [375, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), `home ${width}`).toBeLessThanOrEqual(0);
+  }
+  await expect(page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: 'Empresas' })).toHaveAttribute('href', '/productos/empresas');
+  await page.getByRole('button', { name: 'Empresas' }).click();
+  await expect(page.getByText('Tu despacho o tu área legal, en equipo')).toBeVisible();
+  await expect(page.getByRole('contentinfo').getByRole('link', { name: 'Para empresas' })).toHaveAttribute('href', '/productos/empresas');
+  await page.goto('/productos/empresas');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Avocat para despachos y empresas');
+  await expect(page.getByText('179 €').first()).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+});
