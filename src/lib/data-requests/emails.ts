@@ -4,14 +4,14 @@ import { fonts, primitives as P } from '@/lib/tokens';
 import { formatContractDate } from '@/lib/contracts/dates';
 
 const EMAIL_FONT = fonts.sans.replace(/"/g, "'");
-const esc = (s: string) => s.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!));
+export const esc = (s: string) => s.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!));
 
-function layout(paragraphs: string[], button: { href: string; label: string }, footer: string): string {
+export function layout(paragraphs: string[], button: { href: string; label: string } | null, footer: string): string {
   return `<!doctype html><html><body style="margin:0;background:${P['neutral-50']};font-family:${EMAIL_FONT};color:${P['neutral-900']}">
 <div style="max-width:560px;margin:0 auto;padding:24px">
 <p style="font-family:Georgia,serif;font-size:22px;margin:0 0 16px">Avocat</p>
 ${paragraphs.map(p => `<p style="font-size:14px;line-height:1.5;margin:0 0 12px">${p}</p>`).join('\n')}
-<p style="margin:20px 0"><a href="${esc(button.href)}" style="background:${P['gold-500']};color:${P['neutral-900']};text-decoration:none;padding:12px 18px;border-radius:8px;font-size:14px;font-weight:bold">${esc(button.label)}</a></p>
+${button ? `<p style="margin:20px 0"><a href="${esc(button.href)}" style="background:${P['gold-500']};color:${P['neutral-900']};text-decoration:none;padding:12px 18px;border-radius:8px;font-size:14px;font-weight:bold">${esc(button.label)}</a></p>` : ''}
 <p style="font-size:12px;line-height:1.5;color:${P['neutral-500']}">${footer}</p>
 </div></body></html>`;
 }

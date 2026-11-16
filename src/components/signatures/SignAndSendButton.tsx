@@ -16,7 +16,7 @@ export default function SignAndSendButton({ autoOpen = false, disabled, ...sheet
   return (
     <>
       <Button variant="accent" size="sm" disabled={disabled} onClick={() => setOpen(true)}>Firmar y enviar</Button>
-      {open && <SignAndSendSheet {...sheet} onClose={() => setOpen(false)} />}
+      {open && <SignAndSendSheet {...sheet} initialMethod={autoOpen ? 'digital' : undefined} onClose={() => setOpen(false)} />}
     </>
   );
 }

@@ -183,6 +183,39 @@ export function signingHtmlFromSaved(saved: string, signers: string[], lang: 'es
   return injectAnchors(html);
 }
 
+// ── Manual signature ("Firma manuscrita") ────────────────────────────────────
+// The owner's handwritten signature (Perfil → Firma manuscrita, a Storage image) is stamped in the
+// FIRST signature block of a saved Avocat .doc and today's date in the first "Fecha:"; the other
+// blocks keep their lines for the counterparties, who sign by hand. Blocks missing for the parties
+// are appended, as for DocuSign.
+
+const isStorageImage = (u: string) => /^https:\/\/(firebasestorage|storage)\.googleapis\.com\/[^\s"'<>]+$/.test(u);
+
+export function stampOwnerSignature(
+  saved: string, signatureUrl: string, dateText: string, signers: string[] = [], lang: 'es' | 'en' = 'es',
+): string | null {
+  if (!isStorageImage(signatureUrl)) return null;
+  let html = saved.replace(/^\uFEFF/, '');
+  if (!html.includes('<div class="doc-footer">')) return null;
+  // Back to "Label: ____" (a signature stamped when the document was saved, drawn lines).
+  html = html
+    .replace(/<img[^>]*alt="Firma"[^>]*>/g, '________')
+    .replace(/<span style="display:inline-block;width:\d+px;border-bottom:[^"]*"><\/span>/g, ' ________');
+  const existing = (html.match(SIG_BLOCK_RE) ?? []).length;
+  const extra = missingSignatureBlocksMd(existing, signers.length ? signers : ['—'], lang);
+  if (extra) {
+    const block = existing === 0 ? `<div class="sig-section">${mdToHtml(extra)}</div>` : mdToHtml(extra);
+    html = html.replace('<div class="doc-footer">', `${block}\n<div class="doc-footer">`);
+  }
+  const safeDate = dateText.replace(/[<>&"]/g, '');
+  let date = 0;
+  let sig = 0;
+  return html
+    .replace(DATE_BLOCK_RE, (_m, label: string, close?: string) => `${label}:${close ?? ''} ${++date === 1 ? safeDate : DATE_LINE}`)
+    .replace(SIG_BLOCK_RE, (_m, label: string, close?: string) =>
+      `${label}:${close ?? ''} ${++sig === 1 ? SIG_IMG(signatureUrl.replace(/"/g, '%22')) : SIG_LINE}`);
+}
+
 // ── HTML document template ────────────────────────────────────────────────────
 
 function wrapSignatureSection(html: string): string {

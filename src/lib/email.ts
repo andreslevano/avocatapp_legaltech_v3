@@ -9,7 +9,11 @@ export function emailConfigured(): boolean {
   return !!process.env.EMAIL_USER && !!process.env.EMAIL_PASS;
 }
 
-export async function sendEmail(to: string, msg: { subject: string; text: string; html: string; replyTo?: string }) {
+export interface EmailAttachment { filename: string; content: Buffer; contentType: string }
+
+export async function sendEmail(to: string, msg: {
+  subject: string; text: string; html: string; replyTo?: string; cc?: string[]; attachments?: EmailAttachment[];
+}) {
   if (!emailConfigured()) throw new Error('email_not_configured');
   transport ??= nodemailer.createTransport({
     service: 'gmail',

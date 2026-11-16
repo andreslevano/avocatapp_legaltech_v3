@@ -36,7 +36,13 @@ export async function buildPdfBlob(
 ): Promise<{ blob: Blob; filename: string }> {
   const docTitle = title ?? extractDocTitle(content);
   const html = buildDocHtml(content, docTitle, signatureUrl, meta, { branding });
+  return buildPdfBlobFromHtml(html, docTitle, branding);
+}
 
+/** PDF of an already-built document HTML (e.g. a saved .doc with the owner's signature stamped). */
+export async function buildPdfBlobFromHtml(
+  html: string, docTitle: string, branding?: ResolvedBranding,
+): Promise<{ blob: Blob; filename: string }> {
   const container = document.createElement('div');
   container.innerHTML = html;
   // 794px = A4 width at 96dpi. Side padding = 2.54cm; top/bottom margins are added per PDF page.

@@ -39,6 +39,11 @@ function captureCreate(page: Page, reply: (body: Record<string, unknown>) => { s
 
 const sendBtn = (page: Page) => page.getByRole('button', { name: 'Firmar y enviar →' });
 
+// Cookie choice already made: the consent banner would otherwise cover the sheet's buttons.
+test.beforeEach(async ({ context }) => {
+  await context.addCookies([{ name: 'avocat_consent', value: encodeURIComponent(JSON.stringify({ analytics: false, ads: false, v: 1, ts: 1 })), url: 'http://localhost:3000' }]);
+});
+
 test.describe('Firmar y enviar sheet (5c)', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
@@ -85,7 +90,7 @@ test.describe('Firmar y enviar sheet (5c)', () => {
     await page.getByPlaceholder('email@empresa.com').nth(1).fill('eva@acme.es');
     await page.getByRole('button', { name: 'A la vez' }).click();
     await expect(page.getByText('Todos reciben el email a la vez')).toBeVisible();
-    await page.getByRole('button', { name: '🔒 Pedir código de acceso' }).nth(1).click();
+    await page.getByRole('button', { name: 'Pedir código de acceso' }).nth(1).click();
     const code = page.getByPlaceholder(/Código de acceso/);
     await code.fill('12');
     await sendBtn(page).click();
@@ -149,5 +154,31 @@ test.describe('mobile', () => {
     await sendBtn(page).click();
     await page.waitForURL(FAKE_DOCUSIGN);
     expect(bodies[0].embedOrigin).toBeUndefined();
+  });
+});
+
+test.describe('choose how to sign', () => {
+  test('asks digital or handwritten; digital opens the DocuSign sheet; Volver goes back', async ({ page }) => {
+    await page.goto('/e2e/sign-sheet?metodo=elegir');
+    await expect(page.getByText('¿Cómo quieres firmar?')).toBeVisible();
+    await page.getByRole('button', { name: /Firma digital/ }).click();
+    await expect(page.getByText('1 · Firmas tú, ahora')).toBeVisible();
+    await page.getByRole('button', { name: 'Volver' }).click();
+    await expect(page.getByText('¿Cómo quieres firmar?')).toBeVisible();
+  });
+
+  test('handwritten without a saved signature → link to draw it in Perfil', async ({ page }) => {
+    await page.goto('/e2e/sign-sheet?metodo=elegir');
+    await expect(page.getByRole('button', { name: /Firma manuscrita/ })).toContainText('Aún no tienes firma guardada');
+    await page.getByRole('button', { name: /Firma manuscrita/ }).click();
+    await expect(page.getByRole('link', { name: 'Dibujar mi firma en Perfil' })).toHaveAttribute('href', '/settings/perfil');
+  });
+
+  test('handwritten with a saved signature → recipients prefilled from the counterparty', async ({ page }) => {
+    await page.goto('/e2e/sign-sheet?metodo=elegir&firma=1');
+    await page.getByRole('button', { name: /Firma manuscrita/ }).click();
+    await expect(page.getByText('1 · Tu firma')).toBeVisible();
+    await expect(page.getByLabel('Email').first()).toHaveValue('juan@nike.com');
+    await expect(page.getByRole('button', { name: 'Firmar y enviar →' })).toBeVisible();
   });
 });

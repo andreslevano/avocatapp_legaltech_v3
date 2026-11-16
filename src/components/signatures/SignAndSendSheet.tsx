@@ -12,7 +12,8 @@ import { docusignInfo, startDocusignConnect } from '@/lib/docusign/client';
 import { createSignatureRequest, getSigningUrl, openOwnerSigning, saveSignResume, SignatureClientError } from '@/lib/signatures/client';
 import { DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, type SignatureOptions } from '@/lib/signatures/types';
 import { ACCESS_CODE_RE, MAX_CC, MAX_SIGNERS, type SigningOrder } from '@/lib/signatures/recipients';
-import { Lock } from 'lucide-react';
+import { FileSignature, Lock, PenLine } from 'lucide-react';
+import ManualSignPanel from './ManualSignPanel';
 
 export interface SignAndSendSheetProps {
   documentId: string;
@@ -25,6 +26,66 @@ export interface SignAndSendSheetProps {
   language: 'es' | 'en';
   returnTo: string;               // page to come back to after connecting DocuSign
   onClose: () => void;
+  /** Skip the "¿Cómo quieres firmar?" step (e.g. back from connecting DocuSign → digital). */
+  initialMethod?: 'digital' | 'manual';
+}
+
+type Method = 'digital' | 'manual';
+
+/**
+ * "Firmar y enviar": first the owner chooses how to sign — digital (DocuSign, as before) or with the
+ * handwritten signature saved in Perfil (Firma manuscrita: stamped and emailed for the others to sign
+ * by hand).
+ */
+export default function SignAndSendSheet(p: SignAndSendSheetProps) {
+  const [method, setMethod] = useState<Method | null>(p.initialMethod ?? null);
+  const { userDoc } = useAppAuth();
+  const info = docusignInfo(userDoc);
+  const hasHandwritten = !!(userDoc as unknown as Record<string, unknown>).signatureUrl;
+
+  if (method === 'digital') return <DigitalSignSheet {...p} onBack={() => setMethod(null)} />;
+  if (method === 'manual') {
+    return (
+      <ModalShell title="Firmar y enviar con tu firma manuscrita" onClose={p.onClose} sheetOnMobile>
+        <div className="overflow-y-auto -mx-1 px-1">
+          <p className="text-caption text-text-muted truncate mb-3">{p.title}</p>
+          <ManualSignPanel
+            documentId={p.documentId} title={p.title} language={p.language}
+            defaultRecipients={p.defaultSigners?.length ? p.defaultSigners : [p.defaultCounterparty].filter(x => x.name || x.email)}
+            defaultCc={p.defaultCc}
+            onClose={p.onClose} onBack={() => setMethod(null)}
+          />
+        </div>
+      </ModalShell>
+    );
+  }
+
+  const option = (m: Method, Icon: typeof PenLine, title: string, desc: string, note: string) => (
+    <button type="button" onClick={() => setMethod(m)}
+      className="w-full text-left rounded-xl border border-border-strong bg-surface hover:border-accent-border hover:bg-accent-subtle px-4 py-3 transition-colors min-h-touch">
+      <span className="flex items-center gap-2 text-small font-semibold text-text-heading"><Icon size={18} aria-hidden className="text-accent-text" />{title}</span>
+      <span className="block mt-1 text-caption text-text">{desc}</span>
+      {note && <span className="block mt-1 text-caption text-text-muted">{note}</span>}
+    </button>
+  );
+
+  return (
+    <ModalShell title="Firmar y enviar" onClose={p.onClose} sheetOnMobile>
+      <div className="space-y-3">
+        <p className="text-caption text-text-muted truncate">{p.title}</p>
+        <p className="text-small text-text">¿Cómo quieres firmar?</p>
+        {option('digital', FileSignature, 'Firma digital',
+          'Con DocuSign: firmas aquí y cada parte firma electrónicamente por email. El PDF firmado y el certificado vuelven solos a Documentos.',
+          info && info.status !== 'reauth_required' ? `Cuenta conectada: ${info.email ?? ''}` : 'Necesitas conectar tu cuenta de DocuSign (te lo pedimos en el siguiente paso).')}
+        {option('manual', PenLine, 'Firma manuscrita',
+          'Con la firma que dibujaste en tu perfil: la colocamos en el documento y lo enviamos por email para que los demás firmen a mano.',
+          hasHandwritten ? '' : 'Aún no tienes firma guardada: te llevaremos a dibujarla.')}
+        <div className="flex justify-end pt-1">
+          <Button variant="ghost" size="sm" onClick={p.onClose}>Cancelar</Button>
+        </div>
+      </div>
+    </ModalShell>
+  );
 }
 
 interface SignerRow { key: number; name: string; email: string; code: string; useCode: boolean }
@@ -46,7 +107,7 @@ function defaultMessage(title: string, counterparty: string, owner: string, lang
     : `Hola${hi ? ` ${hi}` : ''},\n\nTe envío "${title}" para tu firma. Yo ya lo he firmado.\n\nGracias,\n${owner}`;
 }
 
-export default function SignAndSendSheet(p: SignAndSendSheetProps) {
+function DigitalSignSheet(p: SignAndSendSheetProps & { onBack: () => void }) {
   const { user, userDoc } = useAppAuth();
   const info = docusignInfo(userDoc);
   const connected = !!info && info.status !== 'reauth_required';
@@ -288,7 +349,7 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
 
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" size="sm" className="!text-text-muted hover:!bg-transparent hover:!text-text"
-          disabled={!!busy} onClick={p.onClose}>Cancelar</Button>
+          disabled={!!busy} onClick={p.onBack}>Volver</Button>
         {resumeId ? (
           <Button variant="accent" size="sm" loading={busy === 'resume'} onClick={resume}>Continuar firma</Button>
         ) : connected ? (
