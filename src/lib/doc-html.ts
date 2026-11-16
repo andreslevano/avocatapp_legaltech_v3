@@ -440,7 +440,7 @@ function legacyHtml(safeTitle: string, authorName: string, authorNif: string, da
 
   ${bodyHtml}
 
-  <div class="doc-footer">Documento generado con AVOCAT &middot; avocatapp.com</div>
+  <div class="doc-footer">Documento generado con AVOCAT &middot; avocatapp.com<br>AVOCAT powered by MobilityForWork</div>
 
 </div>
 </body>

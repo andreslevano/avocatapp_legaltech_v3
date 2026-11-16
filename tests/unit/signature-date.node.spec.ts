@@ -41,3 +41,9 @@ test('a saved document with the stamped date re-signs correctly (DocuSign anchor
   expect(dates(manual)).toEqual(['mañana']);
   expect(manual.indexOf('mañana')).toBeLessThan(manual.indexOf('<strong>B</strong>'));
 });
+
+test('every generated document carries "AVOCAT powered by MobilityForWork" in the footer', () => {
+  for (const html of [buildDocHtml(two(), 'NDA'), buildDocHtml(two(), 'NDA', SIG), buildDocHtml(two(), 'NDA', undefined, undefined, { forSignature: true })]) {
+    expect(html).toMatch(/<div class="doc-footer">[^]*AVOCAT powered by MobilityForWork<\/div>/);
+  }
+});
