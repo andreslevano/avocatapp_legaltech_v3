@@ -38,15 +38,23 @@ service cloud.firestore {
       // `integrations` (connected-account display info, F1) is written only by server routes.
       // `isAdmin` gates server-side admin actions (F2 legal-change approval): a user can never grant it
       // to themselves (signup writes isAdmin: false).
+      // Billing fields (credits, Stripe customer, planTier, welcome flag) are server-only, also at creation.
       allow create: if request.auth != null && request.auth.uid == userId
         && !('integrations' in request.resource.data)
+        && !request.resource.data.keys().hasAny(['creditos_disponibles', 'creditos_consumidos', 'stripe_customer_id', 'planTier', 'welcomeCreditsGranted'])
         && (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false)
         && (!('branding' in request.resource.data) || validBranding(request.resource.data.branding, userId));
       allow update: if request.auth != null && request.auth.uid == userId
         && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['creditos_disponibles', 'creditos_consumidos', 'stripe_customer_id', 'integrations', 'isAdmin'])
+            .hasAny(['creditos_disponibles', 'creditos_consumidos', 'stripe_customer_id', 'integrations', 'isAdmin', 'planTier', 'welcomeCreditsGranted'])
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['branding'])
             || validBranding(request.resource.data.branding, userId));
+    }
+
+    // waitlist ("Avísame cuando esté disponible", /precios): written only by POST /api/waitlist
+    // (Admin SDK). No client access at all.
+    match /waitlist/{id} {
+      allow read, write: if false;
     }
 
     // users/{uid}.branding — document branding (src/lib/branding.ts). Exact shape, validated values:
