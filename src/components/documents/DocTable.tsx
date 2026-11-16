@@ -15,7 +15,7 @@ import { isItemDrag, readDragPayload, setDragPayload, type DragPayload } from '.
 import { formatContractDate } from '@/lib/contracts/dates';
 import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
 
-export type DocAction = 'preview' | 'sign' | 'contract' | 'link-case' | 'link-client' | 'rename' | 'move' | 'download' | 'analyze' | 'delete';
+export type DocAction = 'preview' | 'view' | 'sign' | 'contract' | 'link-case' | 'link-client' | 'rename' | 'move' | 'download' | 'analyze' | 'delete';
 export type FolderAction = 'open' | 'rename' | 'move' | 'delete';
 
 /** A row listed before the files: a real folder, or a virtual group in a smart view. */
@@ -59,7 +59,8 @@ const TH = 'px-3 py-2.5 text-left text-label font-semibold tracking-widest upper
 const TD = 'px-3 py-2.5 text-caption';
 
 const MENU_ITEMS: { label: string; action: DocAction; needsMove?: boolean; needsSign?: boolean; needsContract?: boolean }[] = [
-  { label: 'Ver / previsualizar',  action: 'preview'     },
+  { label: 'Ver en grande',        action: 'view'        },
+  { label: 'Ver detalles',         action: 'preview'     },
   { label: 'Firmar y enviar',      action: 'sign', needsSign: true },
   { label: 'Analizar como contrato', action: 'contract', needsContract: true },
   { label: 'Mover a…',             action: 'move', needsMove: true },
@@ -362,6 +363,8 @@ export default function DocTable({
                   key={d.id}
                   {...dragDocProps(d)}
                   onClick={() => !isRenaming && onAction('preview', d)}
+                  onDoubleClick={() => !isRenaming && onAction('view', d)}
+                  title="Doble clic para ver en grande"
                   className={`group transition-colors cursor-pointer ${isActive ? 'bg-accent-subtle' : 'hover:bg-surface-muted'}`}
                 >
                   <td className={TD} onClick={e => { e.stopPropagation(); onToggleSelect(d.id); }}>

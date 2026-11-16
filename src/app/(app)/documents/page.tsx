@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import DocFiltersBar, { type SearchScope } from '@/components/documents/DocFiltersBar';
 import DocTable, { type DocAction, type FolderAction, type FolderRow } from '@/components/documents/DocTable';
 import DocPreviewPanel from '@/components/documents/DocPreviewPanel';
+import DocViewerModal from '@/components/documents/DocViewerModal';
 import Breadcrumb from '@/components/documents/Breadcrumb';
 import FolderDialogs from '@/components/documents/FolderDialogs';
 import { IconFolder } from '@/components/documents/FolderTree';
@@ -219,6 +220,7 @@ function DocumentsView() {
 
   // Preview (by id, so moves/renames are reflected)
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [viewerId, setViewerId] = useState<string | null>(null);
   const previewDoc = previewId ? docs.find(d => d.id === previewId) ?? null : null;
 
   // Upload
@@ -441,6 +443,10 @@ function DocumentsView() {
         break;
       case 'preview':
         setPreviewId(prev => prev === doc.id ? null : doc.id);
+        break;
+      case 'view':
+        setViewerId(doc.id);
+        setPreviewId(doc.id);
         break;
       case 'move':
         openMove({ docIds: [doc.id], folderIds: [] });
@@ -789,6 +795,19 @@ function DocumentsView() {
           </>
         )}
       </div>
+
+      {/* Full-screen viewer (‹ › follow the table order) */}
+      {viewerId && (() => {
+        const viewed = docs.find(d => d.id === viewerId);
+        return viewed && (
+          <DocViewerModal
+            doc={viewed}
+            list={displayedDocs}
+            onNavigate={d => { setViewerId(d.id); setPreviewId(d.id); }}
+            onClose={() => setViewerId(null)}
+          />
+        );
+      })()}
 
       {/* Bulk action bar */}
       {selectedDocs.length > 0 && (

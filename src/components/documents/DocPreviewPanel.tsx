@@ -15,7 +15,8 @@ import SignaturePanel from '@/components/signatures/SignaturePanel';
 import ContractCard from '@/components/contracts/ContractCard';
 import type { Contract } from '@/lib/contracts/types';
 import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
-import { Cloud } from 'lucide-react';
+import { Cloud, Maximize2 } from 'lucide-react';
+import DocRender from './DocRender';
 
 interface Props {
   doc: DocumentRecord;
@@ -29,17 +30,12 @@ interface Props {
   onContract?: (c: Contract) => void;
 }
 
-const IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
 
 export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, onClose, onAction, canSign = false, onContract }: Props) {
   const caseDoc  = getCaseForDoc(d, cases);
   const client   = getClientForDoc(d, cases, clients);
   const tipo     = inferDocType(d.name);
-  const previewUrl = d.pdfDownloadUrl ?? d.downloadUrl;
   const ext      = (d.pdfDownloadUrl ? 'pdf' : d.type).toLowerCase();
-  const isPdf    = ext === 'pdf';
-  const isImage  = IMAGE_TYPES.has(ext);
-  const isWord   = ext === 'doc' || ext === 'docx';
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -63,24 +59,19 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
         </button>
       </div>
 
-      {/* Preview area */}
-      <div className="flex-1 overflow-hidden min-h-0 bg-bg">
-        {isPdf && <iframe src={previewUrl} title={d.name} className="w-full h-full border-0" />}
-        {isImage && (
-          <div className="flex items-center justify-center h-full p-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={d.downloadUrl} alt={d.name} className="max-w-full max-h-full object-contain rounded-lg" />
-          </div>
-        )}
-        {!isPdf && !isImage && (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-4">
-            <FileTypeIcon name={`f.${ext}`} size={48} className="text-text-muted" />
-            <p className="text-caption text-text-muted">
-              {isWord ? 'Vista previa no disponible para Word.' : `Formato ${ext.toUpperCase()} no tiene previsualización.`}
-            </p>
-            <p className="text-caption text-text-muted">Descarga el archivo para abrirlo.</p>
-          </div>
-        )}
+      {/* Preview area — click (or "Ampliar") opens the full-screen viewer */}
+      <div className="relative group flex-1 overflow-hidden min-h-0 bg-bg">
+        <DocRender key={d.id} doc={d} compact />
+        <button
+          type="button"
+          onClick={() => onAction('view', d)}
+          aria-label={`Ver ${d.name} en grande`}
+          className="absolute inset-0 flex items-end justify-end p-3 bg-transparent hover:bg-black/10 focus-visible:bg-black/10 transition-colors cursor-zoom-in"
+        >
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-surface border border-border-strong px-3 py-1.5 text-caption font-medium text-text shadow-sm">
+            <Maximize2 size={16} aria-hidden /> Ampliar
+          </span>
+        </button>
       </div>
 
       {/* Metadata */}
@@ -155,11 +146,9 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
               <Button variant="accent" size="sm" fullWidth>Descargar</Button>
             </a>
           )}
-          {isPdf && (
-            <a href={previewUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="ghost" size="sm">↗</Button>
-            </a>
-          )}
+          <Button variant="ghost" size="sm" onClick={() => onAction('view', d)} aria-label="Ver en grande" title="Ver en grande">
+            <Maximize2 size={16} aria-hidden />
+          </Button>
         </div>
         {/* Other actions */}
         <div className="flex gap-2">
