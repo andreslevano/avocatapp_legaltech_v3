@@ -11,6 +11,9 @@ import type { Timestamp } from 'firebase/firestore';
 import { FileSpreadsheet, Send } from 'lucide-react';
 import ImportClientsModal from '@/components/clients/ImportClientsModal';
 import ClientsBulkBar from '@/components/clients/ClientsBulkBar';
+import ClientDetailDrawer from '@/components/clients/ClientDetailDrawer';
+import { getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
+import { clientDocuments, docsSummary } from '@/lib/clients/documents';
 import { availableDocs, type DocId } from '@/lib/data-requests/catalog';
 import { isValidEmail } from '@/lib/data-requests/core';
 import {
@@ -49,6 +52,9 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  // Client detail panel (click a client) + the user's documents for the "Documentos" column.
+  const [detail, setDetail] = useState<{ id: string; tab: 'firma' | 'todos' } | null>(null);
+  const [documents, setDocuments] = useState<DocumentRecord[] | null>(null);
   // Selection for bulk actions (ids of clients still in the list).
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const toggleOne = (id: string) => setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -71,6 +77,7 @@ export default function ClientsPage() {
       .then(([cls, cs]) => { setClients(cls); setCases(cs); })
       .catch(() => {})
       .finally(() => setLoading(false));
+    getUserDocuments(userDoc.uid).then(setDocuments).catch(() => setDocuments([]));
   }, [userDoc.uid]);
 
   const openCreate = () => {
@@ -276,7 +283,7 @@ export default function ClientsPage() {
                       onChange={e => setSelected(e.target.checked ? new Set(clients.map(c => c.id)) : new Set())}
                       className="h-4 w-4 rounded border-border-strong accent-accent cursor-pointer" />
                   </th>
-                  {['Cliente', 'Email', 'Datos', 'Casos activos', 'Último caso', 'Estado', ''].map(h => (
+                  {['Cliente', 'Email', 'Datos', 'Documentos', 'Casos activos', 'Último caso', 'Estado', ''].map(h => (
                     <th key={h} className="text-left px-4 py-2.5 text-label font-semibold tracking-widest uppercase text-text-muted">{h}</th>
                   ))}
                 </tr>
@@ -289,7 +296,10 @@ export default function ClientsPage() {
                         className="h-4 w-4 rounded border-border-strong accent-accent cursor-pointer" />
                     </td>
                     <td className="px-4 py-3 font-medium text-text">
-                      <div>{c.name}</div>
+                      <button type="button" onClick={() => setDetail({ id: c.id, tab: 'todos' })}
+                        className="text-left font-medium text-text hover:text-accent-text hover:underline underline-offset-2">
+                        {c.name}
+                      </button>
                       {c.company && <div className="text-caption text-text-muted">{c.company}</div>}
                     </td>
                     <td className="px-4 py-3 text-text-muted">{c.email || '—'}</td>
@@ -320,6 +330,18 @@ export default function ClientsPage() {
                             {rowError[c.id] && <p className="text-caption text-danger-text">{rowError[c.id]}</p>}
                           </div>
                         );
+                      })()}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {documents === null ? <span className="text-text-muted">…</span> : (() => {
+                        const s = docsSummary(clientDocuments(documents, c.id, cases.filter(k => k.clientId === c.id).map(k => k.id)) as never[]);
+                        return s.total ? (
+                          <button type="button" onClick={() => setDetail({ id: c.id, tab: s.signature ? 'firma' : 'todos' })}
+                            className="text-left text-text hover:text-accent-text">
+                            {s.total}
+                            {s.signature > 0 && <span className="block text-caption text-text-muted">{s.signature} de firma{s.signed ? ` · ${s.signed} firmado${s.signed === 1 ? '' : 's'}` : ''}</span>}
+                          </button>
+                        ) : <span className="text-text-muted">—</span>;
                       })()}
                     </td>
                     <td className="px-4 py-3 text-text">{activeCasesByClientId[c.id] ?? 0}</td>
@@ -354,6 +376,17 @@ export default function ClientsPage() {
           </div>
         )}
       </div>
+
+      {detail && (() => {
+        const dc = clients.find(c => c.id === detail.id);
+        return dc && (
+          <ClientDetailDrawer
+            client={dc} cases={cases} documents={documents} initialTab={detail.tab}
+            onClose={() => setDetail(null)}
+            onEdit={() => { setDetail(null); openEdit(dc); }}
+          />
+        );
+      })()}
 
       {selected.size > 0 && (
         <ClientsBulkBar

@@ -214,6 +214,14 @@ function DocumentsView() {
   const [filters, setFilters] = useState<DocFilters>(EMPTY_FILTERS);
   const [scope, setScope] = useState<SearchScope>('folder');
 
+  // ?cliente=<id> (from Clientes → "Ver en Documentos"): that client's documents, in every folder.
+  const clienteParam = searchParams?.get('cliente') ?? '';
+  useEffect(() => {
+    if (!clienteParam) return;
+    setFilters(f => ({ ...f, clientId: clienteParam }));
+    setScope('all');
+  }, [clienteParam]);
+
   // Selection (documents only) — cleared when the location changes
   const [selected, setSelected] = useState<Set<string>>(new Set());
   useEffect(() => { setSelected(new Set()); }, [searchKey, scope]);
