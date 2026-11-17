@@ -26,10 +26,14 @@ function processBlock(block: string): string {
   const out: string[] = [];
   const listItems: string[] = [];
   const paraLines:  string[] = [];
+  // Current list: bullets ("- ", "* ") or numbered ("1. ", "1) "; keeps the first number).
+  let listKind: 'ul' | 'ol' = 'ul';
+  let listStart = 1;
 
   const flushList = () => {
     if (listItems.length) {
-      out.push(`<ul>${listItems.map(i => `<li>${i}</li>`).join('')}</ul>`);
+      const items = listItems.map(i => `<li>${i}</li>`).join('');
+      out.push(listKind === 'ol' ? `<ol${listStart !== 1 ? ` start="${listStart}"` : ''}>${items}</ol>` : `<ul>${items}</ul>`);
       listItems.length = 0;
     }
   };
@@ -49,18 +53,30 @@ function processBlock(block: string): string {
     const h2m = t.match(/^## (.+)/);
     const h3m = t.match(/^### (.+)/);
     const lim = t.match(/^[-*] (.+)/);
+    const olm = t.match(/^(\d{1,3})[.)] (.+)/);
     const hr  = /^-{3,}$|^\*{3,}$|^_{3,}$/.test(t);
 
     if (h1m)      { flushList(); flushPara(); out.push(`<h1>${inline(h1m[1])}</h1>`); }
     else if (h2m) { flushList(); flushPara(); out.push(`<h2>${inline(h2m[1])}</h2>`); }
     else if (h3m) { flushList(); flushPara(); out.push(`<h3>${inline(h3m[1])}</h3>`); }
     else if (hr)  { flushList(); flushPara(); out.push('<hr class="doc-sep">'); }
-    else if (lim) { flushPara();  listItems.push(inline(lim[1])); }
+    else if (lim || olm) {
+      flushPara();
+      const kind = lim ? 'ul' : 'ol';
+      if (listItems.length && kind !== listKind) flushList();
+      if (!listItems.length) { listKind = kind; listStart = olm ? Number(olm[1]) : 1; }
+      listItems.push(inline(lim ? lim[1] : olm![2]));
+    }
     else          { flushList();  paraLines.push(inline(t)); }
   }
   flushList();
   flushPara();
   return out.join('');
+}
+
+/** Markdown subset of Avocat documents → HTML (headings, lists, bold, italic). Escapes all text. */
+export function markdownToHtml(md: string): string {
+  return mdToHtml(md);
 }
 
 function mdToHtml(md: string): string {

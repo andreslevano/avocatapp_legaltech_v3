@@ -61,10 +61,29 @@ function receptorParagraph(r: MfwReceptor): string {
   return `De otra parte, D./Dña. ${v(r.nombre, 'NOMBRE DEL RECEPTOR')}, mayor de edad, con domicilio en ${v(r.domicilio, 'DOMICILIO DEL RECEPTOR')}, provisto/a de DNI/NIE/Pasaporte n.º ${v(r.documento, 'DNI / NIE / PASAPORTE')}, y correo electrónico ${v(r.email, 'EMAIL DEL RECEPTOR')}, actuando en nombre propio (en adelante, el «Receptor» o la «Parte Receptora»).`;
 }
 
-function productosBlock(productos: string): string {
-  const items = productos.split(/\n+/).map(s => s.replace(/^[-*•►]\s*/, '').trim()).filter(Boolean);
-  if (!items.length) return '[DESCRIPCIÓN DE LOS PRODUCTOS PROTEGIDOS]';
-  return items.map(i => `- **${i.replace(/\*/g, '')}**`).join('\n');
+/**
+ * Formatting from the "Productos Protegidos" editor (bold, italic, numbered list, title/subtitle).
+ * Plain lines — and lines with typed bullets — keep the classic rendering: one bold bullet each.
+ */
+export const hasProductFormatting = (text: string) =>
+  /\*\*[^*\n]+\*\*|(^|[^*])\*[^*\s][^*\n]*\*(?!\*)|^\s*\d{1,3}[.)]\s|^\s*#{1,3}\s/m.test(text);
+
+/** The "Productos Protegidos" markdown as it goes into the document (also used by the editor preview). */
+export function productosBlock(productos: string): string {
+  const text = productos.replace(/\r/g, '').trim();
+  if (!text) return '[DESCRIPCIÓN DE LOS PRODUCTOS PROTEGIDOS]';
+  if (!hasProductFormatting(text)) {
+    const items = text.split(/\n+/).map(s => s.replace(/^[-*•►]\s*/, '').trim()).filter(Boolean);
+    return items.map(i => `- **${i.replace(/\*/g, '')}**`).join('\n');
+  }
+  // Formatted by the user: keep it. Título = "##", Subtítulo = "###" (never "#", the document title),
+  // no separators, no "____" (signature lines), bullets normalised.
+  return text.split('\n').map(line => line
+    .replace(/_{2,}/g, ' ')
+    .replace(/^\s*(#{1,3})\s+/, (_m, h: string) => (h.length === 3 ? '### ' : '## '))   // Subtítulo / Título
+    .replace(/^\s*[•►]\s*/, '- ')
+    .replace(/^\s*(-{3,}|\*{3,})\s*$/, '')
+    .trimEnd()).join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
 /** The approved agreement with the variable data filled in (markdown for doc-html.ts). */

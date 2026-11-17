@@ -5,7 +5,8 @@
 // entered; everything else is fixed by the template and shown as a summary.
 
 import type { ClientDoc } from '@/lib/firestore';
-import { MFW_NDA_TEMPLATE, type MfwReceptor } from '@/lib/org-templates/mobiforwork-nda';
+import FormattedTextarea from '@/components/forms/FormattedTextarea';
+import { MFW_NDA_TEMPLATE, productosBlock, type MfwReceptor } from '@/lib/org-templates/mobiforwork-nda';
 
 const INPUT = 'bg-bg border border-border rounded-lg px-3 py-2.5 text-small font-sans text-text  focus:border-accent-border';
 const LABEL = 'block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5';
@@ -79,12 +80,16 @@ export default function MfwNdaFields({ receptor: r, onReceptor, productos, onPro
         <p className="text-caption text-text-muted">Los datos que dejes vacíos aparecerán entre corchetes en el documento para completarlos antes de firmar.</p>
       </div>
 
-      <div>
-        <label className={LABEL}>Productos Protegidos *</label>
-        <textarea rows={4} value={productos} onChange={e => onProductos(e.target.value)}
-          placeholder={'Un producto, servicio o material por línea.\nEj: Plataforma Mobility For Work (CMMS) y sus módulos de mantenimiento\nPortal de fabricantes Norte by Mobility For Work'}
-          className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-small font-sans text-text  focus:border-accent-border resize-none leading-relaxed" />
-      </div>
+      <FormattedTextarea
+        id="mfw-productos"
+        label="Productos Protegidos *"
+        value={productos}
+        onChange={onProductos}
+        rows={5}
+        toDocument={productosBlock}
+        placeholder={'Un producto, servicio o material por línea.\nEj: Plataforma Mobility For Work (CMMS) y sus módulos de mantenimiento\nPortal de fabricantes Norte by Mobility For Work'}
+        help="Sin formato, cada línea aparece como un producto en negrita. Usa la barra para negrita, cursiva, títulos o listas: se respeta tal cual."
+      />
     </div>
   );
 }
