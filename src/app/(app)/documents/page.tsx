@@ -782,6 +782,7 @@ function DocumentsView() {
                 onAction={handleAction}
                 canSign={canSign(previewDoc)}
                 onContract={contractsOn ? c => { applyContract(c); setContractSheet(c); } : undefined}
+                onSignedCopy={r => setDocs(prev => [r.uploaded, ...prev.map(x => x.id === r.original.id ? r.original : x)])}
               />
             </div>
             {/* Mobile: full overlay */}
@@ -797,6 +798,7 @@ function DocumentsView() {
                   onAction={handleAction}
                   canSign={canSign(previewDoc)}
                   onContract={contractsOn ? c => { applyContract(c); setContractSheet(c); } : undefined}
+                  onSignedCopy={r => setDocs(prev => [r.uploaded, ...prev.map(x => x.id === r.original.id ? r.original : x)])}
                 />
               </div>
             </div>

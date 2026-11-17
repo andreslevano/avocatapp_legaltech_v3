@@ -19,3 +19,15 @@ test('signature status: DocuSign, signed copies, handwritten, stored estado', ()
   expect(isSignatureDoc(d('8', { status: 'Enviado' }))).toBe(true);
   expect(docsSummary([d('1', { signatureStatus: 'completed' }), d('2', { signatureStatus: 'sent' }), d('3')])).toEqual({ total: 3, signature: 2, signed: 1 });
 });
+
+test('handwritten signature: waiting for the copy → Firmado once returned; returned copy labelled', async () => {
+  const { awaitingSignedCopy } = await import('@/lib/clients/documents');
+  const sent = d('o', { manualSignature: { sentAt: 'x', signedDocumentId: 's' } });
+  expect(awaitingSignedCopy(sent)).toBe(true);
+  expect(signatureInfo(sent)).toMatchObject({ label: 'Enviado para firma manuscrita', tone: 'pending' });
+  const returned = d('o', { manualSignature: { sentAt: 'x', returnedDocumentId: 'r' }, status: 'Firmado' });
+  expect(awaitingSignedCopy(returned)).toBe(false);
+  expect(signatureInfo(returned)).toMatchObject({ label: 'Firmado', tone: 'done', via: 'Firma manuscrita' });
+  expect(signatureInfo(d('r', { kind: 'signed', signedVia: 'manual' }))).toMatchObject({ label: 'Copia firmada por todos', via: 'Firma manuscrita' });
+  expect(signatureInfo(d('k', { kind: 'signed' }))).toMatchObject({ via: 'DocuSign' });
+});

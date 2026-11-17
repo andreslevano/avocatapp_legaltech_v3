@@ -203,7 +203,7 @@ export default function ServicesContractPage() {
       const pdf = await buildPdfBlob(md, fileBase, undefined, META, brand.pdf).catch(() => null);
       const record = await saveDocumentToStorage({
         userId: user.uid, plan: userDoc.plan ?? 'Abogados', blob, name: `${fileBase}.doc`,
-        caseId: null, source: 'generated', pdfBlob: pdf?.blob ?? undefined,
+        caseId: null, clientId: clientId || null, source: 'generated', pdfBlob: pdf?.blob ?? undefined,
       });
       setSavedDocId(record.id);
       if (requestParams.requestId) linkRequestDocument(user, requestParams.requestId, 'contrato_servicios_mfw', record.id);

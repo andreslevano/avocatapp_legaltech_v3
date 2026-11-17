@@ -382,6 +382,7 @@ export default function ClientsPage() {
         return dc && (
           <ClientDetailDrawer
             client={dc} cases={cases} documents={documents} initialTab={detail.tab}
+            onSignedCopy={r => setDocuments(prev => prev && [r.uploaded, ...prev.map(x => x.id === r.original.id ? r.original : x)])}
             onClose={() => setDetail(null)}
             onEdit={() => { setDetail(null); openEdit(dc); }}
           />

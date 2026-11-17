@@ -12,6 +12,8 @@ import {
 import { formatBytes } from '@/lib/storage-client';
 import type { DocAction } from './DocTable';
 import SignaturePanel from '@/components/signatures/SignaturePanel';
+import UploadSignedCopy, { type SignedCopyResult } from '@/components/signatures/UploadSignedCopy';
+import { awaitingSignedCopy } from '@/lib/clients/documents';
 import ContractCard from '@/components/contracts/ContractCard';
 import type { Contract } from '@/lib/contracts/types';
 import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
@@ -28,10 +30,12 @@ interface Props {
   canSign?: boolean;
   /** F0: contract summary / "Analizar como contrato"; opens the confirmation sheet. */
   onContract?: (c: Contract) => void;
+  /** "Subir copia firmada" (handwritten signature returned): the page updates its list. */
+  onSignedCopy?: (r: SignedCopyResult) => void;
 }
 
 
-export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, onClose, onAction, canSign = false, onContract }: Props) {
+export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, onClose, onAction, canSign = false, onContract, onSignedCopy }: Props) {
   const caseDoc  = getCaseForDoc(d, cases);
   const client   = getClientForDoc(d, cases, clients);
   const tipo     = inferDocType(d.name);
@@ -127,6 +131,7 @@ export default function DocPreviewPanel({ doc: d, cases, clients, folderLabel, o
 
       {/* Actions */}
       <div className="border-t border-border px-4 py-3 flex flex-col gap-2 flex-shrink-0">
+        {awaitingSignedCopy(d) && <UploadSignedCopy key={d.id} doc={d} onDone={onSignedCopy} />}
         {canSign && (
           <Button variant="accent" size="sm" fullWidth onClick={() => onAction('sign', d)}>Firmar y enviar</Button>
         )}

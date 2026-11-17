@@ -21,6 +21,12 @@ export interface DocumentRecord {
   source?: 'generated' | 'uploaded' | 'microsoft' | 'docusign';
   kind?: 'original' | 'signed' | 'certificate';
   signedFromDocumentId?: string;  // on the signed PDF filed from DocuSign (Phase 4)
+  /** Handwritten signature (src/lib/signatures/manual.ts): on the original, when it was sent / returned. */
+  manualSignature?: { signedDocumentId?: string; sentAt?: string; recipients?: string[]; returnedDocumentId?: string; returnedAt?: string };
+  /** On the "firmado por ti" copy: the original document. */
+  manualSignedFrom?: string;
+  /** On a signed copy: how it was signed ('manual' = returned by the other party, uploaded by the owner). */
+  signedVia?: 'manual' | 'docusign';
   folderId?: string | null;     // D1: where the document lives (missing/null = root)
   externalRef?: {               // F1: set on documents imported from Microsoft
     provider: 'onedrive' | 'sharepoint';
@@ -56,10 +62,12 @@ export async function saveDocumentToStorage(params: {
   blob: Blob;
   name: string;
   caseId?: string | null;
+  /** The client the document is for (tools with a client selected): shows in the client's panel. */
+  clientId?: string | null;
   source?: 'generated' | 'uploaded';
   pdfBlob?: Blob;
 }): Promise<DocumentRecord> {
-  const { userId, plan, blob, caseId, source = 'generated', pdfBlob } = params;
+  const { userId, plan, blob, caseId, clientId, source = 'generated', pdfBlob } = params;
   // Generated documents carry their creation date-time in the name, so regenerations of the same
   // document are told apart. Uploads keep the user's own file name.
   const name = source === 'generated' ? stampedFileName(params.name, new Date()) : params.name;
@@ -97,6 +105,7 @@ export async function saveDocumentToStorage(params: {
     createdAt: serverTimestamp(),
   };
   if (pdfDownloadUrl) firestorePayload.pdfDownloadUrl = pdfDownloadUrl;
+  if (clientId) firestorePayload.clientId = clientId;
 
   const docRef = await addDoc(collection(db, 'documents'), firestorePayload);
 
@@ -110,6 +119,7 @@ export async function saveDocumentToStorage(params: {
     storagePath,
     downloadUrl,
     pdfDownloadUrl,
+    ...(clientId ? { clientId } : {}),
     source,
     createdAt: null,
   };

@@ -8,7 +8,8 @@ import Link from 'next/link';
 import { ArrowRight, FileSignature, FileText, Pencil, X } from 'lucide-react';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 import type { DocumentRecord } from '@/lib/storage-client';
-import { clientDocuments, signatureInfo } from '@/lib/clients/documents';
+import { awaitingSignedCopy, clientDocuments, signatureInfo } from '@/lib/clients/documents';
+import UploadSignedCopy, { type SignedCopyResult } from '@/components/signatures/UploadSignedCopy';
 import { inferStatus, STATUS_STYLE } from '@/components/documents/helpers';
 import DocViewerModal from '@/components/documents/DocViewerModal';
 import { PrepareLinks, requestStatus, RequestStatusChip } from './DataRequestControls';
@@ -21,6 +22,8 @@ interface Props {
   onEdit: () => void;
   onClose: () => void;
   initialTab?: Tab;
+  /** A returned signed copy was uploaded: the page updates its document list. */
+  onSignedCopy?: (r: SignedCopyResult) => void;
 }
 
 type Tab = 'firma' | 'todos';
@@ -45,7 +48,7 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export default function ClientDetailDrawer({ client: c, cases, documents, onEdit, onClose, initialTab = 'firma' }: Props) {
+export default function ClientDetailDrawer({ client: c, cases, documents, onEdit, onClose, initialTab = 'firma', onSignedCopy }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<Tab>(initialTab);
   const [viewing, setViewing] = useState<DocumentRecord | null>(null);
@@ -173,6 +176,11 @@ export default function ClientDetailDrawer({ client: c, cases, documents, onEdit
                         </span>
                         <span className={`px-1.5 py-0.5 rounded text-caption font-medium border whitespace-nowrap ${STATUS_STYLE[estado] ?? STATUS_STYLE.Borrador}`}>{estado}</span>
                       </button>
+                      {awaitingSignedCopy(d) && (
+                        <div className="px-3 pb-2.5 pl-10">
+                          <UploadSignedCopy doc={d} compact onDone={onSignedCopy} />
+                        </div>
+                      )}
                     </li>
                   );
                 })}

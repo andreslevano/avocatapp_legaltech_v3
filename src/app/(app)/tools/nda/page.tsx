@@ -348,6 +348,7 @@ export default function NdaPage() {
             blob,
             name: `${ndaName}.doc`,
             caseId: null,
+            clientId: selectedClientId || null,   // shows in the client's panel / Documentos filter
             source: 'generated',
             pdfBlob: pdfBlobResult?.blob ?? undefined,
           });

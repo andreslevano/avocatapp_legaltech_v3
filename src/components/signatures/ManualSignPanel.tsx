@@ -15,6 +15,7 @@ import { buildPdfBlobFromHtml } from '@/lib/agent-export';
 import { getDocumentById, saveDocumentToStorage, type DocumentRecord } from '@/lib/storage-client';
 import { EMAIL_RE } from '@/lib/signatures/types';
 import { MANUAL_MAX_CC, MANUAL_MAX_RECIPIENTS } from '@/lib/signatures/manual';
+import UploadSignedCopy from './UploadSignedCopy';
 
 interface Props {
   documentId: string;
@@ -135,7 +136,12 @@ export default function ManualSignPanel(p: Props) {
       <div className="space-y-3 text-small" role="status">
         <p className="flex items-center gap-2 text-success-text font-semibold"><CheckCircle2 size={18} aria-hidden /> Enviado</p>
         <p className="text-text">Hemos enviado «{p.title}» firmado por ti a {sent.join(', ')}, con el PDF adjunto. Recibirás una copia.</p>
-        <p className="text-text-muted">La copia firmada está en Documentos. Cuando te la devuelvan firmada, súbela allí.</p>
+        <p className="text-text-muted">
+          La copia firmada por ti está en Documentos{doc?.clientId ? ' y en la ficha del cliente' : ''}. Cuando te la devuelvan firmada,
+          súbela con «Subir copia firmada»: aquí, en el documento (Documentos) o en la ficha del cliente. Quedará vinculada al mismo
+          cliente y el documento pasará a Firmado.
+        </p>
+        {doc && <UploadSignedCopy doc={{ ...doc, manualSignature: { sentAt: new Date().toISOString() } }} />}
         <div className="flex justify-end"><Button variant="accent" size="sm" onClick={p.onClose}>Cerrar</Button></div>
       </div>
     );
