@@ -19,5 +19,9 @@ jobs:
       - run: npm run lint:tokens
       # Tailwind default palettes and v3 aliases no longer compile.
       - run: AVOCAT_STRICT_COLORS=1 npx tailwindcss -i src/styles/globals.css -o /tmp/out.css
+      # Real keys live in .env.local (not in git); some API routes create their client at import
+      # time, so the build only needs a placeholder. Nothing is called during the build.
       - run: AVOCAT_STRICT_COLORS=1 npm run build
+        env:
+          OPENAI_API_KEY: ci-build-placeholder
       - run: npx playwright test -c playwright.node.config.ts tests/unit

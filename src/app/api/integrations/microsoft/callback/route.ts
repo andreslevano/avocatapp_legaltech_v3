@@ -5,6 +5,8 @@ import { classifyAuthError } from '@/lib/integrations/microsoft/errors';
 import { decodeJwtClaims, exchangeCode, graphGet } from '@/lib/integrations/microsoft/oauth';
 import { decodeState } from '@/lib/integrations/microsoft/state';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/integrations/microsoft/callback — Microsoft redirects here after sign-in/consent.
 export async function GET(req: NextRequest) {
   const { appUrl } = msServerConfig();
