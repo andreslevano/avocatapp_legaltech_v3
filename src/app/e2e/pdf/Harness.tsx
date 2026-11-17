@@ -28,6 +28,8 @@ export default function PdfHarness() {
   const [font, setFont] = useState('');
   useEffect(() => {
     const branding = new URLSearchParams(window.location.search).get('branded') === '1' ? harnessBranding() : undefined;
+    // ?dark=1 — render from a page in the app's dark theme (its CSS must not leak into the PDF).
+    if (new URLSearchParams(window.location.search).get('dark') === '1') document.documentElement.dataset.theme = 'dark';
     const services = new URLSearchParams(window.location.search).get('doc') === 'services';
     const md = services ? renderMfwServices({
       fechaContrato: '2026-11-11', inicioPool: '2026-08-10', mesesIniciales: 2, tarifaHora: 35, moneda: 'USD',

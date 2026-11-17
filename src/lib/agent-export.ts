@@ -1,6 +1,6 @@
 'use client';
 
-import { buildDocHtml, type DocMeta } from './doc-html';
+import { buildDocHtml, DOC_CREDIT, type DocMeta } from './doc-html';
 import { primaryFamily, type ResolvedBranding } from './branding';
 import { A4_PX, PDF_MARGIN_MM, PX_PER_MM, pageStarts, type Zone } from '@/lib/pdf-pages';
 import { primitives } from '@/lib/tokens';
@@ -43,32 +43,52 @@ export async function buildPdfBlob(
 export async function buildPdfBlobFromHtml(
   html: string, docTitle: string, branding?: ResolvedBranding,
 ): Promise<{ blob: Blob; filename: string }> {
-  const container = document.createElement('div');
-  container.innerHTML = html;
-  // 794px = A4 width at 96dpi. Side padding = 2.54cm; top/bottom margins are added per PDF page.
-  Object.assign(container.style, {
-    position: 'fixed', top: '-9999px', left: '-9999px',
-    width: `${A4_PX.width}px`, padding: '0 96px', background: 'white', zIndex: '-1',
-    boxSizing: 'border-box',
+  // Rendered in its own document (a hidden iframe): the app's CSS — dark theme text colour, the gold
+  // h1/h2 of globals.css, Tailwind preflight — must not leak into the document. 794px = A4 width at
+  // 96dpi; side padding 2.54cm; top/bottom margins are added per PDF page.
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.tabIndex = -1;
+  Object.assign(frame.style, {
+    position: 'fixed', top: '0', left: '-10000px', width: `${A4_PX.width}px`, height: `${A4_PX.height}px`,
+    border: '0', zIndex: '-1',
   });
-  document.body.appendChild(container);
+  document.body.appendChild(frame);
+  const idoc = frame.contentDocument!;
+  const paper = primitives['neutral-0'];
+  idoc.open();
+  idoc.write(html.replace('</head>',
+    `<style>html,body{margin:0;background:${paper}}body{width:${A4_PX.width}px;padding:0 96px;box-sizing:border-box}</style></head>`));
+  idoc.close();
+  const container = idoc.body;
 
   try {
+    if (idoc.readyState !== 'complete') {
+      await new Promise(r => { frame.addEventListener('load', r, { once: true }); setTimeout(r, 4000); });
+    }
     const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
       import('html2canvas'),
       import('jspdf'),
     ]);
 
-    const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
-    // The branding font's <link> was just injected: ask for the faces explicitly, then wait.
-    if (fonts && branding?.font.google) {
-      const fam = primaryFamily(branding.font);
+    // The document's web font (branding) must be loaded in BOTH documents: the frame lays the text out,
+    // but html2canvas draws it on a canvas of this page — a font missing here = wrong glyph spacing.
+    const href = html.match(/<link rel="stylesheet" href="(https:\/\/fonts\.googleapis\.com\/[^"]+)"/)?.[1]?.replace(/&amp;/g, '&');
+    const fam = branding?.font.google ? primaryFamily(branding.font)
+      : href ? decodeURIComponent(href.match(/family=([^:&]+)/)?.[1] ?? '').replace(/\+/g, ' ') : '';
+    if (href && !document.querySelector(`link[data-doc-font][href="${href}"]`)) {
+      const l = document.createElement('link');
+      l.rel = 'stylesheet'; l.href = href; l.dataset.docFont = '';
+      document.head.appendChild(l);
+    }
+    const docs = [idoc, document].map(d => (d as Document & { fonts?: FontFaceSet }).fonts).filter((f): f is FontFaceSet => !!f);
+    if (fam) {
       await Promise.race([
-        Promise.all(['400 12pt', '700 12pt', 'italic 400 12pt'].map(w => fonts.load(`${w} "${fam}"`))),
-        new Promise(r => setTimeout(r, 4000)),
+        Promise.all(docs.flatMap(f => ['400 12pt', '700 12pt', 'italic 400 12pt'].map(w => f.load(`${w} "${fam}"`)))),
+        new Promise(r => setTimeout(r, 6000)),
       ]).catch(() => undefined);
     }
-    await fonts?.ready;
+    await Promise.all(docs.map(f => f.ready));
     // Wait for the logo (and any other image) so html2canvas never captures an empty box.
     await Promise.all(Array.from(container.querySelectorAll('img')).map(img => img.complete ? null
       : new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 4000); })));
@@ -87,7 +107,8 @@ export async function buildPdfBlobFromHtml(
     });
 
     const canvas = await html2canvas(container, {
-      scale: 2, useCORS: true, backgroundColor: primitives['neutral-0'], logging: false,
+      scale: 2, useCORS: true, backgroundColor: paper, logging: false,
+      windowWidth: A4_PX.width, windowHeight: container.scrollHeight,
     });
     const ratio = canvas.width / container.offsetWidth;          // canvas px per CSS px
     const totalCss = canvas.height / ratio;
@@ -112,15 +133,15 @@ export async function buildPdfBlobFromHtml(
       ctx.drawImage(canvas, 0, Math.round(startCss * ratio), canvas.width, sliceH, 0, 0, canvas.width, sliceH);
       if (i > 0) pdf.addPage();
       pdf.addImage(page.toDataURL('image/jpeg', 0.88), 'JPEG', 0, PDF_MARGIN_MM.top, pageW, (endCss - startCss) * mmPerCss);
-      if (starts.length > 1) {
-        pdf.setFontSize(8);
-        pdf.setTextColor(150);
-        pdf.text(`Página ${i + 1} de ${starts.length}`, pageW / 2, pageH - 10, { align: 'center' });
-      }
+      // Every page: the Avocat credit (and the page number when there are several).
+      pdf.setFontSize(8);
+      pdf.setTextColor(150);
+      const pageNo = starts.length > 1 ? ` · Página ${i + 1} de ${starts.length}` : '';
+      pdf.text(`${DOC_CREDIT}${pageNo}`, pageW / 2, pageH - 10, { align: 'center' });
     });
     return { blob: pdf.output('blob'), filename: `${sanitizeFilename(docTitle)}.pdf` };
   } finally {
-    document.body.removeChild(container);
+    document.body.removeChild(frame);
   }
 }
 

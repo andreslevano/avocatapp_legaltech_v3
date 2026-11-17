@@ -215,6 +215,9 @@ export function stampOwnerSignature(
       `${label}:${close ?? ''} ${++sig === 1 ? SIG_IMG(signatureUrl.replace(/"/g, '%22')) : SIG_LINE}`);
 }
 
+/** Credit shown in every document: last-page footer (HTML), every page (PDF and Word). */
+export const DOC_CREDIT = 'AVOCAT powered by MobilityForWork';
+
 // ── HTML document template ────────────────────────────────────────────────────
 
 function wrapSignatureSection(html: string): string {
@@ -321,7 +324,7 @@ function legacyHtml(safeTitle: string, authorName: string, authorNif: string, da
 <meta charset="UTF-8">
 <title>${safeTitle}</title>
 <style>
-  @page WordSection1 { size:21cm 29.7cm; margin:2.5cm; }
+  @page WordSection1 { size:21cm 29.7cm; margin:2.5cm; mso-footer:f1; mso-footer-margin:1.2cm; }
   div.WordSection1   { page:WordSection1; }
   @page {
     size: A4;
@@ -440,7 +443,11 @@ function legacyHtml(safeTitle: string, authorName: string, authorNif: string, da
 
   ${bodyHtml}
 
-  <div class="doc-footer">Documento generado con AVOCAT &middot; avocatapp.com<br>AVOCAT powered by MobilityForWork</div>
+  <div class="doc-footer">Documento generado con AVOCAT &middot; avocatapp.com<br>${DOC_CREDIT}</div>
+
+  <!--[if gte mso 9]><table style="margin-left:50in" border="0" cellspacing="0" cellpadding="0"><tr><td>
+  <div style="mso-element:footer" id="f1"><p class="MsoFooter" style="text-align:center;font-size:8pt;color:#999999">${DOC_CREDIT}</p></div>
+  </td></tr></table><![endif]-->
 
 </div>
 </body>

@@ -179,8 +179,10 @@ export default function ManualSignPanel(p: Props) {
       <section className="space-y-1">
         <p className={LABEL}>1 · Tu firma</p>
         <div className="flex items-center gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={signatureUrl} alt="Tu firma manuscrita" className="h-10 max-w-[160px] object-contain bg-surface-raised rounded border border-border p-1" />
+          <span data-theme="light" className="inline-flex bg-surface rounded border border-border-strong p-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={signatureUrl} alt="Tu firma manuscrita" className="h-10 max-w-[160px] object-contain" />
+          </span>
           <p className="text-text-muted">Se colocará en el primer bloque de firma, con la fecha de hoy. <Link href="/settings/perfil" className="text-accent-text underline">Cambiar</Link></p>
         </div>
       </section>

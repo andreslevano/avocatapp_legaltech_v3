@@ -439,7 +439,7 @@ export default function ProfilePage() {
           {/* Existing signature preview */}
           {signatureUrl && !showPad && (
             <div className="mb-3">
-              <div className="bg-surface rounded-lg p-3 inline-block border border-border">
+              <div data-theme="light" className="bg-surface rounded-lg p-3 inline-block border border-border-strong">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={signatureUrl} alt="Firma guardada" className="h-16 max-w-[280px] object-contain" />
               </div>
@@ -457,7 +457,8 @@ export default function ProfilePage() {
           {/* Signature canvas */}
           {(!signatureUrl || showPad) && (
             <div>
-              <div className="relative rounded-lg overflow-hidden border border-border bg-surface mb-2" style={{ touchAction: 'none' }}>
+              {/* White paper whatever the app theme: the signature is drawn in ink, as on the document. */}
+              <div data-theme="light" className="relative rounded-lg overflow-hidden border border-border-strong bg-surface mb-2" style={{ touchAction: 'none' }}>
                 <canvas
                   ref={canvasRef}
                   width={600}
