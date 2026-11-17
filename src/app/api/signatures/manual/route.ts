@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   const u = owner.data() ?? {};
   const ownerName = String(u.legalCompanyName || u.displayName || u.name || caller.email || 'Avocat');
-  const msg = manualSignedEmail({ ownerName, title, subject, message, recipientName: recipients.length === 1 ? recipients[0].name : '' });
+  const msg = manualSignedEmail({ ownerName, ownerEmail: caller.email, title, subject, message, recipientName: recipients.length === 1 ? recipients[0].name : '' });
   try {
     await sendEmail(recipients.map(r => r.email).join(', '), {
       ...msg,

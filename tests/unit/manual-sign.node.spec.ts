@@ -63,3 +63,10 @@ test('email escapes user text and explains how to sign', () => {
   expect(m.html).toContain('Ana &lt;b&gt;');
   expect(m.text).toContain('fírmalo a mano');
 });
+
+test('email tells the recipient to send the signed copy to the owner, not Avocat', () => {
+  const m = manualSignedEmail({ ownerName: 'Ana', ownerEmail: 'ana@despacho.es', title: 'NDA', subject: '', message: '', recipientName: 'Juan' });
+  expect(m.text).toContain('Envía la copia firmada (escaneada o en foto) a ana@despacho.es');
+  expect(m.html).toContain('href="mailto:ana@despacho.es"');
+  expect(m.html).toContain('envíalo a ana@despacho.es');
+});

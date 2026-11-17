@@ -52,7 +52,7 @@ export default function ManualSignPanel(p: Props) {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState(() => {
     const first = p.defaultRecipients[0]?.name.trim().split(/\s+/)[0];
-    return `Hola${first ? ` ${first}` : ''},\n\nTe envío «${p.title}» firmado por mí. Fírmalo en tu bloque de firma y devuélvemelo respondiendo a este email.\n\nGracias,\n${ownerName}`;
+    return `Hola${first ? ` ${first}` : ''},\n\nTe envío «${p.title}» firmado por mí. Fírmalo en tu bloque de firma y devuélvemelo${user.email ? ` a ${user.email}` : ' respondiendo a este email'}.\n\nGracias,\n${ownerName}`;
   });
   const [busy, setBusy] = useState<'' | 'pdf' | 'save' | 'send'>('');
   const [error, setError] = useState('');

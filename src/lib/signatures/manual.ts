@@ -45,18 +45,28 @@ export function parseManualSend(body: unknown, ownerEmail?: string | null): { ok
   return { ok: true, input: { documentId, signedDocumentId, recipients: recipients as ManualParty[], cc: cc as ManualParty[], subject, message } };
 }
 
-export function manualSignedEmail(o: { ownerName: string; title: string; subject: string; message: string; recipientName: string }) {
+export function manualSignedEmail(o: { ownerName: string; ownerEmail?: string | null; title: string; subject: string; message: string; recipientName: string }) {
   const subject = o.subject || `${o.ownerName} te envía «${o.title}» firmado`;
-  const how = 'Revisa el documento adjunto, fírmalo a mano en tu bloque de firma y devuélvelo respondiendo a este email (escaneado o en foto).';
+  const to = o.ownerEmail?.trim() || '';
+  const how = 'Revisa el documento adjunto y fírmalo a mano en tu bloque de firma.';
+  const back = to
+    ? `Envía la copia firmada (escaneada o en foto) a ${to}. Puedes responder a este email: la respuesta va directamente a esa dirección, no a Avocat.`
+    : 'Devuélvelo firmado (escaneado o en foto) respondiendo a este email.';
+  const backHtml = to
+    ? `Envía la copia firmada (escaneada o en foto) a <strong><a href="mailto:${esc(to)}">${esc(to)}</a></strong>. Puedes responder a este email: la respuesta va directamente a esa dirección, no a Avocat.`
+    : esc(back);
   const text = [
     o.message.trim() || `Hola${o.recipientName ? `, ${o.recipientName}` : ''}:`, '',
-    `${o.ownerName} ya ha firmado «${o.title}». ${how}`, '',
+    `${o.ownerName} ya ha firmado «${o.title}». ${how}`,
+    back, '',
     'Enviado con Avocat.',
   ].join('\n');
   const html = layout([
     ...(o.message.trim() ? o.message.trim().split(/\n{2,}/).map(p => esc(p).replace(/\n/g, '<br>')) : [`Hola${o.recipientName ? `, ${esc(o.recipientName)}` : ''}:`]),
-    `<strong>${esc(o.ownerName)}</strong> ya ha firmado <strong>«${esc(o.title)}»</strong>.`,
-    esc(how),
-  ], null, 'Enviado con Avocat. Responde a este email para contestar directamente a quien te lo envía.');
+    `<strong>${esc(o.ownerName)}</strong> ya ha firmado <strong>«${esc(o.title)}»</strong>. ${esc(how)}`,
+    backHtml,
+  ], null, to
+    ? `Enviado con Avocat en nombre de ${esc(o.ownerName)}. No envíes el documento firmado a la dirección de Avocat: envíalo a ${esc(to)}.`
+    : 'Enviado con Avocat. Responde a este email para contestar directamente a quien te lo envía.');
   return { subject, text, html };
 }
