@@ -98,13 +98,15 @@ export default function ManualSignPanel(p: Props) {
     try {
       setBusy('pdf');
       const base = p.title.replace(/[^\p{L}\p{N} _-]/gu, '').trim().replace(/\s+/g, '_') || 'Documento';
+      // The email carries only the PDF: without it nothing is sent.
       const pdf = await buildPdfBlobFromHtml(html, p.title).catch(() => null);
+      if (!pdf) throw new Error('No se pudo generar el PDF. Intenta de nuevo.');
       stage = 'save'; setBusy('save');
       const record = await saveDocumentToStorage({
         userId: user.uid, plan: userDoc.plan ?? 'Abogados',
         blob: new Blob(['﻿' + html], { type: 'application/msword' }),
         name: `${base}_firmado.doc`, caseId: doc.caseId ?? null, source: 'generated',
-        ...(pdf ? { pdfBlob: pdf.blob } : {}),
+        pdfBlob: pdf.blob,
       });
       stage = 'send'; setBusy('send');
       const token = await user.getIdToken();
@@ -132,7 +134,7 @@ export default function ManualSignPanel(p: Props) {
     return (
       <div className="space-y-3 text-small" role="status">
         <p className="flex items-center gap-2 text-success-text font-semibold"><CheckCircle2 size={18} aria-hidden /> Enviado</p>
-        <p className="text-text">Hemos enviado «{p.title}» firmado por ti a {sent.join(', ')}, con el PDF y el Word adjuntos. Recibirás una copia.</p>
+        <p className="text-text">Hemos enviado «{p.title}» firmado por ti a {sent.join(', ')}, con el PDF adjunto. Recibirás una copia.</p>
         <p className="text-text-muted">La copia firmada está en Documentos. Cuando te la devuelvan firmada, súbela allí.</p>
         <div className="flex justify-end"><Button variant="accent" size="sm" onClick={p.onClose}>Cerrar</Button></div>
       </div>
@@ -201,7 +203,7 @@ export default function ManualSignPanel(p: Props) {
       <section className="space-y-1">
         <p className={LABEL}>2 · Se lo enviamos por email</p>
         {rowEditor(to, setTo, 'to')}
-        <p className="text-text-muted">Recibirán el PDF y el Word para firmarlo a mano y devolvértelo respondiendo al email.</p>
+        <p className="text-text-muted">Recibirán el PDF para firmarlo a mano y devolvértelo respondiendo al email.</p>
       </section>
 
       <details className="space-y-2">

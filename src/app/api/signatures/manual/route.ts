@@ -22,7 +22,8 @@ async function fetchFile(url: unknown, filename: string, contentType: string): P
 
 // POST /api/signatures/manual { documentId, signedDocumentId, recipients[], cc[], subject, message }
 // "Firma manuscrita": the signed copy (owner's handwritten signature stamped, saved by the client)
-// is emailed as PDF + Word to the recipients, with the owner in copy and as reply-to.
+// is emailed as a PDF to the recipients, with the owner in copy and as reply-to. Only the PDF: the
+// Word copy stays in Documentos (a .doc would let the recipient edit the signed document).
 export async function POST(req: NextRequest) {
   const caller = await requireCaller(req);
   if (caller instanceof NextResponse) return caller;
@@ -44,11 +45,9 @@ export async function POST(req: NextRequest) {
 
   const title = signatureTitleFromName(String(orig.get('name') ?? 'Documento'));
   const base = title.replace(/[^\p{L}\p{N} _-]/gu, '').trim().replace(/\s+/g, '_') || 'Documento';
-  const attachments = (await Promise.all([
-    fetchFile(signed.get('pdfDownloadUrl'), `${base}_firmado.pdf`, 'application/pdf'),
-    fetchFile(signed.get('downloadUrl'), `${base}_firmado.doc`, 'application/msword'),
-  ])).filter((a): a is EmailAttachment => !!a);
-  if (!attachments.length) return NextResponse.json({ error: 'No se pudo adjuntar el documento firmado.' }, { status: 502 });
+  const pdf = await fetchFile(signed.get('pdfDownloadUrl'), `${base}_firmado.pdf`, 'application/pdf');
+  if (!pdf) return NextResponse.json({ error: 'No se pudo adjuntar el PDF firmado.' }, { status: 502 });
+  const attachments: EmailAttachment[] = [pdf];
 
   const u = owner.data() ?? {};
   const ownerName = String(u.legalCompanyName || u.displayName || u.name || caller.email || 'Avocat');

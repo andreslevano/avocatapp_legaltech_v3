@@ -1,5 +1,5 @@
 // "Firma manuscrita": the owner signs with the handwritten signature saved in Perfil and Avocat
-// emails the signed document (PDF + Word) to the other parties, who sign by hand and reply.
+// emails the signed document as a PDF to the other parties, who sign by hand and reply.
 // Validation + email content. Pure, unit tested; the route is /api/signatures/manual.
 import { esc, layout } from '@/lib/data-requests/emails';
 import { EMAIL_RE } from './types';
