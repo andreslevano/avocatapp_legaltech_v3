@@ -251,6 +251,19 @@ export interface BuildDocOptions {
   forSignature?: boolean;
   /** Document branding (logo, header colours, font). Absent or default → legacy HTML, unchanged. */
   branding?: ResolvedBranding;
+  /** NDA negotiation draft: "BORRADOR — NO FIRMAR" banner at the top and on every Word page footer. */
+  draft?: boolean;
+}
+
+export const DRAFT_MARK = 'BORRADOR — NO FIRMAR';
+const DRAFT_MARK_HTML = 'BORRADOR &mdash; NO FIRMAR';
+
+/** Adds the draft banner (first thing in the document) and the per-page Word footer line. */
+function markDraft(html: string): string {
+  const banner = `<p class="doc-draft" style="text-indent:0;text-align:center;border:2pt solid #b42318;color:#b42318;font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:14pt;letter-spacing:2pt;padding:6pt;margin:0 0 18pt">${DRAFT_MARK_HTML}</p>`;
+  return html
+    .replace('<div class="WordSection1">', `<div class="WordSection1">\n  ${banner}`)
+    .replace(/(<div style="mso-element:footer" id="f1"><p class="MsoFooter"[^>]*>)/, `$1<b style="color:#b42318">${DRAFT_MARK_HTML}</b> &middot; `);
 }
 
 // ── Branding ─────────────────────────────────────────────────────────────────
@@ -323,14 +336,15 @@ export function buildDocHtml(
 
   const html = legacyHtml(safeTitle, authorName, authorNif, date, bodyHtml);
   const b = opts?.branding;
-  if (!b || b.isDefault) return html;
+  if (!b || b.isDefault) return opts?.draft ? markDraft(html) : html;
 
   // Branded: same base document + override styles + table header (renders in Word, html2canvas, DocuSign).
   const fontHref = googleFontsHref(b.font);
   const head = `${fontHref ? `<link rel="stylesheet" href="${escAttr(fontHref)}">\n` : ''}<style>${brandingCss(b)}</style>\n</head>`;
-  return html
+  const branded = html
     .replace('</head>', head)
     .replace(/  <div class="doc-header">[\s\S]*?\n  <\/div>\n/, `  ${brandedHeader(b, authorName, authorNif, date)}\n`);
+  return opts?.draft ? markDraft(branded) : branded;
 }
 
 function legacyHtml(safeTitle: string, authorName: string, authorNif: string, date: string, bodyHtml: string): string {

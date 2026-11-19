@@ -1,5 +1,6 @@
 import type { DocumentRecord } from '@/lib/storage-client';
 import { SIGNATURE_STATUS_LABEL } from '@/lib/signatures/types';
+import { NEGOTIATION_STATUS_LABEL } from '@/lib/negotiations/types';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 
 // ── Doc type inference ────────────────────────────────────────────
@@ -68,7 +69,29 @@ const SIGNATURE_STYLE: Record<NonNullable<DocumentRecord['signatureStatus']>, st
 };
 
 /** Chip for the Estado column: signature status when there is a request, else the estado. */
+/** NDA negotiation status on its draft (Borrador · En revisión · Cambios propuestos · Acordado …). */
+const NEGOTIATION_STYLE: Record<string, string> = {
+  en_revision:        'bg-info-subtle text-info-text border-status-en-revision-border',
+  cambios_propuestos: 'bg-warning-subtle text-warning-text border-status-proximo-border',
+  acordado:           'bg-success-subtle text-success-text border-status-a-tiempo-border',
+  caducada:           'bg-surface-raised text-text-muted border-border',
+  revocada:           'bg-surface-raised text-text-muted border-border',
+  cerrada:            'bg-surface-raised text-text-muted border-border',
+};
+
+export function negotiationChip(d: Pick<DocumentRecord, 'negotiation'>): { label: string; className: string } | null {
+  const n = d.negotiation;
+  if (!n || n.role !== 'draft') return null;
+  return {
+    label: `Borrador · ${NEGOTIATION_STATUS_LABEL[n.status] ?? n.status}`,
+    className: NEGOTIATION_STYLE[n.status] ?? STATUS_STYLE.Borrador,
+  };
+}
+
 export function statusChip(d: DocumentRecord): { label: string; className: string } {
+  // A draft in negotiation shows the negotiation; the agreed final version, the normal signature status.
+  const neg = negotiationChip(d);
+  if (neg) return neg;
   if (d.signatureStatus && d.signatureStatus in SIGNATURE_STYLE) {
     return { label: SIGNATURE_STATUS_LABEL[d.signatureStatus], className: SIGNATURE_STYLE[d.signatureStatus] };
   }

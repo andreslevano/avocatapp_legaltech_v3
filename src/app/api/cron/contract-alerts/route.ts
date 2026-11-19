@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { runAlertScan, sendDigests } from '@/lib/contracts/server-alerts';
 import { runLegalMonitor } from '@/lib/legal/server';
 import { madridHour } from '@/lib/contracts/dates';
+import { runNegotiationExpiryScan } from '@/lib/negotiations/server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -26,9 +27,11 @@ export async function POST(req: NextRequest) {
     // Isolated so a feed outage never blocks alerts or digests.
     let legal: unknown = null;
     if (madridHour() >= 9) legal = await runLegalMonitor().catch(e => ({ error: (e as Error).message }));
+    // NDA negotiations: "El enlace caduca en 2 días" (isolated, like the legal monitor).
+    const negotiations = await runNegotiationExpiryScan().catch(e => ({ error: (e as Error).message }));
     const digests = await sendDigests();
-    console.log('[contract-alerts] cron', JSON.stringify({ scan, legal, digests }));
-    return NextResponse.json({ scan, legal, digests });
+    console.log('[contract-alerts] cron', JSON.stringify({ scan, legal, negotiations, digests }));
+    return NextResponse.json({ scan, legal, negotiations, digests });
   } catch (err) {
     console.error('[contract-alerts] cron', (err as Error).message);
     return NextResponse.json({ error: 'scan_failed' }, { status: 500 });

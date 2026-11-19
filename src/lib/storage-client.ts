@@ -5,6 +5,7 @@ import {
 } from 'firebase/firestore';
 import { storage, db } from '@/lib/firebase';
 import { stampedFileName } from '@/lib/file-stamp';
+import type { DocumentNegotiation } from '@/lib/negotiations/types';
 
 export interface DocumentRecord {
   id: string;
@@ -27,6 +28,8 @@ export interface DocumentRecord {
   manualSignedFrom?: string;
   /** On a signed copy: how it was signed ('manual' = returned by the other party, uploaded by the owner). */
   signedVia?: 'manual' | 'docusign';
+  /** NDA negotiation (server-written): the draft under review, or the agreed final version. */
+  negotiation?: DocumentNegotiation | null;
   folderId?: string | null;     // D1: where the document lives (missing/null = root)
   externalRef?: {               // F1: set on documents imported from Microsoft
     provider: 'onedrive' | 'sharepoint';
@@ -66,8 +69,10 @@ export async function saveDocumentToStorage(params: {
   clientId?: string | null;
   source?: 'generated' | 'uploaded';
   pdfBlob?: Blob;
+  /** e.g. 'Borrador' for an NDA draft sent to negotiation. */
+  status?: DocumentRecord['status'];
 }): Promise<DocumentRecord> {
-  const { userId, plan, blob, caseId, clientId, source = 'generated', pdfBlob } = params;
+  const { userId, plan, blob, caseId, clientId, source = 'generated', pdfBlob, status } = params;
   // Generated documents carry their creation date-time in the name, so regenerations of the same
   // document are told apart. Uploads keep the user's own file name.
   const name = source === 'generated' ? stampedFileName(params.name, new Date()) : params.name;
@@ -106,6 +111,7 @@ export async function saveDocumentToStorage(params: {
   };
   if (pdfDownloadUrl) firestorePayload.pdfDownloadUrl = pdfDownloadUrl;
   if (clientId) firestorePayload.clientId = clientId;
+  if (status) firestorePayload.status = status;
 
   const docRef = await addDoc(collection(db, 'documents'), firestorePayload);
 
@@ -120,6 +126,7 @@ export async function saveDocumentToStorage(params: {
     downloadUrl,
     pdfDownloadUrl,
     ...(clientId ? { clientId } : {}),
+    ...(status ? { status } : {}),
     source,
     createdAt: null,
   };

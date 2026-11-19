@@ -59,7 +59,7 @@ export function watchContracts(uid: string, cb: (cs: Contract[]) => void): () =>
 export interface AppNotification {
   id: string;
   userId: string;
-  type: 'contract_expiry' | 'legal_change' | 'data_request';
+  type: 'contract_expiry' | 'legal_change' | 'data_request' | 'nda_negotiation';
   // contract_expiry (F3)
   contractId: string;
   documentId: string;
@@ -72,6 +72,11 @@ export interface AppNotification {
   // data_request: a client completed "Solicitar datos" (src/lib/data-requests)
   requestId?: string;
   clientId?: string;
+  // nda_negotiation: the other party opened / reviewed / accepted an NDA draft (src/lib/negotiations)
+  negotiationId?: string;
+  event?: 'submitted' | 'accepted' | 'opened' | 'expiring';
+  proposals?: number;
+  comments?: number;
   dueDate: string;
   severity: AlertSeverity;
   title: string;

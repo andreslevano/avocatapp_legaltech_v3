@@ -10,7 +10,7 @@ import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 import type { DocumentRecord } from '@/lib/storage-client';
 import { awaitingSignedCopy, clientDocuments, signatureInfo } from '@/lib/clients/documents';
 import UploadSignedCopy, { type SignedCopyResult } from '@/components/signatures/UploadSignedCopy';
-import { inferStatus, STATUS_STYLE } from '@/components/documents/helpers';
+import { statusChip } from '@/components/documents/helpers';
 import DocViewerModal from '@/components/documents/DocViewerModal';
 import { PrepareLinks, requestStatus, RequestStatusChip } from './DataRequestControls';
 
@@ -66,7 +66,7 @@ export default function ClientDetailDrawer({ client: c, cases, documents, onEdit
     if (!documents) return null;
     const all = clientDocuments(documents, c.id, clientCases.map(k => k.id))
       .sort((a, b) => ((b.createdAt as { seconds?: number })?.seconds ?? 0) - ((a.createdAt as { seconds?: number })?.seconds ?? 0));
-    return { all, firma: all.filter(d => signatureInfo(d as never)) };
+    return { all, firma: all.filter(d => signatureInfo(d as never) || d.negotiation) };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documents, c.id, clientCases.map(k => k.id).join('|')]);
   const shown = docs ? (tab === 'firma' ? docs.firma : docs.all) : [];
@@ -156,13 +156,13 @@ export default function ClientDetailDrawer({ client: c, cases, documents, onEdit
               <p role="status" className="text-caption text-text-muted">Cargando documentos…</p>
             ) : shown.length === 0 ? (
               <p className="text-caption text-text-muted">
-                {tab === 'firma' ? 'Ningún documento enviado a firma todavía.' : 'Sin documentos vinculados a este cliente ni a sus casos.'}
+                {tab === 'firma' ? 'Ningún documento en negociación ni enviado a firma todavía.' : 'Sin documentos vinculados a este cliente ni a sus casos.'}
               </p>
             ) : (
               <ul className="divide-y divide-border border border-border rounded-lg">
                 {shown.map(d => {
                   const sig = signatureInfo(d as never);
-                  const estado = inferStatus(d);
+                  const chip = statusChip(d);
                   return (
                     <li key={d.id}>
                       <button type="button" onClick={() => setViewing(d)} className="w-full text-left flex items-start gap-3 px-3 py-2.5 hover:bg-surface-muted">
@@ -174,8 +174,15 @@ export default function ClientDetailDrawer({ client: c, cases, documents, onEdit
                             {sig && <> · <span className={TONE[sig.tone]}>{sig.label}</span>{sig.via && ` · ${sig.via}`}</>}
                           </span>
                         </span>
-                        <span className={`px-1.5 py-0.5 rounded text-caption font-medium border whitespace-nowrap ${STATUS_STYLE[estado] ?? STATUS_STYLE.Borrador}`}>{estado}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-caption font-medium border whitespace-nowrap ${chip.className}`}>{chip.label}</span>
                       </button>
+                      {d.negotiation && (
+                        <div className="px-3 pb-2.5 pl-10">
+                          <Link href={`/negociaciones/${encodeURIComponent(d.negotiation.id)}`} className="inline-flex items-center gap-1 min-h-touch sm:min-h-0 text-caption text-accent-text hover:underline">
+                            {d.negotiation.role === 'draft' ? 'Ver negociación' : 'Versión acordada · ver negociación'} <ArrowRight size={16} aria-hidden />
+                          </Link>
+                        </div>
+                      )}
                       {awaitingSignedCopy(d) && (
                         <div className="px-3 pb-2.5 pl-10">
                           <UploadSignedCopy doc={d} compact onDone={onSignedCopy} />

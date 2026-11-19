@@ -76,7 +76,7 @@ export function clientIp(req: NextRequest): string {
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-async function ownerName(uid: string): Promise<{ name: string; email: string | null }> {
+export async function ownerName(uid: string): Promise<{ name: string; email: string | null }> {
   const u = (await db().collection('users').doc(uid).get()).data() ?? {};
   const auth = await authAdmin().getUser(uid).catch(() => null);
   const email = (auth?.email ?? (u.email as string | undefined)) || null;

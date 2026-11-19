@@ -5,7 +5,7 @@ import { requireCaller } from '@/lib/data-requests/server';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { emailConfigured, sendEmail, type EmailAttachment } from '@/lib/email';
 import { manualSignedEmail, parseManualSend } from '@/lib/signatures/manual';
-import { signatureTitleFromName } from '@/lib/signatures/eligibility';
+import { negotiationAllowsSignature, signatureTitleFromName } from '@/lib/signatures/eligibility';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
   ]);
   if (!orig.exists || orig.get('userId') !== caller.uid || !signed.exists || signed.get('userId') !== caller.uid) {
     return NextResponse.json({ error: 'Documento no encontrado.' }, { status: 404 });
+  }
+  if (!negotiationAllowsSignature(orig.get('negotiation'))) {
+    return NextResponse.json({ error: 'Este documento es un borrador en negociación: firma la versión acordada.', code: 'negotiation_draft' }, { status: 409 });
   }
 
   const title = signatureTitleFromName(String(orig.get('name') ?? 'Documento'));

@@ -25,6 +25,7 @@ import MfwNdaFields from '@/components/org-templates/MfwNdaFields';
 import { clientToMfwReceptor, clientToNdaParte } from '@/lib/data-requests/core';
 import { ndaDocFor } from '@/lib/data-requests/catalog';
 import { linkRequestDocument, readRequestParams } from '@/lib/data-requests/client';
+import { stashDraft } from '@/lib/negotiations/client';
 
 type Tipo = 'unilateral' | 'bilateral';
 type Lang = 'es' | 'en';
@@ -136,6 +137,7 @@ export default function NdaPage() {
 
   // Status
   const [generating, setGenerating]   = useState(false);
+  const [draftBusy, setDraftBusy]     = useState(false);
   const [result, setResult]           = useState('');
   const [error, setError]             = useState('');
   const [saved, setSaved]             = useState(false);
@@ -326,6 +328,43 @@ export default function NdaPage() {
       setError((err as Error).message ?? 'Error al generar el NDA.');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  /**
+   * MOBIFORWORK: "Generar borrador para negociar" — same template, saved as a draft (status Borrador,
+   * "BORRADOR — NO FIRMAR" on the Word/PDF), then /negociaciones/nueva to set clause levels and send.
+   * No contract record or signature: that happens on the agreed version.
+   */
+  const handleGenerateDraft = async () => {
+    const r = mfwReceptor;
+    if (r.tipo === 'sociedad' && !r.razonSocial?.trim()) return setError('Indica la razón social de la Parte Receptora.');
+    if (!r.nombre?.trim()) return setError(r.tipo === 'sociedad' ? 'Indica el nombre del representante.' : 'Indica el nombre de la Parte Receptora.');
+    if (!objeto.trim()) return setError('Describe los Productos Protegidos.');
+    setError(''); setNotice('');
+    setDraftBusy(true);
+    try {
+      const md = renderMfwNda({ receptor: r, productos: objeto });
+      const name = `BORRADOR_NDA_MOBIFORWORK_${r.tipo === 'sociedad' ? r.razonSocial : r.nombre}`.replace(/\s+/g, '_').slice(0, 60);
+      const docMeta: DocMeta = { authorName: MFW_NDA_TEMPLATE.company, authorNif: `CIF ${MFW_NDA_TEMPLATE.cif}` };
+      const { blob } = buildWordBlob(md, name, undefined, docMeta, brand.word, { draft: true });
+      const pdf = await buildPdfBlob(md, name, undefined, docMeta, brand.pdf, { draft: true }).catch(() => null);
+      const record = await saveDocumentToStorage({
+        userId: user.uid, plan: userDoc.plan ?? 'Autoservicio', blob, name: `${name}.doc`,
+        caseId: null, clientId: selectedClientId || null, source: 'generated', status: 'Borrador',
+        pdfBlob: pdf?.blob ?? undefined,
+      });
+      stashDraft({
+        documentId: record.id, markdown: md, title: ndaTitle, clientId: selectedClientId || null,
+        counterparty: {
+          name: r.nombre ?? '', email: r.email ?? '',
+          ...(r.tipo === 'sociedad' && r.razonSocial ? { company: r.razonSocial } : {}),
+        },
+      });
+      router.push(`/negociaciones/nueva?draft=${encodeURIComponent(record.id)}`);
+    } catch (err) {
+      setError((err as Error).message || 'No se pudo guardar el borrador.');
+      setDraftBusy(false);
     }
   };
 
@@ -609,7 +648,7 @@ export default function NdaPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-0.5">
                 <p className="text-caption text-text-muted">
                   El NDA se guardará automáticamente en tu repositorio de documentos
@@ -620,9 +659,17 @@ export default function NdaPage() {
                   </p>
                 )}
               </div>
-              <Button variant="accent" size="md" loading={generating} onClick={orgTpl ? handleGenerateFromTemplate : handleGenerate}>
-                {orgTpl ? 'Generar NDA (plantilla validada)' : 'Generar NDA'}
-              </Button>
+              <div className="flex flex-wrap justify-end gap-2">
+                {orgTpl && (
+                  <Button variant="secondary" size="md" loading={draftBusy} disabled={generating}
+                    onClick={handleGenerateDraft} title="La otra parte revisa el borrador cláusula a cláusula antes de firmar">
+                    Generar borrador para negociar
+                  </Button>
+                )}
+                <Button variant="accent" size="md" loading={generating} disabled={draftBusy} onClick={orgTpl ? handleGenerateFromTemplate : handleGenerate}>
+                  {orgTpl ? 'Generar NDA (plantilla validada)' : 'Generar NDA'}
+                </Button>
+              </div>
             </div>
           </div>
 

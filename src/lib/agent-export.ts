@@ -1,6 +1,6 @@
 'use client';
 
-import { buildDocHtml, DOC_CREDIT, type DocMeta } from './doc-html';
+import { buildDocHtml, DOC_CREDIT, DRAFT_MARK, type DocMeta } from './doc-html';
 import { primaryFamily, type ResolvedBranding } from './branding';
 import { A4_PX, PDF_MARGIN_MM, PX_PER_MM, pageStarts, type Zone } from '@/lib/pdf-pages';
 import { primitives } from '@/lib/tokens';
@@ -32,10 +32,11 @@ export function extractDocTitle(content: string): string {
 }
 
 export async function buildPdfBlob(
-  content: string, title?: string, signatureUrl?: string, meta?: DocMeta, branding?: ResolvedBranding
+  content: string, title?: string, signatureUrl?: string, meta?: DocMeta, branding?: ResolvedBranding,
+  opts?: { draft?: boolean },
 ): Promise<{ blob: Blob; filename: string }> {
   const docTitle = title ?? extractDocTitle(content);
-  const html = buildDocHtml(content, docTitle, signatureUrl, meta, { branding });
+  const html = buildDocHtml(content, docTitle, signatureUrl, meta, { branding, draft: opts?.draft });
   return buildPdfBlobFromHtml(html, docTitle, branding);
 }
 
@@ -46,6 +47,8 @@ export async function buildPdfBlobFromHtml(
   // Rendered in its own document (a hidden iframe): the app's CSS — dark theme text colour, the gold
   // h1/h2 of globals.css, Tailwind preflight — must not leak into the document. 794px = A4 width at
   // 96dpi; side padding 2.54cm; top/bottom margins are added per PDF page.
+  // NDA negotiation draft (buildDocHtml draft): diagonal watermark + top line on every page.
+  const draft = html.includes('class="doc-draft"');
   const frame = document.createElement('iframe');
   frame.setAttribute('aria-hidden', 'true');
   frame.tabIndex = -1;
@@ -138,11 +141,30 @@ export async function buildPdfBlobFromHtml(
       pdf.setTextColor(150);
       const pageNo = starts.length > 1 ? ` · Página ${i + 1} de ${starts.length}` : '';
       pdf.text(`${DOC_CREDIT}${pageNo}`, pageW / 2, pageH - 10, { align: 'center' });
+      if (draft) drawDraftMark(pdf, pageW, pageH);
     });
     return { blob: pdf.output('blob'), filename: `${sanitizeFilename(docTitle)}.pdf` };
   } finally {
     document.body.removeChild(frame);
   }
+}
+
+/** "BORRADOR — NO FIRMAR": top line and a light diagonal watermark (drawn over the page image). */
+function drawDraftMark(pdf: import('jspdf').jsPDF, pageW: number, pageH: number) {
+  const red: [number, number, number] = [180, 35, 24];
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(9);
+  pdf.setTextColor(...red);
+  pdf.text(DRAFT_MARK, pageW / 2, 8, { align: 'center' });
+  pdf.saveGraphicsState();
+  pdf.setGState(pdf.GState({ opacity: 0.12 }));
+  pdf.setFontSize(54);
+  const w = pdf.getTextWidth(DRAFT_MARK);
+  const a = Math.PI / 4;
+  // Rotated 45° about its start point: start so the text's middle sits on the page centre.
+  pdf.text(DRAFT_MARK, pageW / 2 - (w / 2) * Math.cos(a), pageH / 2 + (w / 2) * Math.sin(a), { angle: 45 });
+  pdf.restoreGraphicsState();
+  pdf.setFont('helvetica', 'normal');
 }
 
 /** y (CSS px) of every image row that is white across [x0, x1) — safe places to cut a page. */
@@ -169,10 +191,11 @@ function blankRows(canvas: HTMLCanvasElement, x0: number, x1: number, ratio: num
 }
 
 export function buildWordBlob(
-  content: string, title?: string, signatureUrl?: string, meta?: DocMeta, branding?: ResolvedBranding
+  content: string, title?: string, signatureUrl?: string, meta?: DocMeta, branding?: ResolvedBranding,
+  opts?: { draft?: boolean },
 ): { blob: Blob; filename: string } {
   const docTitle = title ?? extractDocTitle(content);
-  const html = buildDocHtml(content, docTitle, signatureUrl, meta, { branding });
+  const html = buildDocHtml(content, docTitle, signatureUrl, meta, { branding, draft: opts?.draft });
   const blob = new Blob(['﻿' + html], { type: 'application/msword' });
   return { blob, filename: `${sanitizeFilename(docTitle)}.doc` };
 }

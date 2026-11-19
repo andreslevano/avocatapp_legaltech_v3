@@ -109,6 +109,7 @@ export default function NotificationsPage() {
           ) : items.map(n => {
             if (n.type === 'legal_change') return <LegalChangeItem key={n.id} n={n} onOpen={open} />;
             if (n.type === 'data_request') return <DataRequestItem key={n.id} n={n} onOpen={open} />;
+            if (n.type === 'nda_negotiation') return <NegotiationItem key={n.id} n={n} onOpen={open} />;
             const c = contracts.get(n.contractId);
             const closed = c && (c.lifecycle === 'terminated' || c.lifecycle === 'renewed' || c.lifecycle === 'superseded');
             return (
@@ -154,6 +155,40 @@ export default function NotificationsPage() {
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** NDA negotiation: the other party opened / reviewed / accepted the draft, or the link expires soon. */
+function NegotiationItem({ n, onOpen }: { n: AppNotification; onOpen: (n: AppNotification, href: string) => void }) {
+  const accepted = n.event === 'accepted';
+  const counts = n.event === 'submitted'
+    ? [`${n.proposals ?? 0} ${n.proposals === 1 ? 'cambio' : 'cambios'}`, `${n.comments ?? 0} ${n.comments === 1 ? 'comentario' : 'comentarios'}`]
+    : [];
+  return (
+    <div className={`bg-surface border rounded-xl px-4 py-3 space-y-2 ${n.readAt ? 'border-border' : 'border-accent-border'}`}>
+      <div className="flex items-start gap-2.5">
+        <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${accepted ? 'bg-success-text' : SEVERITY_DOT[n.severity] ?? SEVERITY_DOT.low}`} />
+        <div className="flex-1 min-w-0">
+          <p className={`text-small leading-snug ${n.readAt ? 'text-text' : 'text-text-heading font-medium'}`}>{n.title}</p>
+          <p className="text-caption text-text-muted mt-0.5">{n.body}</p>
+          {counts.length > 0 && (
+            <p className="mt-1 flex flex-wrap gap-1.5">
+              {counts.map(c => <span key={c} className="px-2 py-0.5 rounded-full border border-border text-caption text-text">{c}</span>)}
+            </p>
+          )}
+        </div>
+        {!n.readAt && (
+          <button onClick={() => markNotificationsRead([n.id])} title="Marcar como leído"
+            className="text-caption text-text-muted hover:text-text flex-shrink-0">Leído</button>
+        )}
+      </div>
+      <div className="pl-[18px]">
+        <Button variant={n.event === 'opened' || n.event === 'expiring' ? 'secondary' : 'accent'} size="sm"
+          onClick={() => onOpen(n, n.url || `/negociaciones/${encodeURIComponent(n.negotiationId ?? '')}`)}>
+          {accepted ? 'Ver versión acordada' : n.event === 'submitted' ? 'Revisar propuestas' : 'Ver negociación'}
+        </Button>
       </div>
     </div>
   );

@@ -24,6 +24,7 @@ import {
 } from './sync';
 import { FILING_LEASE_MS, firebaseDownloadUrl, signedFileName, signedStoragePath } from './filing';
 import { planRecipients, recipientKey } from './recipients';
+import { negotiationAllowsSignature } from './eligibility';
 import { startContractOnSigning } from '@/lib/contracts/server';
 
 const requests = () => db().collection('signature_requests');
@@ -84,6 +85,9 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
   const docRef = documents().doc(input.documentId);
   const docSnap = await docRef.get();
   if (!docSnap.exists || docSnap.get('userId') !== uid) throw fail('Documento no encontrado.', 'not_found', 404);
+  if (!negotiationAllowsSignature(docSnap.get('negotiation'))) {
+    throw fail('Este documento es un borrador en negociación: firma la versión acordada.', 'negotiation_draft', 409);
+  }
   const existingId = docSnap.get('signatureRequestId') as string | undefined;
   const existingStatus = docSnap.get('signatureStatus') as SignatureStatus | undefined;
   if (existingId && isActiveStatus(existingStatus)) {
