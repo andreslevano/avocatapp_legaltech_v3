@@ -10,6 +10,7 @@ import {
   where,
   serverTimestamp,
   type Timestamp,
+  Timestamp as TimestampValue,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { DataRequestStatus, DocId } from '@/lib/data-requests/catalog';
@@ -187,7 +188,8 @@ export async function addCaseComment(caseId: string, text: string): Promise<void
   if (!db) throw new Error('Firestore not available');
   const snap = await getDoc(doc(db, 'cases', caseId));
   const existing: CaseComment[] = (snap.data()?.comments as CaseComment[]) ?? [];
-  const newComment: CaseComment = { text, createdAt: serverTimestamp() as unknown as Timestamp };
+  // Firestore rejects serverTimestamp() inside arrays: the comment carries the client's time.
+  const newComment: CaseComment = { text, createdAt: TimestampValue.now() };
   await updateDoc(doc(db, 'cases', caseId), {
     comments: [...existing, newComment],
     updatedAt: serverTimestamp(),

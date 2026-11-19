@@ -25,6 +25,7 @@ import MicrosoftImportFlow from '@/components/integrations/MicrosoftImportFlow';
 import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 import { useImportJobs } from '@/contexts/ImportJobsContext';
 import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
+import DocViewerModal from '@/components/documents/DocViewerModal';
 import { ArrowRight, CalendarDays, FilePenLine, ListChecks, MessageSquare, Sparkle, TriangleAlert } from 'lucide-react';
 import CaseAgentPanel, { type CaseAgentPanelHandle } from '@/components/cases/CaseAgentPanel';
 import ClientAssign, { newClientFrom, newClientPayload, type ClientAssignment } from '@/components/clients/ClientAssign';
@@ -129,6 +130,9 @@ export default function CaseDetailPage() {
   // Comments
   const [commentText,   setCommentText]   = useState('');
   const [addingComment, setAddingComment] = useState(false);
+  const [commentError,  setCommentError]  = useState('');
+  // Full-screen viewer for the case's documents (‹ › moves through the list).
+  const [viewing,       setViewing]       = useState<DocumentRecord | null>(null);
 
   // Document upload
   const fileRef = useRef<HTMLInputElement>(null);
@@ -204,7 +208,11 @@ export default function CaseDetailPage() {
       const updated = await getCase(caseDoc.id);
       if (updated) setCaseDoc(updated);
       setCommentText('');
-    } catch {}
+      setCommentError('');
+    } catch (err) {
+      console.error('[case] comment', err);
+      setCommentError('No se pudo guardar el comentario. Inténtalo de nuevo.');
+    }
     setAddingComment(false);
   };
 
@@ -569,7 +577,8 @@ export default function CaseDetailPage() {
                       <FileTypeIcon name={`f.${ext}`} size={20} className="flex-shrink-0 text-text-muted" />
                       <div className="flex-1 min-w-0">
                         <p className="text-caption font-sans font-medium text-text truncate">
-                          {d.name}
+                          <button type="button" onClick={() => setViewing(d)} title="Ver documento"
+                            className="text-left hover:text-accent-text hover:underline">{d.name}</button>
                           {d.signatureStatus && (
                             <button onClick={() => setSigOpen(o => o === d.id ? null : d.id)} title="Ver firma"
                               className={`ml-2 px-1.5 py-0.5 rounded text-caption font-medium border align-middle ${statusChip(d).className}`}>
@@ -582,7 +591,9 @@ export default function CaseDetailPage() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <a href={d.pdfDownloadUrl ?? d.downloadUrl} target="_blank" rel="noopener noreferrer"
+                        <button type="button" onClick={() => setViewing(d)} aria-label={`Ver ${d.name}`}
+                          className="text-caption text-text-muted hover:text-accent-text transition-colors">Ver</button>
+                        <a href={d.pdfDownloadUrl ?? d.downloadUrl} target="_blank" rel="noopener noreferrer" aria-label={`Descargar ${d.name}`}
                           className="text-caption text-text-muted hover:text-accent-text transition-colors">↓</a>
                         <button onClick={() => router.push(`/tools/analisis?docId=${d.id}`)}
                           className="text-caption text-text-muted hover:text-accent-text transition-colors">IA</button>
@@ -626,7 +637,8 @@ export default function CaseDetailPage() {
                 placeholder="Añade una nota o comentario al caso..."
                 className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border resize-none leading-relaxed"
               />
-              <div className="flex justify-end">
+              <div className="flex items-center justify-end gap-3">
+                {commentError && <p role="alert" className="text-caption text-danger-text mr-auto">{commentError}</p>}
                 <Button
                   variant="accent"
                   size="sm"
@@ -707,6 +719,10 @@ export default function CaseDetailPage() {
 
         </div>
       </div>
+
+      {viewing && (
+        <DocViewerModal doc={viewing} list={caseDocs} onNavigate={setViewing} onClose={() => setViewing(null)} />
+      )}
 
       {/* ── Mis documentos picker modal ─────────────────────── */}
       {showDocPicker && (
