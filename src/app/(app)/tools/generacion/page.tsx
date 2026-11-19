@@ -172,10 +172,20 @@ function buildPrompt(
   return lines.join('\n');
 }
 
+const FACTS_MIN = 30;
+
 function getValidation(parties: Party[], facts: string, specificFields: Record<string, string>, docTypeValue: string) {
   const hasParty = parties.some(p => p.name.trim());
-  const hasFacts = facts.trim().length >= 30;
-  if (!hasParty || !hasFacts) return { status: 'incomplete' as const, label: 'Mínimos sin completar', msg: 'Añade al menos una parte y una descripción de los hechos.' };
+  const factsLen = facts.trim().length;
+  const hasFacts = factsLen >= FACTS_MIN;
+  if (!hasParty || !hasFacts) {
+    // Say exactly what is missing (the facts minimum used to be invisible).
+    const missing = [
+      !hasParty ? 'añade al menos una parte con nombre' : '',
+      !hasFacts ? (factsLen === 0 ? `describe los hechos (mínimo ${FACTS_MIN} caracteres)` : `amplía los hechos: ${factsLen} de ${FACTS_MIN} caracteres mínimos`) : '',
+    ].filter(Boolean).join(' y ');
+    return { status: 'incomplete' as const, label: 'Mínimos sin completar', msg: missing.charAt(0).toUpperCase() + missing.slice(1) + '.' };
+  }
   const sfFields = SPECIFIC_FIELDS[docTypeValue] ?? [];
   const filled   = sfFields.filter(f => specificFields[f.key]?.trim()).length;
   if (filled >= Math.min(2, sfFields.length)) return { status: 'complete' as const, label: 'Información completa', msg: 'El documento se generará con buena precisión.' };
@@ -482,7 +492,10 @@ export default function GeneracionPage() {
               {/* Facts */}
               <div className="bg-surface border border-border rounded-xl p-5 space-y-3">
                 <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Hechos y descripción *</p>
-                <textarea rows={5} className={`${INPUT} resize-none leading-relaxed`} placeholder="Describe los hechos relevantes, la situación y las pretensiones. Cuanto más detallado, mejor será el documento generado." value={facts} onChange={e => setFacts(e.target.value)} />
+                <textarea rows={5} className={`${INPUT} resize-none leading-relaxed`} placeholder="Describe los hechos relevantes, la situación y las pretensiones. Cuanto más detallado, mejor será el documento generado." value={facts} onChange={e => setFacts(e.target.value)} aria-describedby="facts-count" />
+                <p id="facts-count" className={`text-caption ${facts.trim().length >= FACTS_MIN ? 'text-text-muted' : 'text-warning-text'}`}>
+                  {facts.trim().length < FACTS_MIN ? `Mínimo ${FACTS_MIN} caracteres · llevas ${facts.trim().length}` : `${facts.trim().length} caracteres`}
+                </p>
               </div>
 
               {/* Key dates */}
