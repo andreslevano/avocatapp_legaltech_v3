@@ -19,6 +19,12 @@ interface AgentChatProps {
   userDoc: UserDoc;
   caseContext?: CaseContext;
   caseDocuments?: DocumentRecord[];
+  /** Continue a saved conversation (agent v2 history): its messages are shown and new turns append to it. */
+  initialConversation?: { id: string | null; messages: Message[] };
+  /** A turn finished and the conversation was saved (id of the conversation). */
+  onConversation?: (convId: string) => void;
+  /** Text to put in the input box (e.g. "Preguntar a la IA" on a case's next step); key re-applies it. */
+  prefill?: { key: number; text: string } | null;
 }
 
 const BINARY_MIMES = new Set([
@@ -41,8 +47,8 @@ interface SavedToast {
 }
 
 
-export default function AgentChat({ user, userDoc, caseContext, caseDocuments = [] }: AgentChatProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+export default function AgentChat({ user, userDoc, caseContext, caseDocuments = [], initialConversation, onConversation, prefill }: AgentChatProps) {
+  const [messages, setMessages] = useState<Message[]>(() => initialConversation?.messages ?? []);
   const [streaming, setStreaming] = useState(false);
   const [savedToast, setSavedToast] = useState<SavedToast | null>(null);
   // Document branding, read through a ref so the streaming callback always uses the latest.
@@ -58,14 +64,21 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
   // Last prompt per assistant turn, for "Reintentar" / "Regenerar".
   const promptsRef = useRef<Map<string, { text: string; attachments: MessageAttachment[] }>>(new Map());
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const convIdRef = useRef<string | null>(null);
+  const convIdRef = useRef<string | null>(initialConversation?.id ?? null);
+  const onConversationRef = useRef(onConversation);
+  onConversationRef.current = onConversation;
   // "Detener": aborts the request (the server stops the model) and puts the prompt back to edit.
   const abortRef = useRef<AbortController | null>(null);
   const [draft, setDraft] = useState<{ key: number; text: string; attachments: MessageAttachment[] } | null>(null);
   const stop = useCallback(() => abortRef.current?.abort(), []);
+  useEffect(() => {
+    if (prefill?.text) setDraft({ key: prefill.key, text: prefill.text, attachments: [] });
+  }, [prefill?.key, prefill?.text]);
 
   useEffect(() => {
-    if (atBottomRef.current) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    // Scroll only the conversation area (scrollIntoView would also scroll the page around an embedded chat).
+    const el = logRef.current;
+    if (atBottomRef.current && el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
   const onLogScroll = () => {
@@ -79,9 +92,11 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
     };
   }, []);
 
-  // Reset conversation when case changes
+  // Reset conversation when the case changes (not on mount: a resumed conversation keeps its id)
+  const caseIdRef = useRef(caseContext?.id);
   useEffect(() => {
-    convIdRef.current = null;
+    if (caseIdRef.current !== caseContext?.id) convIdRef.current = null;
+    caseIdRef.current = caseContext?.id;
   }, [caseContext?.id]);
 
   function showDocSavedToast(name: string, url: string, doc: DocumentRecord) {
@@ -228,6 +243,7 @@ export default function AgentChat({ user, userDoc, caseContext, caseDocuments = 
                 );
               } else if (ev.type === 'done') {
                 convIdRef.current = ev.convId as string;
+                onConversationRef.current?.(ev.convId as string);
               } else if (ev.type === 'error') {
                 // A coded error carries a message meant for the user (e.g. AI provider unavailable).
                 const e = new Error(ev.message as string ?? 'Error del servidor') as Error & { userMessage?: string };

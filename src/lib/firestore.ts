@@ -40,6 +40,8 @@ export interface CaseAssessment {
   riesgos: string[];
   puntosClave: string[];
   fechasClave: string[];
+  /** Next steps proposed by the intake analysis (src/lib/cases/next-steps.ts). */
+  proximosPasos?: import('@/lib/cases/next-steps').NextStep[];
 }
 
 export interface CaseComment {
@@ -111,6 +113,9 @@ export interface ConversationDoc {
   userId: string;
   caseId: string | null;
   messages: ConversationMessage[];
+  /** Agent v2 history (users/{uid}/conversations): can be continued. Legacy ones are read-only. */
+  resumable?: boolean;
+  title?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -222,7 +227,7 @@ export async function getConversations(
     getDocs(query(collection(db, 'conversations'), ...legacy)).catch(() => null),
   ]);
   const docs = [
-    ...(current?.docs ?? []).map(d => ({ id: d.id, userId, ...d.data() } as ConversationDoc)),
+    ...(current?.docs ?? []).map(d => ({ id: d.id, userId, ...d.data(), resumable: true } as ConversationDoc)),
     ...(old?.docs ?? []).map(d => ({ id: d.id, ...d.data() } as ConversationDoc)),
   ].filter(c => (c.messages?.length ?? 0) > 0);
   return docs.sort((a, b) => tsSeconds(b.updatedAt) - tsSeconds(a.updatedAt));

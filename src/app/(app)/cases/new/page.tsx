@@ -9,7 +9,9 @@ import { saveDocumentToStorage } from '@/lib/storage-client';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import type { OcrPdfProgress } from '@/lib/ocr-pdf-client';
-import { CalendarDays, Check, FileText, Hourglass, Paperclip, Search, Sparkle, TriangleAlert, X } from 'lucide-react';
+import { CalendarDays, Check, FileText, Hourglass, ListChecks, Paperclip, Search, Sparkle, TriangleAlert, X } from 'lucide-react';
+import { escritoByValue } from '@/lib/escritos-catalog';
+import type { NextStep } from '@/lib/cases/next-steps';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -49,6 +51,7 @@ interface IntakeResult {
   titulo: string; tipo: string; cliente: string; deadline: string | null;
   notas: string; resumen: string; partes: string[]; riesgos: string[];
   puntosClave: string[]; fechasClave: string[];
+  proximosPasos?: NextStep[];
 }
 
 interface CaseForm {
@@ -198,6 +201,21 @@ function AssessmentPanel({ result }: { result: IntakeResult }) {
         </div>
       )}
 
+      {(result.proximosPasos?.length ?? 0) > 0 && (
+        <div className="bg-bg border border-border rounded-xl p-4">
+          <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3 flex items-center gap-1.5"><ListChecks size={14} aria-hidden /> Próximos pasos propuestos</p>
+          <ol className="space-y-2 list-decimal pl-5">
+            {result.proximosPasos!.map((p, i) => (
+              <li key={i} className="text-caption text-text">
+                <span className="font-semibold">{p.titulo}</span>{p.urgente ? <span className="text-danger-text"> · urgente</span> : ''}
+                {p.escrito && escritoByValue(p.escrito) ? <span className="text-text-muted"> · {escritoByValue(p.escrito)!.label}</span> : ''}
+              </li>
+            ))}
+          </ol>
+          <p className="mt-2 text-caption text-text-muted">Los tendrás en el caso, con acceso directo para generar cada escrito.</p>
+        </div>
+      )}
+
       {result.fechasClave.length > 0 && (
         <div className="bg-bg border border-border rounded-xl p-4">
           <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-3 flex items-center gap-1.5"><CalendarDays size={14} aria-hidden /> Fechas y plazos relevantes</p>
@@ -237,6 +255,7 @@ export default function NewCasePage() {
     title: '', type: 'civil', client: '', ref: generateRef(), deadline: '', notes: '',
   });
   const [saving,    setSaving]    = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const [saveError, setSaveError] = useState('');
 
   // ── File handling ──────────────────────────────────────────────
@@ -423,6 +442,7 @@ export default function NewCasePage() {
           riesgos:     intakeResult.riesgos,
           puntosClave: intakeResult.puntosClave,
           fechasClave: intakeResult.fechasClave,
+          ...(intakeResult.proximosPasos?.length ? { proximosPasos: intakeResult.proximosPasos } : {}),
         } : undefined,
         documentRefs: intakeDocRefs.length > 0 ? intakeDocRefs.map(d => ({
           name:     d.name,
@@ -432,10 +452,13 @@ export default function NewCasePage() {
         })) : undefined,
       });
 
-      // Upload original files to Storage + documents collection (fire-and-forget)
+      // Upload the original files to the case BEFORE opening it, so "Documentos adjuntos" lists them.
+      // (They used to upload in the background after navigating: the case opened without them.)
       if (extractedFiles.length > 0) {
         const idToken = await user.getIdToken();
-        Promise.all(
+        setUploadProgress({ done: 0, total: extractedFiles.length });
+        let done = 0;
+        await Promise.all(
           extractedFiles.map(async ({ file, text }) => {
             try {
               const record = await saveDocumentToStorage({
@@ -446,15 +469,16 @@ export default function NewCasePage() {
                 caseId: id,
                 source: 'uploaded',
               });
-              // Trigger vector embedding with extracted text
-              await fetch('/api/documents/embed', {
+              // Vector embedding with the extracted text (background: not needed to show the case)
+              fetch('/api/documents/embed', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
                 body:    JSON.stringify({ docId: record.id, ...(text ? { text } : {}) }),
-              });
-            } catch { /* silent — case already created */ }
+              }).catch(() => {});
+            } catch { /* the case exists; the file can be attached again from the case */ }
+            finally { setUploadProgress({ done: ++done, total: extractedFiles.length }); }
           })
-        ).catch(() => {});
+        );
       }
 
       router.push(`/cases/${id}`);
@@ -655,7 +679,8 @@ export default function NewCasePage() {
                     <textarea rows={5} value={form.notes} onChange={set('notes')} placeholder="Descripción, antecedentes, observaciones..." className={`${inputCls} resize-none leading-relaxed`} />
                   </div>
 
-                  <Button type="submit" variant="accent" size="lg" fullWidth loading={saving}>
+                  <Button type="submit" variant="accent" size="lg" fullWidth loading={saving}
+                    loadingText={uploadProgress ? `Subiendo documentos… ${uploadProgress.done} de ${uploadProgress.total}` : 'Creando caso…'}>
                     Crear caso
                   </Button>
                 </form>

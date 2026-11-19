@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { ALL_DOC_TYPES } from '@/lib/escritos-catalog';
+import { escritoOptionsForPrompt, sanitizeNextSteps } from '@/lib/cases/next-steps';
 
 export const runtime = 'nodejs';
 
@@ -19,9 +21,12 @@ Devuelve ÚNICAMENTE un JSON válido (sin markdown, sin explicaciones):
   "partes": ["nombre parte 1", "nombre parte 2"],
   "riesgos": ["Riesgo o punto de atención 1", "Riesgo 2"],
   "puntosClave": ["Punto jurídico relevante 1", "Punto 2"],
-  "fechasClave": ["fecha o plazo relevante 1"]
+  "fechasClave": ["fecha o plazo relevante 1"],
+  "proximosPasos": [{ "titulo": "Acción concreta (máx. 80 caracteres)", "detalle": "Por qué y cómo, en 1-2 frases", "escrito": "tipo de escrito o null", "urgente": false }]
 }
-Extrae entre 2 y 6 riesgos y 2 y 6 puntos clave. Sé específico y accionable.`;
+Extrae entre 2 y 6 riesgos y 2 y 6 puntos clave. Sé específico y accionable.
+En "proximosPasos" propón entre 2 y 5 pasos siguientes concretos para este caso, en orden. Cuando un paso consista en redactar un escrito, pon en "escrito" EXACTAMENTE uno de estos códigos (el que mejor encaje), si no, null: ${escritoOptionsForPrompt(ALL_DOC_TYPES)}.
+Marca "urgente": true solo si hay un plazo próximo o ya vencido.`;
 
 // ── Route handler — accepts pre-extracted text from client ────────
 
@@ -75,6 +80,7 @@ export async function POST(req: NextRequest) {
     const raw   = completion.choices[0]?.message?.content ?? '{}';
     const clean = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
     const result = JSON.parse(clean);
+    result.proximosPasos = sanitizeNextSteps(result.proximosPasos);
 
     console.log(`[intake] done in ${Date.now() - startTime}ms tokens=${completion.usage?.total_tokens ?? 0}`);
 

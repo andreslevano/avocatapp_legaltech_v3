@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { UserDoc } from '@/lib/auth';
 import { useSidebar } from '@/contexts/SidebarContext';
@@ -42,13 +42,12 @@ export default function Sidebar({ userDoc }: SidebarProps) {
 
   useEffect(() => {
     if (!isLawyer || !db || !userDoc.uid) return;
+    // Live: a case created (or renamed) elsewhere appears here without reloading.
     const q = query(collection(db, 'cases'), where('userId', '==', userDoc.uid));
-    getDocs(q)
-      .then(snap => {
-        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as CaseItem));
-        setCases(docs.sort((a, b) => a.title.localeCompare(b.title)));
-      })
-      .catch(() => {});
+    return onSnapshot(q, snap => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as CaseItem));
+      setCases(docs.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '')));
+    }, () => {});
   }, [userDoc.uid, isLawyer]);
 
   // Non-Abogados: render nothing (no sidebar panel)

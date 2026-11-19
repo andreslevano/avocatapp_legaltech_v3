@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { arrayRemove, arrayUnion, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { buildDocHtml } from '@/lib/doc-html';
+import { getCase, type CaseDoc } from '@/lib/firestore';
 import { ALL_DOC_TYPES, AREAS, DOC_TYPES_BY_AREA, escritoByValue, type Area, type DocType } from '@/lib/escritos-catalog';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
@@ -213,6 +214,8 @@ export default function GeneracionPage() {
   // MOBIFORWORK: NDAs come only from the lawyer-validated template (/tools/nda), never drafted here.
   const orgNda = orgNdaTemplateFor(user) !== null;
   const [customType,   setCustomType]   = useState('');
+  // Opened from a case: the escrito is prefilled from it and saved in it.
+  const [forCase, setForCase] = useState<CaseDoc | null>(null);
 
   // Generic form
   const [parties,    setParties]    = useState<Party[]>([{ id: 1, name: '', role: 'Demandante', nif: '' }, { id: 2, name: '', role: 'Demandado', nif: '' }]);
@@ -249,9 +252,25 @@ export default function GeneracionPage() {
   };
 
   // /tools/generacion?tipo=<value> (Favoritos in Herramientas): straight to that escrito's form.
+  // &caseId=<id> (a case's "Próximos pasos"): facts and parties prefilled from the case; saved in it.
   useEffect(() => {
-    const dt = escritoByValue(new URLSearchParams(window.location.search).get('tipo') ?? '');
+    const q = new URLSearchParams(window.location.search);
+    const dt = escritoByValue(q.get('tipo') ?? '');
     if (dt) { setActiveArea(dt.area); selectType(dt); }
+    const caseId = q.get('caseId');
+    if (caseId) {
+      getCase(caseId).then(c => {
+        if (!c || c.userId !== userDoc.uid) return;
+        setForCase(c);
+        const a = c.assessment;
+        const hechos = [c.notes?.trim(), a?.resumen?.trim() && a.resumen.trim() !== c.notes?.trim() ? `Resumen: ${a.resumen.trim()}` : '']
+          .filter(Boolean).join('\n\n');
+        if (hechos) setFacts(f => f.trim() ? f : hechos);
+        const names = [...new Set([c.client, ...(a?.partes ?? [])].map(n => (n ?? '').trim()).filter(Boolean))].slice(0, 6);
+        if (names.length) setParties(p => (p.some(x => x.name.trim()) ? p : names.map((name, i) => ({ id: i + 1, name, role: i === 0 ? 'Demandante' : 'Demandado', nif: '' }))));
+        if (a?.fechasClave?.length) setKeyDates(k => (k.some(x => x.label.trim() || x.date) ? k : a.fechasClave.slice(0, 5).map((label, i) => ({ id: i + 1, label, date: '' }))));
+      }).catch(() => {});
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -336,7 +355,7 @@ export default function GeneracionPage() {
           title:   `${docLabel} — ${new Date().toLocaleDateString('es-ES')}`,
           userId:  userDoc.uid,
           plan:    userDoc.plan ?? 'Abogados',
-          caseId:  null,
+          caseId:  forCase?.id ?? null,
           branding: brand.word, pdfBranding: brand.pdf,
         }).then(rec => { setAutoSaved(true); setSavedDocId(rec.id); }).catch(() => {});
       }
@@ -386,6 +405,16 @@ export default function GeneracionPage() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-3xl mx-auto space-y-5">
+
+          {forCase && (
+            <div className="bg-accent-subtle border border-accent-border rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-small text-text">
+                Para el caso <strong className="font-semibold">{forCase.title}</strong>
+                <span className="text-text-muted"> · datos del caso precargados; el escrito se guardará en el caso</span>
+              </p>
+              <Link href={`/cases/${forCase.id}`} className="text-caption text-accent-text hover:underline">← Volver al caso</Link>
+            </div>
+          )}
 
           {/* ── STEP 1: TYPE SELECTION ──────────────────────── */}
           {step === 'select' && (
@@ -696,8 +725,8 @@ export default function GeneracionPage() {
                   <Button variant="ghost" size="sm" onClick={() => { setResult(''); setError(''); setAutoSaved(false); setSavedDocId(null); setStep('form'); }}>
                     Regenerar con cambios
                   </Button>
-                  <Link href="/documents">
-                    <Button variant="accent" size="sm">Ver en Mis Documentos →</Button>
+                  <Link href={forCase ? `/cases/${forCase.id}` : '/documents'}>
+                    <Button variant="accent" size="sm">{forCase ? 'Ver en el caso →' : 'Ver en Mis Documentos →'}</Button>
                   </Link>
                 </div>
               )}

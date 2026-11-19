@@ -1,7 +1,7 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import {
   collection, addDoc, serverTimestamp, query, where, getDocs,
-  updateDoc, deleteDoc, doc as firestoreDoc, getDoc,
+  updateDoc, deleteDoc, doc as firestoreDoc, getDoc, onSnapshot,
 } from 'firebase/firestore';
 import { storage, db } from '@/lib/firebase';
 import { stampedFileName } from '@/lib/file-stamp';
@@ -205,6 +205,13 @@ export async function getCaseDocuments(userId: string, caseId: string): Promise<
   const snap = await getDocs(q);
   const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as DocumentRecord));
   return sortByCreatedAt(docs);
+}
+
+/** Live list of a case's documents: uploads that finish after the page opened appear on their own. */
+export function watchCaseDocuments(userId: string, caseId: string, cb: (docs: DocumentRecord[]) => void): () => void {
+  if (!db) return () => {};
+  const q = query(collection(db, 'documents'), where('userId', '==', userId), where('caseId', '==', caseId));
+  return onSnapshot(q, snap => cb(sortByCreatedAt(snap.docs.map(d => ({ id: d.id, ...d.data() } as DocumentRecord)))), () => {});
 }
 
 export function formatBytes(bytes: number): string {

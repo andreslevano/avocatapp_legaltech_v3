@@ -5,11 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import {
-  getCase, getConversations, updateCase, addCaseComment, getClients,
-  type CaseDoc, type ConversationDoc, type ClientDoc,
+  getCase, updateCase, addCaseComment, getClients,
+  type CaseDoc, type ClientDoc,
 } from '@/lib/firestore';
 import {
-  saveDocumentToStorage, getUserDocuments, getCaseDocuments, updateDocumentMeta,
+  saveDocumentToStorage, getUserDocuments, getCaseDocuments, updateDocumentMeta, watchCaseDocuments,
   type DocumentRecord,
 } from '@/lib/storage-client';
 import AppHeader from '@/components/layout/AppHeader';
@@ -25,7 +25,10 @@ import MicrosoftImportFlow from '@/components/integrations/MicrosoftImportFlow';
 import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 import { useImportJobs } from '@/contexts/ImportJobsContext';
 import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
-import { CalendarDays, Sparkle, TriangleAlert } from 'lucide-react';
+import { ArrowRight, CalendarDays, FilePenLine, ListChecks, MessageSquare, Sparkle, TriangleAlert } from 'lucide-react';
+import CaseAgentPanel, { type CaseAgentPanelHandle } from '@/components/cases/CaseAgentPanel';
+import { askPrompt, generateHref, nextStepsFor } from '@/lib/cases/next-steps';
+import { escritoByValue } from '@/lib/escritos-catalog';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -110,7 +113,12 @@ export default function CaseDetailPage() {
   const router  = useRouter();
 
   const [caseDoc,       setCaseDoc]       = useState<CaseDoc | null>(null);
-  const [conversations, setConversations] = useState<ConversationDoc[]>([]);
+  const agentRef = useRef<CaseAgentPanelHandle>(null);
+  const agentSectionRef = useRef<HTMLElement>(null);
+  const goToAgent = (text?: string) => {
+    if (text) agentRef.current?.ask(text);
+    agentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   const [clients,       setClients]       = useState<ClientDoc[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [saving,        setSaving]        = useState(false);
@@ -147,10 +155,11 @@ export default function CaseDetailPage() {
     if (q.get('ms') === 'connected' && q.get('intent') === 'import') setMsImportOpen(true);
   }, []);
   useEffect(() => {
-    // Files imported by the background runner: refresh the case's list.
-    if (!params.id || !importsDone) return;
-    getCaseDocuments(userDoc.uid, params.id).then(setCaseDocs).catch(() => {});
-  }, [importsDone, params.id, userDoc.uid]);
+    // Live list: files still uploading from "Nuevo caso", imports and uploads from other tabs appear on their own.
+    if (!params.id || !userDoc.uid) return;
+    return watchCaseDocuments(userDoc.uid, params.id, setCaseDocs);
+  }, [params.id, userDoc.uid]);
+  void importsDone;
 
   // Client picker
   const [showClientPicker, setShowClientPicker] = useState(false);
@@ -161,14 +170,12 @@ export default function CaseDetailPage() {
     if (!params.id) return;
     Promise.all([
       getCase(params.id),
-      getConversations(userDoc.uid, params.id),
       getClients(userDoc.uid),
       getCaseDocuments(userDoc.uid, params.id),
     ])
-      .then(([c, convs, cls, cdocs]) => {
+      .then(([c, cls, cdocs]) => {
         if (!c || c.userId !== userDoc.uid) { setNotFound(true); return; }
         setCaseDoc(c);
-        setConversations(convs);
         setClients(cls);
         setCaseDocs(cdocs);
       })
@@ -339,15 +346,11 @@ export default function CaseDetailPage() {
         subtitle={`${caseDoc.ref}${caseDoc.client ? ` · ${caseDoc.client}` : ''}`}
         actions={
           <div className="flex items-center gap-2">
-            <Link
-              href={`/agent?caseId=${caseDoc.id}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-subtle border border-accent-border text-accent-text text-caption font-sans font-medium hover:bg-accent-subtle transition-colors"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
+            <button type="button" onClick={() => goToAgent()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-subtle border border-accent-border text-accent-text text-caption font-sans font-medium hover:bg-accent-subtle transition-colors">
+              <Sparkle size={14} aria-hidden />
               Consultar con IA
-            </Link>
+            </button>
             <button onClick={() => router.push('/cases')} className="px-3 py-1.5 rounded-lg text-caption font-sans text-text-muted hover:text-text hover:bg-surface-muted transition-colors">
               ← Casos
             </button>
@@ -457,6 +460,55 @@ export default function CaseDetailPage() {
               </div>
             )}
           </div>
+
+          {/* ── Next steps ────────────────────────────────── */}
+          {(() => {
+            const { steps, fromAnalysis } = nextStepsFor(caseDoc);
+            return (
+              <section aria-labelledby="case-next" className="bg-surface border border-accent-border rounded-xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-border">
+                  <h3 id="case-next" className="flex items-center gap-2 text-small font-sans font-semibold text-text-heading"><ListChecks size={16} aria-hidden /> Próximos pasos</h3>
+                  <p className="text-caption text-text-muted">
+                    {fromAnalysis ? 'Propuestos por el análisis de los documentos del caso.' : `Habituales en un caso ${caseDoc.type}. Revisa cuáles aplican.`}
+                    {' '}Los escritos se generan con los datos del caso y se guardan en él.
+                  </p>
+                </div>
+                <ol className="divide-y divide-border">
+                  {steps.map((st, i) => {
+                    const esc = st.escrito ? escritoByValue(st.escrito) : null;
+                    return (
+                      <li key={i} className="px-5 py-3 flex flex-wrap items-start gap-3">
+                        <span aria-hidden className="mt-0.5 w-6 h-6 rounded-full bg-accent-subtle text-accent-text text-caption font-semibold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-[12rem]">
+                          <p className="text-small text-text font-medium">
+                            {st.titulo}{st.urgente && <span className="ml-2 px-1.5 py-0.5 rounded text-caption font-medium border bg-danger-subtle text-danger-text border-status-urgente-border">Urgente</span>}
+                          </p>
+                          {st.detalle && <p className="text-caption text-text-muted mt-0.5">{st.detalle}</p>}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {esc && (
+                            <Link href={generateHref(esc.value, caseDoc.id)}
+                              className="inline-flex items-center gap-1.5 min-h-touch sm:min-h-0 px-3 py-1.5 rounded-lg bg-accent text-text-on-accent text-caption font-medium hover:bg-accent-hover">
+                              <FilePenLine size={16} aria-hidden /> Generar {esc.label.toLowerCase()}
+                            </Link>
+                          )}
+                          <button type="button" onClick={() => goToAgent(askPrompt(st))}
+                            className="inline-flex items-center gap-1.5 min-h-touch sm:min-h-0 px-3 py-1.5 rounded-lg border border-border-strong text-caption text-text hover:bg-surface-muted">
+                            <MessageSquare size={16} aria-hidden /> Preguntar a la IA
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <div className="px-5 py-3 border-t border-border">
+                  <Link href={`/tools/generacion?caseId=${encodeURIComponent(caseDoc.id)}`} className="inline-flex items-center gap-1 text-caption text-accent-text hover:underline">
+                    Otro escrito para este caso <ArrowRight size={16} aria-hidden />
+                  </Link>
+                </div>
+              </section>
+            );
+          })()}
 
           {/* ── Documents ─────────────────────────────────── */}
           <div className="bg-surface border border-border rounded-xl overflow-hidden">
@@ -631,35 +683,14 @@ export default function CaseDetailPage() {
             </div>
           )}
 
-          {/* ── Conversations ──────────────────────────────── */}
-          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+          {/* ── Conversations: the agent inside the case ──── */}
+          <section ref={agentSectionRef} id="ia" aria-labelledby="case-ia" className="bg-surface border border-border rounded-xl overflow-hidden scroll-mt-4">
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-              <h3 className="text-small font-sans font-semibold text-text-heading">Conversaciones con IA</h3>
-              <span className="text-caption text-text-muted">{conversations.length}</span>
+              <h3 id="case-ia" className="text-small font-sans font-semibold text-text-heading">Conversaciones con IA</h3>
+              <span className="text-caption text-text-muted">Con el contexto y los documentos del caso</span>
             </div>
-            {conversations.length === 0 ? (
-              <div className="px-5 py-8 text-center">
-                <p className="text-caption text-text-muted mb-3">Sin conversaciones registradas para este caso.</p>
-                <Link href={`/agent?caseId=${caseDoc.id}`} className="text-accent-text text-caption hover:underline">
-                  Iniciar consulta con IA →
-                </Link>
-              </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {conversations.map(conv => (
-                  <div key={conv.id} className="px-5 py-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-caption text-text-muted">{conv.messages.length} mensaje{conv.messages.length !== 1 ? 's' : ''}</span>
-                      <span className="text-caption text-text-muted">{formatDateTime(conv.updatedAt)}</span>
-                    </div>
-                    {conv.messages[0] && (
-                      <p className="text-caption text-text line-clamp-2 leading-snug">{conv.messages[0].content}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            <CaseAgentPanel ref={agentRef} user={user} userDoc={userDoc} caseDoc={caseDoc} caseDocs={caseDocs} />
+          </section>
 
         </div>
       </div>
