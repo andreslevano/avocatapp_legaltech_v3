@@ -25,6 +25,8 @@ export interface UserDoc {
   stripe_customer_id?: string;
   /** Herramientas page: tool hrefs per group, in display order (set by drag and drop). */
   toolLayout?: ToolLayout;
+  /** Generación de escritos: document types starred by the user (DocType.value), shown in Favoritos. */
+  favoriteEscritos?: string[];
 }
 
 export interface ToolLayout {

@@ -1,6 +1,9 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
+import { arrayRemove, arrayUnion, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { buildDocHtml } from '@/lib/doc-html';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
@@ -12,7 +15,7 @@ import { consumirCredito } from '@/lib/creditos';
 import SignAndSendButton from '@/components/signatures/SignAndSendButton';
 import { getUserDocuments, type DocumentRecord } from '@/lib/storage-client';
 import { orgNdaTemplateFor } from '@/lib/org-templates';
-import { Check, CircleCheck, CircleX, TriangleAlert } from 'lucide-react';
+import { Check, CircleCheck, CircleX, Star, TriangleAlert } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -62,6 +65,8 @@ const DOC_TYPES_BY_AREA: Record<Area, DocType[]> = {
     { value: 'solicitud_indulto',      label: 'Solicitud de indulto',                area: 'Penal' },
   ],
 };
+
+const ALL_DOC_TYPES: DocType[] = Object.values(DOC_TYPES_BY_AREA).flat();
 
 const SPECIFIC_FIELDS: Record<string, FieldDef[]> = {
   demanda_civil:           [{ key:'cuantia', label:'Cuantía reclamada (€)', type:'number', placeholder:'10.000' }, { key:'titulo_juridico', label:'Título jurídico', type:'select', options:['Responsabilidad contractual','Responsabilidad extracontractual','Reclamación de deuda','Daños y perjuicios','Otro'] }, { key:'juzgado', label:'Juzgado destinatario', type:'text', placeholder:'Juzgado de Primera Instancia nº X de...' }],
@@ -227,7 +232,25 @@ export default function GeneracionPage() {
 
   // Step machine
   const [step,       setStep]       = useState<'select' | 'form' | 'result'>('select');
-  const [activeArea, setActiveArea] = useState<Area>('Civil');
+  // Favoritos: starred document types (users/{uid}.favoriteEscritos), optimistic local copy.
+  const [favorites, setFavorites] = useState<string[]>(() => userDoc.favoriteEscritos ?? []);
+  const [activeArea, setActiveArea] = useState<Area | 'Favoritos'>(() => ((userDoc.favoriteEscritos ?? []).length ? 'Favoritos' : 'Civil'));
+  const favoriteTypes = useMemo(
+    () => favorites.map(v => ALL_DOC_TYPES.find(t => t.value === v)).filter((t): t is DocType => !!t),
+    [favorites],
+  );
+  const toggleFavorite = (dt: DocType) => {
+    const on = !favorites.includes(dt.value);
+    setFavorites(f => (on ? [...f, dt.value] : f.filter(v => v !== dt.value)));
+    if (db && userDoc.uid) {
+      updateDoc(doc(db, 'users', userDoc.uid), {
+        favoriteEscritos: on ? arrayUnion(dt.value) : arrayRemove(dt.value), updatedAt: serverTimestamp(),
+      }).catch(err => {
+        console.error('[generacion] favorite', err);
+        setFavorites(f => (on ? f.filter(v => v !== dt.value) : [...f, dt.value]));
+      });
+    }
+  };
   const [selectedType, setSelectedType] = useState<DocType | null>(null);
   // MOBIFORWORK: NDAs come only from the lawyer-validated template (/tools/nda), never drafted here.
   const orgNda = orgNdaTemplateFor(user) !== null;
@@ -268,7 +291,7 @@ export default function GeneracionPage() {
   };
 
   const selectOtro = () => {
-    setSelectedType({ value: 'otro', label: 'Otro tipo de documento', area: activeArea });
+    setSelectedType({ value: 'otro', label: 'Otro tipo de documento', area: activeArea === 'Favoritos' ? 'Civil' : activeArea });
     setStep('form');
   };
 
@@ -364,6 +387,13 @@ export default function GeneracionPage() {
   const docLabel = selectedType
     ? (selectedType.value === 'otro' ? (customType || 'Otro tipo de documento') : selectedType.label)
     : '';
+  const previewHtml = useMemo(
+    () => (result && !generating
+      ? buildDocHtml(result, docLabel, undefined, undefined, { branding: brand.pdf })
+          .replace('</head>', '<style>body{margin:0;padding:1.5cm 1.8cm}</style></head>')
+      : ''),
+    [result, generating, docLabel, brand.pdf],
+  );
   const validation = selectedType
     ? getValidation(parties, facts, specificFields, selectedType.value)
     : null;
@@ -397,10 +427,12 @@ export default function GeneracionPage() {
             <div className="space-y-4">
               {/* Area tabs */}
               <div className="bg-surface border border-border rounded-xl overflow-hidden">
-                <div className="flex border-b border-border overflow-x-auto">
-                  {AREAS.map(area => (
+                <div className="flex border-b border-border overflow-x-auto" role="tablist" aria-label="Áreas">
+                  {(['Favoritos', ...AREAS] as const).map(area => (
                     <button
                       key={area}
+                      role="tab"
+                      aria-selected={activeArea === area}
                       onClick={() => setActiveArea(area)}
                       className={`flex-1 min-w-[100px] px-4 py-3 text-caption font-sans font-semibold whitespace-nowrap transition-colors ${
                         activeArea === area
@@ -408,22 +440,38 @@ export default function GeneracionPage() {
                           : 'text-text-muted hover:text-text hover:bg-surface-muted'
                       }`}
                     >
-                      {area}
+                      {area === 'Favoritos'
+                        ? <span className="inline-flex items-center gap-1.5"><Star size={16} aria-hidden className={favorites.length ? 'fill-current' : ''} /> Favoritos{favorites.length ? ` (${favorites.length})` : ''}</span>
+                        : area}
                     </button>
                   ))}
                 </div>
 
-                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {DOC_TYPES_BY_AREA[activeArea].map(dt => (
-                    <button
-                      key={dt.value}
-                      onClick={() => selectType(dt)}
-                      className="text-left px-4 py-3 rounded-lg bg-bg border border-border hover:border-accent-border hover:bg-accent-subtle transition-colors group"
-                    >
-                      <p className="text-small font-sans font-medium text-text group-hover:text-text-heading leading-snug">{dt.label}</p>
-                    </button>
-                  ))}
-                </div>
+                {activeArea === 'Favoritos' && favoriteTypes.length === 0 ? (
+                  <p className="p-6 text-center text-small text-text-muted">
+                    Aún no tienes favoritos. Pulsa la estrella <Star size={16} aria-hidden className="inline align-text-bottom" /> de un escrito para tenerlo siempre aquí.
+                  </p>
+                ) : (
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {(activeArea === 'Favoritos' ? favoriteTypes : DOC_TYPES_BY_AREA[activeArea]).map(dt => {
+                      const fav = favorites.includes(dt.value);
+                      return (
+                        <div key={dt.value} className="flex items-stretch rounded-lg bg-bg border border-border hover:border-accent-border hover:bg-accent-subtle transition-colors group">
+                          <button type="button" onClick={() => selectType(dt)} className="flex-1 min-w-0 text-left px-4 py-3 rounded-l-lg">
+                            <p className="text-small font-sans font-medium text-text group-hover:text-text-heading leading-snug">{dt.label}</p>
+                            {activeArea === 'Favoritos' && <p className="text-caption text-text-muted">{dt.area}</p>}
+                          </button>
+                          <button type="button" onClick={() => toggleFavorite(dt)} aria-pressed={fav}
+                            aria-label={fav ? `Quitar «${dt.label}» de favoritos` : `Añadir «${dt.label}» a favoritos`}
+                            title={fav ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+                            className={`flex-shrink-0 min-w-touch flex items-center justify-center rounded-r-lg ${fav ? 'text-accent-text' : 'text-text-muted hover:text-accent-text'}`}>
+                            <Star size={18} aria-hidden className={fav ? 'fill-current' : ''} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Otro tipo */}
@@ -467,7 +515,7 @@ export default function GeneracionPage() {
                     + Añadir parte
                   </button>
                 </div>
-                {parties.map((p, i) => (
+                {parties.map(p => (
                   <div key={p.id} className="grid grid-cols-12 gap-2 items-start">
                     <div className="col-span-5">
                       <input className={INPUT} placeholder="Nombre completo o razón social" value={p.name} onChange={e => setParties(prev => prev.map(x => x.id === p.id ? { ...x, name: e.target.value } : x))} />
@@ -657,11 +705,22 @@ export default function GeneracionPage() {
                     <p className="text-caption text-text-muted">Generando {docLabel}…</p>
                   </div>
                 )}
-                {result && (
+                {result && generating && (
                   <pre className="px-5 py-5 text-caption font-sans text-text whitespace-pre-wrap leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto">
                     {result}
-                    {generating && <span className="inline-block w-1 h-3 bg-accent animate-pulse ml-0.5 align-middle" />}
+                    <span className="inline-block w-1 h-3 bg-accent animate-pulse ml-0.5 align-middle" />
                   </pre>
+                )}
+                {result && !generating && (
+                  // The document as the Word/PDF will look (same HTML, branding included).
+                  <div className="bg-bg p-3 sm:p-5">
+                    <iframe
+                      title={docLabel}
+                      srcDoc={previewHtml}
+                      sandbox=""
+                      className="w-full h-[70vh] min-h-[480px] rounded-lg bg-white border-0"
+                    />
+                  </div>
                 )}
                 {error && <p className="px-5 py-4 text-caption text-danger-text">{error}</p>}
               </div>
