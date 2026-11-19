@@ -150,12 +150,13 @@ export async function createCase(
   userId: string,
   data: Pick<CaseDoc, 'title' | 'type' | 'status' | 'ref' | 'client' | 'notes'> & {
     deadline?: Timestamp | null;
+    clientId?: string | null;
     assessment?: CaseAssessment;
     documentRefs?: DocumentRef[];
   }
 ): Promise<string> {
   if (!db) throw new Error('Firestore not available');
-  const { assessment, documentRefs, ...rest } = data;
+  const { assessment, documentRefs, clientId, ...rest } = data;
   const payload: Record<string, unknown> = {
     ...rest,
     userId,
@@ -165,6 +166,7 @@ export async function createCase(
     updatedAt: serverTimestamp(),
   };
   if (assessment)    payload.assessment    = assessment;
+  if (clientId)      payload.clientId      = clientId;
   if (documentRefs?.length) payload.documentRefs = documentRefs;
   const firestoreRef = await addDoc(collection(db, 'cases'), payload);
   return firestoreRef.id;
@@ -206,6 +208,22 @@ export async function getClients(userId: string): Promise<ClientDoc[]> {
   );
   const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as ClientDoc));
   return docs.sort((a, b) => tsSeconds(b.lastCaseDate) - tsSeconds(a.lastCaseDate));
+}
+
+/** New client from a case (same fields as Clientes › Nuevo cliente). Returns the created client. */
+export async function createClientDoc(
+  userId: string,
+  data: { name: string; email?: string; personType?: 'persona' | 'sociedad'; company?: string; companyTaxId?: string;
+          idNumber?: string; idType?: string; address?: string; companyAddress?: string },
+): Promise<ClientDoc> {
+  if (!db) throw new Error('Firestore not available');
+  const clean = Object.fromEntries(Object.entries(data).filter(([, v]) => typeof v === 'string' ? v.trim() !== '' : v !== undefined)
+    .map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v]));
+  const payload = { email: '', ...clean, name: data.name.trim() };
+  const ref = await addDoc(collection(db, 'clients'), {
+    userId, ...payload, activeCases: 0, lastCaseDate: serverTimestamp(), status: 'active', createdAt: serverTimestamp(),
+  });
+  return { id: ref.id, userId, ...payload, activeCases: 0, lastCaseDate: null as unknown as Timestamp, status: 'active' } as ClientDoc;
 }
 
 // ── Conversations ──────────────────────────────────────────────────

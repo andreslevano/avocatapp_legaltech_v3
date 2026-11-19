@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Timestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
-import { createCase, type CaseType } from '@/lib/firestore';
+import { createCase, createClientDoc, getClients, type CaseType, type ClientDoc } from '@/lib/firestore';
+import ClientAssign, { newClientFrom, newClientPayload, type ClientAssignment, type ClientSuggestion } from '@/components/clients/ClientAssign';
+import { confidentMatch } from '@/lib/clients/match';
 import { saveDocumentToStorage } from '@/lib/storage-client';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
@@ -49,6 +52,7 @@ function usefulChars(text: string): number {
 
 interface IntakeResult {
   titulo: string; tipo: string; cliente: string; deadline: string | null;
+  clienteTipo?: string | null; clienteNif?: string | null; clienteEmail?: string | null; clienteDomicilio?: string | null;
   notas: string; resumen: string; partes: string[]; riesgos: string[];
   puntosClave: string[]; fechasClave: string[];
   proximosPasos?: NextStep[];
@@ -255,6 +259,19 @@ export default function NewCasePage() {
     title: '', type: 'civil', client: '', ref: generateRef(), deadline: '', notes: '',
   });
   const [saving,    setSaving]    = useState(false);
+  // Client: one of the user's clients, a new one (created on save) or none.
+  const [clients, setClients] = useState<ClientDoc[]>([]);
+  const [assignment, setAssignment] = useState<ClientAssignment>({ kind: 'none' });
+  const [suggestion, setSuggestion] = useState<ClientSuggestion | null>(null);
+  useEffect(() => {
+    getClients(userDoc.uid).then(cs => {
+      setClients(cs);
+      // From a client's panel: /cases/new?clientId=… → that client, already chosen.
+      const pre = new URLSearchParams(window.location.search).get('clientId');
+      const c = pre ? cs.find(x => x.id === pre) : null;
+      if (c) setAssignment({ kind: 'existing', client: c });
+    }).catch(() => {});
+  }, [userDoc.uid]);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const [saveError, setSaveError] = useState('');
 
@@ -397,11 +414,21 @@ export default function NewCasePage() {
         }).filter(Boolean) as Array<{ file: File; text: string; strategy: string }>
       );
 
+      // The analysis's client: link it when it's clearly one of yours; otherwise propose creating it.
+      if (r.cliente?.trim()) {
+        const sug: ClientSuggestion = { name: r.cliente, personType: r.clienteTipo, taxId: r.clienteNif, email: r.clienteEmail, address: r.clienteDomicilio };
+        setSuggestion(sug);
+        setAssignment(a => {
+          if (a.kind !== 'none') return a;
+          const m = confidentMatch(r.cliente, clients) ?? (r.clienteNif ? confidentMatch(r.clienteNif, clients) : null);
+          return m ? { kind: 'existing', client: m, auto: true } : { kind: 'new', data: newClientFrom(sug), proposed: true };
+        });
+      }
+
       setForm(prev => ({
         ...prev,
         title:    r.titulo  || prev.title,
         type:     normalizeTipo(r.tipo),
-        client:   r.cliente || prev.client,
         deadline: r.deadline ?? prev.deadline,
         notes:    r.notas   || prev.notes,
       }));
@@ -425,17 +452,26 @@ export default function NewCasePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return setSaveError('El título es obligatorio.');
+    if (assignment.kind === 'new' && !assignment.data.displayName.trim()) return setSaveError('Indica el nombre del nuevo cliente, o elige «Sin cliente».');
+    if (assignment.kind === 'new' && assignment.data.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(assignment.data.email.trim())) {
+      return setSaveError('Revisa el email del nuevo cliente.');
+    }
     setSaveError('');
     setSaving(true);
     try {
+      // New client first, so the case is created linked to it.
+      const client = assignment.kind === 'existing' ? assignment.client
+        : assignment.kind === 'new' ? await createClientDoc(userDoc.uid, newClientPayload(assignment.data))
+        : null;
       const id = await createCase(userDoc.uid, {
         title:    form.title.trim(),
         type:     form.type,
         status:   'active',
         ref:      form.ref || generateRef(),
-        client:   form.client.trim(),
+        client:   client ? (client.company || client.name) : '',
+        clientId: client?.id ?? null,
         notes:    form.notes.trim(),
-        deadline: null,
+        deadline: form.deadline ? Timestamp.fromDate(new Date(`${form.deadline}T12:00:00`)) : null,
         assessment: intakeResult ? {
           resumen:     intakeResult.resumen,
           partes:      intakeResult.partes,
@@ -661,11 +697,12 @@ export default function NewCasePage() {
                     </div>
                   </div>
 
+                  <div>
+                    <p className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">Cliente</p>
+                    <ClientAssign clients={clients} value={assignment} onChange={setAssignment} suggestion={suggestion} idPrefix="new-case-client" />
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">Cliente</label>
-                      <input type="text" value={form.client} onChange={set('client')} placeholder="Nombre del cliente" className={inputCls} />
-                    </div>
                     <div>
                       <label className="block text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1.5">Fecha límite</label>
                       <input type="date" value={form.deadline} onChange={set('deadline')} className={inputCls} />

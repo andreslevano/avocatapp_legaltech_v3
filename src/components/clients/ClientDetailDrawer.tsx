@@ -5,7 +5,7 @@
 // status. Documents open in the full-screen viewer; "Ver en Documentos" opens the filtered repository.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, FileSignature, FileText, Pencil, X } from 'lucide-react';
+import { ArrowRight, FileSignature, FileText, Pencil, Plus, X } from 'lucide-react';
 import type { CaseDoc, ClientDoc } from '@/lib/firestore';
 import type { DocumentRecord } from '@/lib/storage-client';
 import { awaitingSignedCopy, clientDocuments, signatureInfo } from '@/lib/clients/documents';
@@ -122,7 +122,12 @@ export default function ClientDetailDrawer({ client: c, cases, documents, onEdit
           </section>
 
           <section aria-labelledby="cd-casos">
-            <h3 id="cd-casos" className="text-small font-semibold text-text-heading mb-2">Casos ({clientCases.length})</h3>
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <h3 id="cd-casos" className="text-small font-semibold text-text-heading">Casos ({clientCases.length})</h3>
+              <Link href={`/cases/new?clientId=${encodeURIComponent(c.id)}`} className="inline-flex items-center gap-1 min-h-touch sm:min-h-0 text-caption text-accent-text hover:underline">
+                <Plus size={16} aria-hidden /> Nuevo caso
+              </Link>
+            </div>
             {clientCases.length ? (
               <ul className="divide-y divide-border border border-border rounded-lg">
                 {clientCases.map(k => (

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import {
-  getCase, updateCase, addCaseComment, getClients,
+  getCase, updateCase, addCaseComment, getClients, createClientDoc,
   type CaseDoc, type ClientDoc,
 } from '@/lib/firestore';
 import {
@@ -27,6 +27,8 @@ import { useImportJobs } from '@/contexts/ImportJobsContext';
 import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
 import { ArrowRight, CalendarDays, FilePenLine, ListChecks, MessageSquare, Sparkle, TriangleAlert } from 'lucide-react';
 import CaseAgentPanel, { type CaseAgentPanelHandle } from '@/components/cases/CaseAgentPanel';
+import ClientAssign, { newClientFrom, newClientPayload, type ClientAssignment } from '@/components/clients/ClientAssign';
+import { confidentMatch } from '@/lib/clients/match';
 import { askPrompt, generateHref, nextStepsFor } from '@/lib/cases/next-steps';
 import { escritoByValue } from '@/lib/escritos-catalog';
 
@@ -163,7 +165,8 @@ export default function CaseDetailPage() {
 
   // Client picker
   const [showClientPicker, setShowClientPicker] = useState(false);
-  const [clientSearch,     setClientSearch]     = useState('');
+  const [clientAssign,     setClientAssign]     = useState<ClientAssignment>({ kind: 'none' });
+  const [clientError,      setClientError]      = useState('');
   const [savingClient,     setSavingClient]     = useState(false);
 
   useEffect(() => {
@@ -292,10 +295,36 @@ export default function CaseDetailPage() {
   const handleLinkClient = async (client: ClientDoc) => {
     if (!caseDoc) return;
     setSavingClient(true);
-    await updateCase(caseDoc.id, { client: client.name, clientId: client.id });
-    setCaseDoc(prev => prev ? { ...prev, client: client.name, clientId: client.id } : prev);
+    const label = client.company || client.name;
+    await updateCase(caseDoc.id, { client: label, clientId: client.id });
+    setCaseDoc(prev => prev ? { ...prev, client: label, clientId: client.id } : prev);
     setSavingClient(false);
     setShowClientPicker(false);
+  };
+
+  /** Open the picker; with no client linked, propose the case's client name (match it, or create it). */
+  const openClientPicker = () => {
+    setClientError('');
+    const name = caseDoc?.clientId ? '' : (caseDoc?.client ?? '').trim();
+    const m = name ? confidentMatch(name, clients) : null;
+    setClientAssign(m ? { kind: 'existing', client: m, auto: true } : name ? { kind: 'new', data: newClientFrom(name), proposed: true } : { kind: 'none' });
+    setShowClientPicker(true);
+  };
+
+  const saveClientAssign = async () => {
+    if (!caseDoc) return;
+    setClientError('');
+    if (clientAssign.kind === 'none') return setClientError('Elige un cliente o crea uno nuevo.');
+    if (clientAssign.kind === 'new' && !clientAssign.data.displayName.trim()) return setClientError('Indica el nombre del nuevo cliente.');
+    try {
+      setSavingClient(true);
+      const client = clientAssign.kind === 'existing' ? clientAssign.client : await createClientDoc(userDoc.uid, newClientPayload(clientAssign.data));
+      if (clientAssign.kind === 'new') setClients(cs => [client, ...cs]);
+      await handleLinkClient(client);
+    } catch {
+      setClientError('No se pudo guardar el cliente. Inténtalo de nuevo.');
+      setSavingClient(false);
+    }
   };
 
   const handleUnlinkClient = async () => {
@@ -331,11 +360,6 @@ export default function CaseDetailPage() {
 
   const { assessment, comments } = caseDoc;
   const linkedClient = caseDoc.clientId ? clients.find(c => c.id === caseDoc.clientId) : null;
-  const filteredClients = clients.filter(c =>
-    !clientSearch.trim() ||
-    c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-    c.email.toLowerCase().includes(clientSearch.toLowerCase())
-  );
 
   const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small font-sans text-text  focus:border-accent-border';
 
@@ -389,17 +413,17 @@ export default function CaseDetailPage() {
                 <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-1">Cliente</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   {linkedClient ? (
-                    <Link href={`/clients`} className="text-small text-accent-text hover:underline">{linkedClient.name}</Link>
+                    <Link href={`/clients?cliente=${encodeURIComponent(linkedClient.id)}`} className="text-small text-accent-text hover:underline">{linkedClient.company || linkedClient.name}</Link>
                   ) : caseDoc.client ? (
                     <span className="text-small text-text">{caseDoc.client}</span>
                   ) : (
                     <span className="text-small text-text-muted">—</span>
                   )}
                   <button
-                    onClick={() => setShowClientPicker(v => !v)}
+                    onClick={() => (showClientPicker ? setShowClientPicker(false) : openClientPicker())}
                     className="text-caption text-text-muted hover:text-accent-text transition-colors"
                   >
-                    {linkedClient ? '↔ cambiar' : '+ vincular'}
+                    {linkedClient ? '↔ cambiar' : caseDoc.client ? 'vincular a un cliente' : '+ vincular'}
                   </button>
                   {linkedClient && (
                     <button onClick={handleUnlinkClient} className="text-caption text-text-muted hover:text-danger-text transition-colors">desvincular</button>
@@ -416,39 +440,28 @@ export default function CaseDetailPage() {
               </div>
             </div>
 
+            {/* Not linked: the case only has a name typed in — propose linking it (or creating the client). */}
+            {!linkedClient && caseDoc.client && !showClientPicker && (
+              <div className="mt-4 rounded-lg border border-accent-border bg-accent-subtle px-3 py-2 flex flex-wrap items-center gap-2">
+                <p className="flex-1 min-w-[14rem] text-caption text-text">
+                  «{caseDoc.client}» no está vinculado a ningún cliente: el caso no aparece en su ficha.
+                </p>
+                <button type="button" onClick={openClientPicker} className="text-caption font-medium text-accent-text hover:underline min-h-touch sm:min-h-0">
+                  {confidentMatch(caseDoc.client, clients) ? 'Vincular al cliente existente' : 'Crear el cliente y vincularlo'}
+                </button>
+              </div>
+            )}
+
             {/* Client picker */}
             {showClientPicker && (
-              <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-caption text-text-muted mb-2">Selecciona un cliente existente:</p>
-                <input
-                  className={`${INPUT} mb-2`}
-                  placeholder="Buscar cliente..."
-                  value={clientSearch}
-                  onChange={e => setClientSearch(e.target.value)}
-                />
-                <div className="space-y-1 max-h-40 overflow-y-auto">
-                  {filteredClients.length === 0 && (
-                    <p className="text-caption text-text-muted px-2">
-                      Sin coincidencias —{' '}
-                      <Link href="/clients" className="text-accent-text hover:underline">crear nuevo cliente</Link>
-                    </p>
-                  )}
-                  {filteredClients.map(c => (
-                    <button
-                      key={c.id}
-                      onClick={() => handleLinkClient(c)}
-                      disabled={savingClient}
-                      className="w-full text-left px-3 py-2 rounded-lg bg-bg border border-border hover:border-accent-border text-caption text-text transition-colors disabled:opacity-40"
-                    >
-                      <span className="font-medium">{c.name}</span>
-                      {c.company && <span className="text-text-muted ml-2">{c.company}</span>}
-                      <span className="text-text-muted ml-2">{c.email}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-2 flex justify-between items-center">
-                  <Link href="/clients" className="text-caption text-accent-text hover:underline">+ Crear nuevo cliente</Link>
-                  <button onClick={() => setShowClientPicker(false)} className="text-caption text-text-muted hover:text-text">Cerrar</button>
+              <div className="mt-4 pt-4 border-t border-border space-y-3">
+                <ClientAssign clients={clients} value={clientAssign} onChange={a => { setClientAssign(a); setClientError(''); }} idPrefix="case-client" />
+                {clientError && <p role="alert" className="text-caption text-danger-text">{clientError}</p>}
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setShowClientPicker(false)}>Cancelar</Button>
+                  <Button variant="accent" size="sm" loading={savingClient} onClick={saveClientAssign}>
+                    {clientAssign.kind === 'new' ? 'Crear cliente y vincular' : 'Vincular'}
+                  </Button>
                 </div>
               </div>
             )}

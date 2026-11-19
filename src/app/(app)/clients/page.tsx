@@ -54,10 +54,15 @@ export default function ClientsPage() {
   const [showImport, setShowImport] = useState(false);
   // Client detail panel (click a client) + the user's documents for the "Documentos" column.
   const [detail, setDetail] = useState<{ id: string; tab: 'firma' | 'todos' } | null>(null);
+  // /clients?cliente=<id> (e.g. from a case): open that client's panel.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('cliente');
+    if (id) setDetail({ id, tab: 'todos' });
+  }, []);
   const [documents, setDocuments] = useState<DocumentRecord[] | null>(null);
   // Selection for bulk actions (ids of clients still in the list).
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const toggleOne = (id: string) => setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleOne = (id: string) => setSelected(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const [editingClient, setEditingClient] = useState<ClientDoc | null>(null);
   const [form, setForm] = useState<NewClientForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
