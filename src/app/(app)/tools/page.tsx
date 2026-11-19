@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCheckoutSessionEndpoint } from '@/lib/api-endpoints';
 import { useState, type DragEvent } from 'react';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { arrayRemove, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { escritoByValue, type DocType } from '@/lib/escritos-catalog';
 import { db } from '@/lib/firebase';
 import type { ToolLayout } from '@/lib/auth';
 import { TOOL_GROUPS as GROUPS, moveTool, resolveLayout, type ToolGroupId as GroupId } from '@/lib/tool-layout';
@@ -108,6 +109,19 @@ export default function ToolsPage() {
     ...TOOLS_COMMON.slice(1),
   ];
   const byHref = new Map(tools.map(t => [t.href, t]));
+
+  // Escritos starred in Generación de escritos (users/{uid}.favoriteEscritos): listed in Favoritos too.
+  const [removedEscritos, setRemovedEscritos] = useState<string[]>([]);
+  const favEscritos = (userDoc.favoriteEscritos ?? [])
+    .filter(v => !removedEscritos.includes(v))
+    .map(escritoByValue).filter((t): t is DocType => !!t);
+  const unstarEscrito = (dt: DocType) => {
+    setRemovedEscritos(r => [...r, dt.value]);
+    if (db && userDoc.uid) {
+      updateDoc(doc(db, 'users', userDoc.uid), { favoriteEscritos: arrayRemove(dt.value), updatedAt: serverTimestamp() })
+        .catch(err => { console.error('[tools] favorite escrito', err); setRemovedEscritos(r => r.filter(v => v !== dt.value)); });
+    }
+  };
 
   // Local edits win over the snapshot in userDoc (which is not refreshed after our write).
   const [edited, setEdited] = useState<ToolLayout | null>(null);
@@ -255,7 +269,25 @@ export default function ToolsPage() {
                     </div>
                   );
                 })}
-                {items.length === 0 && (
+                {g.id === 'favoritos' && favEscritos.map(dt => (
+                  <div key={`escrito-${dt.value}`}
+                    className="relative bg-surface border border-border rounded-xl transition-colors group hover:border-accent-border hover:bg-surface-muted">
+                    <Link href={`/tools/generacion?tipo=${encodeURIComponent(dt.value)}`} className="block p-5 pr-14 rounded-xl">
+                      <FilePenLine size={24} className="mb-3 text-accent-text" aria-hidden />
+                      <h3 className="font-sans font-semibold text-body-sm text-text group-hover:text-text-heading mb-1.5">{dt.label}</h3>
+                      <p className="text-caption text-text-muted leading-relaxed">Generación de escritos · {dt.area}</p>
+                    </Link>
+                    <IconButton
+                      icon={Star}
+                      size="sm"
+                      label={`Quitar ${dt.label} de favoritos`}
+                      pressed
+                      onClick={() => unstarEscrito(dt)}
+                      className="absolute top-3 right-3 [&>svg]:text-accent-text [&>svg]:fill-current"
+                    />
+                  </div>
+                ))}
+                {items.length === 0 && !(g.id === 'favoritos' && favEscritos.length > 0) && (
                   <p className="sm:col-span-2 rounded-xl border border-dashed border-border px-5 py-6 text-caption text-text-muted text-center">
                     {g.id === 'favoritos'
                       ? 'Arrastra aquí una herramienta o pulsa la estrella para añadirla a favoritos.'

@@ -26,6 +26,7 @@ import { clientToMfwReceptor, clientToNdaParte } from '@/lib/data-requests/core'
 import { ndaDocFor } from '@/lib/data-requests/catalog';
 import { linkRequestDocument, readRequestParams } from '@/lib/data-requests/client';
 import { stashDraft } from '@/lib/negotiations/client';
+import { Handshake } from 'lucide-react';
 
 type Tipo = 'unilateral' | 'bilateral';
 type Lang = 'es' | 'en';
@@ -432,7 +433,14 @@ export default function NdaPage() {
       <AppHeader
         title="Generador de NDA"
         subtitle="Acuerdo de Confidencialidad asistido por IA"
-        actions={<Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>}
+        actions={
+          <div className="flex items-center gap-1">
+            {orgTpl && (
+              <Link href="/negociaciones"><Button variant="secondary" size="sm" icon={Handshake}>Negociaciones</Button></Link>
+            )}
+            <Link href="/tools"><Button variant="ghost" size="sm">← Herramientas</Button></Link>
+          </div>
+        }
       />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">

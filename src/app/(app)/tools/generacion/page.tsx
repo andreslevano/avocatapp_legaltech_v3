@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { arrayRemove, arrayUnion, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { buildDocHtml } from '@/lib/doc-html';
+import { ALL_DOC_TYPES, AREAS, DOC_TYPES_BY_AREA, escritoByValue, type Area, type DocType } from '@/lib/escritos-catalog';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { AIDisclaimer } from '@/components/ui/AIDisclaimer';
@@ -19,54 +20,11 @@ import { Check, CircleCheck, CircleX, Star, TriangleAlert } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────
 
-const AREAS = ['Civil', 'Laboral', 'Mercantil', 'Administrativo', 'Penal'] as const;
-type Area = (typeof AREAS)[number];
-interface DocType { value: string; label: string; area: Area }
 interface FieldDef { key: string; label: string; type: 'text' | 'textarea' | 'number' | 'date' | 'select'; placeholder?: string; options?: string[] }
 interface Party { id: number; name: string; role: string; nif: string }
 interface KeyDate { id: number; label: string; date: string }
 
-// ── Document catalog ──────────────────────────────────────────────
-
-const DOC_TYPES_BY_AREA: Record<Area, DocType[]> = {
-  Civil: [
-    { value: 'demanda_civil',          label: 'Demanda civil',                       area: 'Civil' },
-    { value: 'contestacion_demanda',   label: 'Contestación a demanda',              area: 'Civil' },
-    { value: 'recurso_apelacion',      label: 'Recurso de apelación',                area: 'Civil' },
-    { value: 'escrito_alegaciones',    label: 'Escrito de alegaciones',              area: 'Civil' },
-    { value: 'medidas_cautelares',     label: 'Solicitud de medidas cautelares',     area: 'Civil' },
-  ],
-  Laboral: [
-    { value: 'demanda_laboral',        label: 'Demanda laboral',                     area: 'Laboral' },
-    { value: 'reclamacion_cantidad',   label: 'Reclamación de cantidad',             area: 'Laboral' },
-    { value: 'carta_despido',          label: 'Carta de despido',                    area: 'Laboral' },
-    { value: 'conciliacion_previa',    label: 'Conciliación previa',                 area: 'Laboral' },
-    { value: 'recurso_suplicacion',    label: 'Recurso de suplicación',              area: 'Laboral' },
-  ],
-  Mercantil: [
-    { value: 'contrato_compraventa',   label: 'Contrato de compraventa',             area: 'Mercantil' },
-    { value: 'nda',                    label: 'Acuerdo de confidencialidad (NDA)',   area: 'Mercantil' },
-    { value: 'contrato_servicios',     label: 'Contrato de prestación de servicios',area: 'Mercantil' },
-    { value: 'pacto_socios',           label: 'Pacto de socios',                     area: 'Mercantil' },
-    { value: 'reclamacion_aseguradora',label: 'Reclamación a aseguradora',           area: 'Mercantil' },
-  ],
-  Administrativo: [
-    { value: 'recurso_alzada',         label: 'Recurso de alzada',                   area: 'Administrativo' },
-    { value: 'recurso_contencioso',    label: 'Recurso contencioso-administrativo',  area: 'Administrativo' },
-    { value: 'solicitud_administrativa',label:'Solicitud administrativa',            area: 'Administrativo' },
-    { value: 'reclamacion_patrimonial',label: 'Reclamación patrimonial',             area: 'Administrativo' },
-    { value: 'denuncia_administrativa',label: 'Denuncia administrativa',             area: 'Administrativo' },
-  ],
-  Penal: [
-    { value: 'denuncia_penal',         label: 'Denuncia penal',                      area: 'Penal' },
-    { value: 'querella',               label: 'Querella criminal',                   area: 'Penal' },
-    { value: 'escrito_defensa',        label: 'Escrito de defensa',                  area: 'Penal' },
-    { value: 'recurso_reforma',        label: 'Recurso de reforma',                  area: 'Penal' },
-    { value: 'solicitud_indulto',      label: 'Solicitud de indulto',                area: 'Penal' },
-  ],
-};
-
-const ALL_DOC_TYPES: DocType[] = Object.values(DOC_TYPES_BY_AREA).flat();
+// Document catalog: src/lib/escritos-catalog.ts
 
 const SPECIFIC_FIELDS: Record<string, FieldDef[]> = {
   demanda_civil:           [{ key:'cuantia', label:'Cuantía reclamada (€)', type:'number', placeholder:'10.000' }, { key:'titulo_juridico', label:'Título jurídico', type:'select', options:['Responsabilidad contractual','Responsabilidad extracontractual','Reclamación de deuda','Daños y perjuicios','Otro'] }, { key:'juzgado', label:'Juzgado destinatario', type:'text', placeholder:'Juzgado de Primera Instancia nº X de...' }],
@@ -289,6 +247,13 @@ export default function GeneracionPage() {
     setSpecificFields({});
     setStep('form');
   };
+
+  // /tools/generacion?tipo=<value> (Favoritos in Herramientas): straight to that escrito's form.
+  useEffect(() => {
+    const dt = escritoByValue(new URLSearchParams(window.location.search).get('tipo') ?? '');
+    if (dt) { setActiveArea(dt.area); selectType(dt); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selectOtro = () => {
     setSelectedType({ value: 'otro', label: 'Otro tipo de documento', area: activeArea === 'Favoritos' ? 'Civil' : activeArea });
