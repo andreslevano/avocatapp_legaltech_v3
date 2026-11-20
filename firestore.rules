@@ -210,6 +210,10 @@ service cloud.firestore {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
+    // signature_webhook_events/{eventId} (Yousign webhook events, processed in the background) and
+    // signature_invites/{tokenHash} (counterparty signing links): server-only, no client access —
+    // covered by the catch-all deny below (tested).
+
     // contracts/{id}: structured contract data (F0). Owner reads; every write goes through
     // /api/contracts (Admin SDK) so dates are always computed server-side.
     match /contracts/{contractId} {

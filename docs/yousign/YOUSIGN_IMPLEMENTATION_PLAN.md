@@ -334,3 +334,75 @@ Privacy policy changes needed (not edited yet):
 | O5 | Signing PDF rendering: pdfkit (A) vs headless Chromium (B) | A (lighter); B only if you need the signed PDF to look identical to the Word |
 | O6 | Signature cost and credits (Precios v4 counts signature sends) | Keep it out of this task; track sends in `signature_requests` so credits can be wired later |
 | O7 | Reminder default "every 3 days" is kept, sent by Avocat (Yousign only allows 1, 2, 7 or 14 days and only with its own emails) | Keep 3 days, owned by Avocat |
+
+---
+
+## 15. Progress (branch `feat/yousign`)
+
+Approved 2026-11-20 with the recommended answers to O1–O7. O1 (who signs Parte A) is not built yet: the owner signs Parte A, as today.
+
+| Phase | Status | Commit |
+|---|---|---|
+| Plan | done | `02483367` |
+| Y1 Provider abstraction (DocuSign unchanged; existing tests green) | done | `6f524cc6` |
+| Y2 Signing PDF renderer (pdfkit, fields by coordinates) | done | `7098958f` |
+| Y2 Yousign provider, mapping, HMAC, invites | done | `408c333e` |
+| Y3 Webhook < 1 s, event store, processor + Cloud Function trigger, hourly retry, Avocat reminders | done | `bc604ce1` |
+| Y4 Owner iframe modal, `/firma/[token]`, sheet/panel/return page, signed copies by email | done | `f2e9d706` |
+| Y0 Sandbox spike | **script ready, waiting for the sandbox key** | — |
+| Y5 Filing (signed PDF + audit trails) | built in Y2/Y4; **verify in sandbox** | — |
+| Y7 Production | not started | — |
+
+**Still [spike] (the code uses the documented or most likely shape; Y0 confirms or corrects it):**
+- the fresh link via `GET …/signers/{id}`;
+- field `height` and coordinates origin (top-left assumed);
+- the `cancel` body;
+- the signed-document download path and format;
+- the date mention field (not used yet: the audit trail carries the signing time).
+
+### Y0 — how to run the sandbox spike
+1. In `.env.local`, add `YOUSIGN_API_KEY` (a sandbox key) and `YOUSIGN_API_BASE=https://api-sandbox.yousign.app/v3`.
+2. `npx playwright test -c playwright.sandbox.config.ts` creates a request, then cancels it. Findings are written to `screenshots/yousign-spike.json`, with signing links redacted.
+3. To check the signing page, the field positions and the downloads:
+   - `KEEP=1 npx playwright test -c playwright.sandbox.config.ts`;
+   - open the two printed links and sign;
+   - then `DOWNLOAD=<id> npx playwright test -c playwright.sandbox.config.ts`.
+
+### Sandbox end-to-end (after Y0)
+1. **Variables:** `.env.local` needs:
+   - `YOUSIGN_API_KEY`, `YOUSIGN_API_BASE` (sandbox);
+   - `YOUSIGN_WEBHOOK_SECRET`;
+   - `YOUSIGN_WEBHOOK_BASE_URL` (a public tunnel to `localhost:3000`);
+   - `SIGNATURE_PROVIDER_DEFAULT=yousign`, `DOCUSIGN_ENABLED=false`;
+   - `CRON_SECRET` (≥ 32 chars).
+2. **Webhook subscription** in the Yousign app (API → Webhooks):
+   - endpoint `<tunnel>/api/signatures/yousign/webhook`;
+   - sandbox on;
+   - events `signer.*` and `signature_request.*`;
+   - `auto_retry` on;
+   - put its secret in `YOUSIGN_WEBHOOK_SECRET`.
+3. **Processing locally:** the Cloud Function trigger isn't deployed locally, so process events by hand: `curl -X POST localhost:3000/api/signatures/yousign/process -H "Authorization: Bearer $CRON_SECRET" -d '{"pending":true}'`. Or deploy the function to the dev project.
+4. **The run:**
+   1. NDA → Firmar y enviar.
+   2. Sign in the modal.
+   3. The other party receives the Avocat email (test inbox).
+   4. Open `/firma/…` → Visto.
+   5. Sign → Firmado; the signed PDF and audit trails are in Documentos and the case.
+5. **Edge cases:**
+   - the other party declines → reason shown, document unlocked;
+   - "Firmar más tarde" → Continuar firma;
+   - Anular → edit → new version;
+   - Corregir → explanation + Anular;
+   - a short expiry → Caducado;
+   - replay the same webhook event → processed once.
+
+### Go-live (Y7, with you)
+- **Deploy:**
+  - `firebase deploy --only firestore:indexes` (`signature_webhook_events`, `signature_requests` provider+status);
+  - `firebase deploy --only functions:processSignatureEvent` (it uses the `CRON_SECRET` secret);
+  - hosting.
+- **Yousign production:**
+  - production key and plan;
+  - iFraming → "Authorized domains only": `https://avocatapp.com`, `https://*.avocatapp.com`, `https://avocat-legaltech-v3.web.app`;
+  - production webhook subscription (prod endpoint, `auto_retry`).
+- **Then:** `SIGNATURE_PROVIDER_LIVE=true`; the privacy policy (§13); the DPA.

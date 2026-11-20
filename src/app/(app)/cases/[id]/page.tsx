@@ -598,7 +598,7 @@ export default function CaseDetailPage() {
                         <button onClick={() => router.push(`/tools/analisis?docId=${d.id}`)}
                           className="text-caption text-text-muted hover:text-accent-text transition-colors">IA</button>
                         {canUseDocusign(userDoc.plan, user) && canSendForSignature(d) && (
-                          <button onClick={() => setSignDoc(d)} title="Firmar y enviar con DocuSign"
+                          <button onClick={() => setSignDoc(d)} title="Firmar y enviar"
                             className="text-caption text-text-muted hover:text-accent-text transition-colors">Firmar</button>
                         )}
                       </div>
