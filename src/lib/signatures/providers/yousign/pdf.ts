@@ -177,7 +177,12 @@ export function renderSigningPdf(markdown: string, o: RenderOptions): Promise<Si
       doc.x = left; doc.y = y + 18;
     };
 
-    for (const b of parseBlocks(markdown)) {
+    const blocks = parseBlocks(markdown);
+    const sigBlockHeight = (x: Block | undefined) =>
+      x && x.t === 'p' && x.lines.some(l => SIG_LINE_RE.test(l)) ? x.lines.length * 18 + SIGNATURE_BOX.height + 10 : 0;
+    for (const [bi, b] of blocks.entries()) {
+      // A heading followed by a signature block ("FIRMAS", "PARTE A") moves with it: never alone at a page end.
+      if (b.t === 'h1' || b.t === 'h2' || b.t === 'h3') ensure(40 + sigBlockHeight(blocks[bi + 1]));
       if (b.t === 'h1') { ensure(60); doc.moveDown(0.5); writeRuns(plain(b.text).toUpperCase(), { align: 'center', width }, 14); doc.moveDown(1); }
       else if (b.t === 'h2') { ensure(50); doc.moveDown(0.6); doc.font(DOC_FONT.heading).fontSize(12).text(plain(b.text).toUpperCase(), left, doc.y, { width }); doc.moveDown(0.3); }
       else if (b.t === 'h3') { ensure(44); doc.moveDown(0.4); doc.font(DOC_FONT.heading).fontSize(12).text(plain(b.text), left, doc.y, { width }); doc.moveDown(0.2); }

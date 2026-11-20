@@ -16,6 +16,9 @@ import { expirationDate, embedLink } from '@/lib/signatures/providers/yousign/co
 loadEnv({ path: '.env.local' });
 const KEY = process.env.YOUSIGN_API_KEY ?? '';
 const BASE = (process.env.YOUSIGN_API_BASE ?? '').replace(/\/+$/, '');
+// Sandbox: recipients must have an email of your Yousign organisation (e.g. you+owner@… / you+party@…).
+const OWNER_EMAIL = process.env.YOUSIGN_SPIKE_OWNER_EMAIL ?? '';
+const PARTY_EMAIL = process.env.YOUSIGN_SPIKE_PARTY_EMAIL ?? '';
 
 type R = { status: number; type: string; json: unknown; text: string };
 async function call(method: string, path: string, body?: unknown): Promise<R> {
@@ -33,10 +36,32 @@ async function call(method: string, path: string, body?: unknown): Promise<R> {
 
 test('Yousign sandbox spike', async () => {
   test.skip(!KEY || !BASE, 'YOUSIGN_API_KEY / YOUSIGN_API_BASE not set in .env.local');
+  test.skip(!process.env.DOWNLOAD && (!OWNER_EMAIL || !PARTY_EMAIL), 'Set YOUSIGN_SPIKE_OWNER_EMAIL and YOUSIGN_SPIKE_PARTY_EMAIL (emails of your Yousign organisation) in .env.local');
   if (!/api-sandbox\.yousign\.app/.test(BASE)) throw new Error('Refusing to run the spike outside the sandbox.');
   const f: Record<string, unknown> = { base: BASE, at: new Date().toISOString() };
   mkdirSync('screenshots', { recursive: true });
   const save = () => writeFileSync('screenshots/yousign-spike.json', JSON.stringify(f, null, 2));
+
+  if (process.env.PARTYLINK) {
+    // After the first signer signed: is the next signer's link there now, and fresh on each GET?
+    const id = process.env.PARTYLINK;
+    const sr = await call('GET', `/signature_requests/${id}`);
+    const signers = ((sr.json as { signers?: { id: string; status: string }[] })?.signers ?? []);
+    f.statuses = { request: (sr.json as { status?: string })?.status, signers: signers.map(x => x.status) };
+    const next = signers.find(x => x.status !== 'signed');
+    if (next) {
+      const a = await call('GET', `/signature_requests/${id}/signers/${next.id}`);
+      const b = await call('GET', `/signature_requests/${id}/signers/${next.id}`);
+      const l = (r: R) => (r.json as { signature_link?: string | null })?.signature_link ?? null;
+      f.nextSignerLink = { status: next.status, hasLink: !!l(a), sameOnSecondGet: l(a) === l(b), expiration: (a.json as { signature_link_expiration_date?: string })?.signature_link_expiration_date };
+      if (l(a)) console.log('\nNext signer link (sandbox — treat as a secret):', embedLink(l(a)!, true), '\n');
+      const rem = await call('POST', `/signature_requests/${id}/signers/${next.id}/send_reminder`);
+      f.reminderNotifiedDeliveryNone = { status: rem.status, body: rem.json ?? rem.text };
+    }
+    writeFileSync('screenshots/yousign-spike-party.json', JSON.stringify(f, null, 2).replace(/https:\/\/[^"]*yousign[^"]*sign[^"]*/g, '<signing link>'));
+    console.log(JSON.stringify(f, null, 2).replace(/https:\/\/[^"]*yousign[^"]*sign[^"]*/g, '<signing link>'));
+    return;
+  }
 
   if (process.env.DOWNLOAD) {
     const id = process.env.DOWNLOAD;
@@ -72,7 +97,7 @@ test('Yousign sandbox spike', async () => {
 
   // 4) Signers with signature fields by coordinates (+ a date "mention" try on signer 1).
   const signerIds: string[] = [];
-  for (const [i, who] of [['Owner Spike', 'owner@example.com'], ['Party Spike', 'party@example.com']].entries()) {
+  for (const [i, who] of [['Owner Spike', OWNER_EMAIL], ['Party Spike', PARTY_EMAIL]].entries()) {
     const boxes = pdf.fields.filter(b => b.kind === 'signature' && b.signer === i + 1);
     const s = await call('POST', `/signature_requests/${id}/signers`, {
       info: { first_name: who[0].split(' ')[0], last_name: who[0].split(' ')[1], email: who[1], locale: 'es' },
@@ -101,7 +126,7 @@ test('Yousign sandbox spike', async () => {
   f.freshLink = { status: g1.status, hasLink: !!link(g1), sameOnSecondGet: link(g1) === link(g2), expiration: (g1.json as { signature_link_expiration_date?: string })?.signature_link_expiration_date };
 
   // 7) Change a signer's email after activation?
-  const patch = await call('PATCH', `/signature_requests/${id}/signers/${signerIds[1]}`, { info: { email: 'party2@example.com' } });
+  const patch = await call('PATCH', `/signature_requests/${id}/signers/${signerIds[1]}`, { info: { email: OWNER_EMAIL.replace('@', '+changed@') } });
   f.patchSignerAfterActivation = { status: patch.status, body: patch.json ?? patch.text };
 
   // 8) Reminder with delivery none?
@@ -119,6 +144,7 @@ test('Yousign sandbox spike', async () => {
     // 9) Cancel body.
     const cancel = await call('POST', `/signature_requests/${id}/cancel`, { reason: 'contractualization_aborted', custom_note: 'Avocat spike' });
     f.cancel = { status: cancel.status, body: cancel.json ?? cancel.text };
+    if (cancel.status >= 400) await call('DELETE', `/signature_requests/${id}`);   // still a draft: remove it
   }
   // Signing links are credentials: strip them from the saved findings.
   const redacted = JSON.stringify(f, null, 2).replace(/https:\/\/[^"]*yousign[^"]*sign[^"]*/g, '<signing link>');

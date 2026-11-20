@@ -73,3 +73,14 @@ test('saved .doc HTML converts back to the same blocks', () => {
   expect(md).toMatch(/Firma: _{4,}/);
   expect(md).not.toContain('AVOCAT powered');
 });
+
+test('a heading before a signature block never stays alone at the bottom of a page', async () => {
+  // Fill a page almost completely, then "## FIRMAS" + one party block.
+  const filler = Array.from({ length: 33 }, (_, i) => `Línea de relleno número ${i + 1}.`).join('\n\n');
+  const md = `# Doc\n\n${filler}\n\n## FIRMAS\n\n**A**\nFecha: ____________\nFirma: ________________________`;
+  const r = await renderSigningPdf(md, { title: 'Doc' });
+  const sig = r.fields.find(f => f.kind === 'signature')!;
+  const pages = await pdfText(r.pdf);
+  const firmasPage = pages.findIndex(t => t.includes('FIRMAS')) + 1;
+  expect(firmasPage).toBe(sig.page);
+});

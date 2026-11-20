@@ -406,3 +406,19 @@ Approved 2026-11-20 with the recommended answers to O1–O7. O1 (who signs Parte
   - iFraming → "Authorized domains only": `https://avocatapp.com`, `https://*.avocatapp.com`, `https://avocat-legaltech-v3.web.app`;
   - production webhook subscription (prod endpoint, `auto_retry`).
 - **Then:** `SIGNATURE_PROVIDER_LIVE=true`; the privacy policy (§13); the DPA.
+
+### Y0 findings — sandbox, 2026-11-20 (all [spike] items resolved)
+
+| Question | Result |
+|---|---|
+| Create, document upload, signers with fields by coordinates | 201. Origin top-left; `width`/`height` accepted as sent (signature 180×52) |
+| Date next to each signature | `POST /signature_requests/{id}/documents/{docId}/fields` `{signer_id, type:'mention', mention:'%date%', page,x,y,width,height}` → 201; prints «20-11-2026» on the "Fecha:" line. **Built in, one per signer** |
+| Sandbox recipients | Activation is refused unless **every** recipient email is an exact member of the Yousign organisation (plus-addresses are refused). For the in-app sandbox test, invite a second user, or ask support to lift the limit |
+| Ordered + `delivery_mode:'none'` | On activation, signer 1 is `notified` with a link (48 h); signer 2 is `initiated` with no link until signer 1 signs, then `notified` |
+| Fresh link | `GET …/signers/{id}` returns a link for the signer whose turn it is, and **a new one on every call** (48 h from issue) → `/firma` and "Continuar firma" are confirmed |
+| Change a signer's email after activation | `PATCH …/signers/{id}` 200 while that signer is still `initiated`. Not used yet: we keep cancel + resend (a signer already notified is the common case; to re-check if we want it) |
+| Yousign reminder with `delivery_mode:'none'` | Only for `notified`/`verified` signers, and it is Yousign's email; not used (Avocat sends reminders) |
+| Cancel | `POST …/cancel {reason:'contractualization_aborted', custom_note}` → 201 (only on ongoing requests; a draft is deleted with `DELETE`) |
+| Signed document | `GET …/documents/download` → `application/pdf` (one signable document = one PDF) |
+| Audit trails | `GET …/signers/{id}/audit_trails/download` → `application/pdf`, one per signer |
+| Layout | Signatures land on each "Firma y sello" line; fix applied so a heading ("FIRMAS") never stays alone at a page end |

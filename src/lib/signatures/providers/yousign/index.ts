@@ -84,6 +84,12 @@ export const yousignProvider: SignatureProvider = {
           fields: boxes.map(b => ({ document_id: doc.id, type: 'signature', page: b.page, x: b.x, y: b.y, width: b.width, height: b.height })),
         });
         signers.push({ recipientKey: p.key, signerId: s.id });
+        // The signing date on the party's "Fecha:" line (confirmed in the Y0 sandbox spike).
+        for (const d of pdf.fields.filter(f => f.kind === 'date' && f.signer === p.key)) {
+          await ys('POST', `/signature_requests/${req.id}/documents/${doc.id}/fields`, {
+            signer_id: s.id, type: 'mention', mention: '%date%', page: d.page, x: d.x, y: d.y, width: d.width, height: d.height,
+          });
+        }
       }
       await ys('POST', `/signature_requests/${req.id}/activate`);
       return { yousign: { signatureRequestId: req.id, documentId: doc.id, signers }, expiresAt, signatureLevel: 'ses' as const };
