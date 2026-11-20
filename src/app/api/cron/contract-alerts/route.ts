@@ -4,6 +4,8 @@ import { runAlertScan, sendDigests } from '@/lib/contracts/server-alerts';
 import { runLegalMonitor } from '@/lib/legal/server';
 import { madridHour } from '@/lib/contracts/dates';
 import { runNegotiationExpiryScan } from '@/lib/negotiations/server';
+import { processPendingYousignEvents } from '@/lib/signatures/webhook-events';
+import { sendDueSignatureReminders } from '@/lib/signatures/reminders';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -29,9 +31,12 @@ export async function POST(req: NextRequest) {
     if (madridHour() >= 9) legal = await runLegalMonitor().catch(e => ({ error: (e as Error).message }));
     // NDA negotiations: "El enlace caduca en 2 días" (isolated, like the legal monitor).
     const negotiations = await runNegotiationExpiryScan().catch(e => ({ error: (e as Error).message }));
+    // Yousign: events the trigger missed, and Avocat's own signing reminders (every N days).
+    const signatureEvents = await processPendingYousignEvents().catch(e => ({ error: (e as Error).message }));
+    const signatureReminders = await sendDueSignatureReminders().catch(e => ({ error: (e as Error).message }));
     const digests = await sendDigests();
-    console.log('[contract-alerts] cron', JSON.stringify({ scan, legal, negotiations, digests }));
-    return NextResponse.json({ scan, legal, negotiations, digests });
+    console.log('[contract-alerts] cron', JSON.stringify({ scan, legal, negotiations, signatureEvents, signatureReminders, digests }));
+    return NextResponse.json({ scan, legal, negotiations, signatureEvents, signatureReminders, digests });
   } catch (err) {
     console.error('[contract-alerts] cron', (err as Error).message);
     return NextResponse.json({ error: 'scan_failed' }, { status: 500 });

@@ -8,6 +8,8 @@ import { deriveSync } from '@/lib/signatures/sync';
 import type { SignatureRequest } from '@/lib/signatures/types';
 import { signerInviteEmail } from '@/lib/signatures/invite-email';
 import { recipientsToInvite } from '@/lib/signatures/invites';
+import { reminderDue } from '@/lib/signatures/reminder-schedule';
+import { storeYousignEvent } from '@/lib/signatures/webhook-events';
 
 const SECRET = 'whsec_test_123';
 const sign = (body: string, secret = SECRET) => `sha256=${createHmac('sha256', secret).update(body).digest('hex')}`;
@@ -152,5 +154,41 @@ test.describe('counterparty invite email', () => {
     expect(recipientsToInvite({ status: 'sent', recipients: recs }, false).map(x => x.name)).toEqual(['B']);
     expect(recipientsToInvite({ status: 'sent', recipients: recs }, true).map(x => x.name)).toEqual(['B', 'D']);
     expect(recipientsToInvite({ status: 'pending_owner', recipients: recs }, false)).toEqual([]);
+  });
+});
+
+test.describe('Avocat reminders (every N days)', () => {
+  const r = (over: Record<string, unknown> = {}) => ({
+    status: 'sent' as const, options: { reminderDelayDays: 3, reminderFrequencyDays: 3, expireAfterDays: 30, language: 'es' as const },
+    expiresAt: '2026-12-31',
+    recipients: [
+      { role: 'owner' as const, name: 'A', email: 'a@x', routingOrder: 1, status: 'completed' as const },
+      { role: 'signer' as const, name: 'B', email: 'b@x', routingOrder: 2, status: 'sent' as const, invitedAt: '2026-11-20T10:00:00.000Z' },
+    ],
+    ...over,
+  });
+  test('first after the delay, then every frequency; never when done or expired', () => {
+    expect(reminderDue(r(), new Date('2026-11-22T10:00:00Z'))).toBe(false);
+    expect(reminderDue(r(), new Date('2026-11-23T10:00:00Z'))).toBe(true);
+    expect(reminderDue(r({ lastAutoRemindedAt: '2026-11-23T10:00:00.000Z' }), new Date('2026-11-25T10:00:00Z'))).toBe(false);
+    expect(reminderDue(r({ lastAutoRemindedAt: '2026-11-23T10:00:00.000Z' }), new Date('2026-11-26T10:00:00Z'))).toBe(true);
+    expect(reminderDue(r({ status: 'completed' }), new Date('2026-12-01T10:00:00Z'))).toBe(false);
+    expect(reminderDue(r({ expiresAt: '2026-11-21' }), new Date('2026-11-23T10:00:00Z'))).toBe(false);
+  });
+});
+
+test.describe('webhook idempotency', () => {
+  test('the same event_id is stored once; retries are acknowledged without reprocessing', async () => {
+    const store = new Map<string, unknown>();
+    const create = async (id: string, data: Record<string, unknown>) => {
+      if (store.has(id)) throw Object.assign(new Error('exists'), { code: 6 });
+      store.set(id, data);
+    };
+    const ev = parseYousignEvent({ event_id: 'evt_9', event_name: 'signer.done', data: { signature_request: { id: 'sr', external_id: 'r1' }, signer: { id: 's' } } })!;
+    expect(await storeYousignEvent(ev, create)).toBe(true);
+    expect(await storeYousignEvent(ev, create)).toBe(false);
+    expect(store.size).toBe(1);
+    expect(store.get('evt_9')).toMatchObject({ processedAt: null, attempts: 0, externalId: 'r1' });
+    await expect(storeYousignEvent(ev, async () => { throw Object.assign(new Error('down'), { code: 14 }); })).rejects.toThrow('down');
   });
 });
