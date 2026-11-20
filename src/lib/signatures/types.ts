@@ -64,6 +64,7 @@ export function signatureEventLabel(e: SignatureEvent): string {
     case 'voided': return 'Solicitud anulada';
     case 'expired': return 'Solicitud caducada';
     case 'filed': return 'PDF firmado guardado en Documentos';
+    case 'invited': return `Enlace de firma enviado a${who}`;
     default: return e.type;
   }
 }

@@ -51,7 +51,7 @@ export function ccCompletedEmail(o: { ownerName: string; title: string; language
   const en = o.language === 'en';
   const subject = en ? `Signed: ${o.title}` : `Firmado: ${o.title}`;
   const line = en
-    ? `All parties have signed «${o.title}». ${o.ownerName} copied you: the signed PDF is attached.`
-    : `Todas las partes han firmado «${o.title}». ${o.ownerName} te ha puesto en copia: adjuntamos el PDF firmado.`;
+    ? `All parties have signed «${o.title}». Here is your copy of the signed PDF, sent on behalf of ${o.ownerName}.`
+    : `Todas las partes han firmado «${o.title}». Te enviamos tu copia del PDF firmado en nombre de ${o.ownerName}.`;
   return { subject, text: `${line}\n\n${en ? 'Sent with Avocat.' : 'Enviado con Avocat.'}`, html: layout([esc(line)], null, esc(en ? 'Sent with Avocat.' : 'Enviado con Avocat.')) };
 }

@@ -1,7 +1,8 @@
 'use client';
 
 // Signature status, timeline and actions for one request (Phase 3) — shown in the /documents
-// preview panel. Live via onSnapshot; DocuSign is only called on explicit button clicks.
+// preview panel. Live via onSnapshot; the provider (Yousign or DocuSign) is only called on explicit
+// button clicks.
 
 import { useEffect, useState } from 'react';
 import { useAppAuth } from '@/contexts/AppAuthContext';
@@ -40,6 +41,8 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
   useEffect(() => { setNotice(null); setEditing(null); setConfirmVoid(false); }, [requestId]);
 
   if (!r) return null;
+  const ys = r.provider === 'yousign';
+  const providerName = ys ? 'Yousign' : 'DocuSign';
   const active = isActiveStatus(r.status);
   const waitingOnOther = r.status === 'sent' || r.status === 'delivered';
   const pending = r.recipients.filter(x => x.role === 'signer' && (x.status === 'sent' || x.status === 'delivered'));
@@ -74,6 +77,12 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
     if (!rec) { w?.close(); throw new Error('No encontramos el PDF firmado.'); }
     if (w) w.location.href = rec.downloadUrl; else window.location.href = rec.downloadUrl;
   });
+  const onOpenAudit = (id: string) => run('open', async () => {
+    const w = window.open('', '_blank');
+    const rec = await getDocumentById(id);
+    if (!rec) { w?.close(); throw new Error('No encontramos el registro de auditoría.'); }
+    if (w) w.location.href = rec.downloadUrl; else window.location.href = rec.downloadUrl;
+  });
   const onRemind = () => run('remind', async () => {
     const res = await remindSignature(user!, r.id);
     return `Recordatorio enviado a ${(res.reminded ?? pending.map(x => x.email)).join(', ')}.`;
@@ -89,10 +98,10 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
     if (!EMAIL_RE.test(email)) throw new Error('El email no es válido.');
     await correctSignatureEmail(user!, r.id, email, editing.key);
     setEditing(null);
-    return `Email corregido. DocuSign enviará la solicitud a ${email}.`;
+    return `Email corregido. ${providerName} enviará la solicitud a ${email}.`;
   });
   const onSign = () => run('sign', async () => {
-    openOwnerSigning(r.id, await getSigningUrl(user!, r.id));
+    openOwnerSigning(r.id, await getSigningUrl(user!, r.id), r.subject.replace(/^Firma solicitada:\s*/i, ''));
   });
 
   const events = [...(r.events ?? [])].sort((a, b) => b.at.localeCompare(a.at));
@@ -100,7 +109,7 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
   return (
     <div className="border-t border-border px-4 py-3 flex-shrink-0 bg-bg space-y-2.5 max-h-[45vh] overflow-y-auto">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-text-muted uppercase tracking-widest font-semibold text-label">Firma DocuSign</p>
+        <p className="text-text-muted uppercase tracking-widest font-semibold text-label" title={ys ? 'Firma electrónica simple (SES) conforme al Reglamento eIDAS, con Yousign' : undefined}>Firma {providerName}</p>
         {(active || needsFiling) && (
           <button onClick={onRefresh} disabled={busy !== null}
             className="text-caption text-text-muted hover:text-accent-text disabled:opacity-50 transition-colors">
@@ -128,7 +137,7 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
             );
           }
           return (
-            <li key={`${x.role}-${k}`} className="flex items-center justify-between gap-2 text-caption">
+            <li key={`${x.role}-${k}`} className="flex flex-wrap items-center justify-between gap-x-2 text-caption">
               <span className="min-w-0 truncate text-text" title={x.email}>
                 {x.role === 'cc' ? 'CC' : `${x.routingOrder}.`} {x.role === 'owner' ? 'Tú' : x.name}
                 {x.accessCode && <span title="Con código de acceso" className="inline-flex ml-1 align-middle"><Lock size={12} aria-label="Con código de acceso" /></span>}
@@ -136,13 +145,22 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
               </span>
               <span className="flex-shrink-0 flex items-center gap-2">
                 {canCorrect(x) && editing === null && (
-                  <button onClick={() => setEditing({ key: k, email: x.email })} disabled={busy !== null}
+                  <button onClick={() => {
+                    if (ys) {
+                      // Yousign can't change a signer once the request is live: cancel and send a new version.
+                      setNotice({ kind: 'err', text: 'Con Yousign no se puede cambiar el email de un firmante en un envío activo. Anula la solicitud y vuelve a enviarla con el email correcto (firmarás de nuevo).' });
+                      setConfirmVoid(true);
+                    } else setEditing({ key: k, email: x.email });
+                  }} disabled={busy !== null}
                     className="text-caption text-text-muted hover:text-accent-text transition-colors">Corregir</button>
                 )}
                 <span className={`text-caption ${x.status === 'completed' ? 'text-info-text' : x.status === 'declined' ? 'text-danger-text' : 'text-text-muted'}`}>
                   {x.role === 'cc' ? 'En copia' : RECIPIENT_LABEL[x.status]}
                 </span>
               </span>
+              {x.status === 'declined' && x.declinedReason && (
+                <span className="basis-full text-caption text-danger-text">Motivo: {x.declinedReason}</span>
+              )}
             </li>
           );
         })}
@@ -154,16 +172,26 @@ export default function SignaturePanel({ requestId }: { requestId: string }) {
           {busy === 'open' ? 'Abriendo…' : 'Abrir PDF firmado'}
         </Button>
       )}
+      {r.status === 'completed' && (r.auditTrailDocumentIds?.length ?? 0) > 0 && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-caption">
+          <span className="text-text-muted">Registros de auditoría:</span>
+          {r.auditTrailDocumentIds!.map((id, i) => (
+            <button key={id} type="button" disabled={busy !== null} onClick={() => onOpenAudit(id)} className="text-accent-text hover:underline">
+              {r.recipients.filter(x => x.role !== 'cc')[i]?.role === 'owner' ? 'Tú' : r.recipients.filter(x => x.role !== 'cc')[i]?.name ?? `Firmante ${i + 1}`}
+            </button>
+          ))}
+        </div>
+      )}
       {needsFiling && (
         <p className="text-caption text-text-muted">
           {r.filingError
-            ? 'No se pudo guardar el PDF firmado en Avocat. Pulsa «Actualizar estado» para reintentarlo (DocuSign ya te lo envió por email).'
+            ? `No se pudo guardar el PDF firmado en Avocat. Pulsa «Actualizar estado» para reintentarlo${ys ? '' : ' (DocuSign ya te lo envió por email)'}.`
             : 'Guardando el PDF firmado en tus documentos…'}
         </p>
       )}
       {r.status === 'pending_owner' && (
         <Button variant="accent" size="sm" fullWidth disabled={busy !== null} onClick={onSign}>
-          {busy === 'sign' ? 'Abriendo DocuSign…' : 'Continuar firma'}
+          {busy === 'sign' ? `Abriendo ${providerName}…` : 'Continuar firma'}
         </Button>
       )}
       {waitingOnOther && pending.length > 0 && editing === null && (

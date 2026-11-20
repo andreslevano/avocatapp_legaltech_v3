@@ -7,7 +7,8 @@
 
 export type SigningOrder = 'sequential' | 'parallel';
 export interface PartyInput { name: string; email: string }
-export interface SignerInput extends PartyInput { accessCode?: string }
+/** accessCode: DocuSign (shared by the owner). otp: Yousign sends the signer a code by email. */
+export interface SignerInput extends PartyInput { accessCode?: string; otp?: boolean }
 
 export const MAX_SIGNERS = 5;
 export const MAX_CC = 5;

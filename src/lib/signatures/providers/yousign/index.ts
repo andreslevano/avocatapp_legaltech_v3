@@ -52,7 +52,7 @@ export const yousignProvider: SignatureProvider = {
     const markdown = c.markdown ?? htmlToSigningMarkdown(c.html);
     const branding = await loadOwnerBranding(c.uid).catch(() => null);
     const pdf = await renderSigningPdf(markdown, { title: c.title, authorName: c.meta?.authorName, authorNif: c.meta?.authorNif, branding, language: lang });
-    const parties = [{ name: c.owner.name, email: c.owner.email, key: 1, otp: false }, ...c.signers.map((p, i) => ({ name: p.name, email: p.email, key: i + 2, otp: !!p.accessCode }))];
+    const parties = [{ name: c.owner.name, email: c.owner.email, key: 1, otp: false }, ...c.signers.map((p, i) => ({ name: p.name, email: p.email, key: i + 2, otp: !!p.otp || !!p.accessCode }))];
     for (const p of parties) {
       if (!pdf.fields.some(f => f.kind === 'signature' && f.signer === p.key)) throw fail('El documento no tiene un bloque de firma para cada firmante.', 'missing_signature_block', 422);
     }

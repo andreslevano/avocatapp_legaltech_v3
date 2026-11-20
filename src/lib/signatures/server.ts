@@ -13,6 +13,9 @@ import { defaultProvider, docusignEnabled } from './providers/yousign/config';
 import { summaryFromYousignEvent } from './providers/yousign/map';
 import type { YousignEvent } from './providers/yousign/webhook';
 import { sendSignerInvites } from './invites';
+import { ccCompletedEmail } from './invite-email';
+import { emailConfigured, sendEmail } from '@/lib/email';
+import { ownerName } from '@/lib/data-requests/server';
 import {
   DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, isActiveStatus,
   type CreateSignatureInput, type SignatureRequest, type SignatureStatus,
@@ -81,7 +84,7 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
   const provider = providerFor(chooseProvider(input.provider));
   const owner = await provider.resolveOwner(uid);
   const options = { ...DEFAULT_SIGNATURE_OPTIONS, ...input.options };
-  const signers = input.signers.map(p => ({ name: p.name.trim(), email: p.email.trim(), accessCode: p.accessCode || undefined }));
+  const signers = input.signers.map(p => ({ name: p.name.trim(), email: p.email.trim(), accessCode: p.accessCode || undefined, otp: p.otp === true }));
   const cc = (input.cc ?? []).map(p => ({ name: p.name.trim(), email: p.email.trim() }));
   const signingOrder = input.signingOrder ?? 'sequential';
   if ([...signers, ...cc].some(p => p.email.toLowerCase() === owner.email.toLowerCase())) {
@@ -121,7 +124,7 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
       { role: 'owner', name: owner.name, email: owner.email, recipientId: 1, routingOrder: 1, status: 'sent' },
       ...signers.map((p, k) => ({
         role: 'signer' as const, name: p.name, email: p.email, ...plan.signers[k], status: 'created' as const,
-        ...(p.accessCode ? { accessCode: true } : {}),
+        ...(p.accessCode || p.otp ? { accessCode: true } : {}),
       })),
       ...cc.map((p, j) => ({ role: 'cc' as const, name: p.name || p.email, email: p.email, ...plan.cc[j], status: 'created' as const })),
     ],
@@ -309,6 +312,8 @@ export async function fileSignedDocument(requestId: string): Promise<string | nu
       updatedAt: FieldValue.serverTimestamp(),
     });
     await batch.commit();
+    // Yousign: Avocat (not the provider) sends the signed PDF to the other signers and the CC.
+    if (r.provider === 'yousign') await emailSignedCopies(r, pdf, name).catch(err => console.warn('[signatures] signed copies', r.id, (err as Error).message));
     // F0: a generated NDA's term runs from the signing day, not the drafting day.
     await startContractOnSigning(r.userId, r.documentId, signedAt.toISOString())
       .catch(err => console.warn('[signatures] contract start', r.id, (err as Error).message));
@@ -430,7 +435,7 @@ export async function recordOwnerReturn(uid: string, requestId: string, event: s
   const r = await loadOwnedRequest(uid, requestId);
   const counterparty = r.recipients.find(x => x.role === 'signer') ?? null;
   const counterparties = r.recipients.filter(x => x.role === 'signer');
-  const summary = { status: r.status, counterparty, counterparties, documentId: r.documentId };
+  const summary = { status: r.status, counterparty, counterparties, documentId: r.documentId, provider: r.provider };
 
   if (r.status !== 'pending_owner') return summary;            // reload / back button — idempotent
 
@@ -484,4 +489,17 @@ export async function processYousignEvent(ev: YousignEvent): Promise<'applied' |
   }
   if (status === 'completed') await fileSignedDocument(r.id);
   return 'applied';
+}
+
+/** Yousign: the signed PDF to every counterparty and CC recipient (the owner has it in Documentos). */
+async function emailSignedCopies(r: SignatureRequest, pdf: Buffer, fileName: string) {
+  if (!emailConfigured() || pdf.length > 10 * 1024 * 1024) return;
+  const owner = await ownerName(r.userId);
+  const title = r.subject.replace(/^Firma solicitada:\s*/i, '') || 'Documento';
+  const msg = ccCompletedEmail({ ownerName: owner.name, title, language: r.options?.language ?? 'es' });
+  const to = r.recipients.filter(x => x.role !== 'owner').map(x => x.email);
+  for (const email of to) {
+    await sendEmail(email, { ...msg, ...(owner.email ? { replyTo: owner.email } : {}), attachments: [{ filename: fileName, content: pdf, contentType: 'application/pdf' }] })
+      .catch(err => console.warn('[signatures] signed copy', r.id, (err as Error).message));
+  }
 }

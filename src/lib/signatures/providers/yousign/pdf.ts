@@ -13,6 +13,10 @@ import { DOC_FONT } from '@/lib/pdf/fonts';
 import { applyBrandingFonts, drawBrandedHeader } from '@/lib/pdf/branding';
 import type { ServerBranding } from '@/lib/branding-server';
 import { DOC_CREDIT } from '@/lib/doc-html';
+import { primitives as P } from '@/lib/tokens';
+
+// Document greys (the same family as the Word/PDF header and footer).
+const INK = { header: P['neutral-700'], sub: P['neutral-600'], faint: P['neutral-400'], rule: P['neutral-800'], hr: P['neutral-300'] };
 
 /** A field box in PDF points, origin top-left of the page (1-based page). */
 export interface FieldBox { signer: number; kind: 'signature' | 'date'; page: number; x: number; y: number; width: number; height: number }
@@ -136,13 +140,13 @@ export function renderSigningPdf(markdown: string, o: RenderOptions): Promise<Si
       drawBrandedHeader(doc, o.branding, o.date ?? new Date());
     } else {
       const dateStr = (o.date ?? new Date()).toLocaleDateString(o.language === 'en' ? 'en-GB' : 'es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
-      doc.font(DOC_FONT.heading).fontSize(9).fillColor('#444444')
+      doc.font(DOC_FONT.heading).fontSize(9).fillColor(INK.header)
         .text((o.authorName || 'AVOCAT LegalTech').toUpperCase(), left, MARGIN.top, { width: width - 140, characterSpacing: 0.5 });
-      if (o.authorNif) doc.font(DOC_FONT.body).fontSize(8).fillColor('#666666').text(o.authorNif, left, doc.y, { width: width - 140 });
+      if (o.authorNif) doc.font(DOC_FONT.body).fontSize(8).fillColor(INK.sub).text(o.authorNif, left, doc.y, { width: width - 140 });
       const yAfter = doc.y;
-      doc.font(DOC_FONT.body).fontSize(9).fillColor('#444444').text(dateStr, left + width - 140, MARGIN.top, { width: 140, align: 'right' });
+      doc.font(DOC_FONT.body).fontSize(9).fillColor(INK.header).text(dateStr, left + width - 140, MARGIN.top, { width: 140, align: 'right' });
       const ruleY = Math.max(yAfter, doc.y) + 6;
-      doc.moveTo(left, ruleY).lineTo(left + width, ruleY).lineWidth(0.75).strokeColor('#999999').stroke();
+      doc.moveTo(left, ruleY).lineTo(left + width, ruleY).lineWidth(0.75).strokeColor(INK.faint).stroke();
       doc.fillColor('black').strokeColor('black').lineWidth(1);
       doc.x = left; doc.y = ruleY + 22;
     }
@@ -167,7 +171,7 @@ export function renderSigningPdf(markdown: string, o: RenderOptions): Promise<Si
       doc.font(DOC_FONT.body).fontSize(12).fillColor('black').text(`${label}:`, left, y, { lineBreak: false });
       const x = left + doc.widthOfString(`${label}:`) + 8;
       const lineY = y + 13;
-      doc.moveTo(x, lineY).lineTo(x + box.width, lineY).lineWidth(0.5).strokeColor('#333333').stroke().strokeColor('black').lineWidth(1);
+      doc.moveTo(x, lineY).lineTo(x + box.width, lineY).lineWidth(0.5).strokeColor(INK.rule).stroke().strokeColor('black').lineWidth(1);
       const n = kind === 'signature' ? ++sig : ++date;
       fields.push({ signer: n, kind, page: page(), x: Math.round(x), y: Math.round(lineY - box.height), width: box.width, height: box.height });
       doc.x = left; doc.y = y + 18;
@@ -177,7 +181,7 @@ export function renderSigningPdf(markdown: string, o: RenderOptions): Promise<Si
       if (b.t === 'h1') { ensure(60); doc.moveDown(0.5); writeRuns(plain(b.text).toUpperCase(), { align: 'center', width }, 14); doc.moveDown(1); }
       else if (b.t === 'h2') { ensure(50); doc.moveDown(0.6); doc.font(DOC_FONT.heading).fontSize(12).text(plain(b.text).toUpperCase(), left, doc.y, { width }); doc.moveDown(0.3); }
       else if (b.t === 'h3') { ensure(44); doc.moveDown(0.4); doc.font(DOC_FONT.heading).fontSize(12).text(plain(b.text), left, doc.y, { width }); doc.moveDown(0.2); }
-      else if (b.t === 'hr') { ensure(20); const y = doc.y + 6; doc.moveTo(left, y).lineTo(left + width, y).lineWidth(0.5).strokeColor('#cccccc').stroke().strokeColor('black'); doc.y = y + 10; }
+      else if (b.t === 'hr') { ensure(20); const y = doc.y + 6; doc.moveTo(left, y).lineTo(left + width, y).lineWidth(0.5).strokeColor(INK.hr).stroke().strokeColor('black'); doc.y = y + 10; }
       else if (b.t === 'ul' || b.t === 'ol') {
         b.items.forEach((it, i) => {
           ensure(18);
@@ -209,7 +213,7 @@ export function renderSigningPdf(markdown: string, o: RenderOptions): Promise<Si
       doc.switchToPage(range.start + i);
       doc.page.margins.bottom = 0;            // writing in the margin must not open a new page
       const label = range.count > 1 ? `${DOC_CREDIT} · ${o.language === 'en' ? 'Page' : 'Página'} ${i + 1} ${o.language === 'en' ? 'of' : 'de'} ${range.count}` : DOC_CREDIT;
-      doc.font(DOC_FONT.body).fontSize(8).fillColor('#999999')
+      doc.font(DOC_FONT.body).fontSize(8).fillColor(INK.faint)
         .text(label, left, A4.height - MARGIN.bottom + 28, { width, align: 'center', lineBreak: false });
     }
     doc.fillColor('black');

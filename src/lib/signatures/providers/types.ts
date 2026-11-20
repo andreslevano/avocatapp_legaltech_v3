@@ -20,7 +20,7 @@ export interface CreateContext {
   title: string;
   subject: string;
   message: string;
-  signers: { name: string; email: string; accessCode?: string }[];
+  signers: { name: string; email: string; accessCode?: string; otp?: boolean }[];
   cc: { name: string; email: string }[];
   signingOrder: SigningOrder;
   options: SignatureOptions;
