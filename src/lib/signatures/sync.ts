@@ -82,6 +82,7 @@ export function deriveSync(current: Pick<SignatureRequest, 'status' | 'recipient
     if (next && R_RANK[next] > R_RANK[r.status]) {
       out = { ...out, status: next };
       if (next === 'completed') out.signedAt = ds.signedDateTime ?? nowIso;
+      if (next === 'declined' && ds.declinedReason) out.declinedReason = ds.declinedReason.slice(0, 500);
       // The owner "opening" is just them starting embedded signing — not worth a timeline entry.
       if ((next === 'delivered' && r.role !== 'owner') || next === 'completed' || next === 'declined') {
         const at = (next === 'delivered' ? ds.deliveredDateTime : next === 'completed' ? ds.signedDateTime : ds.declinedDateTime) ?? nowIso;

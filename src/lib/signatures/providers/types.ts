@@ -15,7 +15,8 @@ export interface CreateContext {
   requestId: string;               // our signature_requests id (Yousign external_id, DocuSign customField)
   owner: ProviderOwner;
   html: string;                    // signing HTML (buildDocHtml forSignature) — DocuSign sends it as is
-  markdown?: string;               // source text when the page had it (Yousign renders its own PDF)
+  markdown?: string;               // source text with one "Firma:" block per signer (Yousign renders its own PDF)
+  meta?: { authorName?: string; authorNif?: string };
   title: string;
   subject: string;
   message: string;
@@ -26,7 +27,7 @@ export interface CreateContext {
 }
 
 /** Provider-specific ids stored on the request (merged into signature_requests/{id}). */
-export type ExternalRefs = Partial<Pick<SignatureRequest, 'accountId' | 'envelopeId' | 'webhookTokenHash' | 'yousign'>>;
+export type ExternalRefs = Partial<Pick<SignatureRequest, 'accountId' | 'envelopeId' | 'webhookTokenHash' | 'yousign' | 'expiresAt' | 'signatureLevel'>>;
 
 /**
  * Provider-neutral envelope state — the shape deriveSync merges (statuses: created | sent |

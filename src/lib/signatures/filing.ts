@@ -25,3 +25,10 @@ export function firebaseDownloadUrl(bucket: string, path: string, token: string)
 
 /** A filing attempt older than this is considered dead (function killed) and may be retried. */
 export const FILING_LEASE_MS = 5 * 60 * 1000;
+
+/** "NDA_MFW.doc" + "Juan Pérez" → "NDA_MFW_registro_auditoria_Juan_Perez.pdf" (Yousign audit trail, one per signer). */
+export function auditTrailFileName(originalName: string, signerName: string): string {
+  const base = (originalName || 'Documento').replace(/\.[^./\\]+$/, '').replace(/(_firmado)?(_\d{4}-\d{2}-\d{2}_\d{2}-\d{2})?$/i, '');
+  const who = signerName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'firmante';
+  return `${base}_registro_auditoria_${who}.pdf`;
+}

@@ -9,6 +9,10 @@ import { buildDocHtml, signingHtmlFromSaved, withSignatureBlocks, type DocMeta }
 import { inlineSavedLogo, loadOwnerBranding } from '@/lib/branding-server';
 import { DocusignApiError } from '@/lib/docusign/api';
 import { providerFor } from './providers';
+import { defaultProvider, docusignEnabled } from './providers/yousign/config';
+import { summaryFromYousignEvent } from './providers/yousign/map';
+import type { YousignEvent } from './providers/yousign/webhook';
+import { sendSignerInvites } from './invites';
 import {
   DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, isActiveStatus,
   type CreateSignatureInput, type SignatureRequest, type SignatureStatus,
@@ -16,7 +20,7 @@ import {
 import {
   deriveSync, refreshAvailableAt, REFRESH_WINDOW_MS, REMIND_WINDOW_MS, summaryFromConnect, type DsEnvelopeSummary,
 } from './sync';
-import { FILING_LEASE_MS, firebaseDownloadUrl, signedFileName, signedStoragePath } from './filing';
+import { auditTrailFileName, FILING_LEASE_MS, firebaseDownloadUrl, signedFileName, signedStoragePath } from './filing';
 import { planRecipients, recipientKey } from './recipients';
 import { negotiationAllowsSignature } from './eligibility';
 import { startContractOnSigning } from '@/lib/contracts/server';
@@ -74,7 +78,7 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
     throw e;
   }
 
-  const provider = providerFor('docusign');
+  const provider = providerFor(chooseProvider(input.provider));
   const owner = await provider.resolveOwner(uid);
   const options = { ...DEFAULT_SIGNATURE_OPTIONS, ...input.options };
   const signers = input.signers.map(p => ({ name: p.name.trim(), email: p.email.trim(), accessCode: p.accessCode || undefined }));
@@ -98,7 +102,8 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
 
   const reqRef = requests().doc();
   const refs = await provider.createAndSend({
-    uid, requestId: reqRef.id, owner, html, markdown: input.markdown, title: input.title,
+    uid, requestId: reqRef.id, owner, html, title: input.title, meta: await ownerMeta(uid),
+    markdown: input.markdown ? withSignatureBlocks(input.markdown, names, options.language) : undefined,
     subject: input.subject, message: input.message, signers, cc, signingOrder, options,
   });
 
@@ -235,7 +240,7 @@ export async function fileSignedDocument(requestId: string): Promise<string | nu
   if (!r) return null;
 
   try {
-    const { signedPdf: pdf } = await providerFor(r.provider).downloadSigned(r);
+    const { signedPdf: pdf, auditTrails } = await providerFor(r.provider).downloadSigned(r);
 
     const original = (await documents().doc(r.documentId).get()).data() ?? {};
     // Stamp with the moment the envelope completed (not the filing retry time).
@@ -272,8 +277,33 @@ export async function fileSignedDocument(requestId: string): Promise<string | nu
       signatureStatus: 'completed',
       createdAt: FieldValue.serverTimestamp(),
     });
+    // Yousign: the audit trail of each signer, next to the signed PDF (kind 'certificate').
+    const auditIds: string[] = [];
+    for (const a of auditTrails) {
+      const who = r.recipients.find(x => recipientKey(x) === a.recipientKey);
+      const aName = auditTrailFileName((original.name as string) || 'Documento', who?.name ?? `firmante_${a.recipientKey}`);
+      const aPath = signedStoragePath(original.storagePath as string | undefined, r.userId, Date.now(), aName);
+      const aToken = randomUUID();
+      await storage().bucket(bucketName).file(aPath).save(a.pdf, {
+        resumable: false, contentType: 'application/pdf', metadata: { metadata: { firebaseStorageDownloadTokens: aToken } },
+      });
+      const aRef = documents().doc();
+      auditIds.push(aRef.id);
+      batch.set(aRef, {
+        userId: r.userId,
+        caseId: (original.caseId as string | null) ?? r.caseId ?? null,
+        clientId: (original.clientId as string | null) ?? r.clientId ?? null,
+        folderId: (original.folderId as string | null) ?? null,
+        name: aName, type: 'pdf', size: a.pdf.length, storagePath: aPath,
+        downloadUrl: firebaseDownloadUrl(bucketName, aPath, aToken),
+        source: r.provider, status: 'Firmado', kind: 'certificate',
+        signedFromDocumentId: r.documentId, signatureRequestId: r.id,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    }
     batch.update(ref, {
       signedDocumentId: signedRef.id,
+      ...(auditIds.length ? { auditTrailDocumentIds: auditIds } : {}),
       filingStartedAt: FieldValue.delete(),
       events: FieldValue.arrayUnion({ type: 'filed', at }),
       updatedAt: FieldValue.serverTimestamp(),
@@ -373,7 +403,7 @@ export async function correctCounterpartyEmail(uid: string, requestId: string, e
   const newName = (name ?? '').trim() || c.name;
   const result = await providerFor(r.provider).updateSignerEmail(r, c, clean, newName);
   if (result === 'recreate_required') {
-    throw fail('Este proveedor no permite cambiar el email de un firmante en un envío activo. Anula el envío y vuelve a enviarlo con el email correcto.', 'recreate_required', 409);
+    throw fail('Con Yousign no se puede cambiar el email de un firmante cuando el documento ya está en firma. Anula el envío y vuelve a enviarlo con el email correcto (tendrás que firmar de nuevo).', 'recreate_required', 409);
   }
   const at = now();
   // A signer whose turn hasn't come yet stays "created"; DocuSign emails them when it does.
@@ -409,6 +439,10 @@ export async function recordOwnerReturn(uid: string, requestId: string, event: s
       x.role === 'owner' ? { ...x, status: 'completed' as const, signedAt: now() }
       : x.role === 'signer' && x.routingOrder === 2 ? { ...x, status: 'sent' as const } : x);   // first in line (all, if parallel)
     await setStatus(r, 'sent', { recipients }, 'owner_signed');
+    // Yousign: Avocat delivers the links — email whoever's turn it is now (idempotent: invitedAt).
+    if (r.provider === 'yousign') {
+      await sendSignerInvites(r.id).catch(err => console.error('[signatures] invites after owner signed', r.id, (err as Error).message));
+    }
     return { ...summary, status: 'sent' as const };
   }
   if (event === 'decline') {
@@ -419,4 +453,35 @@ export async function recordOwnerReturn(uid: string, requestId: string, event: s
     return { ...summary, status: 'voided' as const };
   }
   return summary;
+}
+
+
+// ── Provider choice and Yousign events (docs/yousign/YOUSIGN_IMPLEMENTATION_PLAN.md) ──
+
+/** New requests: Yousign by default; DocuSign only when enabled and asked for (it needs the user's connection). */
+export function chooseProvider(requested?: string | null): 'yousign' | 'docusign' {
+  if (requested === 'docusign' && docusignEnabled()) return 'docusign';
+  if (requested === 'yousign') return 'yousign';
+  return defaultProvider();
+}
+
+/**
+ * Applies one stored Yousign webhook event (called by the background processor, never inside the
+ * webhook request). Idempotent: monotonic merge + invitedAt + the filing lease.
+ */
+export async function processYousignEvent(ev: YousignEvent): Promise<'applied' | 'ignored' | 'unknown_request'> {
+  const id = ev.externalId;
+  if (!id || !/^[A-Za-z0-9_-]{1,64}$/.test(id)) return 'unknown_request';
+  const snap = await requests().doc(id).get();
+  if (!snap.exists || snap.get('provider') !== 'yousign') return 'unknown_request';
+  const r = { id: snap.id, ...(snap.data() as Omit<SignatureRequest, 'id'>) };
+  if (ev.signatureRequestId && r.yousign?.signatureRequestId !== ev.signatureRequestId) return 'unknown_request';
+  const summary = summaryFromYousignEvent(r, ev);
+  if (!summary) return 'ignored';
+  const status = await applySummary(r.id, summary);
+  if (status === 'sent' || status === 'delivered') {
+    await sendSignerInvites(r.id).catch(err => console.error('[signatures] invites', r.id, (err as Error).message));
+  }
+  if (status === 'completed') await fileSignedDocument(r.id);
+  return 'applied';
 }

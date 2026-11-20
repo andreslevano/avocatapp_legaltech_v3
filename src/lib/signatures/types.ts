@@ -30,6 +30,8 @@ export interface SignatureRecipient {
   accessCode?: boolean;           // an access code is required (the code itself is never stored)
   status: 'created' | 'sent' | 'delivered' | 'completed' | 'declined';
   signedAt?: string;
+  declinedReason?: string;        // why they declined (when the provider reports it)
+  invitedAt?: string;             // Yousign: when Avocat emailed them their signing link (first time)
 }
 
 export interface SignatureOptions {
@@ -80,6 +82,8 @@ export interface SignatureRequest {
   yousign?: { signatureRequestId: string; documentId: string; signers: { recipientKey: number; signerId: string }[] };
   /** ses = simple electronic signature (default) · aes = advanced (Yousign, needs OTP SMS + activation). */
   signatureLevel?: 'ses' | 'aes';
+  /** Yousign: the request's expiration date (yyyy-mm-dd). */
+  expiresAt?: string;
   status: SignatureStatus;
   recipients: SignatureRecipient[];
   subject: string;
@@ -101,8 +105,9 @@ export interface SignatureRequest {
 /** What the browser needs to open Focused View (5c); null → full-page redirect. */
 export interface FocusedViewInfo { integrationKey: string; bundleUrl: string }
 
-/** Owner signing session returned by POST /api/signatures and …/signing-url. */
-export interface SigningTarget { signingUrl: string; focused?: FocusedViewInfo | null }
+/** Owner signing session returned by POST /api/signatures and …/signing-url.
+ *  DocuSign: Focused View (desktop) or a redirect URL. Yousign: an embedded iframe (`yousign`). */
+export interface SigningTarget { signingUrl: string; focused?: FocusedViewInfo | null; yousign?: { embedded: true } | null }
 
 /** Body of POST /api/signatures. */
 export interface CreateSignatureInput {
@@ -117,6 +122,8 @@ export interface CreateSignatureInput {
   subject: string;
   message: string;
   options: SignatureOptions;
+  /** 'docusign' only when enabled and the user asks for it; otherwise the default (Yousign). */
+  provider?: 'yousign' | 'docusign';
 }
 
 /** DocuSign return events (returnUrl ?event=…) → what the return page shows. */
