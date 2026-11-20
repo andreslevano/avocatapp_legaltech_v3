@@ -72,20 +72,26 @@ export interface SignatureRequest {
   documentId: string;
   caseId: string | null;
   clientId: string | null;
-  provider: 'docusign';
-  accountId: string;
-  envelopeId: string;
+  provider: 'docusign' | 'yousign';
+  /** DocuSign only. */
+  accountId?: string;
+  envelopeId?: string;
+  /** Yousign only: its ids (signing links are never stored). */
+  yousign?: { signatureRequestId: string; documentId: string; signers: { recipientKey: number; signerId: string }[] };
+  /** ses = simple electronic signature (default) · aes = advanced (Yousign, needs OTP SMS + activation). */
+  signatureLevel?: 'ses' | 'aes';
   status: SignatureStatus;
   recipients: SignatureRecipient[];
   subject: string;
   message: string;
   options: SignatureOptions;
   events: SignatureEvent[];
-  webhookTokenHash: string | null;
+  webhookTokenHash?: string | null;       // DocuSign per-request webhook token (sha256)
   signingOrder?: SigningOrder;    // 5b; older records: one counterparty
   lastSyncedAt?: string;          // last DocuSign status call (manual refresh, D9)
   lastRemindedAt?: string;
   signedDocumentId?: string;      // documents/{id} of the signed PDF (+ certificate) — Phase 4
+  auditTrailDocumentIds?: string[]; // Yousign: one audit trail per signer, filed next to the signed PDF
   filingStartedAt?: string;       // lease while downloading/uploading the signed PDF
   filingError?: string;
   createdAt?: unknown;

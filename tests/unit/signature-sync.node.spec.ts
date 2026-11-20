@@ -102,8 +102,13 @@ test.describe('refresh throttle (D9)', () => {
 
   // D13b: the go-live review fails on repeated envelope GETs. The only GET is the throttled refresh.
   test('envelope GET is only used by refreshSignatureRequest', () => {
+    // DocuSign's envelope GET lives in its provider's fetchStatus, which only the throttled refresh calls.
+    const ds = readFileSync(join(__dirname, '../../src/lib/signatures/providers/docusign.ts'), 'utf8');
+    const get = [...ds.matchAll(/getEnvelopeWithRecipients\(/g)].map(m => m.index!);
+    expect(get).toHaveLength(1);
+    expect(ds.slice(ds.lastIndexOf('async ', get[0]), get[0])).toMatch(/^async fetchStatus/);
     const src = readFileSync(join(__dirname, '../../src/lib/signatures/server.ts'), 'utf8');
-    const calls = [...src.matchAll(/getEnvelopeWithRecipients\(/g)].map(m => m.index!);
+    const calls = [...src.matchAll(/\.fetchStatus\(/g)].map(m => m.index!);
     expect(calls).toHaveLength(1);
     const owner = src.lastIndexOf('export async function', calls[0]);
     expect(src.slice(owner, owner + 60)).toContain('refreshSignatureRequest');
@@ -140,8 +145,12 @@ test.describe('signed PDF filing (Phase 4)', () => {
   });
 
   test('combined download is only reached through fileSignedDocument', () => {
+    const ds = readFileSync(join(__dirname, '../../src/lib/signatures/providers/docusign.ts'), 'utf8');
+    const dl = [...ds.matchAll(/downloadCombinedPdf\(/g)].map(m => m.index!);
+    expect(dl).toHaveLength(1);
+    expect(ds.slice(ds.lastIndexOf('async ', dl[0]), dl[0])).toMatch(/^async downloadSigned/);
     const src = readFileSync(join(__dirname, '../../src/lib/signatures/server.ts'), 'utf8');
-    const calls = [...src.matchAll(/downloadCombinedPdf\(/g)].map(m => m.index!);
+    const calls = [...src.matchAll(/\.downloadSigned\(/g)].map(m => m.index!);
     expect(calls).toHaveLength(1);
     const owner = src.lastIndexOf('export async function', calls[0]);
     expect(src.slice(owner, owner + 60)).toContain('fileSignedDocument');
