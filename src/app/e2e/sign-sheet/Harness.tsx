@@ -6,6 +6,7 @@ import type { UserDoc } from '@/lib/auth';
 import { AppAuthProvider } from '@/contexts/AppAuthContext';
 import SignAndSendSheet from '@/components/signatures/SignAndSendSheet';
 import FocusedSigningHost from '@/components/signatures/FocusedSigningHost';
+import YousignSigningHost from '@/components/signatures/YousignSigningHost';
 
 const user = { uid: 'e2e-user', email: 'ana@bufete.es', getIdToken: async () => 'e2e-token' } as unknown as User;
 const userDoc = {
@@ -31,6 +32,7 @@ export default function SignSheetHarness() {
               defaultCounterparty={{ name: 'Juan García', email: 'juan@nike.com' }} onClose={() => setOpen(false)} />
           : <p data-testid="closed" className="text-text">Hoja cerrada</p>}
         <FocusedSigningHost />
+        <YousignSigningHost />
       </div>
     </AppAuthProvider>
   );

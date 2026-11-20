@@ -1,6 +1,7 @@
 'use client';
 
-// DocuSign sends the owner back here after embedded signing: /signatures/return?rid=…&event=…
+// The owner comes back here after embedded signing (DocuSign redirect / Focused View, or the Yousign
+// modal): /signatures/return?rid=…&event=…
 // The event is recorded server-side without asking DocuSign for status (D13b).
 
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -22,6 +23,7 @@ function ReturnInner() {
   const event = params?.get('event') ?? '';
   const [view, setView] = useState<View>('loading');
   const [others, setOthers] = useState<SignatureRecipient[]>([]);
+  const [provider, setProvider] = useState<'yousign' | 'docusign'>('docusign');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const once = useRef(false);
@@ -32,6 +34,7 @@ function ReturnInner() {
     reportSigningReturn(user, rid, event)
       .then(r => {
         setOthers(r.counterparties ?? (r.counterparty ? [r.counterparty] : []));
+        if (r.provider) setProvider(r.provider);
         const s: SignatureStatus = r.status;
         if (s === 'pending_owner') {
           const o = outcomeForEvent(event);
@@ -48,7 +51,7 @@ function ReturnInner() {
     try {
       const target = await getSigningUrl(user, rid);
       openOwnerSigning(rid, target);
-      if (target.focused) setBusy(false);
+      if (target.focused || target.yousign) setBusy(false);
     }
     catch (e) { setError((e as Error).message); setBusy(false); }
   };
@@ -59,17 +62,21 @@ function ReturnInner() {
 
   const content: Record<Exclude<View, 'loading'>, { icon: React.ReactNode; title: string; text: string; resume?: boolean }> = {
     signed:   { icon: <Check size={18} aria-hidden />, title: `Firmado por ti. Enviado a ${who}.`,
-                text: many
+                text: provider === 'yousign'
+                  ? (many
+                    ? 'Les enviamos desde Avocat un email con su enlace de firma (por turnos o a la vez, según elegiste). Cuando firmen todos, el PDF firmado y los registros de auditoría se guardan solos en Documentos.'
+                    : 'Le hemos enviado desde Avocat un email con su enlace de firma. Cuando firme, el PDF firmado y los registros de auditoría se guardan solos en Documentos.')
+                  : many
                   ? 'DocuSign les enviará un email para firmar (por turnos o a la vez, según elegiste). Cuando firmen todos, el documento quedará firmado.'
                   : 'DocuSign le ha enviado un email para firmar. Cuando firme, el documento quedará firmado por ambas partes.' },
     pending:  { icon: <Pause size={18} aria-hidden />, title: 'Pendiente de tu firma',
                 text: 'Has salido sin firmar. La otra parte todavía no ha recibido nada: puedes continuar cuando quieras.', resume: true },
     expired:  { icon: <Timer size={18} aria-hidden />, title: 'La sesión de firma caducó',
-                text: 'Por seguridad, la sesión de DocuSign tiene un tiempo límite. Tu envío sigue pendiente de tu firma.', resume: true },
+                text: `Por seguridad, la sesión de ${provider === 'yousign' ? 'firma' : 'DocuSign'} tiene un tiempo límite. Tu envío sigue pendiente de tu firma.`, resume: true },
     declined: { icon: <X size={18} aria-hidden />, title: 'Has rechazado firmar',
                 text: 'Hemos anulado el envío y la otra parte no recibirá nada. El documento vuelve a estar desbloqueado.' },
     error:    { icon: <CircleAlert size={18} aria-hidden />, title: 'No pudimos completar la firma',
-                text: 'Algo falló en DocuSign. Tu envío sigue pendiente de tu firma; inténtalo de nuevo.', resume: true },
+                text: `Algo falló en ${provider === 'yousign' ? 'Yousign' : 'DocuSign'}. Tu envío sigue pendiente de tu firma; inténtalo de nuevo.`, resume: true },
     done:     { icon: <Check size={18} aria-hidden />, title: 'Este envío ya está en curso',
                 text: 'No hay nada pendiente de tu firma en esta solicitud.' },
   };
@@ -103,7 +110,7 @@ function ReturnInner() {
 export default function SignatureReturnPage() {
   return (
     <div className="flex flex-col h-full">
-      <AppHeader title="Firma electrónica" subtitle="DocuSign" />
+      <AppHeader title="Firma electrónica" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-xl mx-auto">
           <Suspense fallback={<p className="text-small text-text-muted">Cargando…</p>}>

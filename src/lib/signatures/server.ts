@@ -7,22 +7,23 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { db, storage } from '@/lib/firebase-admin';
 import { buildDocHtml, signingHtmlFromSaved, withSignatureBlocks, type DocMeta } from '@/lib/doc-html';
 import { inlineSavedLogo, loadOwnerBranding } from '@/lib/branding-server';
-import { randomToken, sha256Base64Url } from '@/lib/integrations/crypto';
-import { allowedEmbedOrigin, dsServerConfig, focusedViewHosts } from '@/lib/docusign/config';
-import { buildEnvelopeDefinition, webhookUrlFor } from '@/lib/docusign/envelope';
-import {
-  createEnvelope, createRecipientView, DocusignApiError, downloadCombinedPdf, getEnvelopeWithRecipients,
-  updateSignerAndResend, voidEnvelope,
-} from '@/lib/docusign/api';
-import { getValidAccessToken } from '@/lib/docusign/tokens';
+import { DocusignApiError } from '@/lib/docusign/api';
+import { providerFor } from './providers';
+import { defaultProvider, docusignEnabled } from './providers/yousign/config';
+import { summaryFromYousignEvent } from './providers/yousign/map';
+import type { YousignEvent } from './providers/yousign/webhook';
+import { sendSignerInvites } from './invites';
+import { ccCompletedEmail } from './invite-email';
+import { emailConfigured, sendEmail } from '@/lib/email';
+import { ownerName } from '@/lib/data-requests/server';
 import {
   DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, isActiveStatus,
-  type CreateSignatureInput, type FocusedViewInfo, type SignatureRequest, type SignatureStatus,
+  type CreateSignatureInput, type SignatureRequest, type SignatureStatus,
 } from './types';
 import {
   deriveSync, refreshAvailableAt, REFRESH_WINDOW_MS, REMIND_WINDOW_MS, summaryFromConnect, type DsEnvelopeSummary,
 } from './sync';
-import { FILING_LEASE_MS, firebaseDownloadUrl, signedFileName, signedStoragePath } from './filing';
+import { auditTrailFileName, FILING_LEASE_MS, firebaseDownloadUrl, signedFileName, signedStoragePath } from './filing';
 import { planRecipients, recipientKey } from './recipients';
 import { negotiationAllowsSignature } from './eligibility';
 import { startContractOnSigning } from '@/lib/contracts/server';
@@ -32,22 +33,6 @@ const documents = () => db().collection('documents');
 const now = () => new Date().toISOString();
 
 const fail = (message: string, code: string, status: number) => new DocusignApiError(message, code, status);
-
-/** Recipient-view extras for Focused View when the page asked for it from an allowed origin. */
-function focusedOptions(embedOrigin?: string | null) {
-  const cfg = dsServerConfig();
-  const origin = allowedEmbedOrigin(embedOrigin, cfg.appUrl);
-  if (!origin) return { view: {}, focused: null as FocusedViewInfo | null };
-  const hosts = focusedViewHosts(cfg.oauthBase);
-  return {
-    view: { frameAncestors: [origin, hosts.messageOrigin], messageOrigins: [hosts.messageOrigin] },
-    focused: { integrationKey: cfg.integrationKey, bundleUrl: hosts.bundleUrl },
-  };
-}
-
-function returnUrl(requestId: string): string {
-  return `${dsServerConfig().appUrl}/signatures/return?rid=${encodeURIComponent(requestId)}`;
-}
 
 async function ownerMeta(uid: string): Promise<DocMeta> {
   const u = (await db().collection('users').doc(uid).get()).data() ?? {};
@@ -96,11 +81,10 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
     throw e;
   }
 
-  const creds = await getValidAccessToken(uid);
-  if (!creds.userEmail) throw fail('Reconecta tu cuenta de DocuSign.', 'reconnect_required', 409);
-  const owner = { name: creds.userName || creds.userEmail, email: creds.userEmail, clientUserId: uid };
+  const provider = providerFor(chooseProvider(input.provider));
+  const owner = await provider.resolveOwner(uid);
   const options = { ...DEFAULT_SIGNATURE_OPTIONS, ...input.options };
-  const signers = input.signers.map(p => ({ name: p.name.trim(), email: p.email.trim(), accessCode: p.accessCode || undefined }));
+  const signers = input.signers.map(p => ({ name: p.name.trim(), email: p.email.trim(), accessCode: p.accessCode || undefined, otp: p.otp === true }));
   const cc = (input.cc ?? []).map(p => ({ name: p.name.trim(), email: p.email.trim() }));
   const signingOrder = input.signingOrder ?? 'sequential';
   if ([...signers, ...cc].some(p => p.email.toLowerCase() === owner.email.toLowerCase())) {
@@ -120,22 +104,11 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
   }
 
   const reqRef = requests().doc();
-  const webhookToken = randomToken(32);
-  const webhookUrl = webhookUrlFor(process.env.DOCUSIGN_WEBHOOK_BASE_URL, webhookToken);
-
-  const { envelopeId } = await createEnvelope(creds, buildEnvelopeDefinition({
-    html,
-    documentName: input.title,
-    subject: input.subject,
-    message: input.message,
-    owner,
-    signers,
-    cc,
-    signingOrder,
-    options,
-    requestId: reqRef.id,
-    webhookUrl,
-  }));
+  const refs = await provider.createAndSend({
+    uid, requestId: reqRef.id, owner, html, title: input.title, meta: await ownerMeta(uid),
+    markdown: input.markdown ? withSignatureBlocks(input.markdown, names, options.language) : undefined,
+    subject: input.subject, message: input.message, signers, cc, signingOrder, options,
+  });
 
   const at = now();
   const plan = planRecipients(signers.length, cc.length, signingOrder);
@@ -144,15 +117,14 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
     documentId: input.documentId,
     caseId: (docSnap.get('caseId') as string | null) ?? null,
     clientId: (docSnap.get('clientId') as string | null) ?? null,
-    provider: 'docusign',
-    accountId: creds.accountId,
-    envelopeId,
+    provider: provider.id,
+    ...refs,
     status: 'pending_owner',
     recipients: [
       { role: 'owner', name: owner.name, email: owner.email, recipientId: 1, routingOrder: 1, status: 'sent' },
       ...signers.map((p, k) => ({
         role: 'signer' as const, name: p.name, email: p.email, ...plan.signers[k], status: 'created' as const,
-        ...(p.accessCode ? { accessCode: true } : {}),
+        ...(p.accessCode || p.otp ? { accessCode: true } : {}),
       })),
       ...cc.map((p, j) => ({ role: 'cc' as const, name: p.name || p.email, email: p.email, ...plan.cc[j], status: 'created' as const })),
     ],
@@ -161,7 +133,6 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
     message: input.message.trim(),
     options,
     events: [{ type: 'created', at, by: owner.email }],
-    webhookTokenHash: webhookUrl ? sha256Base64Url(webhookToken) : null,
   };
 
   try {
@@ -176,27 +147,19 @@ export async function startSignatureRequest(uid: string, input: CreateSignatureI
     await batch.commit();
   } catch (err) {
     // Don't leave a live envelope Avocat doesn't know about.
-    await voidEnvelope(creds, envelopeId, 'Error interno al registrar la solicitud').catch(() => {});
+    await provider.abandon(uid, refs, 'Error interno al registrar la solicitud').catch(() => {});
     throw err;
   }
 
-  const fv = focusedOptions(embedOrigin);
-  const { url } = await createRecipientView(creds, envelopeId, { ...owner, returnUrl: returnUrl(reqRef.id), ...fv.view });
-  return { requestId: reqRef.id, signingUrl: url, focused: fv.focused };
+  const session = await provider.ownerSigningSession({ id: reqRef.id, userId: uid, recipients: record.recipients, ...refs }, embedOrigin);
+  return { requestId: reqRef.id, ...session };
 }
 
 /** POST /api/signatures/[id]/signing-url — "Continuar firma" (fresh single-use view). */
 export async function resumeOwnerSigning(uid: string, requestId: string, embedOrigin?: string | null) {
   const r = await loadOwnedRequest(uid, requestId);
   if (r.status !== 'pending_owner') throw fail('Ya no hay nada que firmar en esta solicitud.', 'not_pending', 409);
-  const creds = await getValidAccessToken(uid);
-  const owner = r.recipients.find(x => x.role === 'owner');
-  if (!owner) throw fail('Solicitud de firma no válida.', 'invalid', 500);
-  const fv = focusedOptions(embedOrigin);
-  const { url } = await createRecipientView(creds, r.envelopeId, {
-    name: owner.name, email: owner.email, clientUserId: uid, returnUrl: returnUrl(r.id), ...fv.view,
-  });
-  return { signingUrl: url, focused: fv.focused };
+  return providerFor(r.provider).ownerSigningSession(r, embedOrigin);
 }
 
 const docPatch = (status: SignatureStatus, unlock: boolean) =>
@@ -280,8 +243,7 @@ export async function fileSignedDocument(requestId: string): Promise<string | nu
   if (!r) return null;
 
   try {
-    const creds = await getValidAccessToken(r.userId);
-    const pdf = await downloadCombinedPdf(creds, r.envelopeId);
+    const { signedPdf: pdf, auditTrails } = await providerFor(r.provider).downloadSigned(r);
 
     const original = (await documents().doc(r.documentId).get()).data() ?? {};
     // Stamp with the moment the envelope completed (not the filing retry time).
@@ -310,7 +272,7 @@ export async function fileSignedDocument(requestId: string): Promise<string | nu
       size: pdf.length,
       storagePath: path,
       downloadUrl: firebaseDownloadUrl(bucketName, path, token),
-      source: 'docusign',
+      source: r.provider,
       status: 'Firmado',
       kind: 'signed',
       signedFromDocumentId: r.documentId,
@@ -318,13 +280,40 @@ export async function fileSignedDocument(requestId: string): Promise<string | nu
       signatureStatus: 'completed',
       createdAt: FieldValue.serverTimestamp(),
     });
+    // Yousign: the audit trail of each signer, next to the signed PDF (kind 'certificate').
+    const auditIds: string[] = [];
+    for (const a of auditTrails) {
+      const who = r.recipients.find(x => recipientKey(x) === a.recipientKey);
+      const aName = auditTrailFileName((original.name as string) || 'Documento', who?.name ?? `firmante_${a.recipientKey}`);
+      const aPath = signedStoragePath(original.storagePath as string | undefined, r.userId, Date.now(), aName);
+      const aToken = randomUUID();
+      await storage().bucket(bucketName).file(aPath).save(a.pdf, {
+        resumable: false, contentType: 'application/pdf', metadata: { metadata: { firebaseStorageDownloadTokens: aToken } },
+      });
+      const aRef = documents().doc();
+      auditIds.push(aRef.id);
+      batch.set(aRef, {
+        userId: r.userId,
+        caseId: (original.caseId as string | null) ?? r.caseId ?? null,
+        clientId: (original.clientId as string | null) ?? r.clientId ?? null,
+        folderId: (original.folderId as string | null) ?? null,
+        name: aName, type: 'pdf', size: a.pdf.length, storagePath: aPath,
+        downloadUrl: firebaseDownloadUrl(bucketName, aPath, aToken),
+        source: r.provider, status: 'Firmado', kind: 'certificate',
+        signedFromDocumentId: r.documentId, signatureRequestId: r.id,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    }
     batch.update(ref, {
       signedDocumentId: signedRef.id,
+      ...(auditIds.length ? { auditTrailDocumentIds: auditIds } : {}),
       filingStartedAt: FieldValue.delete(),
       events: FieldValue.arrayUnion({ type: 'filed', at }),
       updatedAt: FieldValue.serverTimestamp(),
     });
     await batch.commit();
+    // Yousign: Avocat (not the provider) sends the signed PDF to the other signers and the CC.
+    if (r.provider === 'yousign') await emailSignedCopies(r, pdf, name).catch(err => console.warn('[signatures] signed copies', r.id, (err as Error).message));
     // F0: a generated NDA's term runs from the signing day, not the drafting day.
     await startContractOnSigning(r.userId, r.documentId, signedAt.toISOString())
       .catch(err => console.warn('[signatures] contract start', r.id, (err as Error).message));
@@ -360,9 +349,8 @@ export async function refreshSignatureRequest(uid: string, requestId: string) {
     await fileSignedDocument(r.id);
     return { status: r.status, nextRefreshAt: new Date(Date.now() + REFRESH_WINDOW_MS).toISOString(), throttled: false };
   }
-  const creds = await getValidAccessToken(uid);
-  const envelope = await getEnvelopeWithRecipients(creds, r.envelopeId);
-  const status = (await applySummary(r.id, envelope)) ?? r.status;
+  const summary = await providerFor(r.provider).fetchStatus(r);
+  const status = (await applySummary(r.id, summary)) ?? r.status;
   if (status === 'completed') await fileSignedDocument(r.id);
   return { status, nextRefreshAt: new Date(Date.now() + REFRESH_WINDOW_MS).toISOString(), throttled: false };
 }
@@ -390,9 +378,7 @@ export async function remindCounterparty(uid: string, requestId: string) {
   if (Date.now() - last < REMIND_WINDOW_MS) {
     throw fail('Ya enviaste un recordatorio hace menos de una hora.', 'throttled', 429);
   }
-  const creds = await getValidAccessToken(uid);
-  await updateSignerAndResend(creds, r.envelopeId,
-    pending.map(c => ({ recipientId: String(recipientKey(c)), name: c.name, email: c.email })));
+  await providerFor(r.provider).remind(r, pending);
   const at = now();
   await requests().doc(r.id).update({
     lastRemindedAt: at,
@@ -420,8 +406,10 @@ export async function correctCounterpartyEmail(uid: string, requestId: string, e
       : 'Ese email ya está en esta solicitud.', 'invalid_email', 422);
   }
   const newName = (name ?? '').trim() || c.name;
-  const creds = await getValidAccessToken(uid);
-  await updateSignerAndResend(creds, r.envelopeId, [{ recipientId: String(recipientKey(c)), name: newName, email: clean }]);
+  const result = await providerFor(r.provider).updateSignerEmail(r, c, clean, newName);
+  if (result === 'recreate_required') {
+    throw fail('Con Yousign no se puede cambiar el email de un firmante cuando el documento ya está en firma. Anula el envío y vuelve a enviarlo con el email correcto (tendrás que firmar de nuevo).', 'recreate_required', 409);
+  }
   const at = now();
   // A signer whose turn hasn't come yet stays "created"; DocuSign emails them when it does.
   const recipients = r.recipients.map(x => x === c ? { ...x, email: clean, name: newName, status: c.status === 'created' ? 'created' as const : 'sent' as const } : x);
@@ -433,8 +421,7 @@ export async function correctCounterpartyEmail(uid: string, requestId: string, e
 export async function voidSignatureRequest(uid: string, requestId: string) {
   const r = await loadOwnedRequest(uid, requestId);
   if (!isActiveStatus(r.status)) throw fail('Esta solicitud ya no está activa.', 'not_pending', 409);
-  const creds = await getValidAccessToken(uid);
-  await voidEnvelope(creds, r.envelopeId, 'Anulado por el remitente desde Avocat');
+  await providerFor(r.provider).void(r, 'Anulado por el remitente desde Avocat');
   await setStatus(r, 'voided', {}, 'voided', true);
   return { ok: true };
 }
@@ -448,7 +435,7 @@ export async function recordOwnerReturn(uid: string, requestId: string, event: s
   const r = await loadOwnedRequest(uid, requestId);
   const counterparty = r.recipients.find(x => x.role === 'signer') ?? null;
   const counterparties = r.recipients.filter(x => x.role === 'signer');
-  const summary = { status: r.status, counterparty, counterparties, documentId: r.documentId };
+  const summary = { status: r.status, counterparty, counterparties, documentId: r.documentId, provider: r.provider };
 
   if (r.status !== 'pending_owner') return summary;            // reload / back button — idempotent
 
@@ -457,15 +444,62 @@ export async function recordOwnerReturn(uid: string, requestId: string, event: s
       x.role === 'owner' ? { ...x, status: 'completed' as const, signedAt: now() }
       : x.role === 'signer' && x.routingOrder === 2 ? { ...x, status: 'sent' as const } : x);   // first in line (all, if parallel)
     await setStatus(r, 'sent', { recipients }, 'owner_signed');
+    // Yousign: Avocat delivers the links — email whoever's turn it is now (idempotent: invitedAt).
+    if (r.provider === 'yousign') {
+      await sendSignerInvites(r.id).catch(err => console.error('[signatures] invites after owner signed', r.id, (err as Error).message));
+    }
     return { ...summary, status: 'sent' as const };
   }
   if (event === 'decline') {
-    const creds = await getValidAccessToken(uid);
-    await voidEnvelope(creds, r.envelopeId, 'El remitente rechazó firmar').catch(err => {
+    await providerFor(r.provider).void(r, 'El remitente rechazó firmar').catch(err => {
       console.warn('[signatures] void after decline failed:', (err as Error).message);
     });
     await setStatus(r, 'voided', {}, 'owner_declined', true);
     return { ...summary, status: 'voided' as const };
   }
   return summary;
+}
+
+
+// ── Provider choice and Yousign events (docs/yousign/YOUSIGN_IMPLEMENTATION_PLAN.md) ──
+
+/** New requests: Yousign by default; DocuSign only when enabled and asked for (it needs the user's connection). */
+export function chooseProvider(requested?: string | null): 'yousign' | 'docusign' {
+  if (requested === 'docusign' && docusignEnabled()) return 'docusign';
+  if (requested === 'yousign') return 'yousign';
+  return defaultProvider();
+}
+
+/**
+ * Applies one stored Yousign webhook event (called by the background processor, never inside the
+ * webhook request). Idempotent: monotonic merge + invitedAt + the filing lease.
+ */
+export async function processYousignEvent(ev: YousignEvent): Promise<'applied' | 'ignored' | 'unknown_request'> {
+  const id = ev.externalId;
+  if (!id || !/^[A-Za-z0-9_-]{1,64}$/.test(id)) return 'unknown_request';
+  const snap = await requests().doc(id).get();
+  if (!snap.exists || snap.get('provider') !== 'yousign') return 'unknown_request';
+  const r = { id: snap.id, ...(snap.data() as Omit<SignatureRequest, 'id'>) };
+  if (ev.signatureRequestId && r.yousign?.signatureRequestId !== ev.signatureRequestId) return 'unknown_request';
+  const summary = summaryFromYousignEvent(r, ev);
+  if (!summary) return 'ignored';
+  const status = await applySummary(r.id, summary);
+  if (status === 'sent' || status === 'delivered') {
+    await sendSignerInvites(r.id).catch(err => console.error('[signatures] invites', r.id, (err as Error).message));
+  }
+  if (status === 'completed') await fileSignedDocument(r.id);
+  return 'applied';
+}
+
+/** Yousign: the signed PDF to every counterparty and CC recipient (the owner has it in Documentos). */
+async function emailSignedCopies(r: SignatureRequest, pdf: Buffer, fileName: string) {
+  if (!emailConfigured() || pdf.length > 10 * 1024 * 1024) return;
+  const owner = await ownerName(r.userId);
+  const title = r.subject.replace(/^Firma solicitada:\s*/i, '') || 'Documento';
+  const msg = ccCompletedEmail({ ownerName: owner.name, title, language: r.options?.language ?? 'es' });
+  const to = r.recipients.filter(x => x.role !== 'owner').map(x => x.email);
+  for (const email of to) {
+    await sendEmail(email, { ...msg, ...(owner.email ? { replyTo: owner.email } : {}), attachments: [{ filename: fileName, content: pdf, contentType: 'application/pdf' }] })
+      .catch(err => console.warn('[signatures] signed copy', r.id, (err as Error).message));
+  }
 }

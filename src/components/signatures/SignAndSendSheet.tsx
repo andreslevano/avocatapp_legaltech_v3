@@ -4,12 +4,12 @@
 // routing 1); DocuSign emails the other signers only after that — one after another or all at
 // once — and copies the CC recipients.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { Button } from '@/components/ui/Button';
 import { ModalShell } from '@/components/documents/modals';
 import { docusignInfo, startDocusignConnect } from '@/lib/docusign/client';
-import { createSignatureRequest, getSigningUrl, openOwnerSigning, saveSignResume, SignatureClientError } from '@/lib/signatures/client';
+import { createSignatureRequest, getSignatureProvider, getSigningUrl, openOwnerSigning, saveSignResume, SignatureClientError, type SignatureProviderInfo } from '@/lib/signatures/client';
 import { DEFAULT_SIGNATURE_OPTIONS, EMAIL_RE, type SignatureOptions } from '@/lib/signatures/types';
 import { ACCESS_CODE_RE, MAX_CC, MAX_SIGNERS, type SigningOrder } from '@/lib/signatures/recipients';
 import { FileSignature, Lock, PenLine } from 'lucide-react';
@@ -39,11 +39,29 @@ type Method = 'digital' | 'manual';
  */
 export default function SignAndSendSheet(p: SignAndSendSheetProps) {
   const [method, setMethod] = useState<Method | null>(p.initialMethod ?? null);
-  const { userDoc } = useAppAuth();
+  const { user, userDoc } = useAppAuth();
   const info = docusignInfo(userDoc);
   const hasHandwritten = !!(userDoc as unknown as Record<string, unknown>).signatureUrl;
+  // Which providers this account can use for new requests (Yousign default; DocuSign if enabled).
+  const [prov, setProv] = useState<SignatureProviderInfo | null>(null);
+  const [chosen, setChosen] = useState<Provider | null>(null);
+  useEffect(() => {
+    getSignatureProvider(user)
+      .then(setProv)
+      .catch(() => setProv({ provider: 'docusign', docusignAvailable: true, yousignAvailable: false }));
+  }, [user]);
+  const options = prov ? providerOptions(prov) : [];
 
-  if (method === 'digital') return <DigitalSignSheet {...p} onBack={() => setMethod(null)} />;
+  // The provider for "Firma digital": the user's pick; back from connecting DocuSign (initialMethod
+  // 'digital') → DocuSign; else their last choice on this device, else the default.
+  const provider: Provider | null = !prov ? null
+    : chosen ?? (p.initialMethod === 'digital' && options.includes('docusign') ? 'docusign'
+      : (() => { const last = readLastProvider(); return last && options.includes(last) ? last : prov.provider; })());
+
+  if (method === 'digital') {
+    if (!provider) return <ModalShell title="Firmar y enviar" onClose={p.onClose} sheetOnMobile><p className="text-caption text-text-muted py-6 text-center">Preparando…</p></ModalShell>;
+    return <DigitalSignSheet {...p} provider={provider} onBack={() => { setMethod(null); setChosen(null); }} />;
+  }
   if (method === 'manual') {
     return (
       <ModalShell title="Firmar y enviar con tu firma manuscrita" onClose={p.onClose} sheetOnMobile>
@@ -60,24 +78,36 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
     );
   }
 
-  const option = (m: Method, Icon: typeof PenLine, title: string, desc: string, note: string) => (
-    <button type="button" onClick={() => setMethod(m)}
+  const option = (onClick: () => void, Icon: typeof PenLine, title: string, desc: string, note: string, badge?: string) => (
+    <button type="button" onClick={onClick}
       className="w-full text-left rounded-xl border border-border-strong bg-surface hover:border-accent-border hover:bg-accent-subtle px-4 py-3 transition-colors min-h-touch">
-      <span className="flex items-center gap-2 text-small font-semibold text-text-heading"><Icon size={18} aria-hidden className="text-accent-text" />{title}</span>
+      <span className="flex items-center gap-2 text-small font-semibold text-text-heading">
+        <Icon size={18} aria-hidden className="text-accent-text" />{title}
+        {badge && <span className="ml-auto px-2 py-0.5 rounded-full bg-accent-subtle border border-accent-border text-caption font-medium text-accent-text">{badge}</span>}
+      </span>
       <span className="block mt-1 text-caption text-text">{desc}</span>
       {note && <span className="block mt-1 text-caption text-text-muted">{note}</span>}
     </button>
   );
+  const pick = (pr: Provider) => () => { setChosen(pr); saveLastProvider(pr); setMethod('digital'); };
+  const yousignCard = (both: boolean) => option(pick('yousign'), FileSignature, both ? 'Firma digital con Yousign' : 'Firma digital',
+    'Firmas aquí y cada parte recibe un email de Avocat para firmar online, sin cuenta. El PDF firmado y los registros de auditoría vuelven solos a Documentos.',
+    'Firma electrónica simple (SES) conforme al Reglamento eIDAS. No necesitas ninguna cuenta.', both ? 'Recomendada' : undefined);
+  const docusignCard = (both: boolean) => option(pick('docusign'), FileSignature, both ? 'Firma digital con DocuSign' : 'Firma digital',
+    'Con tu cuenta de DocuSign: firmas aquí y cada parte firma electrónicamente por email. El PDF firmado y el certificado vuelven solos a Documentos.',
+    info && info.status !== 'reauth_required' ? `Cuenta conectada: ${info.email ?? ''}` : 'Necesitas conectar tu cuenta de DocuSign (te lo pedimos en el siguiente paso).');
 
   return (
     <ModalShell title="Firmar y enviar" onClose={p.onClose} sheetOnMobile>
       <div className="space-y-3">
         <p className="text-caption text-text-muted truncate">{p.title}</p>
         <p className="text-small text-text">¿Cómo quieres firmar?</p>
-        {option('digital', FileSignature, 'Firma digital',
-          'Con DocuSign: firmas aquí y cada parte firma electrónicamente por email. El PDF firmado y el certificado vuelven solos a Documentos.',
-          info && info.status !== 'reauth_required' ? `Cuenta conectada: ${info.email ?? ''}` : 'Necesitas conectar tu cuenta de DocuSign (te lo pedimos en el siguiente paso).')}
-        {option('manual', PenLine, 'Firma manuscrita',
+        {!prov ? (
+          <p className="text-caption text-text-muted py-2">Preparando…</p>
+        ) : (
+          options.map(o => <div key={o}>{o === 'yousign' ? yousignCard(options.length > 1) : docusignCard(options.length > 1)}</div>)
+        )}
+        {option(() => setMethod('manual'), PenLine, 'Firma manuscrita',
           'Con la firma que dibujaste en tu perfil: la colocamos en el documento y lo enviamos por email para que los demás firmen a mano.',
           hasHandwritten ? '' : 'Aún no tienes firma guardada: te llevaremos a dibujarla.')}
         <div className="flex justify-end pt-1">
@@ -86,6 +116,23 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
       </div>
     </ModalShell>
   );
+}
+
+type Provider = 'yousign' | 'docusign';
+
+/** Digital providers offered, the default first (Yousign when configured; DocuSign when enabled). */
+export function providerOptions(i: SignatureProviderInfo): Provider[] {
+  const other: Provider = i.provider === 'yousign' ? 'docusign' : 'yousign';
+  const otherOn = other === 'yousign' ? !!i.yousignAvailable : i.docusignAvailable;
+  return otherOn ? [i.provider, other] : [i.provider];
+}
+
+const LAST_KEY = 'avocat.signProvider';
+function readLastProvider(): Provider | null {
+  try { const v = localStorage.getItem(LAST_KEY); return v === 'yousign' || v === 'docusign' ? v : null; } catch { return null; }
+}
+function saveLastProvider(v: Provider) {
+  try { localStorage.setItem(LAST_KEY, v); } catch { /* private mode */ }
 }
 
 interface SignerRow { key: number; name: string; email: string; code: string; useCode: boolean }
@@ -107,11 +154,14 @@ function defaultMessage(title: string, counterparty: string, owner: string, lang
     : `Hola${hi ? ` ${hi}` : ''},\n\nTe envío "${title}" para tu firma. Yo ya lo he firmado.\n\nGracias,\n${owner}`;
 }
 
-function DigitalSignSheet(p: SignAndSendSheetProps & { onBack: () => void }) {
+function DigitalSignSheet(p: SignAndSendSheetProps & { onBack: () => void; provider: 'yousign' | 'docusign' }) {
   const { user, userDoc } = useAppAuth();
+  const ys = p.provider === 'yousign';
   const info = docusignInfo(userDoc);
-  const connected = !!info && info.status !== 'reauth_required';
-  const ownerName = info?.name || info?.email || '';
+  // Yousign: one Avocat account — nothing to connect; the owner is the Avocat user.
+  const connected = ys || (!!info && info.status !== 'reauth_required');
+  const ownerName = ys ? (userDoc.displayName || user.email || '') : info?.name || info?.email || '';
+  const ownerEmail = ys ? user.email ?? '' : info?.email ?? '';
 
   const [signers, setSigners] = useState<SignerRow[]>(() =>
     (p.defaultSigners?.length ? p.defaultSigners : [p.defaultCounterparty]).map(x => ({ key: nextKey(), name: x.name, email: x.email, code: '', useCode: false })));
@@ -145,11 +195,11 @@ function DigitalSignSheet(p: SignAndSendSheetProps & { onBack: () => void }) {
     for (const r of signers) {
       if (!r.name.trim()) return 'Indica el nombre de cada firmante.';
       if (!EMAIL_RE.test(r.email.trim())) return `El email de ${r.name.trim()} no es válido.`;
-      if (r.useCode && !ACCESS_CODE_RE.test(r.code)) return `El código de acceso de ${r.name.trim()} debe tener entre 4 y 20 letras o números.`;
+      if (!ys && r.useCode && !ACCESS_CODE_RE.test(r.code)) return `El código de acceso de ${r.name.trim()} debe tener entre 4 y 20 letras o números.`;
     }
     for (const r of cc) if (!EMAIL_RE.test(r.email.trim())) return 'Revisa los emails en copia.';
     const emails = [...signers, ...cc].map(r => r.email.trim().toLowerCase());
-    if (info?.email && emails.includes(info.email.toLowerCase())) {
+    if (ownerEmail && emails.includes(ownerEmail.toLowerCase())) {
       return 'Tú ya firmas el primero: no te añadas como firmante ni en copia.';
     }
     if (new Set(emails).size !== emails.length) return 'Cada persona debe tener un email distinto.';
@@ -164,13 +214,14 @@ function DigitalSignSheet(p: SignAndSendSheetProps & { onBack: () => void }) {
     try {
       const target = await createSignatureRequest(user, {
         documentId: p.documentId, markdown: p.markdown, title: p.title,
-        signers: signers.map(r => ({ name: r.name.trim(), email: r.email.trim(), ...(r.useCode ? { accessCode: r.code } : {}) })),
+        signers: signers.map(r => ({ name: r.name.trim(), email: r.email.trim(), ...(r.useCode ? (ys ? { otp: true } : { accessCode: r.code }) : {}) })),
+        provider: p.provider,
         cc: cc.map(r => ({ name: r.name.trim(), email: r.email.trim() })),
         signingOrder: order,
         subject: subject.trim(), message, options,
       });
-      openOwnerSigning(target.requestId, target);   // Focused View (desktop) or full-page redirect
-      if (target.focused) p.onClose();
+      openOwnerSigning(target.requestId, target, p.title);   // Yousign modal, Focused View (desktop) or redirect
+      if (target.focused || target.yousign) p.onClose();
     } catch (e) {
       const err = e as SignatureClientError;
       if (err.code === 'already_in_signature' && err.requestId) setResumeId(err.requestId);
@@ -188,14 +239,14 @@ function DigitalSignSheet(p: SignAndSendSheetProps & { onBack: () => void }) {
     setBusy('resume'); setError('');
     try {
       const target = await getSigningUrl(user, resumeId);
-      openOwnerSigning(resumeId, target);
-      if (target.focused) p.onClose();
+      openOwnerSigning(resumeId, target, p.title);
+      if (target.focused || target.yousign) p.onClose();
     }
     catch (e) { setError((e as Error).message); setBusy(''); }
   };
 
   return (
-    <ModalShell title="Firmar y enviar con DocuSign" onClose={busy ? () => {} : p.onClose} sheetOnMobile>
+    <ModalShell title={ys ? 'Firmar y enviar' : 'Firmar y enviar con DocuSign'} onClose={busy ? () => {} : p.onClose} sheetOnMobile>
       <div className="overflow-y-auto -mx-1 px-1 space-y-4 text-caption font-sans">
         <p className="text-text-muted truncate">{p.title}</p>
 
@@ -213,7 +264,7 @@ function DigitalSignSheet(p: SignAndSendSheetProps & { onBack: () => void }) {
           <>
             <section className="space-y-1">
               <p className={LABEL}>1 · Firmas tú, ahora</p>
-              <p className="text-text">{info?.name} <span className="text-text-muted">· {info?.email}</span></p>
+              <p className="text-text">{ownerName} <span className="text-text-muted">· {ownerEmail}</span></p>
               <p className="text-caption text-text-muted">Firmarás en el primer bloque de firma, sin salir del flujo de Avocat.</p>
             </section>
 
@@ -230,7 +281,12 @@ function DigitalSignSheet(p: SignAndSendSheetProps & { onBack: () => void }) {
                     )}
                   </div>
                   <input className={FIELD} type="email" placeholder="email@empresa.com" value={r.email} onChange={e => setSigner(r.key, { email: e.target.value })} />
-                  {r.useCode ? (
+                  {ys ? (
+                    <label className="flex items-start gap-2 text-caption text-text cursor-pointer">
+                      <input type="checkbox" className="mt-0.5" checked={r.useCode} onChange={e => setSigner(r.key, { useCode: e.target.checked })} />
+                      <span><Lock size={12} aria-hidden className="inline -mt-0.5" /> Pedir código por email <span className="text-text-muted">— Yousign le enviará un código para abrir el documento.</span></span>
+                    </label>
+                  ) : r.useCode ? (
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <input className={FIELD} placeholder="Código de acceso (4–20 letras o números)" value={r.code} maxLength={20}
@@ -268,7 +324,9 @@ function DigitalSignSheet(p: SignAndSendSheetProps & { onBack: () => void }) {
                 </div>
               )}
               <p className="text-caption text-text-muted">
-                {signers.length === 1 ? 'Recibirá un email de DocuSign cuando hayas firmado. No necesita cuenta.' : 'No necesitan cuenta de DocuSign.'}
+                {ys
+                  ? (signers.length === 1 ? 'Recibirá un email de Avocat con su enlace de firma cuando hayas firmado. No necesita cuenta.' : 'Recibirán un email de Avocat con su enlace de firma. No necesitan cuenta.')
+                  : signers.length === 1 ? 'Recibirá un email de DocuSign cuando hayas firmado. No necesita cuenta.' : 'No necesitan cuenta de DocuSign.'}
                 {' '}Si el documento no tiene un bloque «Firma:» para cada persona, lo añadimos al final.
               </p>
             </section>
@@ -334,6 +392,7 @@ function DigitalSignSheet(p: SignAndSendSheetProps & { onBack: () => void }) {
               ) : (
                 <p className="mt-1 text-caption text-text-muted">
                   Recordatorio cada {options.reminderFrequencyDays} días a partir del día {options.reminderDelayDays} · caduca en {options.expireAfterDays} días
+                  {ys && ' · Firma electrónica simple (SES) conforme al Reglamento eIDAS, con Yousign'}
                 </p>
               )}
             </section>

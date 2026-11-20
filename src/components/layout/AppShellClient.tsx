@@ -14,6 +14,7 @@ import Rail from '@/components/layout/Rail';
 import Sidebar from '@/components/layout/Sidebar';
 import SignatureNotifier from '@/components/signatures/SignatureNotifier';
 import FocusedSigningHost from '@/components/signatures/FocusedSigningHost';
+import YousignSigningHost from '@/components/signatures/YousignSigningHost';
 import { ImportJobsProvider } from '@/contexts/ImportJobsContext';
 import PreviewVerifyBanner from '@/components/layout/PreviewVerifyBanner';
 
@@ -120,6 +121,7 @@ export default function AppShellClient({ children }: AppShellClientProps) {
           </div>
           <SignatureNotifier />
           <FocusedSigningHost />
+          <YousignSigningHost />
           </ImportJobsProvider>
         </DocumentsWorkspaceProvider>
       </SidebarProvider>

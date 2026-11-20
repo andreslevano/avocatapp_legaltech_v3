@@ -4117,3 +4117,4 @@ export const stripeWebhook = functions.https.onRequest({
 
 // F3: hourly trigger for contract expiry alerts (logic in the Next.js app).
 export { contractAlertsHourly } from "./contract-alerts";
+export { processSignatureEvent } from "./signature-events";

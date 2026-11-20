@@ -32,15 +32,28 @@ export function embedOriginForThisDevice(): string | undefined {
 export const FOCUSED_SIGNING_EVENT = 'avocat:focused-signing';
 export interface FocusedSigningDetail extends FocusedViewInfo { requestId: string; url: string }
 
-/** Opens the owner's signing session: the app-wide Focused View modal, or DocuSign's page. */
-export function openOwnerSigning(requestId: string, t: SigningTarget) {
-  if (t.focused) {
+export const YOUSIGN_SIGNING_EVENT = 'avocat:yousign-signing';
+export interface YousignSigningDetail { requestId: string; url: string; title: string }
+
+/** Opens the owner's signing session: Yousign's embedded modal, DocuSign's Focused View, or DocuSign's page. */
+export function openOwnerSigning(requestId: string, t: SigningTarget, title = 'Documento') {
+  if (t.yousign) {
+    window.dispatchEvent(new CustomEvent<YousignSigningDetail>(YOUSIGN_SIGNING_EVENT, { detail: { requestId, url: t.signingUrl, title } }));
+  } else if (t.focused) {
     window.dispatchEvent(new CustomEvent<FocusedSigningDetail>(FOCUSED_SIGNING_EVENT, {
       detail: { requestId, url: t.signingUrl, ...t.focused },
     }));
   } else {
     window.location.assign(t.signingUrl);
   }
+}
+
+/** Which provider "Firmar y enviar" uses for new requests, and whether DocuSign can be chosen. */
+export interface SignatureProviderInfo { provider: 'yousign' | 'docusign'; docusignAvailable: boolean; yousignAvailable?: boolean }
+export async function getSignatureProvider(user: User): Promise<SignatureProviderInfo> {
+  const res = await fetch('/api/signatures/provider', { headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
+  if (!res.ok) return { provider: 'docusign', docusignAvailable: true, yousignAvailable: false };
+  return res.json();
 }
 
 export const createSignatureRequest = (user: User, input: CreateSignatureInput) =>
@@ -52,7 +65,7 @@ export const getSigningUrl = (user: User, requestId: string, opts: { plain?: boo
     { embedOrigin: opts.plain ? undefined : embedOriginForThisDevice() });
 
 export const reportSigningReturn = (user: User, requestId: string, event: string) =>
-  post<{ status: SignatureStatus; counterparty: SignatureRecipient | null; counterparties?: SignatureRecipient[]; documentId: string }>(
+  post<{ status: SignatureStatus; counterparty: SignatureRecipient | null; counterparties?: SignatureRecipient[]; documentId: string; provider?: 'yousign' | 'docusign' }>(
     user, `/api/signatures/${encodeURIComponent(requestId)}/return`, { event });
 
 const rid = (id: string) => `/api/signatures/${encodeURIComponent(id)}`;
