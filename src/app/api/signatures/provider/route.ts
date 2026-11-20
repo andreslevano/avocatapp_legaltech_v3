@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireDocusignUser } from '@/lib/docusign/route-helpers';
 import { chooseProvider } from '@/lib/signatures/server';
-import { docusignEnabled } from '@/lib/signatures/providers/yousign/config';
+import { docusignEnabled, yousignConfigured } from '@/lib/signatures/providers/yousign/config';
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/signatures/provider — which provider "Firmar y enviar" uses for new requests (Yousign by
-// default; DocuSign only when enabled). No secrets: just the choice.
+// GET /api/signatures/provider — the default provider for new requests and which ones the lawyer
+// may choose in "Firmar y enviar" (Yousign when configured; DocuSign when enabled). No secrets.
 export async function GET(req: NextRequest) {
   const uid = await requireDocusignUser(req);
   if (typeof uid !== 'string') return uid;
-  return NextResponse.json({ provider: chooseProvider(), docusignAvailable: docusignEnabled() });
+  // Both available → the sheet lets the lawyer choose per document (default first).
+  return NextResponse.json({ provider: chooseProvider(), docusignAvailable: docusignEnabled(), yousignAvailable: yousignConfigured() });
 }

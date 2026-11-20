@@ -86,3 +86,35 @@ test('messages from other origins are ignored', async ({ page }) => {
   await page.waitForTimeout(500);
   await expect(page.getByRole('heading', { name: 'Documento firmado' })).toHaveCount(0);
 });
+
+test('both providers available: the lawyer chooses per document; the choice is remembered', async ({ page }) => {
+  await base(page);
+  await page.unroute('**/api/signatures/provider');
+  await page.route('**/api/signatures/provider', r => r.fulfill({ json: { provider: 'yousign', docusignAvailable: true, yousignAvailable: true } }));
+  const bodies: Record<string, unknown>[] = [];
+  await page.route('**/api/signatures', async r => { bodies.push(r.request().postDataJSON()); await r.fulfill({ json: { requestId: 'r3', signingUrl: FAKE_LINK, yousign: { embedded: true } } }); });
+  await page.goto('/e2e/sign-sheet?metodo=elegir');
+  const sheet = page.getByRole('dialog', { name: 'Firmar y enviar' });
+  await expect(sheet.getByRole('button', { name: /Firma digital con Yousign/ })).toContainText('Recomendada');
+  await expect(sheet.getByRole('button', { name: /Firma digital con DocuSign/ })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: /Firma manuscrita/ })).toBeVisible();
+  await page.screenshot({ path: 'screenshots/sign-provider-choice.png' });
+  // DocuSign: its own sheet (connect DocuSign, as today).
+  await sheet.getByRole('button', { name: /Firma digital con DocuSign/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Firmar y enviar con DocuSign' })).toBeVisible();
+  await page.getByRole('button', { name: 'Volver' }).click();
+  // Yousign: sends provider 'yousign'.
+  await page.getByRole('button', { name: /Firma digital con Yousign/ }).click();
+  await page.getByRole('button', { name: 'Firmar y enviar →' }).click();
+  await expect(page.getByRole('dialog', { name: 'Firma electrónica' })).toBeVisible();
+  expect(bodies[0]).toMatchObject({ provider: 'yousign' });
+  expect(await page.evaluate(() => localStorage.getItem('avocat.signProvider'))).toBe('yousign');
+});
+
+test('only one provider available: a single "Firma digital" option', async ({ page }) => {
+  await base(page);
+  await page.goto('/e2e/sign-sheet?metodo=elegir');
+  const sheet = page.getByRole('dialog', { name: 'Firmar y enviar' });
+  await expect(sheet.getByRole('button', { name: /^Firma digital/ })).toHaveCount(1);
+  await expect(sheet).not.toContainText('DocuSign');
+});

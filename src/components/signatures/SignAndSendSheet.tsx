@@ -42,14 +42,25 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
   const { user, userDoc } = useAppAuth();
   const info = docusignInfo(userDoc);
   const hasHandwritten = !!(userDoc as unknown as Record<string, unknown>).signatureUrl;
-  // Yousign by default; DocuSign when it's the configured provider (or chosen, if enabled).
+  // Which providers this account can use for new requests (Yousign default; DocuSign if enabled).
   const [prov, setProv] = useState<SignatureProviderInfo | null>(null);
-  useEffect(() => { getSignatureProvider(user).then(setProv).catch(() => setProv({ provider: 'docusign', docusignAvailable: true })); }, [user]);
-  const ys = prov?.provider === 'yousign';
+  const [chosen, setChosen] = useState<Provider | null>(null);
+  useEffect(() => {
+    getSignatureProvider(user)
+      .then(setProv)
+      .catch(() => setProv({ provider: 'docusign', docusignAvailable: true, yousignAvailable: false }));
+  }, [user]);
+  const options = prov ? providerOptions(prov) : [];
+
+  // The provider for "Firma digital": the user's pick; back from connecting DocuSign (initialMethod
+  // 'digital') → DocuSign; else their last choice on this device, else the default.
+  const provider: Provider | null = !prov ? null
+    : chosen ?? (p.initialMethod === 'digital' && options.includes('docusign') ? 'docusign'
+      : (() => { const last = readLastProvider(); return last && options.includes(last) ? last : prov.provider; })());
 
   if (method === 'digital') {
-    if (!prov) return <ModalShell title="Firmar y enviar" onClose={p.onClose} sheetOnMobile><p className="text-caption text-text-muted py-6 text-center">Preparando…</p></ModalShell>;
-    return <DigitalSignSheet {...p} provider={prov.provider} onBack={() => setMethod(null)} />;
+    if (!provider) return <ModalShell title="Firmar y enviar" onClose={p.onClose} sheetOnMobile><p className="text-caption text-text-muted py-6 text-center">Preparando…</p></ModalShell>;
+    return <DigitalSignSheet {...p} provider={provider} onBack={() => { setMethod(null); setChosen(null); }} />;
   }
   if (method === 'manual') {
     return (
@@ -67,26 +78,36 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
     );
   }
 
-  const option = (m: Method, Icon: typeof PenLine, title: string, desc: string, note: string) => (
-    <button type="button" onClick={() => setMethod(m)}
+  const option = (onClick: () => void, Icon: typeof PenLine, title: string, desc: string, note: string, badge?: string) => (
+    <button type="button" onClick={onClick}
       className="w-full text-left rounded-xl border border-border-strong bg-surface hover:border-accent-border hover:bg-accent-subtle px-4 py-3 transition-colors min-h-touch">
-      <span className="flex items-center gap-2 text-small font-semibold text-text-heading"><Icon size={18} aria-hidden className="text-accent-text" />{title}</span>
+      <span className="flex items-center gap-2 text-small font-semibold text-text-heading">
+        <Icon size={18} aria-hidden className="text-accent-text" />{title}
+        {badge && <span className="ml-auto px-2 py-0.5 rounded-full bg-accent-subtle border border-accent-border text-caption font-medium text-accent-text">{badge}</span>}
+      </span>
       <span className="block mt-1 text-caption text-text">{desc}</span>
       {note && <span className="block mt-1 text-caption text-text-muted">{note}</span>}
     </button>
   );
+  const pick = (pr: Provider) => () => { setChosen(pr); saveLastProvider(pr); setMethod('digital'); };
+  const yousignCard = (both: boolean) => option(pick('yousign'), FileSignature, both ? 'Firma digital con Yousign' : 'Firma digital',
+    'Firmas aquí y cada parte recibe un email de Avocat para firmar online, sin cuenta. El PDF firmado y los registros de auditoría vuelven solos a Documentos.',
+    'Firma electrónica simple (SES) conforme al Reglamento eIDAS. No necesitas ninguna cuenta.', both ? 'Recomendada' : undefined);
+  const docusignCard = (both: boolean) => option(pick('docusign'), FileSignature, both ? 'Firma digital con DocuSign' : 'Firma digital',
+    'Con tu cuenta de DocuSign: firmas aquí y cada parte firma electrónicamente por email. El PDF firmado y el certificado vuelven solos a Documentos.',
+    info && info.status !== 'reauth_required' ? `Cuenta conectada: ${info.email ?? ''}` : 'Necesitas conectar tu cuenta de DocuSign (te lo pedimos en el siguiente paso).');
 
   return (
     <ModalShell title="Firmar y enviar" onClose={p.onClose} sheetOnMobile>
       <div className="space-y-3">
         <p className="text-caption text-text-muted truncate">{p.title}</p>
         <p className="text-small text-text">¿Cómo quieres firmar?</p>
-        {option('digital', FileSignature, 'Firma digital', ys
-          ? 'Con Yousign: firmas aquí y cada parte recibe un email de Avocat para firmar online, sin cuenta. El PDF firmado y los registros de auditoría vuelven solos a Documentos.'
-          : 'Con DocuSign: firmas aquí y cada parte firma electrónicamente por email. El PDF firmado y el certificado vuelven solos a Documentos.',
-          ys ? 'Firma electrónica simple (SES) conforme al Reglamento eIDAS.'
-            : info && info.status !== 'reauth_required' ? `Cuenta conectada: ${info.email ?? ''}` : 'Necesitas conectar tu cuenta de DocuSign (te lo pedimos en el siguiente paso).')}
-        {option('manual', PenLine, 'Firma manuscrita',
+        {!prov ? (
+          <p className="text-caption text-text-muted py-2">Preparando…</p>
+        ) : (
+          options.map(o => <div key={o}>{o === 'yousign' ? yousignCard(options.length > 1) : docusignCard(options.length > 1)}</div>)
+        )}
+        {option(() => setMethod('manual'), PenLine, 'Firma manuscrita',
           'Con la firma que dibujaste en tu perfil: la colocamos en el documento y lo enviamos por email para que los demás firmen a mano.',
           hasHandwritten ? '' : 'Aún no tienes firma guardada: te llevaremos a dibujarla.')}
         <div className="flex justify-end pt-1">
@@ -95,6 +116,23 @@ export default function SignAndSendSheet(p: SignAndSendSheetProps) {
       </div>
     </ModalShell>
   );
+}
+
+type Provider = 'yousign' | 'docusign';
+
+/** Digital providers offered, the default first (Yousign when configured; DocuSign when enabled). */
+export function providerOptions(i: SignatureProviderInfo): Provider[] {
+  const other: Provider = i.provider === 'yousign' ? 'docusign' : 'yousign';
+  const otherOn = other === 'yousign' ? !!i.yousignAvailable : i.docusignAvailable;
+  return otherOn ? [i.provider, other] : [i.provider];
+}
+
+const LAST_KEY = 'avocat.signProvider';
+function readLastProvider(): Provider | null {
+  try { const v = localStorage.getItem(LAST_KEY); return v === 'yousign' || v === 'docusign' ? v : null; } catch { return null; }
+}
+function saveLastProvider(v: Provider) {
+  try { localStorage.setItem(LAST_KEY, v); } catch { /* private mode */ }
 }
 
 interface SignerRow { key: number; name: string; email: string; code: string; useCode: boolean }

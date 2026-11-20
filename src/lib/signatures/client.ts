@@ -49,10 +49,10 @@ export function openOwnerSigning(requestId: string, t: SigningTarget, title = 'D
 }
 
 /** Which provider "Firmar y enviar" uses for new requests, and whether DocuSign can be chosen. */
-export interface SignatureProviderInfo { provider: 'yousign' | 'docusign'; docusignAvailable: boolean }
+export interface SignatureProviderInfo { provider: 'yousign' | 'docusign'; docusignAvailable: boolean; yousignAvailable?: boolean }
 export async function getSignatureProvider(user: User): Promise<SignatureProviderInfo> {
   const res = await fetch('/api/signatures/provider', { headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
-  if (!res.ok) return { provider: 'docusign', docusignAvailable: true };
+  if (!res.ok) return { provider: 'docusign', docusignAvailable: true, yousignAvailable: false };
   return res.json();
 }
 
