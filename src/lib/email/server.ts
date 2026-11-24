@@ -66,6 +66,11 @@ async function outlookToken(c: EmailCaller): Promise<string> {
   return (await getAccessToken(c.uid)).token;
 }
 
+/** Access token for the provider (Gmail: refreshed, encrypted store; Outlook: Microsoft connection, plan-gated). */
+export async function tokenFor(c: EmailCaller, provider: EmailProvider): Promise<string> {
+  return provider === 'gmail' ? getGmailAccessToken(c.uid) : outlookToken(c);
+}
+
 export async function searchEmail(c: EmailCaller, provider: EmailProvider, criteria: SearchCriteria): Promise<EmailMessage[]> {
   if (provider === 'gmail') return searchMessages(await getGmailAccessToken(c.uid), gmailQuery(criteria), 20);
   return searchOutlook(await outlookToken(c), outlookSearch(criteria), 20);
@@ -85,7 +90,7 @@ export function emailErrorResponse(err: unknown): NextResponse {
   if (e instanceof GmailNotConnected || e instanceof NotConnectedError) return NextResponse.json({ error: e.message, code: 'not_connected' }, { status: 409 });
   if (e instanceof GmailReconnect || e instanceof ReconnectRequiredError) return NextResponse.json({ error: e.message, code: 'reconnect_required' }, { status: 409 });
   if (e instanceof OutlookMailNotGranted) return NextResponse.json({ error: e.message, code: 'mail_not_granted' }, { status: 409 });
-  if (e.status === 400 || e.status === 403) return NextResponse.json({ error: e.message, code: e.code ?? 'error' }, { status: e.status });
+  if (e.status === 400 || e.status === 403 || e.status === 404) return NextResponse.json({ error: e.message, code: e.code ?? 'error' }, { status: e.status });
   console.error('[email]', e?.message ?? err);
   return NextResponse.json({ error: 'No pudimos leer el correo. Inténtalo de nuevo.', code: 'error' }, { status: 502 });
 }

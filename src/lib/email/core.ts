@@ -16,7 +16,8 @@ export interface EmailMessage {
 
 export interface EmailMessageFull extends EmailMessage {
   bodyText: string;
-  attachments: { name: string; mimeType: string; size: number }[];
+  /** `id`: to download it when the user ticks it for the analysis or saves it to a case. */
+  attachments: { id?: string; name: string; mimeType: string; size: number }[];
 }
 
 export interface SearchCriteria { keywords?: string; from?: string; dateFrom?: string; dateTo?: string }

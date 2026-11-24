@@ -9,10 +9,11 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCases, createCase, updateCase, type CaseDoc } from '@/lib/firestore';
 import { saveAnalysisDocument } from '@/lib/agent-export';
 import { useDocBranding } from '@/hooks/useDocBranding';
-import { PROVIDER_LABEL, type EmailMessage as GmailMessage, type EmailMessageFull as GmailMessageFull, type EmailProvider } from '@/lib/email/core';
+import { PROVIDER_LABEL, type EmailMessageFull as GmailMessageFull, type EmailProvider } from '@/lib/email/core';
 import type { EmailStatus } from '@/lib/email/server';
 import type { EmailAnalysisResult } from '@/app/api/gmail/analyze/route';
-import { Mail, Paperclip, Plus, X } from 'lucide-react';
+import { Mail, Plus, X } from 'lucide-react';
+import EmailAssistant from '@/components/email/EmailAssistant';
 
 function analysisToMarkdown(a: EmailAnalysisResult, subject: string, from: string, date: string): string {
   const lines: string[] = [
@@ -87,15 +88,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
   }, [user]);
   useEffect(() => { loadStatus().catch(() => setStatus({ loginEmail: null, suggested: null, outlookAvailable: false, gmail: null, outlook: null })); }, [loadStatus]);
 
-  // Search form
-  const [keywords, setKeywords]       = useState('');
-  const [fromEmail, setFromEmail]     = useState('');
-  const [dateFrom, setDateFrom]       = useState('');
-  const [dateTo, setDateTo]           = useState('');
-  const [searching, setSearching]     = useState(false);
-  const [messages, setMessages]       = useState<GmailMessage[]>([]);
   const [searchError, setSearchError] = useState('');
-  const [searched, setSearched]       = useState(false);
 
   // Selected email + analysis
   const [selected, setSelected]       = useState<GmailMessageFull | null>(null);
@@ -143,7 +136,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
     await fetch(provider === 'gmail' ? '/api/gmail/disconnect' : '/api/integrations/microsoft/disconnect',
       { method: 'POST', headers: { Authorization: `Bearer ${idToken}` } });
     setConfirmOff(false);
-    setMessages([]); setSelected(null); setAnalysis(null); setSearched(false);
+    setSelected(null); setAnalysis(null);
     await loadStatus();
   };
 
@@ -152,23 +145,6 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
     else if (code === 'mail_not_granted') setSearchError('Microsoft aún no ha dado permiso para leer tu correo. Pulsa «Dar acceso al correo».');
     else setSearchError(fallback);
     if (code === 'reconnect_required' || code === 'mail_not_granted' || code === 'not_connected') await loadStatus();
-  };
-
-  const handleSearch = async () => {
-    if (!provider) return;
-    setSearching(true); setSearchError(''); setSelected(null); setAnalysis(null);
-    try {
-      const idToken = await user.getIdToken();
-      const res = await fetch('/api/email/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ provider, keywords, from: fromEmail, dateFrom, dateTo }),
-      });
-      const data = await res.json() as { messages?: GmailMessage[]; error?: string; code?: string };
-      if (!res.ok) await onApiError(data.code, data.error ?? 'Error al buscar emails.');
-      else { setMessages(data.messages ?? []); setSearched(true); }
-    } catch { setSearchError('Error al buscar emails.'); }
-    finally { setSearching(false); }
   };
 
   const handleSelectEmail = useCallback(async (id: string) => {
@@ -184,6 +160,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
       const data = await res.json() as { message?: GmailMessageFull; error?: string; code?: string };
       if (!res.ok) throw Object.assign(new Error(data.error ?? 'No se pudo abrir el email.'), { code: data.code });
       setSelected(data.message!);
+      setTimeout(() => document.getElementById('email-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     } catch (err) { await onApiError((err as { code?: string }).code, (err as Error).message); }
     finally { setLoadingMsg(''); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -320,7 +297,7 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
         {accounts.length > 1 ? (
           <label className="flex items-center gap-2 text-caption text-text">
             Cuenta
-            <select value={provider ?? ''} onChange={e => { setProvider(e.target.value as EmailProvider); setMessages([]); setSelected(null); setAnalysis(null); setSearched(false); }}
+            <select value={provider ?? ''} onChange={e => { setProvider(e.target.value as EmailProvider); setSelected(null); setAnalysis(null); }}
               className="bg-bg border border-border-strong rounded-md px-2 py-1 text-caption text-text">
               {accounts.map(a => <option key={a} value={a}>{PROVIDER_LABEL[a]} · {emailOf(a)}</option>)}
             </select>
@@ -347,71 +324,16 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
         </span>
       </div>
 
-      {/* Search form */}
-      <div className="bg-surface border border-border rounded-xl p-5 space-y-3">
-        <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted">Criterios de búsqueda</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-caption text-text-muted mb-1">Palabras clave</label>
-            <input className={INPUT} placeholder="Ej: contrato, demanda, requerimiento..." value={keywords} onChange={e => setKeywords(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} />
-          </div>
-          <div>
-            <label className="block text-caption text-text-muted mb-1">De (remitente)</label>
-            <input className={INPUT} placeholder="ejemplo@dominio.com" value={fromEmail} onChange={e => setFromEmail(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-caption text-text-muted mb-1">Desde</label>
-            <input type="date" className={INPUT} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-caption text-text-muted mb-1">Hasta</label>
-            <input type="date" className={INPUT} value={dateTo} onChange={e => setDateTo(e.target.value)} />
-          </div>
-        </div>
-        {searchError && <p className="text-caption text-danger-text">{searchError}</p>}
-        <div className="flex justify-end">
-          <Button variant="accent" size="sm" loading={searching} onClick={handleSearch}>Buscar emails</Button>
-        </div>
-      </div>
-
-      {/* Results */}
-      {searched && (
-        <div className="bg-surface border border-border rounded-xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-border">
-            <span className="text-caption text-text-muted">
-              {messages.length === 0 ? 'Sin resultados' : `${messages.length} email${messages.length !== 1 ? 's' : ''} encontrado${messages.length !== 1 ? 's' : ''}`}
-            </span>
-          </div>
-          {messages.length > 0 && (
-            <div className="divide-y divide-border">
-              {messages.map(m => (
-                <div
-                  key={m.id}
-                  className={`px-5 py-3 flex items-start gap-4 hover:bg-surface-muted transition-colors cursor-pointer ${selected?.id === m.id ? 'bg-surface-raised' : ''}`}
-                  onClick={() => handleSelectEmail(m.id)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      {m.hasAttachments && <Paperclip size={12} className="text-text-muted" aria-label="Con adjuntos" />}
-                      <p className="text-small font-medium text-text-heading truncate">{m.subject}</p>
-                    </div>
-                    <p className="text-caption text-text-muted truncate">{m.from}</p>
-                    <p className="text-caption text-text-muted mt-0.5 line-clamp-1">{m.snippet}</p>
-                  </div>
-                  <span className="text-caption text-text-muted shrink-0 whitespace-nowrap">{parseGmailDate(m.date)}</span>
-                  {loadingMsg === m.id && (
-                    <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin shrink-0" />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      {provider && (
+        <EmailAssistant user={user} plan={userDoc.plan ?? 'Abogados'} provider={provider} account={emailOf(provider)} cases={cases}
+          onApiError={onApiError} onOpenEmail={handleSelectEmail} openId={selected?.id ?? loadingMsg ?? null}
+          error={searchError} setError={setSearchError} />
       )}
+      {loadingMsg && <p className="text-caption text-text-muted" aria-live="polite">Abriendo el email…</p>}
 
       {/* Email detail + analysis */}
       {selected && (
-        <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        <div id="email-detail" className="bg-surface border border-border rounded-xl overflow-hidden scroll-mt-4">
           {/* Header */}
           <div className="px-5 py-4 border-b border-border space-y-1">
             <p className="text-body-sm font-sans font-semibold text-text-heading">{selected.subject}</p>

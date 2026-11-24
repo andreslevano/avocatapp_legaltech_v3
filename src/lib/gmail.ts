@@ -83,7 +83,7 @@ export interface GmailMessage {
 
 export interface GmailMessageFull extends GmailMessage {
   bodyText: string;
-  attachments: { name: string; mimeType: string; size: number }[];
+  attachments: { id?: string; name: string; mimeType: string; size: number }[];
 }
 
 function decodeBase64Url(str: string): string {
@@ -151,7 +151,7 @@ export async function searchMessages(
   if (!ids.length) return [];
 
   const messages = await Promise.all(
-    ids.slice(0, 20).map(async ({ id }) => {
+    ids.slice(0, Math.min(maxResults, 50)).map(async ({ id }) => {
       const msgRes = await fetch(`${GMAIL_API}/users/me/messages/${id}?format=METADATA&metadataHeaders=Subject,From,To,Date`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -182,9 +182,15 @@ export async function fetchFullMessage(accessToken: string, messageId: string): 
   };
   const headers = msg.payload?.headers ?? [];
   const hasAttachments = !!(msg.payload?.parts?.some((p) => p.filename && p.filename.length > 0));
-  const attachments = (msg.payload?.parts ?? [])
+  // Attachments anywhere in the MIME tree (forwarded emails nest them).
+  type Part = GmailPayload & { filename?: string; body?: { size?: number; data?: string; attachmentId?: string }; mimeType?: string };
+  const flat: Part[] = [];
+  const walk = (ps?: Part[]) => (ps ?? []).forEach(p => { flat.push(p); walk(p.parts as Part[] | undefined); });
+  walk(msg.payload?.parts as Part[] | undefined);
+  const attachments = flat
     .filter((p) => p.filename && p.filename.length > 0)
     .map((p) => ({
+      id: p.body?.attachmentId,
       name: p.filename!,
       mimeType: p.mimeType ?? 'application/octet-stream',
       size: p.body?.size ?? 0,
@@ -202,4 +208,14 @@ export async function fetchFullMessage(accessToken: string, messageId: string): 
     bodyText: msg.payload ? extractBodyText(msg.payload as GmailPayload) : '',
     attachments,
   };
+}
+
+/** One attachment's bytes (read-only). */
+export async function downloadGmailAttachment(accessToken: string, messageId: string, attachmentId: string): Promise<Buffer> {
+  const res = await fetch(`${GMAIL_API}/users/me/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error(`Gmail attachment → ${res.status}`);
+  const data = await res.json() as { data?: string };
+  return Buffer.from((data.data ?? '').replace(/-/g, '+').replace(/_/g, '/'), 'base64');
 }

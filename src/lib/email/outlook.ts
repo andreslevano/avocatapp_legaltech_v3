@@ -57,12 +57,20 @@ export async function fetchOutlookMessage(token: string, id: string): Promise<Em
   const enc = encodeURIComponent(id);
   const [m, att] = await Promise.all([
     get<GraphMessage>(token, `/me/messages/${enc}?$select=${SELECT},body`, { Prefer: 'outlook.body-content-type="text"' }),
-    get<{ value?: { name?: string; contentType?: string; size?: number }[] }>(token, `/me/messages/${enc}/attachments?$select=name,contentType,size`)
+    get<{ value?: { id?: string; name?: string; contentType?: string; size?: number; isInline?: boolean }[] }>(token, `/me/messages/${enc}/attachments?$select=id,name,contentType,size,isInline`)
       .catch(() => ({ value: [] })),
   ]);
   return {
     ...toMessage(m),
     bodyText: (m.body?.content ?? '').replace(/\r\n/g, '\n').trim(),
-    attachments: (att.value ?? []).map(a => ({ name: a.name ?? 'adjunto', mimeType: a.contentType ?? 'application/octet-stream', size: a.size ?? 0 })),
+    attachments: (att.value ?? []).filter(a => !a.isInline).map(a => ({ id: a.id, name: a.name ?? 'adjunto', mimeType: a.contentType ?? 'application/octet-stream', size: a.size ?? 0 })),
   };
+}
+
+/** One attachment's bytes (read-only; file attachments only). */
+export async function downloadOutlookAttachment(token: string, messageId: string, attachmentId: string): Promise<Buffer> {
+  if (!ID_RE.test(messageId) || !ID_RE.test(attachmentId)) throw new Error('Adjunto no válido.');
+  const a = await get<{ contentBytes?: string }>(token, `/me/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}`);
+  if (!a.contentBytes) throw new Error('Este adjunto no se puede descargar (no es un archivo).');
+  return Buffer.from(a.contentBytes, 'base64');
 }
