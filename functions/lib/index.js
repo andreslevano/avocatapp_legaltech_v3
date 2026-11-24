@@ -43,7 +43,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stripeWebhook = exports.createBillingPortalSession = exports.generateStudentDocumentPackage = exports.createCheckoutSession = exports.analyzeDocuments = exports.getUserStatus = exports.reactivateUser = exports.checkUserStatusByEmail = exports.updateUserStatus = exports.cleanupUser = exports.enableUser = exports.disableUser = exports.getUserStats = exports.accionTutela = exports.reclamacionCantidades = exports.testOpenAI = exports.extraccionDatosExtract = exports.helloWorld = void 0;
+exports.processSignatureEvent = exports.contractAlertsHourly = exports.stripeWebhook = exports.createBillingPortalSession = exports.generateStudentDocumentPackage = exports.createCheckoutSession = exports.analyzeDocuments = exports.getUserStatus = exports.reactivateUser = exports.checkUserStatusByEmail = exports.updateUserStatus = exports.cleanupUser = exports.enableUser = exports.disableUser = exports.getUserStats = exports.accionTutela = exports.reclamacionCantidades = exports.testOpenAI = exports.extraccionDatosExtract = exports.helloWorld = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const cors = __importStar(require("cors"));
@@ -3508,4 +3508,9 @@ exports.stripeWebhook = functions.https.onRequest({
     timeoutSeconds: 540,
     memory: '512MiB' // Increase memory for document generation
 }, webhookApp);
+// F3: hourly trigger for contract expiry alerts (logic in the Next.js app).
+var contract_alerts_1 = require("./contract-alerts");
+Object.defineProperty(exports, "contractAlertsHourly", { enumerable: true, get: function () { return contract_alerts_1.contractAlertsHourly; } });
+var signature_events_1 = require("./signature-events");
+Object.defineProperty(exports, "processSignatureEvent", { enumerable: true, get: function () { return signature_events_1.processSignatureEvent; } });
 //# sourceMappingURL=index.js.map
