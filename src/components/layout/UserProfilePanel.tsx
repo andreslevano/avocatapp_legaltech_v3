@@ -102,8 +102,10 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
   const initials = (user.displayName ?? user.email ?? 'U')
     .split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-  // Position: right of the trigger (desktop rail) OR above the bottom bar (mobile)
-  const isFromBottomBar = anchorRect && anchorRect.top > window.innerHeight * 0.7;
+  // Position: next to the trigger on the desktop rail (same side as the avatar), or above the
+  // mobile bottom bar. The rail exists from md (768px); below it the trigger is the bottom bar.
+  // (Not by height: the desktop avatar also sits low on the screen.)
+  const isFromBottomBar = !!anchorRect && !window.matchMedia('(min-width: 768px)').matches;
   const panelStyle: React.CSSProperties = isFromBottomBar
     ? {
         // Mobile: float above the bottom bar, pinned to the right
