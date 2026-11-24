@@ -9,9 +9,10 @@ import { useAppAuth } from '@/contexts/AppAuthContext';
 import { getCases, createCase, updateCase, type CaseDoc } from '@/lib/firestore';
 import { saveAnalysisDocument } from '@/lib/agent-export';
 import { useDocBranding } from '@/hooks/useDocBranding';
-import type { GmailMessage, GmailMessageFull } from '@/lib/gmail';
+import { PROVIDER_LABEL, type EmailMessage as GmailMessage, type EmailMessageFull as GmailMessageFull, type EmailProvider } from '@/lib/email/core';
+import type { EmailStatus } from '@/lib/email/server';
 import type { EmailAnalysisResult } from '@/app/api/gmail/analyze/route';
-import { Mail, Paperclip, X } from 'lucide-react';
+import { Mail, Paperclip, Plus, X } from 'lucide-react';
 
 function analysisToMarkdown(a: EmailAnalysisResult, subject: string, from: string, date: string): string {
   const lines: string[] = [
@@ -69,10 +70,22 @@ const INPUT = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-small
 
 function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user']; userDoc: ReturnType<typeof useAppAuth>['userDoc']; }) {
   const brand = useDocBranding();
-  const ud = userDoc as Record<string, unknown>;
-  const [connected, setConnected]     = useState<boolean>(Boolean(ud.gmailConnected));
-  const [gmailEmail, setGmailEmail]   = useState<string>((ud.gmailEmail as string) ?? '');
-  const [connecting, setConnecting]   = useState(false);
+  // Mail accounts (Gmail / Outlook) and the provider of the login email (/api/email/status).
+  const [status, setStatus]           = useState<EmailStatus | null>(null);
+  const [provider, setProvider]       = useState<EmailProvider | null>(null);
+  const [connecting, setConnecting]   = useState('');
+  const [confirmOff, setConfirmOff]   = useState(false);
+
+  const loadStatus = useCallback(async () => {
+    const res = await fetch('/api/email/status', { headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
+    const st = await res.json() as EmailStatus;
+    setStatus(st);
+    setProvider(p => {
+      const usable = (['gmail', 'outlook'] as const).filter(x => x === 'gmail' ? st.gmail : st.outlook?.mail);
+      return p && usable.includes(p) ? p : usable[0] ?? null;
+    });
+  }, [user]);
+  useEffect(() => { loadStatus().catch(() => setStatus({ loginEmail: null, suggested: null, outlookAvailable: false, gmail: null, outlook: null })); }, [loadStatus]);
 
   // Search form
   const [keywords, setKeywords]       = useState('');
@@ -106,74 +119,75 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
     if (user?.uid) getCases(user.uid).then(setCases).catch(() => {});
   }, [user?.uid]);
 
-  const handleConnect = async () => {
-    setConnecting(true);
+  /** `account`: 'login' preselects the Avocat login email; 'other' lets the provider ask. */
+  const handleConnect = async (p: EmailProvider, account: 'login' | 'other') => {
+    setConnecting(`${p}:${account}`); setSearchError('');
     try {
       const idToken = await user.getIdToken();
-      const res = await fetch('/api/gmail/auth', {
-        headers: { Authorization: `Bearer ${idToken}` },
-      });
-      const { url, error } = await res.json() as { url?: string; error?: string };
-      if (error || !url) throw new Error(error ?? 'Error al iniciar conexión');
-      window.location.href = url;
+      const url = p === 'gmail'
+        ? `/api/gmail/auth?account=${account}`
+        : `/api/integrations/microsoft/auth?returnTo=${encodeURIComponent('/tools/revision-email')}&mail=1${account === 'login' ? '&account=login' : ''}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${idToken}` } });
+      const { url: go, error } = await res.json() as { url?: string; error?: string };
+      if (error || !go) throw new Error(error ?? 'Error al iniciar la conexión');
+      window.location.href = go;
     } catch (err) {
       setSearchError((err as Error).message);
-      setConnecting(false);
+      setConnecting('');
     }
   };
 
   const handleDisconnect = async () => {
+    if (!provider) return;
     const idToken = await user.getIdToken();
-    await fetch('/api/gmail/disconnect', { method: 'POST', headers: { Authorization: `Bearer ${idToken}` } });
-    setConnected(false); setGmailEmail('');
-    setMessages([]); setSelected(null); setAnalysis(null);
+    await fetch(provider === 'gmail' ? '/api/gmail/disconnect' : '/api/integrations/microsoft/disconnect',
+      { method: 'POST', headers: { Authorization: `Bearer ${idToken}` } });
+    setConfirmOff(false);
+    setMessages([]); setSelected(null); setAnalysis(null); setSearched(false);
+    await loadStatus();
   };
 
-  const buildQuery = () => {
-    const parts: string[] = [];
-    if (keywords.trim()) parts.push(keywords.trim());
-    if (fromEmail.trim()) parts.push(`from:${fromEmail.trim()}`);
-    if (dateFrom) parts.push(`after:${dateFrom.replace(/-/g, '/')}`);
-    if (dateTo)   parts.push(`before:${dateTo.replace(/-/g, '/')}`);
-    return parts.join(' ') || 'in:inbox';
+  const onApiError = async (code: string | undefined, fallback: string) => {
+    if (code === 'reconnect_required') setSearchError(`La conexión con ${provider ? PROVIDER_LABEL[provider] : 'tu correo'} ha caducado. Vuelve a conectarla.`);
+    else if (code === 'mail_not_granted') setSearchError('Microsoft aún no ha dado permiso para leer tu correo. Pulsa «Dar acceso al correo».');
+    else setSearchError(fallback);
+    if (code === 'reconnect_required' || code === 'mail_not_granted' || code === 'not_connected') await loadStatus();
   };
 
   const handleSearch = async () => {
+    if (!provider) return;
     setSearching(true); setSearchError(''); setSelected(null); setAnalysis(null);
     try {
       const idToken = await user.getIdToken();
-      const res = await fetch('/api/gmail/search', {
+      const res = await fetch('/api/email/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ query: buildQuery(), maxResults: 20 }),
+        body: JSON.stringify({ provider, keywords, from: fromEmail, dateFrom, dateTo }),
       });
-      const data = await res.json() as { messages?: GmailMessage[]; error?: string };
-      if (data.error) {
-        if (data.error === 'token_expired') { setConnected(false); setSearchError('Sesión de Gmail expirada. Reconecta tu cuenta.'); }
-        else setSearchError(data.error);
-      } else {
-        setMessages(data.messages ?? []);
-        setSearched(true);
-      }
+      const data = await res.json() as { messages?: GmailMessage[]; error?: string; code?: string };
+      if (!res.ok) await onApiError(data.code, data.error ?? 'Error al buscar emails.');
+      else { setMessages(data.messages ?? []); setSearched(true); }
     } catch { setSearchError('Error al buscar emails.'); }
     finally { setSearching(false); }
   };
 
   const handleSelectEmail = useCallback(async (id: string) => {
+    if (!provider) return;
     setLoadingMsg(id); setSelected(null); setAnalysis(null); setCaseSaved('');
     try {
       const idToken = await user.getIdToken();
-      const res = await fetch('/api/gmail/message', {
+      const res = await fetch('/api/email/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ messageId: id }),
+        body: JSON.stringify({ provider, id }),
       });
-      const data = await res.json() as { message?: GmailMessageFull; error?: string };
-      if (data.error) throw new Error(data.error);
+      const data = await res.json() as { message?: GmailMessageFull; error?: string; code?: string };
+      if (!res.ok) throw Object.assign(new Error(data.error ?? 'No se pudo abrir el email.'), { code: data.code });
       setSelected(data.message!);
-    } catch (err) { setSearchError((err as Error).message); }
+    } catch (err) { await onApiError((err as { code?: string }).code, (err as Error).message); }
     finally { setLoadingMsg(''); }
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, provider]);
 
   const handleAnalyze = async () => {
     if (!selected) return;
@@ -239,38 +253,98 @@ function GmailTab({ user, userDoc }: { user: ReturnType<typeof useAppAuth>['user
     setSavingCase(false);
   };
 
-  if (!connected) {
+  if (!status) return <p className="text-caption text-text-muted py-10 text-center">Cargando tu correo…</p>;
+
+  const accounts = (['gmail', 'outlook'] as const).filter(x => x === 'gmail' ? status.gmail : status.outlook?.mail);
+  const emailOf = (x: EmailProvider) => (x === 'gmail' ? status.gmail?.email : status.outlook?.email) ?? '';
+  const canOutlook = status.outlookAvailable;
+  const sugg = status.suggested && (status.suggested === 'gmail' || canOutlook) ? status.suggested : null;
+  const otherButtons = (exclude?: EmailProvider) => (
+    <div className="flex flex-wrap justify-center gap-2">
+      {exclude !== 'gmail' && !status.gmail && (
+        <Button variant="secondary" size="sm" loading={connecting === 'gmail:other'} onClick={() => handleConnect('gmail', 'other')}>Gmail</Button>
+      )}
+      {canOutlook && exclude !== 'outlook' && !status.outlook?.mail && (
+        <Button variant="secondary" size="sm" loading={connecting === 'outlook:other'} onClick={() => handleConnect('outlook', 'other')}>Outlook</Button>
+      )}
+    </div>
+  );
+  // Microsoft connected for OneDrive but without mail permission yet.
+  const outlookNeedsMail = canOutlook && status.outlook && !status.outlook.mail;
+
+  if (!accounts.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center max-w-sm mx-auto gap-5">
-        <div className="w-14 h-14 rounded-2xl bg-surface border border-border flex items-center justify-center "><Mail size={24} className="text-accent-text" aria-hidden /></div>
-        <div>
-          <p className="text-body-sm font-sans font-semibold text-text-heading mb-1">Conecta tu cuenta de Gmail</p>
-          <p className="text-caption text-text-muted leading-relaxed">
-            Autoriza acceso de solo lectura a tu Gmail para buscar, analizar y vincular emails a tus casos.
-          </p>
+      <div className="flex flex-col items-center justify-center py-16 text-center max-w-md mx-auto gap-5">
+        <div className="w-14 h-14 rounded-2xl bg-surface border border-border flex items-center justify-center"><Mail size={24} className="text-accent-text" aria-hidden /></div>
+        {outlookNeedsMail ? (
+          <>
+            <div>
+              <p className="text-body-sm font-sans font-semibold text-text-heading mb-1">Da acceso al correo de {status.outlook!.email}</p>
+              <p className="text-caption text-text-muted leading-relaxed">Ya tienes Microsoft conectado para OneDrive. Microsoft te pedirá permiso para que Avocat también lea tu correo (solo lectura).</p>
+            </div>
+            <Button variant="accent" size="md" loading={connecting === 'outlook:login'} onClick={() => handleConnect('outlook', 'login')}>Dar acceso al correo</Button>
+          </>
+        ) : sugg && status.loginEmail ? (
+          <>
+            <div>
+              <p className="text-body-sm font-sans font-semibold text-text-heading mb-1">Conecta tu correo</p>
+              <p className="text-caption text-text-muted leading-relaxed">
+                Te proponemos la cuenta con la que entras en Avocat. {PROVIDER_LABEL[sugg]} te pedirá permiso de solo lectura.
+              </p>
+            </div>
+            <Button variant="accent" size="md" loading={connecting === `${sugg}:login`} onClick={() => handleConnect(sugg, 'login')}>
+              Conectar {status.loginEmail} ({PROVIDER_LABEL[sugg]})
+            </Button>
+          </>
+        ) : (
+          <div>
+            <p className="text-body-sm font-sans font-semibold text-text-heading mb-1">Conecta tu correo</p>
+            <p className="text-caption text-text-muted leading-relaxed">Autoriza acceso de solo lectura para buscar, analizar y vincular emails a tus casos.</p>
+          </div>
+        )}
+        <div className="space-y-2">
+          <p className="text-caption text-text-muted">{sugg || outlookNeedsMail ? 'O usa otra cuenta:' : 'Elige tu proveedor:'}</p>
+          {otherButtons()}
         </div>
-        <Button variant="accent" size="md" loading={connecting} onClick={handleConnect}>
-          Conectar Gmail
-        </Button>
         {searchError && <p className="text-caption text-danger-text">{searchError}</p>}
-        <p className="text-caption text-text-muted">
-          Avocat solo lee tus emails — nunca envía ni modifica nada.
-        </p>
+        <p className="text-caption text-text-muted">Avocat solo lee tus emails — nunca envía ni modifica nada.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      {/* Connection badge */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-surface border border-border rounded-xl">
-        <div className="flex items-center gap-2.5">
-          <span className="w-2 h-2 rounded-full bg-status-pagado-bg flex-shrink-0" />
-          <span className="text-caption text-text">Conectado como <strong className="text-text-heading">{gmailEmail}</strong></span>
-        </div>
-        <button onClick={handleDisconnect} className="text-caption text-text-muted hover:text-danger-text transition-colors">
-          Desconectar
-        </button>
+      {/* Account bar: which mailbox, switch, add another, disconnect */}
+      <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 bg-surface border border-border rounded-xl">
+        <span className="w-2 h-2 rounded-full bg-success-text flex-shrink-0" aria-hidden />
+        {accounts.length > 1 ? (
+          <label className="flex items-center gap-2 text-caption text-text">
+            Cuenta
+            <select value={provider ?? ''} onChange={e => { setProvider(e.target.value as EmailProvider); setMessages([]); setSelected(null); setAnalysis(null); setSearched(false); }}
+              className="bg-bg border border-border-strong rounded-md px-2 py-1 text-caption text-text">
+              {accounts.map(a => <option key={a} value={a}>{PROVIDER_LABEL[a]} · {emailOf(a)}</option>)}
+            </select>
+          </label>
+        ) : (
+          <span className="text-caption text-text">Conectado como <strong className="text-text-heading">{provider ? emailOf(provider) : ''}</strong> ({provider ? PROVIDER_LABEL[provider] : ''})</span>
+        )}
+        <span className="ml-auto flex items-center gap-3">
+          {(!status.gmail || (canOutlook && !status.outlook?.mail)) && (
+            <details className="relative">
+              <summary className="list-none cursor-pointer text-caption text-accent-text hover:underline inline-flex items-center gap-1"><Plus size={14} aria-hidden /> Añadir cuenta</summary>
+              <div className="absolute right-0 mt-2 z-10 bg-surface border border-border rounded-lg p-2 shadow-md">{otherButtons()}</div>
+            </details>
+          )}
+          {confirmOff ? (
+            <span className="inline-flex items-center gap-2 text-caption">
+              <span className="text-text">{provider === 'outlook' ? '¿Desconectar Microsoft? También se desconectan OneDrive y SharePoint.' : '¿Desconectar Gmail?'}</span>
+              <button onClick={handleDisconnect} className="text-danger-text font-medium">Desconectar</button>
+              <button onClick={() => setConfirmOff(false)} className="text-text-muted">No</button>
+            </span>
+          ) : (
+            <button onClick={() => setConfirmOff(true)} className="text-caption text-text-muted hover:text-danger-text transition-colors">Desconectar</button>
+          )}
+        </span>
       </div>
 
       {/* Search form */}
@@ -592,24 +666,23 @@ function ManualTab({ user }: { user: ReturnType<typeof useAppAuth>['user'] }) {
 export default function RevisionEmailPage() {
   const { user, userDoc } = useAppAuth();
   const searchParams = useSearchParams();
-  const [tab, setTab] = useState<'gmail' | 'manual'>('gmail');
+  const [tab, setTab] = useState<'correo' | 'manual'>('correo');
   const [banner, setBanner] = useState('');
 
   useEffect(() => {
-    const connected = searchParams.get('gmail_connected');
-    const error     = searchParams.get('gmail_error');
-    if (connected) {
-      setBanner('Gmail conectado correctamente.');
-      // Update URL without param
-      window.history.replaceState({}, '', '/tools/revision-email');
-    } else if (error) {
-      setBanner(`Error al conectar Gmail: ${error}. Intenta de nuevo.`);
-      window.history.replaceState({}, '', '/tools/revision-email');
-    }
+    const gmailOk = searchParams?.get('gmail_connected');
+    const gmailErr = searchParams?.get('gmail_error');
+    const ms = searchParams?.get('ms');
+    if (gmailOk) setBanner('Gmail conectado correctamente.');
+    else if (gmailErr) setBanner(`Error al conectar Gmail: ${gmailErr}. Intenta de nuevo.`);
+    else if (ms === 'connected') setBanner('Microsoft conectado correctamente.');
+    else if (ms === 'cancelled') setBanner('Error: conexión con Microsoft cancelada.');
+    else if (ms) setBanner('Error al conectar con Microsoft. Intenta de nuevo.');
+    if (gmailOk || gmailErr || ms) window.history.replaceState({}, '', '/tools/revision-email');
   }, [searchParams]);
 
   const TABS = [
-    { key: 'gmail',  label: 'Gmail' },
+    { key: 'correo', label: 'Correo' },
     { key: 'manual', label: 'Manual' },
   ] as const;
 
@@ -640,7 +713,7 @@ export default function RevisionEmailPage() {
             ))}
           </div>
 
-          {tab === 'gmail'
+          {tab === 'correo'
             ? <GmailTab user={user} userDoc={userDoc} />
             : <ManualTab user={user} />
           }

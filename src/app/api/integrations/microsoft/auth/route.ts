@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authAdmin } from '@/lib/firebase-admin';
 import { randomToken } from '@/lib/integrations/crypto';
 import { sanitizeReturnTo } from '@/lib/integrations/microsoft/config';
 import { savePending } from '@/lib/integrations/microsoft/connection';
@@ -26,5 +27,13 @@ export async function GET(req: NextRequest) {
     caseId: q.get('caseId') || null,
   });
 
-  return NextResponse.json({ url: buildAuthorizeUrl({ state, codeVerifier }) });
+  // Revisión de Email: ?account=login preselects the Avocat login email; ?mail=1 asks Microsoft again for
+  // consent, so a connection made for OneDrive also gets Mail.Read (read-only).
+  const loginHint = q.get('account') === 'login' ? await loginEmailOf(uid) : null;
+  return NextResponse.json({ url: buildAuthorizeUrl({ state, codeVerifier, loginHint, prompt: q.get('mail') === '1' ? 'consent' : 'select_account' }) });
+}
+
+async function loginEmailOf(uid: string): Promise<string | null> {
+  const u = await authAdmin().getUser(uid).catch(() => null);
+  return u?.email ?? null;
 }

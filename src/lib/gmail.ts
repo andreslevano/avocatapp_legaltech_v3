@@ -10,15 +10,17 @@ export interface GmailTokens {
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GMAIL_API = 'https://gmail.googleapis.com/gmail/v1';
 
-export function getOAuthUrl(nonce: string): string {
+/** `loginHint`: preselect that Google account (the Avocat login email); without it Google asks which one. */
+export function getOAuthUrl(nonce: string, opts: { loginHint?: string | null } = {}): string {
   const params = new URLSearchParams({
     client_id:     process.env.GOOGLE_CLIENT_ID!,
     redirect_uri:  process.env.GOOGLE_REDIRECT_URI!,
     response_type: 'code',
     scope:         'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email',
     access_type:   'offline',
-    prompt:        'consent',
+    prompt:        opts.loginHint ? 'consent' : 'select_account consent',
     state:         nonce,
+    ...(opts.loginHint ? { login_hint: opts.loginHint } : {}),
   });
   return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 }

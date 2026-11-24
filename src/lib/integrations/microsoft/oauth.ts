@@ -14,7 +14,7 @@ export interface TokenResponse {
   scope?: string;
 }
 
-export function buildAuthorizeUrl(opts: { state: string; codeVerifier: string; prompt?: 'select_account' }): string {
+export function buildAuthorizeUrl(opts: { state: string; codeVerifier: string; prompt?: 'select_account' | 'consent'; loginHint?: string | null }): string {
   const cfg = msServerConfig();
   const url = new URL(`${cfg.authority}/oauth2/v2.0/authorize`);
   url.search = new URLSearchParams({
@@ -27,6 +27,7 @@ export function buildAuthorizeUrl(opts: { state: string; codeVerifier: string; p
     code_challenge: sha256Base64Url(opts.codeVerifier),
     code_challenge_method: 'S256',
     prompt: opts.prompt ?? 'select_account',
+    ...(opts.loginHint ? { login_hint: opts.loginHint } : {}),
   }).toString();
   return url.toString();
 }

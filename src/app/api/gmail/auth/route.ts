@@ -9,9 +9,11 @@ export async function GET(req: NextRequest) {
   if (!idToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   let uid: string;
+  let loginEmail: string | undefined;
   try {
     const decoded = await authAdmin().verifyIdToken(idToken);
     uid = decoded.uid;
+    loginEmail = decoded.email;
   } catch {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
@@ -22,7 +24,9 @@ export async function GET(req: NextRequest) {
 
   // Encode uid + nonce in state so the callback can find the user
   const state = Buffer.from(`${uid}:${nonce}`).toString('base64url');
-  const url   = getOAuthUrl(state);
+  // ?account=login → Google preselects the Avocat login email; ?account=other → Google asks which one.
+  const useLogin = req.nextUrl.searchParams.get('account') === 'login';
+  const url   = getOAuthUrl(state, { loginHint: useLogin ? loginEmail : null });
 
   return NextResponse.json({ url });
 }

@@ -27,6 +27,8 @@ export interface MicrosoftDisplay {
   accountType: 'personal' | 'work';
   pickerBaseUrl: string | null;
   status: 'connected' | 'reauth_required';
+  /** Mail.Read granted: Revisión de Email can read Outlook. */
+  mail?: boolean;
   connectedAt?: unknown;
 }
 

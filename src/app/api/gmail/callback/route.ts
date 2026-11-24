@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
 import { exchangeCode, getGmailUserEmail } from '@/lib/gmail';
+import { saveGmailConnection } from '@/lib/email/gmail-connection';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export async function GET(req: NextRequest) {
@@ -42,16 +43,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${redirectBase}/tools/revision-email?gmail_error=token_exchange`);
   }
 
-  // Store tokens in Firestore
-  await userRef.update({
-    gmailConnected:     true,
-    gmailEmail,
-    gmailAccessToken:   tokens.accessToken,
-    gmailRefreshToken:  tokens.refreshToken,
-    gmailTokenExpiresAt: tokens.expiresAt,
-    gmailAuthNonce:     FieldValue.delete(),
-    gmailConnectedAt:   FieldValue.serverTimestamp(),
-  });
+  // Tokens: encrypted, server-only (src/lib/email/gmail-connection.ts). The profile keeps display info only.
+  if (!tokens.refreshToken) {
+    return NextResponse.redirect(`${redirectBase}/tools/revision-email?gmail_error=no_refresh_token`);
+  }
+  await saveGmailConnection(uid, { ...tokens, email: gmailEmail });
+  await userRef.update({ gmailAuthNonce: FieldValue.delete() });
 
   return NextResponse.redirect(`${redirectBase}/tools/revision-email?gmail_connected=1`);
 }

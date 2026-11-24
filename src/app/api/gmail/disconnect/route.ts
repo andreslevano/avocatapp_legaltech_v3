@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authAdmin, db } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { authAdmin } from '@/lib/firebase-admin';
+import { deleteGmailConnection } from '@/lib/email/gmail-connection';
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('Authorization') ?? '';
@@ -15,13 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
 
-  await db().collection('users').doc(uid).update({
-    gmailConnected:      false,
-    gmailEmail:          FieldValue.delete(),
-    gmailAccessToken:    FieldValue.delete(),
-    gmailRefreshToken:   FieldValue.delete(),
-    gmailTokenExpiresAt: FieldValue.delete(),
-  });
+  await deleteGmailConnection(uid);
 
   return NextResponse.json({ ok: true });
 }

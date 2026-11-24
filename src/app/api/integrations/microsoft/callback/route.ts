@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { msServerConfig, sharePointTenantFromUrl, withParams, CONSUMER_PICKER_BASE_URL } from '@/lib/integrations/microsoft/config';
+import { msServerConfig, scopeNames, sharePointTenantFromUrl, withParams, CONSUMER_PICKER_BASE_URL } from '@/lib/integrations/microsoft/config';
 import { consumePending, isPersonalTenant, saveConnection } from '@/lib/integrations/microsoft/connection';
 import { classifyAuthError } from '@/lib/integrations/microsoft/errors';
 import { decodeJwtClaims, exchangeCode, graphGet } from '@/lib/integrations/microsoft/oauth';
@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
       tenantName,
       accountType: personal ? 'personal' : 'work',
       pickerBaseUrl,
+      mail: scopeNames(tokens.scope).includes('Mail.Read'),
     });
 
     const params: Record<string, string> = { ms: 'connected' };
