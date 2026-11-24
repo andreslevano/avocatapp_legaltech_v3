@@ -262,3 +262,42 @@ export function matchContext(input: {
   }
   return out;
 }
+
+// ── Model output → JSON, tolerant of fences, prose around it, and a cut-off tail ──
+
+/**
+ * Parses the first JSON object/array in `text`. If the model's answer was truncated (length limit),
+ * keeps every complete element and closes the open brackets, so a long digest still yields its
+ * complete parts instead of failing. Returns null when there's no JSON at all.
+ */
+export function parseJsonLoose(text: string): unknown {
+  const t = text.replace(/```json\s*/gi, '').replace(/```/g, '');
+  const start = t.search(/[[{]/);
+  if (start < 0) return null;
+  const body = t.slice(start);
+  const end = Math.max(body.lastIndexOf('}'), body.lastIndexOf(']'));
+  if (end >= 0) { try { return JSON.parse(body.slice(0, end + 1)); } catch { /* repair below */ } }
+
+  // Repair: scan, remember the last point where a value inside a container was complete.
+  const stack: string[] = [];
+  let inStr = false, esc = false, cut = -1, cutStack: string[] = [];
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === '{' || ch === '[') stack.push(ch === '{' ? '}' : ']');
+    else if (ch === '}' || ch === ']') {
+      stack.pop();
+      if (!stack.length) return JSON.parse(body.slice(0, i + 1));
+      cut = i + 1; cutStack = [...stack];
+    } else if (ch === ',') { cut = i; cutStack = [...stack]; }
+  }
+  if (cut < 0) return null;
+  const head = body.slice(0, cut).replace(/,\s*$/, '');
+  try { return JSON.parse(head + cutStack.reverse().join('')); } catch { return null; }
+}

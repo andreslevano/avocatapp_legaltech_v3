@@ -58,3 +58,14 @@ test('addresses and matching against Avocat data', () => {
   expect(kinds).not.toContain('case:k2');
   expect(s.find(x => x.type === 'client' && x.clientId === 'c1')!.reason).toContain('@acme.es');
 });
+
+test('model JSON: fenced, wrapped in prose, and truncated answers', async () => {
+  const { parseJsonLoose } = await import('@/lib/email/assistant-core');
+  expect(parseJsonLoose('```json\n{"a":1}\n```')).toEqual({ a: 1 });
+  expect(parseJsonLoose('Aquí tienes: [{"i":0}] ¡listo!')).toEqual([{ i: 0 }]);
+  // Cut off mid-string inside the 3rd list item: keeps the complete parts.
+  const cut = '{"resumen":"R","temas":["a","b"],"puntosAtencion":[{"texto":"uno","fuentes":[1]},{"texto":"dos","fuentes":[2]},{"texto":"tr';
+  expect(parseJsonLoose(cut)).toEqual({ resumen: 'R', temas: ['a', 'b'], puntosAtencion: [{ texto: 'uno', fuentes: [1] }, { texto: 'dos', fuentes: [2] }] });
+  expect(parseJsonLoose('{"resumen":"con } y ] dentro","x":[1,2')).toEqual({ resumen: 'con } y ] dentro', x: [1] }); // the last value may be cut off: dropped
+  expect(parseJsonLoose('sin json')).toBeNull();
+});

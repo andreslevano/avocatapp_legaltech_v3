@@ -11,7 +11,7 @@ import { downloadGmailAttachment, fetchFullMessage, searchMessages } from '@/lib
 import { firebaseDownloadUrl } from '@/lib/signatures/filing';
 import { gmailQuery, outlookSearch, type EmailMessage, type EmailMessageFull, type EmailProvider, type SearchCriteria } from './core';
 import {
-  applyRanking, cleanDigest, cleanPlan, domainOf, groupThreads, matchContext, MAX_ANALYSIS_EMAILS, MAX_CANDIDATES, parseAddresses, planQuery,
+  applyRanking, cleanDigest, parseJsonLoose, cleanPlan, domainOf, groupThreads, matchContext, MAX_ANALYSIS_EMAILS, MAX_CANDIDATES, parseAddresses, planQuery,
   stripQuoted, type DigestSource, type EmailDigest, type MatchRecord, type Participant, type RankedEmail, type SearchPlan, type Suggestion, type Thread,
 } from './assistant-core';
 import { downloadOutlookAttachment, fetchOutlookMessage, searchOutlook } from './outlook';
@@ -21,10 +21,12 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const FAST_MODEL = 'claude-haiku-4-5-20251001';    // planning + ranking (same as the single-email analysis)
 const DEEP_MODEL = 'claude-sonnet-4-6';             // the digest and reply drafts (same as the agent)
 
-function jsonFrom(text: string): unknown {
-  const t = text.replace(/```json\s*/g, '').replace(/```/g, '').trim();
-  const m = t.match(/[[{][\s\S]*[\]}]/);
-  return m ? JSON.parse(m[0]) : null;
+const jsonFrom = parseJsonLoose;
+
+/** An error whose message the page can show (which step failed), logged with its cause. */
+function stepError(step: string, message: string, cause: unknown) {
+  console.error(`[email/assist] ${step}:`, (cause as Error)?.message ?? cause);
+  return Object.assign(new Error(message), { status: 502, expose: true });
 }
 
 async function ask(model: string, system: string, user: string, maxTokens: number): Promise<string> {
@@ -108,6 +110,7 @@ export async function downloadAttachment(token: string, provider: EmailProvider,
 
 const DIGEST_SYSTEM = `Eres un asistente jurídico que lee conversaciones de email para un abogado (España / Latinoamérica). Lees los emails numerados (y los adjuntos marcados) y extraes lo útil para el trabajo del abogado, en español, sin inventar nada.
 Cada elemento indica en "fuentes" los números de email de donde sale.
+Sé conciso: frases cortas; como máximo 8 elementos por lista y 15 en la cronología (agrupa lo menor).
 Devuelve SOLO JSON con esta forma:
 {"resumen":"3-6 frases","cronologia":[{"fecha":"AAAA-MM-DD","quien":"","que":"","fuentes":[1]}],"temas":["..."],
 "puntosAtencion":[{"texto":"riesgos, compromisos, contradicciones, cláusulas o términos relevantes","fuentes":[1]}],
@@ -133,8 +136,11 @@ export async function digestEmails(
   if (!sel.length) throw Object.assign(new Error('Elige al menos un email.'), { status: 400 });
   const token = await tokenFor(c, provider);
   const full: EmailMessageFull[] = [];
-  for (const id of sel) {
-    full.push(provider === 'gmail' ? await fetchFullMessage(token, id) : await fetchOutlookMessage(token, id));
+  try {
+    for (const id of sel) full.push(provider === 'gmail' ? await fetchFullMessage(token, id) : await fetchOutlookMessage(token, id));
+  } catch (err) {
+    if ((err as { code?: string }).code || (err as Error).name.endsWith('NotGranted')) throw err;
+    throw stepError('fetch', `No pudimos descargar los emails de ${provider === 'gmail' ? 'Gmail' : 'Outlook'}. Inténtalo de nuevo.`, err);
   }
   full.sort((a, b) => (Date.parse(a.date) || 0) - (Date.parse(b.date) || 0));
 
@@ -159,12 +165,21 @@ export async function digestEmails(
   let text = blocks.join('\n\n');
   if (text.length > 120_000) text = text.slice(0, 120_000) + '\n[…recortado]';
 
-  const raw = await ask(DEEP_MODEL, DIGEST_SYSTEM, `Lo que el abogado necesita saber: ${purpose || 'un resumen útil de la conversación'}\n\n${text}`, 4000);
-  const digest = cleanDigest(jsonFrom(raw), full.length);
+  let digest: EmailDigest;
+  try {
+    const raw = await ask(DEEP_MODEL, DIGEST_SYSTEM, `Lo que el abogado necesita saber: ${purpose || 'un resumen útil de la conversación'}\n\n${text}`, 8000);
+    const parsed = jsonFrom(raw);
+    if (!parsed) throw new Error(`no JSON in answer (${raw.length} chars)`);
+    digest = cleanDigest(parsed, full.length);
+  } catch (err) {
+    throw stepError('digest', 'El análisis con IA no se pudo completar. Prueba con menos emails o sin adjuntos.', err);
+  }
   const sources = full.map((m, i) => ({ n: i + 1, id: m.id, provider, subject: m.subject, from: m.from, date: m.date }));
   const participants = dedupe([...full.flatMap(m => [...parseAddresses(m.from), ...parseAddresses(m.to)]),
     ...digest.personas.filter(p => p.email).map(p => ({ name: p.nombre || p.email, email: p.email }))]);
-  const suggestions = await relatedInAvocat(c, participants, digest.personas.map(p => p.organizacion).filter(Boolean));
+  // Relations are a bonus: if they fail, the digest still comes back.
+  const suggestions = await relatedInAvocat(c, participants, digest.personas.map(p => p.organizacion).filter(Boolean))
+    .catch(err => { console.error('[email/assist] relations:', (err as Error)?.message); return [] as Suggestion[]; });
   return { digest, sources, participants, suggestions, attachmentsRead };
 }
 
