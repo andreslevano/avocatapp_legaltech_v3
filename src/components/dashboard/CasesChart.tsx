@@ -12,10 +12,9 @@ import {
 import { Line } from 'react-chartjs-2';
 import type { CaseDoc } from '@/lib/firestore';
 import { chartTheme, themes } from '@/lib/tokens';
+import { useUiTheme } from '@/contexts/UiThemeContext';
 
-// The app shell is dark (data-theme="dark"); canvas can't read CSS variables, so use the theme values.
-const T = themes.dark;
-const C = chartTheme('dark');
+// Canvas can't read CSS variables: the chart takes the values of the app's current theme.
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler);
 
@@ -48,6 +47,9 @@ interface CasesChartProps {
 }
 
 export default function CasesChart({ cases }: CasesChartProps) {
+  const { resolved } = useUiTheme();
+  const T = themes[resolved];
+  const C = chartTheme(resolved);
   const labels = getLast6Months();
   const counts = countByMonth(cases);
 

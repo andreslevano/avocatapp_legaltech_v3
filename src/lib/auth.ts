@@ -27,6 +27,8 @@ export interface UserDoc {
   toolLayout?: ToolLayout;
   /** Generación de escritos: document types starred by the user (DocType.value), shown in Favoritos. */
   favoriteEscritos?: string[];
+  /** App appearance (src/lib/ui-theme.ts): 'dark' (default) | 'light' | 'system'. */
+  uiTheme?: 'dark' | 'light' | 'system';
 }
 
 export interface ToolLayout {

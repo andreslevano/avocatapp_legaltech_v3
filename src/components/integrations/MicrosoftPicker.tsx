@@ -11,6 +11,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAppAuth } from '@/contexts/AppAuthContext';
+import { useUiTheme } from '@/contexts/UiThemeContext';
 import { Button } from '@/components/ui/Button';
 import { ConnectorError, getPickerToken, type MicrosoftIntegrationInfo } from '@/lib/integrations/microsoft/client';
 import { X } from 'lucide-react';
@@ -41,7 +42,7 @@ type PortMessage = {
   data: { command?: string; notification?: string; resource?: string; type?: string; items?: PickedItem[] };
 };
 
-function pickerOptions(info: MicrosoftIntegrationInfo, channelId: string) {
+function pickerOptions(info: MicrosoftIntegrationInfo, channelId: string, theme: 'dark' | 'light') {
   const work = info.accountType === 'work';
   return {
     sdk: '8.0',
@@ -65,7 +66,7 @@ function pickerOptions(info: MicrosoftIntegrationInfo, channelId: string) {
       switchAccount: { mode: 'none' },
       manageAccounts: { mode: 'none' },
     },
-    theme: 'dark',
+    theme,
   };
 }
 
@@ -73,6 +74,7 @@ const LOAD_TIMEOUT_MS = 25_000;
 
 export default function MicrosoftPicker({ info, onPick, onClose, onReconnect }: Props) {
   const { user } = useAppAuth();
+  const uiTheme = useUiTheme().resolved;
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [frameName] = useState(() => `ms-picker-${Math.random().toString(36).slice(2)}`);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -87,7 +89,7 @@ export default function MicrosoftPicker({ info, onPick, onClose, onReconnect }: 
     let port: MessagePort | null = null;
     let cancelled = false;
     const channelId = crypto.randomUUID();
-    const options = pickerOptions(info, channelId);
+    const options = pickerOptions(info, channelId, uiTheme);
     const baseUrl = info.pickerBaseUrl;
     const initialResource = new URL(baseUrl).origin;
 
@@ -175,6 +177,8 @@ export default function MicrosoftPicker({ info, onPick, onClose, onReconnect }: 
       port?.removeEventListener('message', onPortMessage);
       port?.close();
     };
+    // The theme is read when the picker opens; switching it meanwhile doesn't reload an open picker.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [info, user, frameName, attempt]);
 
   return (

@@ -4,6 +4,7 @@ import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import type { CaseDoc, CaseStatus } from '@/lib/firestore';
 import { themes } from '@/lib/tokens';
+import { useUiTheme } from '@/contexts/UiThemeContext';
 
 ChartJS.register(ArcElement, Tooltip);
 
@@ -14,21 +15,23 @@ const STATUS_LABELS: Record<CaseStatus, string> = {
   archived: 'Archivados',
 };
 
-// Case status → dark-theme colours (canvas can't read CSS variables). Urgent uses the danger hue; the
-// legend also prints the word, so colour is never the only cue.
-const T = themes.dark;
-const STATUS_COLORS: Record<CaseStatus, string> = {
+// Case status → the current theme's colours (canvas can't read CSS variables). Urgent uses the danger
+// hue; the legend also prints the word, so colour is never the only cue.
+const statusColors = (T: { successText: string; dangerText: string; textMuted: string; borderStrong: string }): Record<CaseStatus, string> => ({
   active:   T.successText,
   urgent:   T.dangerText,
   closed:   T.textMuted,
   archived: T.borderStrong,
-};
+});
 
 interface StatusDonutProps {
   cases: CaseDoc[];
 }
 
 export default function StatusDonut({ cases }: StatusDonutProps) {
+  const { resolved } = useUiTheme();
+  const T = themes[resolved];
+  const STATUS_COLORS = statusColors(T);
   const statuses: CaseStatus[] = ['active', 'urgent', 'closed', 'archived'];
   const counts = statuses.map(s => cases.filter(c => c.status === s).length);
   const total = counts.reduce((a, b) => a + b, 0);

@@ -17,6 +17,7 @@ import FocusedSigningHost from '@/components/signatures/FocusedSigningHost';
 import YousignSigningHost from '@/components/signatures/YousignSigningHost';
 import { ImportJobsProvider } from '@/contexts/ImportJobsContext';
 import PreviewVerifyBanner from '@/components/layout/PreviewVerifyBanner';
+import { UiThemeProvider, useShellTheme } from '@/contexts/UiThemeContext';
 
 const LAWYER_ONLY_PATHS = ['/panel', '/cases'];
 
@@ -39,6 +40,8 @@ export default function AppShellClient({ children }: AppShellClientProps) {
   // Keep a ref so the onSnapshot callback always sees the current pathname
   const pathnameRef = useRef(pathname);
   useEffect(() => { pathnameRef.current = pathname; }, [pathname]);
+  // Oscuro · Claro · Automático (src/lib/ui-theme.ts): default dark.
+  const theme = useShellTheme(user?.uid ?? null, (userDoc as { uiTheme?: unknown } | null)?.uiTheme);
 
   useEffect(() => {
     if (!auth) { router.push('/login'); return; }
@@ -85,20 +88,20 @@ export default function AppShellClient({ children }: AppShellClientProps) {
       .catch(() => {});
   }, [user]);
 
-  // Portaled modals render into <body>, outside the shell div, so <body> carries the dark theme
+  // Portaled modals render into <body>, outside the shell div, so <body> carries the app theme
   // too while the shell is up (`app-surface` stays as a hook for app-only CSS).
   useEffect(() => {
     document.body.classList.add('app-surface');
-    document.body.dataset.theme = 'dark';
     return () => {
       document.body.classList.remove('app-surface');
       delete document.body.dataset.theme;
     };
   }, []);
+  useEffect(() => { document.body.dataset.theme = theme.resolved; }, [theme.resolved]);
 
   if (loading) {
     return (
-      <div data-theme="dark" className="min-h-screen bg-bg flex items-center justify-center">
+      <div data-theme={theme.resolved} className="min-h-screen bg-bg flex items-center justify-center">
         <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
       </div>
     );
@@ -107,11 +110,12 @@ export default function AppShellClient({ children }: AppShellClientProps) {
   if (!user || !userDoc) return null;
 
   return (
+    <UiThemeProvider value={theme}>
     <AppAuthProvider user={user} userDoc={userDoc}>
       <SidebarProvider>
         <DocumentsWorkspaceProvider>
           <ImportJobsProvider>
-          <div data-theme="dark" className="flex h-[100dvh] overflow-hidden bg-bg">
+          <div data-theme={theme.resolved} className="flex h-[100dvh] overflow-hidden bg-bg">
             <Rail user={user} userDoc={userDoc} />
             <Sidebar userDoc={userDoc} />
             <main className="flex-1 overflow-auto flex flex-col min-w-0 pb-16 md:pb-0">
@@ -126,5 +130,6 @@ export default function AppShellClient({ children }: AppShellClientProps) {
         </DocumentsWorkspaceProvider>
       </SidebarProvider>
     </AppAuthProvider>
+    </UiThemeProvider>
   );
 }

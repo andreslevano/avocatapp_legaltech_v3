@@ -11,6 +11,7 @@ import type { UserPlan } from '@/lib/auth';
 import { useAppAuth } from '@/contexts/AppAuthContext';
 import { canUseContracts } from '@/lib/contracts/config';
 import { X } from 'lucide-react';
+import ThemeSwitch from '@/components/settings/ThemeSwitch';
 
 // ── Plan metadata ──────────────────────────────────────────────────
 
@@ -215,6 +216,12 @@ export default function UserProfilePanel({ open, onClose, anchorRect }: UserProf
             {country ? country.label : <span className="text-text-muted italic">No configurado</span>}
           </p>
         )}
+      </div>
+
+      {/* ── Appearance ── */}
+      <div className="px-4 py-3 border-b border-border">
+        <p className="text-label font-sans font-semibold uppercase tracking-widest text-text-muted mb-2">Tema</p>
+        <ThemeSwitch compact id="menu" />
       </div>
 
       {/* ── Navigation actions ── */}

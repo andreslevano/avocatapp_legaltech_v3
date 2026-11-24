@@ -11,6 +11,7 @@ import { canUseMicrosoft } from '@/lib/integrations/microsoft/config';
 import { canUseDocusign } from '@/lib/docusign/config';
 import NotificationSettingsCard from '@/components/notifications/NotificationSettingsCard';
 import BrandingCard from '@/components/settings/BrandingCard';
+import ThemeSwitch from '@/components/settings/ThemeSwitch';
 import { canUseContracts } from '@/lib/contracts/config';
 import { primitives } from '@/lib/tokens';
 
@@ -506,6 +507,12 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        {/* Apariencia: Oscuro · Claro · Automático */}
+        <section id="apariencia" aria-labelledby="apariencia-title" className="bg-surface border border-border rounded-2xl p-5 space-y-3 mt-4">
+          <h2 id="apariencia-title" className="text-small font-sans font-semibold text-text-heading">Apariencia</h2>
+          <ThemeSwitch id="perfil" />
+        </section>
 
         {/* Identidad de marca: logo, colores y tipografía de los documentos */}
         <BrandingCard />
