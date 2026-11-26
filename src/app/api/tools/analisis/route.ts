@@ -1,3 +1,4 @@
+import { requirePaidCaller } from '@/lib/billing/server';
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -16,6 +17,9 @@ const SYSTEM_PROMPT = `Eres un experto jurídico. Analiza el documento proporcio
 Si algún campo no aplica o no se puede determinar, usa un array vacío [] o string vacío.`;
 
 export async function POST(req: NextRequest) {
+  const caller = await requirePaidCaller(req);
+  if (caller instanceof Response) return caller;
+
   try {
     const { text, fileName } = await req.json() as { text: string; fileName?: string };
     if (!text?.trim()) return NextResponse.json({ error: 'No se proporcionó texto' }, { status: 400 });

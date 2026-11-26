@@ -2,6 +2,7 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as cors from "cors";
 import * as express from "express";
+import { applyBillingEvent } from './billing-status';
 import Stripe from "stripe";
 import jsPDF from "jspdf";
 import path from "path";
@@ -3337,6 +3338,16 @@ async function processTutelaDocument(
 async function processWebhookAsync(event: Stripe.Event) {
   try {
     const db = admin.firestore();
+
+    // Subscription status → users.billing (access rule in the app). Billing-only events stop here.
+    try {
+      let stripeForBilling: Stripe | null = null;
+      try { stripeForBilling = new Stripe(resolveStripeSecretKey(), { apiVersion: '2023-10-16' }); } catch { /* no key: status from the event only */ }
+      if (await applyBillingEvent(db, stripeForBilling, event)) return;
+    } catch (err) {
+      console.error('❌ billing status update failed', event.type, (err as Error)?.message);
+    }
+
     const openai = createOpenAIClient();
 
     if (event.type === 'checkout.session.completed') {

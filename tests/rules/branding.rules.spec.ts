@@ -64,9 +64,9 @@ test.describe('users.branding', () => {
     test(`rejects ${name}`, async () => { await assertFails(save('alice', mutate(valid()))); });
   }
   test('create with invalid branding is rejected, valid accepted', async () => {
-    await assertFails(setDoc(doc(as('carol'), 'users/carol'), { name: 'C', branding: { font: 'x' } }));
+    await assertFails(setDoc(doc(as('carol'), 'users/carol'), { name: 'C', createdAt: serverTimestamp(), branding: { font: 'x' } }));
     await assertSucceeds(setDoc(doc(as('dave'), 'users/dave'), {
-      name: 'D', branding: { ...valid(), logoUrl: null, logoPath: null },
+      name: 'D', createdAt: serverTimestamp(), branding: { ...valid(), logoUrl: null, logoPath: null },
     }));
   });
 });

@@ -1,3 +1,4 @@
+import { requirePaidCaller } from '@/lib/billing/server';
 import OpenAI from 'openai';
 import { NextRequest } from 'next/server';
 import type { UserPlan } from '@/lib/auth';
@@ -43,6 +44,9 @@ async function extractDocumentText(doc: FilePayload): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  const caller = await requirePaidCaller(req);
+  if (caller instanceof Response) return caller;
+
   try {
     const { message, attachments, documents, caseContext, history, userPlan } =
       (await req.json()) as {

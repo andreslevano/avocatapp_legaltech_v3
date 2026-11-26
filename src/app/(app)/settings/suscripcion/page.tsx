@@ -4,7 +4,6 @@ import { useState } from 'react';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { useAppAuth } from '@/contexts/AppAuthContext';
-import { getBillingPortalEndpoint } from '@/lib/api-endpoints';
 
 const PLAN_INFO: Record<string, { label: string; price: string; description: string; color: string }> = {
   Abogados: {
@@ -40,16 +39,14 @@ export default function SubscriptionPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await fetch(getBillingPortalEndpoint(), {
+      // Authenticated route: the portal opens only for the signed-in user's own Stripe customer.
+      const res = await fetch('/api/billing/portal', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          returnUrl: window.location.href,
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` },
+        body: JSON.stringify({ returnPath: '/settings/suscripcion' }),
       });
       const data = await res.json();
-      if (data.success && data.url) {
+      if (data.url) {
         window.location.href = data.url;
       } else if (data.error === 'no_stripe_customer') {
         setError('Tu cuenta fue activada manualmente. Para cancelar o cambiar el plan, escríbenos a hola@avocatapp.com.');

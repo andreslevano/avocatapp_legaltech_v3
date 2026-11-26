@@ -1,3 +1,4 @@
+import { paymentGate } from '@/lib/billing/server';
 // Revisión de Email — the user's mail accounts and provider-neutral search/read. Server-only.
 import { promises as dns } from 'dns';
 import { NextRequest, NextResponse } from 'next/server';
@@ -18,6 +19,8 @@ export async function requireEmailCaller(req: NextRequest): Promise<EmailCaller 
   if (!idToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const t = await authAdmin().verifyIdToken(idToken);
+    const unpaid = await paymentGate(t.uid, t.email ?? null);
+    if (unpaid) return unpaid;
     return { uid: t.uid, email: t.email ?? null, emailVerified: t.email_verified === true };
   } catch {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });

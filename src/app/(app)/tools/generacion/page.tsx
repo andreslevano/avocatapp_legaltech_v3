@@ -335,7 +335,7 @@ export default function GeneracionPage() {
     try {
       const res = await fetch('/api/agent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` },
         body: JSON.stringify({ message: prompt, history: [], userPlan: userDoc.plan, caseContext: null }),
       });
       const reader  = res.body?.getReader();

@@ -1,5 +1,5 @@
+import { requirePaidCaller } from '@/lib/billing/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { authAdmin } from '@/lib/firebase-admin';
 import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -22,15 +22,8 @@ export interface EmailAnalysisResult {
 }
 
 export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get('Authorization') ?? '';
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!idToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  try {
-    await authAdmin().verifyIdToken(idToken);
-  } catch {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-  }
+  const caller = await requirePaidCaller(req);
+  if (caller instanceof Response) return caller;
 
   const { subject, from, to, date, body, attachments = [] } = (await req.json()) as {
     subject: string;

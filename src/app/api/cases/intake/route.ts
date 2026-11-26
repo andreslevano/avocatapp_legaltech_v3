@@ -1,3 +1,4 @@
+import { requirePaidCaller } from '@/lib/billing/server';
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { ALL_DOC_TYPES } from '@/lib/escritos-catalog';
@@ -42,6 +43,9 @@ interface IncomingDocument {
 }
 
 export async function POST(req: NextRequest) {
+  const caller = await requirePaidCaller(req);
+  if (caller instanceof Response) return caller;
+
   const startTime = Date.now();
   try {
     const body = await req.json() as { documents: IncomingDocument[] };

@@ -6,6 +6,7 @@ import { db, authAdmin } from '@/lib/firebase-admin';
 import { buildSystemPrompt } from '@/lib/agent-prompts';
 import { generateEmbedding } from '@/lib/vertex-embeddings';
 import { pdfText } from '@/lib/pdf-text';
+import { paymentGate } from '@/lib/billing/server';
 import { orgNdaTemplateFor } from '@/lib/org-templates';
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
@@ -408,14 +409,18 @@ export async function POST(req: NextRequest) {
   }
 
   let uid: string;
+  let callerEmail: string | null = null;
   let orgTemplate: ReturnType<typeof orgNdaTemplateFor> = null;
   try {
     const decoded = await authAdmin().verifyIdToken(idToken);
     uid = decoded.uid;
+    callerEmail = decoded.email ?? null;
     orgTemplate = orgNdaTemplateFor({ email: decoded.email, emailVerified: decoded.email_verified === true });
   } catch {
     return new Response('Invalid token', { status: 401, headers: CORS_HEADERS });
   }
+  const unpaid = await paymentGate(uid, callerEmail, CORS_HEADERS);
+  if (unpaid) return unpaid;
 
   const { message, caseId, convId, documents } = (await req.json()) as {
     message: string;

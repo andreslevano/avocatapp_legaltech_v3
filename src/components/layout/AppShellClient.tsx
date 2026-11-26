@@ -18,6 +18,9 @@ import YousignSigningHost from '@/components/signatures/YousignSigningHost';
 import { ImportJobsProvider } from '@/contexts/ImportJobsContext';
 import PreviewVerifyBanner from '@/components/layout/PreviewVerifyBanner';
 import { UiThemeProvider, useShellTheme } from '@/contexts/UiThemeContext';
+import PaymentGraceBanner from '@/components/billing/PaymentGraceBanner';
+import { accessForUserDoc } from '@/lib/billing/access';
+import { isPilotUser } from '@/lib/pilot-users';
 
 const LAWYER_ONLY_PATHS = ['/panel', '/cases'];
 
@@ -57,6 +60,12 @@ export default function AppShellClient({ children }: AppShellClientProps) {
         if (!snap.exists()) { router.push('/onboarding'); return; }
         const data = snap.data() as UserDoc;
         if (!data.plan || !data.onboardingComplete) { router.push('/onboarding'); return; }
+
+        // Payment (src/lib/billing/access.ts): a new paid plan that never completed checkout, a
+        // cancelled subscription or a failed payment past the 7-day grace goes to /pago. The paid
+        // API routes apply the same rule on the server.
+        const access = accessForUserDoc(data as unknown as Record<string, unknown>, { pilot: isPilotUser(fbUser.email) });
+        if (!access.allowed) { router.replace('/pago'); return; }
 
         // Guard: redirect non-Abogados away from lawyer-only routes.
         // Keep showing spinner (don't call setLoading(false)) until redirect
@@ -120,6 +129,7 @@ export default function AppShellClient({ children }: AppShellClientProps) {
             <Sidebar userDoc={userDoc} />
             <main className="flex-1 overflow-auto flex flex-col min-w-0 pb-16 md:pb-0">
               <PreviewVerifyBanner />
+              <PaymentGraceBanner userDoc={userDoc} />
               {children}
             </main>
           </div>

@@ -5,7 +5,7 @@ import { test } from '@playwright/test';
 import {
   assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const ALICE = 'alice';
 let env: RulesTestEnvironment;
@@ -45,8 +45,8 @@ test.describe('users.integrations', () => {
     await assertFails(updateDoc(doc(as(ALICE), 'users/alice'), { integrations: {} }));
   });
   test('cannot create a user doc that already carries integrations', async () => {
-    await assertFails(setDoc(doc(as('bob'), 'users/bob'), { name: 'Bob', integrations: { microsoft: { email: 'x' } } }));
-    await assertSucceeds(setDoc(doc(as('bob'), 'users/bob'), { name: 'Bob' }));
+    await assertFails(setDoc(doc(as('bob'), 'users/bob'), { name: 'Bob', createdAt: serverTimestamp(), integrations: { microsoft: { email: 'x' } } }));
+    await assertSucceeds(setDoc(doc(as('bob'), 'users/bob'), { name: 'Bob', createdAt: serverTimestamp() }));
   });
 });
 

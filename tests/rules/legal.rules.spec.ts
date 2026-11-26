@@ -7,7 +7,7 @@ import { test } from '@playwright/test';
 import {
   assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where, serverTimestamp } from 'firebase/firestore';
 
 let env: RulesTestEnvironment;
 
@@ -59,9 +59,9 @@ test.describe('isAdmin cannot be self-granted', () => {
   test('update and create', async () => {
     await assertFails(updateDoc(doc(as('alice'), 'users/alice'), { isAdmin: true }));
     await assertSucceeds(updateDoc(doc(as('alice'), 'users/alice'), { name: 'Alice' }));
-    await assertFails(setDoc(doc(as('bob'), 'users/bob'), { email: 'b@x.com', isAdmin: true }));
-    await assertSucceeds(setDoc(doc(as('bob'), 'users/bob'), { email: 'b@x.com', isAdmin: false }));
-    await assertSucceeds(setDoc(doc(as('carol'), 'users/carol'), { email: 'c@x.com' }));
+    await assertFails(setDoc(doc(as('bob'), 'users/bob'), { email: 'b@x.com', isAdmin: true, createdAt: serverTimestamp() }));
+    await assertSucceeds(setDoc(doc(as('bob'), 'users/bob'), { email: 'b@x.com', isAdmin: false, createdAt: serverTimestamp() }));
+    await assertSucceeds(setDoc(doc(as('carol'), 'users/carol'), { email: 'c@x.com', createdAt: serverTimestamp() }));
   });
 });
 

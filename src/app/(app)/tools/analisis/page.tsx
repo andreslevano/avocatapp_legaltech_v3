@@ -228,7 +228,7 @@ function AnalisisPageContent() {
       }
       const res  = await fetch('/api/tools/analisis', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` },
         body:    JSON.stringify({ text: extractedText, fileName: selectedName }),
       });
       const data = await res.json();

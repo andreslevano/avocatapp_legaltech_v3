@@ -392,7 +392,7 @@ export default function NewCasePage() {
     try {
       const res  = await fetch('/api/cases/intake', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` },
         body:    JSON.stringify({ documents: extracted }),
       });
       const data = await res.json();

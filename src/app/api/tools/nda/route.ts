@@ -1,6 +1,6 @@
+import { requirePaidCaller } from '@/lib/billing/server';
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { authAdmin } from '@/lib/firebase-admin';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -207,15 +207,8 @@ async function extractTextFromDocUrl(url: string): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get('Authorization') ?? '';
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!idToken) return new Response('Unauthorized', { status: 401 });
-
-  try {
-    await authAdmin().verifyIdToken(idToken);
-  } catch {
-    return new Response('Invalid token', { status: 401 });
-  }
+  const caller = await requirePaidCaller(req);
+  if (caller instanceof Response) return caller;
 
   const body = (await req.json()) as NdaBody;
   if (!body.objeto?.trim()) return new Response('Missing objeto', { status: 400 });

@@ -5,6 +5,7 @@ import { requireCaller } from '@/lib/data-requests/server';
 import { parseCheckout, sessionPlan } from '@/lib/checkout';
 import { PLAN_DASHBOARDS } from '@/lib/plans';
 import { planById } from '@/lib/pricing';
+import { markCheckoutPending } from '@/lib/billing/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,9 +42,14 @@ export async function POST(req: NextRequest) {
       // calculates it when enabled for the account.
       ...(process.env.STRIPE_AUTOMATIC_TAX === 'true' ? { automatic_tax: { enabled: true }, tax_id_collection: { enabled: true } } : {}),
       allow_promotion_codes: true,
-      success_url: `${origin}${landing}?checkout=ok`,
-      cancel_url: `${origin}/precios?pais=${parsed.country.toLowerCase()}&checkout=cancelado`,
+      // Subscriptions come back to /pago, which waits for the webhook's confirmation (or offers to
+      // retry when the user cancelled); packs go straight back to the app.
+      success_url: plan.mode === 'subscription' ? `${origin}/pago?checkout=ok` : `${origin}${landing}?checkout=ok`,
+      cancel_url: plan.mode === 'subscription' ? `${origin}/pago?checkout=cancelado` : `${origin}${landing}?checkout=cancelado`,
     });
+    if (plan.mode === 'subscription') {
+      await markCheckoutPending(caller.uid, { item: parsed.item, country: parsed.country, interval: parsed.interval });
+    }
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error('[checkout]', (err as Error).message);
